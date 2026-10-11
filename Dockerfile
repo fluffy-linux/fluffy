@@ -2,6 +2,8 @@
 ARG BASH_VERSION_=5.3 
 ARG BINUTILS_VERSION=2.47
 ARG COREUTILS_VERSION=9.11
+ARG DIFFUTILS_VERSION=3.12
+ARG FILE_VERSION=5.48
 ARG GCC_VERSION=16.2.0
 ARG GLIBC_VERSION=2.44
 ARG GMP_VERSION=6.3.0
@@ -51,6 +53,7 @@ ENV CONFIG_SITE=$LFS/usr/share/config.site
 ENV MAKEFLAGS=-j7
 
 FROM ch4.4 AS ch5.2
+COPY --from=ch4.4 --link $LFS $LFS
 WORKDIR /work
 ARG BINUTILS_VERSION
 RUN wget https://sourceware.org/pub/binutils/releases/binutils-${BINUTILS_VERSION}.tar.xz
@@ -69,7 +72,8 @@ RUN ../configure --prefix=$LFS/tools \
 RUN make
 RUN make install
 
-FROM ch5.2 AS ch5.3
+FROM ch4.4 AS ch5.3
+COPY --from=ch5.2 --link $LFS $LFS
 WORKDIR /work
 ARG GCC_VERSION
 ARG MPFR_VERSION
@@ -115,7 +119,8 @@ RUN make
 RUN make install
 RUN cat ../gcc/{limitx,glimits,limity}.h > $($LFS_TGT-gcc -print-file-name=include)/limits.h
 
-FROM ch5.3 AS ch5.4
+FROM ch4.4 AS ch5.4
+COPY --from=ch5.3 --link $LFS $LFS
 WORKDIR /work
 ARG LINUX_MAJOR
 ARG LINUX_VERSION
@@ -126,7 +131,8 @@ RUN make headers
 RUN find usr/include -type f ! -name '*.h' -delete
 RUN cp -rv usr/include $LFS/usr
 
-FROM ch5.4 AS ch5.5
+FROM ch4.4 AS ch5.5
+COPY --from=ch5.4 --link $LFS $LFS
 WORKDIR /work
 ARG GLIBC_VERSION
 RUN wget https://ftpmirror.gnu.org/glibc/glibc-${GLIBC_VERSION}.tar.xz
@@ -156,7 +162,9 @@ RUN echo 'int main(){}' | $LFS_TGT-gcc -x c - -v -Wl,--verbose &> dummy.log
 RUN $LFS_TGT-readelf -l a.out | grep ': /lib'
 RUN rm a.out dummy.log
 
-FROM ch5.5 AS ch5.6
+# special case - builds off prior gcc
+FROM ch5.3 AS ch5.6
+COPY --from=ch5.5 --link $LFS $LFS
 WORKDIR /work
 ARG GCC_VERSION
 WORKDIR /work/gcc-${GCC_VERSION}
@@ -175,7 +183,8 @@ RUN make
 RUN make DESTDIR=$LFS install
 RUN rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 
-FROM ch5.6 AS ch6.2
+FROM ch4.4 AS ch6.2
+COPY --from=ch5.6 --link $LFS $LFS
 WORKDIR /work
 ARG M4_VERSION
 RUN wget https://ftpmirror.gnu.org/m4/m4-${M4_VERSION}.tar.xz
@@ -189,7 +198,8 @@ RUN ./configure --prefix=/usr   \
 RUN make
 RUN make DESTDIR=$LFS install
 
-FROM ch6.2 AS ch6.3
+FROM ch4.4 AS ch6.3
+COPY --from=ch6.2 --link $LFS $LFS
 WORKDIR /work
 ARG NCURSES_VERSION
 RUN wget https://invisible-mirror.net/archives/ncurses/ncurses-${NCURSES_VERSION}.tar.gz
@@ -219,7 +229,8 @@ RUN make DESTDIR=$LFS install
 RUN ln -sv libncursesw.so $LFS/usr/lib/libncurses.so
 RUN sed -e 's/^#if.*XOPEN.*$/#if 1/' -i $LFS/usr/include/curses.h
 
-FROM ch6.3 AS ch6.4
+FROM ch4.4 AS ch6.4
+COPY --from=ch6.3 --link $LFS $LFS
 WORKDIR /work
 ARG BASH_VERSION_
 RUN wget https://ftpmirror.gnu.org/bash/bash-${BASH_VERSION_}.tar.gz
@@ -233,7 +244,8 @@ RUN ./configure --prefix=/usr           \
 RUN make
 RUN make DESTDIR=$LFS install
 
-FROM ch6.4 AS ch6.5
+FROM ch4.4 AS ch6.5
+COPY --from=ch6.4 --link $LFS $LFS
 WORKDIR /work
 ARG COREUTILS_VERSION
 RUN wget https://ftpmirror.gnu.org/coreutils/coreutils-${COREUTILS_VERSION}.tar.xz
@@ -249,3 +261,41 @@ RUN mv -v $LFS/usr/bin/chroot              $LFS/usr/sbin
 RUN mkdir -pv $LFS/usr/share/man/man8
 RUN mv -v $LFS/usr/share/man/man1/chroot.1 $LFS/usr/share/man/man8/chroot.8
 RUN sed -i 's/"1"/"8"/'                    $LFS/usr/share/man/man8/chroot.8
+
+FROM ch4.4 AS ch6.6
+COPY --from=ch6.5 --link $LFS $LFS
+WORKDIR /work
+ARG DIFFUTILS_VERSION
+RUN wget https://ftpmirror.gnu.org/diffutils/diffutils-${DIFFUTILS_VERSION}.tar.xz
+RUN tar -xf diffutils-${DIFFUTILS_VERSION}.tar.xz
+WORKDIR /work/diffutils-${DIFFUTILS_VERSION}
+RUN ./configure --prefix=/usr       \
+    --host=$LFS_TGT                 \
+    gl_cv_func_strcasecmp_works=yes \
+    --build=$(./build-aux/config.guess)
+RUN make
+RUN make DESTDIR=$LFS install
+
+FROM ch4.4 AS ch6.7
+COPY --from=ch6.6 --link $LFS $LFS
+WORKDIR /work
+ARG FILE_VERSION
+RUN wget https://astron.com/pub/file/file-${FILE_VERSION}.tar.gz
+RUN tar -xf file-${FILE_VERSION}.tar.gz
+WORKDIR /work/file-${FILE_VERSION}
+RUN mkdir build
+WORKDIR /work/file-${FILE_VERSION}/build
+RUN ../configure            \
+    --disable-bzlib         \
+    --disable-libseccomp    \
+    --disable-xzlib         \
+    --disable-zlib
+RUN make
+WORKDIR /work/file-${FILE_VERSION}
+RUN ./configure     \
+    --prefix=/usr   \
+    --host=$LFS_TGT \
+    --build=$(./config.guess)
+RUN make FILE_COMPILE=$(pwd)/build/src/file
+RUN make DESTDIR=$LFS install
+RUN rm -v $LFS/usr/lib/libmagic.la
