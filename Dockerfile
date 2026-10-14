@@ -1,6 +1,7 @@
 # avoid conflict with builtin var BASH_VERSION
 ARG BASH_VERSION_=5.3
 ARG BINUTILS_VERSION=2.47
+ARG BISON_VERSION=3.8.2
 ARG COREUTILS_VERSION=9.11
 ARG DIFFUTILS_VERSION=3.12
 ARG FILE_VERSION=5.48
@@ -12,17 +13,27 @@ ARG GLIBC_VERSION=2.44
 ARG GMP_VERSION=6.3.0
 ARG GREP_VERSION=3.12
 ARG GZIP_VERSION=1.14
+ARG IANA_ETC_VERSION=20260805
 ARG LINUX_MAJOR=7
 ARG LINUX_VERSION=${LINUX_MAJOR}.1.8
 ARG MAKE_VERSION=4.4.1
+ARG MAN_PAGES_VERSION=6.18
 ARG MPC_VERSION=1.4.1
+ARG MPDECIMAL_VERSION=4.0.1
 ARG MPFR_VERSION=4.2.2
 ARG M4_VERSION=1.4.21
 ARG NCURSES_VERSION=6.6
 ARG PATCH_VERSION=2.8
+ARG PERL_MAJOR_MINOR_VERSION=5.44
+ARG PERL_VERSION=${PERL_MAJOR_MINOR_VERSION}.0
+ARG PYTHON_VERSION=3.14.7
 ARG SED_VERSION=4.10
 ARG TAR_VERSION=1.35
+ARG TEXINFO_VERSION=7.3
+ARG UTIL_LINUX_VERSION=2.42.2
 ARG XZ_VERSION=5.8.3
+ARG ZLIB_VERSION=1.3.2
+
 FROM debian:12.15-slim AS ch2.2
 
 RUN apt update
@@ -514,7 +525,7 @@ COPY --from=ch6.18 --link $LFS $LFS
 USER root
 RUN chown --from lfs -R root:root $LFS/{usr,var,etc,tools,lib64}
 
-FROM scratch AS ch7.3
+FROM scratch AS ch7.4
 COPY --from=ch7.2 --link /mnt/lfs /
 ENV HOME=/root
 ENV PATH=/usr/bin:/usr/sbin
@@ -524,7 +535,7 @@ SHELL ["/bin/bash", "--login", "-c"]
 RUN mkdir -p /work
 
 
-FROM ch7.3 AS ch7.4
+FROM ch7.4 AS ch7.5
 RUN mkdir -pv /{boot,home,mnt,opt,srv}
 
 RUN mkdir -pv /etc/{opt,sysconfig}
@@ -545,8 +556,8 @@ RUN ln -sfv /run/lock /var/lock
 RUN install -dv -m 0750 /root
 RUN install -dv -m 1777 /tmp /var/tmp
 
-FROM ch7.3 AS ch7.5
-COPY --from=ch7.4 --link / /
+FROM ch7.4 AS ch7.6
+COPY --from=ch7.5 --link / /
 RUN ln -sv /proc/self/mounts /etc/mtab
 # TODO write real /etc/hosts after export
 RUN cat <<EOF >/etc/hosts.tmp
@@ -614,9 +625,9 @@ RUN chgrp -v utmp /var/log/lastlog
 RUN chmod -v 664  /var/log/lastlog
 RUN chmod -v 600  /var/log/btmp
 
-FROM ch7.3 AS ch7.6
+FROM ch7.4 AS ch7.7
 WORKDIR /work
-COPY --from=ch7.5 --link / /
+COPY --from=ch7.6 --link / /
 ARG GETTEXT_VERSION
 COPY --chown=lfs packages/gettext-${GETTEXT_VERSION}.tar.xz gettext-${GETTEXT_VERSION}.tar.xz
 RUN tar -xf gettext-${GETTEXT_VERSION}.tar.xz
@@ -624,3 +635,203 @@ WORKDIR /work/gettext-${GETTEXT_VERSION}
 RUN ./configure --disable-shared
 RUN make
 RUN cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
+
+FROM ch7.4 AS ch7.8
+WORKDIR /work
+COPY --from=ch7.7 --link / /
+ARG BISON_VERSION
+COPY packages/bison-${BISON_VERSION}.tar.xz .
+RUN tar -xf bison-${BISON_VERSION}.tar.xz
+WORKDIR /work/bison-${BISON_VERSION}
+RUN ./configure --prefix=/usr \
+    --docdir=/usr/share/doc/bison-${BISON_VERSION}
+RUN make
+RUN make install
+
+FROM ch7.4 AS ch7.9
+WORKDIR /work
+COPY --from=ch7.8 --link / /
+ARG PERL_VERSION
+COPY packages/perl-${PERL_VERSION}.tar.xz .
+RUN tar -xf perl-${PERL_VERSION}.tar.xz
+WORKDIR /work/perl-${PERL_VERSION}
+RUN sh Configure -des                               \
+    -D prefix=/usr                                  \
+    -D vendorprefix=/usr                            \
+    -D useshrplib                                   \
+    -D privlib=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/core_perl        \
+    -D archlib=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/core_perl        \
+    -D sitelib=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/site_perl        \
+    -D sitearch=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/site_perl       \
+    -D vendorlib=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/vendor_perl    \
+    -D vendorarch=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/vendor_perl
+RUN make
+RUN make install
+
+FROM ch7.4 AS ch7.10
+WORKDIR /work
+COPY --from=ch7.9 --link / /
+ARG ZLIB_VERSION
+COPY packages/zlib-${ZLIB_VERSION}.tar.gz .
+RUN tar -xf zlib-${ZLIB_VERSION}.tar.gz
+WORKDIR /work/zlib-${ZLIB_VERSION}
+RUN ./configure --prefix=/usr
+RUN make
+RUN make install
+RUN rm -fv /usr/lib/libz.a
+
+FROM ch7.4 AS ch7.11
+WORKDIR /work
+COPY --from=ch7.10 --link / /
+ARG MPDECIMAL_VERSION
+COPY packages/mpdecimal-${MPDECIMAL_VERSION}.tar.gz .
+RUN tar -xf mpdecimal-${MPDECIMAL_VERSION}.tar.gz
+WORKDIR /work/mpdecimal-${MPDECIMAL_VERSION}
+RUN ./configure --prefix=/usr   \
+    --disable-static            \
+    --docdir=/usr/share/doc/mpdecimal-${MPDECIMAL_VERSION}
+RUN make
+RUN make install
+
+FROM ch7.4 AS ch7.12
+WORKDIR /work
+COPY --from=ch7.11 --link / /
+ARG PYTHON_VERSION
+COPY packages/Python-${PYTHON_VERSION}.tar.xz .
+RUN tar -xf Python-${PYTHON_VERSION}.tar.xz
+WORKDIR /work/Python-${PYTHON_VERSION}
+RUN ./configure --prefix=/usr   \
+    --enable-shared             \
+    --without-ensurepip         \
+    --without-static-libpython
+RUN make
+RUN make install
+
+FROM ch7.4 AS ch7.13
+WORKDIR /work
+COPY --from=ch7.12 --link / /
+ARG TEXINFO_VERSION
+COPY packages/texinfo-${TEXINFO_VERSION}.tar.xz .
+RUN tar -xf texinfo-${TEXINFO_VERSION}.tar.xz
+WORKDIR /work/texinfo-${TEXINFO_VERSION}
+RUN ./configure --prefix=/usr
+RUN make
+RUN make install
+
+FROM ch7.4 AS ch7.14
+WORKDIR /work
+COPY --from=ch7.13 --link / /
+ARG UTIL_LINUX_VERSION
+COPY packages/util-linux-${UTIL_LINUX_VERSION}.tar.xz .
+RUN tar -xf util-linux-${UTIL_LINUX_VERSION}.tar.xz
+WORKDIR /work/util-linux-${UTIL_LINUX_VERSION}
+RUN mkdir -pv /var/lib/hwclock
+RUN ./configure --libdir=/usr/lib     \
+    --runstatedir=/run    \
+    --disable-chfn-chsh   \
+    --disable-login       \
+    --disable-nologin     \
+    --disable-su          \
+    --disable-setpriv     \
+    --disable-runuser     \
+    --disable-pylibmount  \
+    --disable-static      \
+    --disable-liblastlog2 \
+    --without-python      \
+    ADJTIME_PATH=/var/lib/hwclock/adjtime \
+    --docdir=/usr/share/doc/util-linux-${UTIL_LINUX_VERSION}
+RUN make
+RUN make install
+
+FROM ch7.4 AS ch7.15
+COPY --from=ch7.14 --link / /
+RUN rm -rf /usr/share/{info,man,doc}/*
+RUN find /usr/{lib,libexec} -name \*.la -delete
+RUN rm -rf /tools
+
+FROM ch7.4 AS ch8.3
+WORKDIR /work
+COPY --from=ch7.15 --link / /
+ARG MAN_PAGES_VERSION
+COPY packages/man-pages-${MAN_PAGES_VERSION}.tar.xz .
+RUN tar -xf man-pages-${MAN_PAGES_VERSION}.tar.xz
+WORKDIR /work/man-pages-${MAN_PAGES_VERSION}
+RUN rm -v man3/crypt*
+RUN make -R GIT=false prefix=/usr install
+
+FROM ch7.4 AS ch8.4
+WORKDIR /work
+COPY --from=ch8.3 --link / /
+ARG IANA_ETC_VERSION
+COPY packages/iana-etc-${IANA_ETC_VERSION}.tar.gz .
+RUN tar -xf iana-etc-${IANA_ETC_VERSION}.tar.gz
+WORKDIR /work/iana-etc-${IANA_ETC_VERSION}
+RUN cp -v services protocols /etc
+
+FROM ch7.4 AS ch8.5
+WORKDIR /work
+COPY --from=ch8.4 --link / /
+ARG GLIBC_VERSION
+COPY packages/glibc-${GLIBC_VERSION}.tar.xz .
+COPY packages/glibc-fhs-1.patch .
+COPY packages/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch .
+RUN tar -xf glibc-${GLIBC_VERSION}.tar.xz
+WORKDIR /work/glibc-${GLIBC_VERSION}
+RUN patch -Np1 -i ../glibc-fhs-1.patch
+RUN patch -Np1 -i ../glibc-${GLIBC_VERSION}-upstream_fixes-1.patch
+RUN mkdir -v build
+WORKDIR /work/glibc-${GLIBC_VERSION}/build
+RUN ../configure --prefix=/usr      \
+    --disable-werror                \
+    --disable-nscd                  \
+    libc_cv_slibdir=/usr/lib        \
+    --enable-stack-protector=strong \
+    --enable-kernel=5.10
+RUN make
+RUN make check
+RUN touch /etc/ld.so.conf
+RUN sed '/test-installation/s@$(PERL)@echo not running@' -i ../Makefile
+RUN make install
+RUN sed '/RTLDLIST=/s@/usr@@g' -i /usr/bin/ldd
+RUN make localedata/install-locales
+RUN cat <<"EOF" >/etc/nsswitch.conf
+# Begin /etc/nsswitch.conf
+
+passwd: files systemd
+group: files systemd
+shadow: files systemd
+
+hosts: mymachines resolve [!UNAVAIL=return] files myhostname dns
+networks: files
+
+protocols: files
+services: files
+ethers: files
+rpc: files
+
+# End /etc/nsswitch.conf
+EOF
+RUN tar -xf ../../tzdata2026c.tar.gz
+ENV ZONEINFO=/usr/share/zoneinfo
+RUN mkdir -pv $ZONEINFO/{posix,right}
+RUN for tz in etcetera southamerica northamerica europe africa antarctica asia australasia backward; do \
+    zic -L /dev/null   -d $ZONEINFO       ${tz} \
+    zic -L /dev/null   -d $ZONEINFO/posix ${tz} \
+    zic -L leapseconds -d $ZONEINFO/right ${tz} \
+done
+RUN cp -v zone.tab zone1970.tab iso3166.tab $ZONEINFO
+RUN zic -d $ZONEINFO -p America/New_York
+RUN ln -sfv $ZONEINFO/America/New_York /etc/localtime
+ENV ZONEINFO=
+RUN cat <<"EOF" > /etc/ld.so.conf
+# Begin /etc/ld.so.conf
+/usr/local/lib
+/opt/lib
+
+EOF
+RUN cat <<"EOF" >> /etc/ld.so.conf
+# Add an include directory
+include /etc/ld.so.conf.d/*.conf
+
+EOF
+RUN mkdir -pv /etc/ld.so.conf.d
