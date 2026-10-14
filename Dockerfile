@@ -1,5 +1,5 @@
 # avoid conflict with builtin var BASH_VERSION
-ARG BASH_VERSION_=5.3 
+ARG BASH_VERSION_=5.3
 ARG BINUTILS_VERSION=2.47
 ARG COREUTILS_VERSION=9.11
 ARG DIFFUTILS_VERSION=3.12
@@ -129,8 +129,7 @@ RUN ../configure                  \
     --enable-languages=c,c++
 RUN make
 RUN make install
-WORKDIR /work/gcc-${GCC_VERSION}
-RUN cat gcc/{limitx,glimits,limity}.h > `dirname $($LFS_TGT-gcc -print-libgcc-file-name)`/include/limits.h
+RUN cat ../gcc/{limitx,glimits,limity}.h  > $($LFS_TGT-gcc -print-file-name=include)/limits.h
 
 FROM ch4.4 AS ch5.4
 COPY --from=ch5.3 --link $LFS $LFS
@@ -140,6 +139,7 @@ ARG LINUX_VERSION
 COPY --chown=lfs packages/linux-${LINUX_VERSION}.tar.xz linux-${LINUX_VERSION}.tar.xz
 RUN tar -xf linux-${LINUX_VERSION}.tar.xz
 WORKDIR /work/linux-${LINUX_VERSION}
+RUN make mrproper
 RUN make headers
 RUN find usr/include -type f ! -name '*.h' -delete
 RUN cp -rv usr/include $LFS/usr
@@ -156,7 +156,7 @@ WORKDIR /work/glibc-${GLIBC_VERSION}
 RUN ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64
 RUN ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64/ld-lsb-x86-64.so.3
 RUN patch -Np1 -i ../glibc-fhs-1.patch
-# RUN patch -Np1 -i ../glibc-2.44-upstream_fixes-1.patch
+RUN patch -Np1 -i ../glibc-${GLIBC_VERSION}-upstream_fixes-1.patch
 RUN mkdir -v build
 WORKDIR /work/glibc-${GLIBC_VERSION}/build
 RUN echo "rootsbindir=/usr/sbin" > configparms
@@ -253,9 +253,10 @@ RUN ./configure --prefix=/usr           \
     --build=$(sh support/config.guess)  \
     --host=$LFS_TGT                     \
     --without-bash-malloc               \
-    --docdir=/usr/share/doc/bash-5.3
+    --docdir=/usr/share/doc/bash-${BASH_VERSION_}
 RUN make
 RUN make DESTDIR=$LFS install
+RUN ln -sv bash $LFS/bin/sh
 
 FROM ch4.4 AS ch6.5
 COPY --from=ch6.4 --link $LFS $LFS
@@ -482,24 +483,28 @@ RUN sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
 RUN sed '/thread_header =/s/@.*@/gthr-posix.h/' -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
 RUN mkdir -v build-pass2
 WORKDIR /work/gcc-${GCC_VERSION}/build-pass2
-RUN ../configure                \
-    --build=$(../config.guess)  \
-    --host=$LFS_TGT             \
-    --target=$LFS_TGT           \
-    --prefix=/usr               \
-    --with-build-sysroot=$LFS   \
-    --enable-default-pie        \
-    --enable-default-ssp        \
-    --disable-nls               \
-    --disable-multilib          \
-    --disable-libatomic         \
-    --disable-libgomp           \
-    --disable-libquadmath       \
-    --disable-libsanitizer      \
-    --disable-libssp            \
-    --disable-libvtv            \
-    --enable-languages=c,c++    \
-    LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc
+RUN ../configure                                        \
+    --build=$(../config.guess)                          \
+    --host=$LFS_TGT                                     \
+    --target=$LFS_TGT                                   \
+    --prefix=/usr                                       \
+    --with-build-sysroot=$LFS                           \
+    --enable-default-pie                                \
+    --enable-default-ssp                                \
+    --disable-fixincludes                               \
+    --disable-nls                                       \
+    --disable-multilib                                  \
+    --disable-libatomic                                 \
+    --disable-libgomp                                   \
+    --disable-libquadmath                               \
+    --disable-libsanitizer                              \
+    --disable-libssp                                    \
+    --disable-libvtv                                    \
+    --enable-languages=c,c++                            \
+    CXX_FOR_TARGET="$LFS_TGT-gcc -nostdinc++"           \
+    LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc           \
+    target_configargs=gcc_cv_target_thread_file=posix
+
 RUN make
 RUN make DESTDIR=$LFS install
 RUN ln -sv gcc $LFS/usr/bin/cc
@@ -510,7 +515,6 @@ USER root
 RUN chown --from lfs -R root:root $LFS/{usr,var,etc,tools,lib64}
 
 FROM scratch AS ch7.3
-# can't use --link here because we'd stomp on special dirs.
 COPY --from=ch7.2 --link /mnt/lfs /
 ENV HOME=/root
 ENV PATH=/usr/bin:/usr/sbin
@@ -522,6 +526,7 @@ RUN mkdir -p /work
 
 FROM ch7.3 AS ch7.4
 RUN mkdir -pv /{boot,home,mnt,opt,srv}
+
 RUN mkdir -pv /etc/{opt,sysconfig}
 RUN mkdir -pv /lib/firmware
 RUN mkdir -pv /media/{floppy,cdrom}
@@ -536,27 +541,36 @@ RUN mkdir -pv /var/lib/{color,misc,locate}
 
 RUN ln -sfv /run /var/run
 RUN ln -sfv /run/lock /var/lock
-RUN ln -sfv /bin/bash /bin/sh
 
 RUN install -dv -m 0750 /root
 RUN install -dv -m 1777 /tmp /var/tmp
 
 FROM ch7.3 AS ch7.5
 COPY --from=ch7.4 --link / /
+RUN ln -sv /proc/self/mounts /etc/mtab
 # TODO write real /etc/hosts after export
 RUN cat <<EOF >/etc/hosts.tmp
 127.0.0.1  localhost $(hostname)
 ::1        localhost
 EOF
 RUN cat <<"EOF" >/etc/passwd
+
 root:x:0:0:root:/root:/bin/bash
 bin:x:1:1:bin:/dev/null:/usr/bin/false
 daemon:x:6:6:Daemon User:/dev/null:/usr/bin/false
 messagebus:x:18:18:D-Bus Message Daemon User:/run/dbus:/usr/bin/false
+systemd-journal-gateway:x:73:73:systemd Journal Gateway:/:/usr/bin/false
+systemd-journal-remote:x:74:74:systemd Journal Remote:/:/usr/bin/false
+systemd-journal-upload:x:75:75:systemd Journal Upload:/:/usr/bin/false
+systemd-network:x:76:76:systemd Network Management:/:/usr/bin/false
+systemd-resolve:x:77:77:systemd Resolver:/:/usr/bin/false
+systemd-timesync:x:78:78:systemd Time Synchronization:/:/usr/bin/false
+systemd-coredump:x:79:79:systemd Core Dumper:/:/usr/bin/false
 uuidd:x:80:80:UUID Generation Daemon User:/dev/null:/usr/bin/false
+systemd-oom:x:81:81:systemd Out Of Memory Daemon:/:/usr/bin/false
 nobody:x:65534:65534:Unprivileged User:/dev/null:/usr/bin/false
 EOF
-RUN cat <<"EOF" >/etc/group 
+RUN cat <<"EOF" >/etc/group
 root:x:0:
 bin:x:1:daemon
 sys:x:2:
@@ -571,13 +585,23 @@ dialout:x:10:
 audio:x:11:
 video:x:12:
 utmp:x:13:
+clock:x:14:
 cdrom:x:15:
 adm:x:16:
 messagebus:x:18:
+systemd-journal:x:23:
 input:x:24:
 mail:x:34:
 kvm:x:61:
+systemd-journal-gateway:x:73:
+systemd-journal-remote:x:74:
+systemd-journal-upload:x:75:
+systemd-network:x:76:
+systemd-resolve:x:77:
+systemd-timesync:x:78:
+systemd-coredump:x:79:
 uuidd:x:80:
+systemd-oom:x:81:
 wheel:x:97:
 users:x:999:
 nogroup:x:65534:
