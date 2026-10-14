@@ -67,7 +67,7 @@ FROM ch4.4 AS ch5.2
 COPY --from=ch4.4 --link $LFS $LFS
 WORKDIR /work
 ARG BINUTILS_VERSION
-ADD --chown=lfs https://sourceware.org/pub/binutils/releases/binutils-${BINUTILS_VERSION}.tar.xz binutils-${BINUTILS_VERSION}.tar.xz
+COPY --chown=lfs packages/binutils-${BINUTILS_VERSION}.tar.xz binutils-${BINUTILS_VERSION}.tar.xz
 RUN tar -xf binutils-${BINUTILS_VERSION}.tar.xz
 WORKDIR /work/binutils-${BINUTILS_VERSION}
 RUN mkdir -pv build-pass1
@@ -91,10 +91,10 @@ ARG GCC_VERSION
 ARG MPFR_VERSION
 ARG MPC_VERSION
 ARG GMP_VERSION
-ADD --chown=lfs https://ftpmirror.gnu.org/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz gcc-${GCC_VERSION}.tar.xz
-ADD --chown=lfs https://ftpmirror.gnu.org/mpfr/mpfr-${MPFR_VERSION}.tar.xz mpfr-${MPFR_VERSION}.tar.xz
-ADD --chown=lfs https://ftpmirror.gnu.org/mpc/mpc-${MPC_VERSION}.tar.xz mpc-${MPC_VERSION}.tar.xz
-ADD --chown=lfs https://ftpmirror.gnu.org/gmp/gmp-${GMP_VERSION}.tar.xz gmp-${GMP_VERSION}.tar.xz
+COPY --chown=lfs packages/gcc-${GCC_VERSION}.tar.xz gcc-${GCC_VERSION}.tar.xz
+COPY --chown=lfs packages/mpfr-${MPFR_VERSION}.tar.xz mpfr-${MPFR_VERSION}.tar.xz
+COPY --chown=lfs packages/mpc-${MPC_VERSION}.tar.xz mpc-${MPC_VERSION}.tar.xz
+COPY --chown=lfs packages/gmp-${GMP_VERSION}.tar.xz gmp-${GMP_VERSION}.tar.xz
 RUN tar -xf gcc-${GCC_VERSION}.tar.xz
 WORKDIR /work/gcc-${GCC_VERSION}
 RUN tar -xf ../mpfr-${MPFR_VERSION}.tar.xz
@@ -137,7 +137,7 @@ COPY --from=ch5.3 --link $LFS $LFS
 WORKDIR /work
 ARG LINUX_MAJOR
 ARG LINUX_VERSION
-ADD --chown=lfs https://www.kernel.org/pub/linux/kernel/v${LINUX_MAJOR}.x/linux-${LINUX_VERSION}.tar.xz linux-${LINUX_VERSION}.tar.xz
+COPY --chown=lfs packages/linux-${LINUX_VERSION}.tar.xz linux-${LINUX_VERSION}.tar.xz
 RUN tar -xf linux-${LINUX_VERSION}.tar.xz
 WORKDIR /work/linux-${LINUX_VERSION}
 RUN make headers
@@ -148,9 +148,9 @@ FROM ch4.4 AS ch5.5
 COPY --from=ch5.4 --link $LFS $LFS
 WORKDIR /work
 ARG GLIBC_VERSION
-ADD --chown=lfs https://ftpmirror.gnu.org/glibc/glibc-${GLIBC_VERSION}.tar.xz glibc-${GLIBC_VERSION}.tar.xz
-ADD --chown=lfs https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-fhs-1.patch glibc-fhs-1.patch
-ADD --chown=lfs https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch glibc-${GLIBC_VERSION}-upstream_fixes-1.patch
+COPY --chown=lfs packages/glibc-${GLIBC_VERSION}.tar.xz glibc-${GLIBC_VERSION}.tar.xz
+COPY --chown=lfs packages/glibc-fhs-1.patch glibc-fhs-1.patch
+COPY --chown=lfs packages/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch glibc-${GLIBC_VERSION}-upstream_fixes-1.patch
 RUN tar -xf glibc-${GLIBC_VERSION}.tar.xz
 WORKDIR /work/glibc-${GLIBC_VERSION}
 RUN ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64
@@ -200,7 +200,7 @@ FROM ch4.4 AS ch6.2
 COPY --from=ch5.6 --link $LFS $LFS
 WORKDIR /work
 ARG M4_VERSION
-ADD --chown=lfs https://ftpmirror.gnu.org/m4/m4-${M4_VERSION}.tar.xz m4-${M4_VERSION}.tar.xz
+COPY --chown=lfs packages/m4-${M4_VERSION}.tar.xz m4-${M4_VERSION}.tar.xz
 RUN echo ac_cv_func_posix_spawn_file_actions_addchdir=yes >> $LFS/usr/share/config.site
 RUN echo ac_cv_func_posix_spawn_file_actions_addfchdir=yes >> $LFS/usr/share/config.site
 RUN tar -xf m4-${M4_VERSION}.tar.xz
@@ -215,7 +215,7 @@ FROM ch4.4 AS ch6.3
 COPY --from=ch6.2 --link $LFS $LFS
 WORKDIR /work
 ARG NCURSES_VERSION
-ADD --chown=lfs https://invisible-mirror.net/archives/ncurses/ncurses-${NCURSES_VERSION}.tar.gz ncurses-${NCURSES_VERSION}.tar.gz
+COPY --chown=lfs packages/ncurses-${NCURSES_VERSION}.tar.gz ncurses-${NCURSES_VERSION}.tar.gz
 RUN tar -xf ncurses-${NCURSES_VERSION}.tar.gz
 WORKDIR /work/ncurses-${NCURSES_VERSION}
 RUN mkdir -pv build
@@ -246,7 +246,7 @@ FROM ch4.4 AS ch6.4
 COPY --from=ch6.3 --link $LFS $LFS
 WORKDIR /work
 ARG BASH_VERSION_
-ADD --chown=lfs https://ftpmirror.gnu.org/bash/bash-${BASH_VERSION_}.tar.gz bash-${BASH_VERSION_}.tar.gz
+COPY --chown=lfs packages/bash-${BASH_VERSION_}.tar.gz bash-${BASH_VERSION_}.tar.gz
 RUN tar -xf bash-${BASH_VERSION_}.tar.gz
 WORKDIR /work/bash-${BASH_VERSION_}
 RUN ./configure --prefix=/usr           \
@@ -261,7 +261,7 @@ FROM ch4.4 AS ch6.5
 COPY --from=ch6.4 --link $LFS $LFS
 WORKDIR /work
 ARG COREUTILS_VERSION
-ADD --chown=lfs https://ftpmirror.gnu.org/coreutils/coreutils-${COREUTILS_VERSION}.tar.xz coreutils-${COREUTILS_VERSION}.tar.xz
+COPY --chown=lfs packages/coreutils-${COREUTILS_VERSION}.tar.xz coreutils-${COREUTILS_VERSION}.tar.xz
 RUN tar -xf coreutils-${COREUTILS_VERSION}.tar.xz
 WORKDIR /work/coreutils-${COREUTILS_VERSION}
 RUN ./configure --prefix=/usr           \
@@ -279,7 +279,7 @@ FROM ch4.4 AS ch6.6
 COPY --from=ch6.5 --link $LFS $LFS
 WORKDIR /work
 ARG DIFFUTILS_VERSION
-ADD --chown=lfs https://ftpmirror.gnu.org/diffutils/diffutils-${DIFFUTILS_VERSION}.tar.xz diffutils-${DIFFUTILS_VERSION}.tar.xz
+COPY --chown=lfs packages/diffutils-${DIFFUTILS_VERSION}.tar.xz diffutils-${DIFFUTILS_VERSION}.tar.xz
 RUN tar -xf diffutils-${DIFFUTILS_VERSION}.tar.xz
 WORKDIR /work/diffutils-${DIFFUTILS_VERSION}
 RUN ./configure --prefix=/usr       \
@@ -293,7 +293,7 @@ FROM ch4.4 AS ch6.7
 COPY --from=ch6.6 --link $LFS $LFS
 WORKDIR /work
 ARG FILE_VERSION
-ADD --chown=lfs https://astron.com/pub/file/file-${FILE_VERSION}.tar.gz file-${FILE_VERSION}.tar.gz
+COPY --chown=lfs packages/file-${FILE_VERSION}.tar.gz file-${FILE_VERSION}.tar.gz
 RUN tar -xf file-${FILE_VERSION}.tar.gz
 WORKDIR /work/file-${FILE_VERSION}
 RUN mkdir build
@@ -317,7 +317,7 @@ FROM ch4.4 AS ch6.8
 COPY --from=ch6.7 --link $LFS $LFS
 WORKDIR /work
 ARG FINDUTILS_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/findutils/findutils-${FINDUTILS_VERSION}.tar.xz findutils-${FINDUTILS_VERSION}.tar.xz
+COPY --chown=lfs packages/findutils-${FINDUTILS_VERSION}.tar.xz findutils-${FINDUTILS_VERSION}.tar.xz
 RUN tar -xf findutils-${FINDUTILS_VERSION}.tar.xz
 WORKDIR /work/findutils-${FINDUTILS_VERSION}
 RUN ./configure --prefix=/usr       \
@@ -331,7 +331,7 @@ FROM ch4.4 AS ch6.9
 COPY --from=ch6.8 --link $LFS $LFS
 WORKDIR /work
 ARG GAWK_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/gawk/gawk-${GAWK_VERSION}.tar.xz gawk-${GAWK_VERSION}.tar.xz
+COPY --chown=lfs packages/gawk-${GAWK_VERSION}.tar.xz gawk-${GAWK_VERSION}.tar.xz
 RUN tar -xf gawk-${GAWK_VERSION}.tar.xz
 WORKDIR /work/gawk-${GAWK_VERSION}
 RUN sed -i 's/extras//' Makefile.in
@@ -345,7 +345,7 @@ FROM ch4.4 AS ch6.10
 COPY --from=ch6.9 --link $LFS $LFS
 WORKDIR /work
 ARG GREP_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/grep/grep-${GREP_VERSION}.tar.xz grep-${GREP_VERSION}.tar.xz
+COPY --chown=lfs packages/grep-${GREP_VERSION}.tar.xz grep-${GREP_VERSION}.tar.xz
 RUN tar -xf grep-${GREP_VERSION}.tar.xz
 WORKDIR /work/grep-${GREP_VERSION}
 RUN ./configure --prefix=/usr           \
@@ -358,7 +358,7 @@ FROM ch4.4 AS ch6.11
 COPY --from=ch6.10 --link $LFS $LFS
 WORKDIR /work
 ARG GZIP_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/gzip/gzip-${GZIP_VERSION}.tar.xz gzip-${GZIP_VERSION}.tar.xz
+COPY --chown=lfs packages/gzip-${GZIP_VERSION}.tar.xz gzip-${GZIP_VERSION}.tar.xz
 RUN tar -xf gzip-${GZIP_VERSION}.tar.xz
 WORKDIR /work/gzip-${GZIP_VERSION}
 RUN ./configure --prefix=/usr   \
@@ -370,7 +370,7 @@ FROM ch4.4 AS ch6.12
 COPY --from=ch6.11 --link $LFS $LFS
 WORKDIR /work
 ARG MAKE_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/make/make-${MAKE_VERSION}.tar.gz make-${MAKE_VERSION}.tar.gz
+COPY --chown=lfs packages/make-${MAKE_VERSION}.tar.gz make-${MAKE_VERSION}.tar.gz
 RUN tar -xf make-${MAKE_VERSION}.tar.gz
 WORKDIR /work/make-${MAKE_VERSION}
 RUN ./configure --prefix=/usr   \
@@ -383,7 +383,7 @@ FROM ch4.4 AS ch6.13
 COPY --from=ch6.12 --link $LFS $LFS
 WORKDIR /work
 ARG PATCH_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/patch/patch-${PATCH_VERSION}.tar.xz patch-${PATCH_VERSION}.tar.xz
+COPY --chown=lfs packages/patch-${PATCH_VERSION}.tar.xz patch-${PATCH_VERSION}.tar.xz
 RUN tar -xf patch-${PATCH_VERSION}.tar.xz
 WORKDIR /work/patch-${PATCH_VERSION}
 RUN ./configure --prefix=/usr   \
@@ -396,7 +396,7 @@ FROM ch4.4 AS ch6.14
 COPY --from=ch6.13 --link $LFS $LFS
 WORKDIR /work
 ARG SED_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/sed/sed-${SED_VERSION}.tar.xz sed-${SED_VERSION}.tar.xz
+COPY --chown=lfs packages/sed-${SED_VERSION}.tar.xz sed-${SED_VERSION}.tar.xz
 RUN tar -xf sed-${SED_VERSION}.tar.xz
 WORKDIR /work/sed-${SED_VERSION}
 RUN ./configure --prefix=/usr   \
@@ -409,7 +409,7 @@ FROM ch4.4 AS ch6.15
 COPY --from=ch6.14 --link $LFS $LFS
 WORKDIR /work
 ARG TAR_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/tar/tar-${TAR_VERSION}.tar.xz tar-${TAR_VERSION}.tar.xz
+COPY --chown=lfs packages/tar-${TAR_VERSION}.tar.xz tar-${TAR_VERSION}.tar.xz
 RUN tar -xf tar-${TAR_VERSION}.tar.xz
 WORKDIR /work/tar-${TAR_VERSION}
 RUN ./configure --prefix=/usr   \
@@ -422,7 +422,7 @@ FROM ch4.4 AS ch6.16
 COPY --from=ch6.15 --link $LFS $LFS
 WORKDIR /work
 ARG XZ_VERSION
-ADD --chown=lfs https://github.com/tukaani-project/xz/releases/download/v${XZ_VERSION}/xz-${XZ_VERSION}.tar.xz xz-${XZ_VERSION}.tar.xz
+COPY --chown=lfs packages/xz-${XZ_VERSION}.tar.xz xz-${XZ_VERSION}.tar.xz
 RUN tar -xf xz-${XZ_VERSION}.tar.xz
 WORKDIR /work/xz-${XZ_VERSION}
 RUN ./configure --prefix=/usr           \
@@ -466,10 +466,10 @@ ARG GCC_VERSION
 ARG MPFR_VERSION
 ARG MPC_VERSION
 ARG GMP_VERSION
-ADD --chown=lfs https://ftpmirror.gnu.org/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz gcc-${GCC_VERSION}.tar.xz
-ADD --chown=lfs https://ftpmirror.gnu.org/mpfr/mpfr-${MPFR_VERSION}.tar.xz mpfr-${MPFR_VERSION}.tar.xz
-ADD --chown=lfs https://ftpmirror.gnu.org/mpc/mpc-${MPC_VERSION}.tar.xz mpc-${MPC_VERSION}.tar.xz
-ADD --chown=lfs https://ftpmirror.gnu.org/gmp/gmp-${GMP_VERSION}.tar.xz gmp-${GMP_VERSION}.tar.xz
+COPY --chown=lfs packages/gcc-${GCC_VERSION}.tar.xz gcc-${GCC_VERSION}.tar.xz
+COPY --chown=lfs packages/mpfr-${MPFR_VERSION}.tar.xz mpfr-${MPFR_VERSION}.tar.xz
+COPY --chown=lfs packages/mpc-${MPC_VERSION}.tar.xz mpc-${MPC_VERSION}.tar.xz
+COPY --chown=lfs packages/gmp-${GMP_VERSION}.tar.xz gmp-${GMP_VERSION}.tar.xz
 RUN tar -xf gcc-${GCC_VERSION}.tar.xz
 WORKDIR /work/gcc-${GCC_VERSION}
 RUN tar -xf ../mpfr-${MPFR_VERSION}.tar.xz
@@ -500,7 +500,6 @@ RUN ../configure                \
     --disable-libvtv            \
     --enable-languages=c,c++    \
     LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc
-RUN pwd && false
 RUN make
 RUN make DESTDIR=$LFS install
 RUN ln -sv gcc $LFS/usr/bin/cc
@@ -595,7 +594,7 @@ FROM ch7.3 AS ch7.6
 WORKDIR /work
 COPY --from=ch7.5 --link / /
 ARG GETTEXT_VERSION
-ADD --chown=lfs https://ftp.gnu.org/gnu/gettext/gettext-${GETTEXT_VERSION}.tar.xz gettext-${GETTEXT_VERSION}.tar.xz
+COPY --chown=lfs packages/gettext-${GETTEXT_VERSION}.tar.xz gettext-${GETTEXT_VERSION}.tar.xz
 RUN tar -xf gettext-${GETTEXT_VERSION}.tar.xz
 WORKDIR /work/gettext-${GETTEXT_VERSION}
 RUN ./configure --disable-shared
