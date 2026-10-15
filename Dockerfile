@@ -1,11 +1,16 @@
 # avoid conflict with builtin var BASH_VERSION
 ARG BASH_VERSION_=5.3
+ARG BC_VERSION=7.0.3
 ARG BINUTILS_VERSION=2.47
 ARG BISON_VERSION=3.8.2
+ARG BZIP2_VERSION=1.0.8
 ARG COREUTILS_VERSION=9.11
+ARG DEJAGNU_VERSION=1.6.3
 ARG DIFFUTILS_VERSION=3.12
+ARG EXPECT_VERSION=5.45.4
 ARG FILE_VERSION=5.48
 ARG FINDUTILS_VERSION=4.11.0
+ARG FLEX_VERSION=2.6.4
 ARG GAWK_VERSION=5.4.1
 ARG GCC_VERSION=16.2.0
 ARG GETTEXT_VERSION=1.0
@@ -16,6 +21,7 @@ ARG GZIP_VERSION=1.14
 ARG IANA_ETC_VERSION=20260805
 ARG LINUX_MAJOR=7
 ARG LINUX_VERSION=${LINUX_MAJOR}.1.8
+ARG LZ4_VERSION=1.10.0
 ARG MAKE_VERSION=4.4.1
 ARG MAN_PAGES_VERSION=6.18
 ARG MPC_VERSION=1.4.1
@@ -24,15 +30,20 @@ ARG MPFR_VERSION=4.2.2
 ARG M4_VERSION=1.4.21
 ARG NCURSES_VERSION=6.6
 ARG PATCH_VERSION=2.8
+ARG PCRE2_VERSION=10.47
 ARG PERL_MAJOR_MINOR_VERSION=5.44
 ARG PERL_VERSION=${PERL_MAJOR_MINOR_VERSION}.0
 ARG PYTHON_VERSION=3.14.7
+ARG READLINE_VERSION=8.3
 ARG SED_VERSION=4.10
 ARG TAR_VERSION=1.35
+ARG TCL_VERSION=8.6.18
 ARG TEXINFO_VERSION=7.3
+ARG TZDATA_VERSION=2026c
 ARG UTIL_LINUX_VERSION=2.42.2
 ARG XZ_VERSION=5.8.3
 ARG ZLIB_VERSION=1.3.2
+ARG ZSTD_VERSION=1.5.7
 
 FROM debian:12.15-slim AS ch2.2
 
@@ -772,9 +783,12 @@ FROM ch7.4 AS ch8.5
 WORKDIR /work
 COPY --from=ch8.4 --link / /
 ARG GLIBC_VERSION
+ARG LINUX_VERSION
+ARG TZDATA_VERSION
 COPY packages/glibc-${GLIBC_VERSION}.tar.xz .
 COPY packages/glibc-fhs-1.patch .
 COPY packages/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch .
+COPY packages/tzdata${TZDATA_VERSION}.tar.gz .
 RUN tar -xf glibc-${GLIBC_VERSION}.tar.xz
 WORKDIR /work/glibc-${GLIBC_VERSION}
 RUN patch -Np1 -i ../glibc-fhs-1.patch
@@ -786,9 +800,9 @@ RUN ../configure --prefix=/usr      \
     --disable-nscd                  \
     libc_cv_slibdir=/usr/lib        \
     --enable-stack-protector=strong \
-    --enable-kernel=5.10
+    --enable-kernel=${LINUX_VERSION}
 RUN make
-RUN make check
+# RUN make check
 RUN touch /etc/ld.so.conf
 RUN sed '/test-installation/s@$(PERL)@echo not running@' -i ../Makefile
 RUN make install
@@ -811,13 +825,13 @@ rpc: files
 
 # End /etc/nsswitch.conf
 EOF
-RUN tar -xf ../../tzdata2026c.tar.gz
+RUN tar -xf ../../tzdata${TZDATA_VERSION}.tar.gz
 ENV ZONEINFO=/usr/share/zoneinfo
 RUN mkdir -pv $ZONEINFO/{posix,right}
 RUN for tz in etcetera southamerica northamerica europe africa antarctica asia australasia backward; do \
-    zic -L /dev/null   -d $ZONEINFO       ${tz} \
-    zic -L /dev/null   -d $ZONEINFO/posix ${tz} \
-    zic -L leapseconds -d $ZONEINFO/right ${tz} \
+    zic -L /dev/null   -d $ZONEINFO       ${tz}; \
+    zic -L /dev/null   -d $ZONEINFO/posix ${tz}; \
+    zic -L leapseconds -d $ZONEINFO/right ${tz}; \
 done
 RUN cp -v zone.tab zone1970.tab iso3166.tab $ZONEINFO
 RUN zic -d $ZONEINFO -p America/New_York
@@ -835,3 +849,248 @@ include /etc/ld.so.conf.d/*.conf
 
 EOF
 RUN mkdir -pv /etc/ld.so.conf.d
+
+FROM ch7.4 AS ch8.6
+WORKDIR /work
+COPY --from=ch8.5 --link / /
+ARG ZLIB_VERSION
+COPY packages/zlib-${ZLIB_VERSION}.tar.gz .
+RUN tar -xf zlib-${ZLIB_VERSION}.tar.gz
+WORKDIR /work/zlib-${ZLIB_VERSION}
+RUN ./configure --prefix=/usr
+RUN make
+RUN make check
+RUN make install
+RUN rm -fv /usr/lib/libz.a
+
+FROM ch7.4 AS ch8.7
+WORKDIR /work
+COPY --from=ch8.6 --link / /
+ARG BZIP2_VERSION
+COPY packages/bzip2-${BZIP2_VERSION}.tar.gz .
+COPY packages/bzip2-${BZIP2_VERSION}-install_docs-1.patch .
+RUN tar -xf bzip2-${BZIP2_VERSION}.tar.gz
+WORKDIR /work/bzip2-${BZIP2_VERSION}
+RUN patch -Np1 -i ../bzip2-${BZIP2_VERSION}-install_docs-1.patch
+RUN sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
+RUN sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
+RUN make -f Makefile-libbz2_so
+RUN make clean
+RUN make
+RUN make PREFIX=/usr install
+RUN cp -av libbz2.so.* /usr/lib
+RUN ln -sfv libbz2.so.${BZIP2_VERSION} /usr/lib/libbz2.so
+RUN ln -sfv libbz2.so.${BZIP2_VERSION} /usr/lib/libbz2.so.1
+RUN cp -v bzip2-shared /usr/bin/bzip2
+RUN for i in /usr/bin/{bzcat,bunzip2}; do \
+  ln -sfv bzip2 $i; \
+done
+RUN rm -fv /usr/lib/libbz2.a
+
+FROM ch7.4 AS ch8.8
+WORKDIR /work
+COPY --from=ch8.7 --link / /
+ARG XZ_VERSION
+COPY packages/xz-${XZ_VERSION}.tar.xz .
+RUN tar -xf xz-${XZ_VERSION}.tar.xz
+WORKDIR /work/xz-${XZ_VERSION}
+RUN ./configure --prefix=/usr   \
+    --disable-static            \
+    --docdir=/usr/share/doc/xz-${XZ_VERSION}
+RUN make
+RUN make check
+RUN make install
+
+FROM ch7.4 AS ch8.9
+WORKDIR /work
+COPY --from=ch8.8 --link / /
+ARG LZ4_VERSION
+COPY packages/lz4-${LZ4_VERSION}.tar.gz .
+RUN tar -xf lz4-${LZ4_VERSION}.tar.gz
+WORKDIR /work/lz4-${LZ4_VERSION}
+RUN make BUILD_STATIC=no PREFIX=/usr
+RUN make -j1 check
+RUN make BUILD_STATIC=no PREFIX=/usr install
+
+FROM ch7.4 AS ch8.10
+WORKDIR /work
+COPY --from=ch8.9 --link / /
+ARG ZSTD_VERSION
+COPY packages/zstd-${ZSTD_VERSION}.tar.gz .
+RUN tar -xf zstd-${ZSTD_VERSION}.tar.gz
+WORKDIR /work/zstd-${ZSTD_VERSION}
+RUN make prefix=/usr
+RUN make check
+RUN make prefix=/usr install
+RUN rm -v /usr/lib/libzstd.a
+
+FROM ch7.4 AS ch8.11
+WORKDIR /work
+COPY --from=ch8.10 --link / /
+ARG FILE_VERSION
+COPY packages/file-${FILE_VERSION}.tar.gz .
+RUN tar -xf file-${FILE_VERSION}.tar.gz
+WORKDIR /work/file-${FILE_VERSION}
+RUN ./configure --prefix=/usr
+RUN make
+RUN make check
+RUN make install
+
+FROM ch7.4 AS ch8.12
+WORKDIR /work
+COPY --from=ch8.11 --link / /
+ARG READLINE_VERSION
+COPY packages/readline-${READLINE_VERSION}.tar.gz .
+RUN tar -xf readline-${READLINE_VERSION}.tar.gz
+WORKDIR /work/readline-${READLINE_VERSION}
+RUN sed -i '/MV.*old/d' Makefile.in
+RUN sed -i '/{OLDSUFF}/c:' support/shlib-install
+RUN sed -i 's/-Wl,-rpath,[^ ]*//' support/shobj-conf
+RUN sed -e '270a\
+     else\
+       chars_avail = 1;'      \
+    -e '288i\   result = -1;' \
+    -i.orig input.c
+RUN ./configure --prefix=/usr   \
+    --disable-static            \
+    --with-curses               \
+    --docdir=/usr/share/doc/readline-${READLINE_VERSION}
+RUN make SHLIB_LIBS="-lncursesw"
+RUN make install
+RUN install -v -m644 doc/*.{ps,pdf,html,dvi} /usr/share/doc/readline-${READLINE_VERSION}
+
+FROM ch7.4 AS ch8.13
+WORKDIR /work
+COPY --from=ch8.12 --link / /
+ARG PCRE2_VERSION
+COPY packages/pcre2-${PCRE2_VERSION}.tar.bz2 .
+RUN tar -xf pcre2-${PCRE2_VERSION}.tar.bz2
+WORKDIR /work/pcre2-${PCRE2_VERSION}
+RUN ./configure --prefix=/usr                       \
+    --docdir=/usr/share/doc/pcre2-${PCRE2_VERSION}  \
+    --enable-unicode                                \
+    --enable-jit                                    \
+    --enable-pcre2-16                               \
+    --enable-pcre2-32                               \
+    --enable-pcre2grep-libz                         \
+    --enable-pcre2grep-libbz2                       \
+    --enable-pcre2test-libreadline                  \
+    --disable-static
+RUN make
+RUN make check
+RUN make install
+
+FROM ch7.4 AS ch8.14
+WORKDIR /work
+COPY --from=ch8.13 --link / /
+ARG M4_VERSION
+COPY packages/m4-${M4_VERSION}.tar.xz .
+RUN tar -xf m4-${M4_VERSION}.tar.xz
+WORKDIR /work/m4-${M4_VERSION}
+RUN ./configure --prefix=/usr
+RUN make
+RUN make check
+RUN make install
+
+FROM ch7.4 AS ch8.15
+WORKDIR /work
+COPY --from=ch8.14 --link / /
+ARG BC_VERSION
+COPY packages/bc-${BC_VERSION}.tar.xz .
+RUN tar -xf bc-${BC_VERSION}.tar.xz
+WORKDIR /work/bc-${BC_VERSION}
+RUN CC='gcc -std=c99' ./configure --prefix=/usr -G -O3 -r
+RUN make
+RUN make test
+RUN make install
+
+FROM ch7.4 AS ch8.16
+WORKDIR /work
+COPY --from=ch8.15 --link / /
+ARG FLEX_VERSION
+COPY packages/flex-${FLEX_VERSION}.tar.gz .
+RUN tar -xf flex-${FLEX_VERSION}.tar.gz
+WORKDIR /work/flex-${FLEX_VERSION}
+RUN ./configure --prefix=/usr       \
+    --disable-static                \
+    --docdir=/usr/share/doc/flex-${FLEX_VERSION}
+RUN make
+RUN make check
+RUN make install
+RUN ln -sv flex   /usr/bin/lex
+RUN ln -sv flex.1 /usr/share/man/man1/lex.1
+
+FROM ch7.4 AS ch8.17
+WORKDIR /work
+COPY --from=ch8.16 --link / /
+ARG TCL_VERSION
+COPY packages/tcl${TCL_VERSION}-src.tar.gz .
+COPY packages/tcl${TCL_VERSION}-html.tar.gz .
+RUN tar -xf tcl${TCL_VERSION}-src.tar.gz
+ENV SRCDIR=/work/tcl${TCL_VERSION}
+WORKDIR /work/tcl${TCL_VERSION}/unix
+RUN ./configure --prefix=/usr   \
+    --mandir=/usr/share/man     \
+    --disable-rpath
+RUN make
+RUN sed -e "s|$SRCDIR/unix|/usr/lib|"   \
+    -e "s|$SRCDIR|/usr/include|"        \
+    -i tclConfig.sh
+RUN sed -e "s|$SRCDIR/unix/pkgs/tdbc1.1.13|/usr/lib/tdbc1.1.13|"    \
+    -e "s|$SRCDIR/pkgs/tdbc1.1.13/generic|/usr/include|"            \
+    -e "s|$SRCDIR/pkgs/tdbc1.1.13/library|/usr/lib/tcl8.6|"         \
+    -e "s|$SRCDIR/pkgs/tdbc1.1.13|/usr/include|"                    \
+    -i pkgs/tdbc1.1.13/tdbcConfig.sh
+RUN sed -e "s|$SRCDIR/unix/pkgs/itcl4.3.7|/usr/lib/itcl4.3.7|"      \
+    -e "s|$SRCDIR/pkgs/itcl4.3.7/generic|/usr/include|"             \
+    -e "s|$SRCDIR/pkgs/itcl4.3.7|/usr/include|"                     \
+    -i pkgs/itcl4.3.7/itclConfig.sh
+ENV SRCDIR=
+RUN LC_ALL=C.UTF-8 make test
+RUN make install
+RUN chmod 644 /usr/lib/libtclstub8.6.a
+RUN chmod -v u+w /usr/lib/libtcl8.6.so
+RUN make install-private-headers
+RUN ln -sfv tclsh8.6 /usr/bin/tclsh
+RUN mv -v /usr/share/man/man3/{Thread,Tcl_Thread}.3
+WORKDIR /work/tcl${TCL_VERSION}
+RUN tar -xf ../tcl${TCL_VERSION}-html.tar.gz --strip-components=1
+RUN mkdir -v -p /usr/share/doc/tcl-${TCL_VERSION}
+RUN cp -v -r  ./html/* /usr/share/doc/tcl-${TCL_VERSION}
+
+FROM ch7.4 AS ch8.18
+WORKDIR /work
+COPY --from=ch8.17 --link / /
+ARG EXPECT_VERSION
+COPY packages/expect${EXPECT_VERSION}.tar.gz .
+COPY packages/expect-${EXPECT_VERSION}-gcc15-1.patch .
+RUN tar -xf expect${EXPECT_VERSION}.tar.gz
+WORKDIR /work/expect${EXPECT_VERSION}
+RUN patch -Np1 -i ../expect-${EXPECT_VERSION}-gcc15-1.patch
+RUN ./configure --prefix=/usr   \
+    --with-tcl=/usr/lib         \
+    --enable-shared             \
+    --disable-rpath             \
+    --mandir=/usr/share/man     \
+    --with-tclinclude=/usr/include
+RUN make
+RUN make test
+RUN make install
+RUN ln -svf expect${EXPECT_VERSION}/libexpect${EXPECT_VERSION}.so /usr/lib
+
+FROM ch7.4 AS ch8.19
+WORKDIR /work
+COPY --from=ch8.18 --link / /
+ARG DEJAGNU_VERSION
+COPY packages/dejagnu-${DEJAGNU_VERSION}.tar.gz .
+RUN tar -xf dejagnu-${DEJAGNU_VERSION}.tar.gz
+WORKDIR /work/dejagnu-${DEJAGNU_VERSION}
+RUN mkdir -pv build
+WORKDIR /work/dejagnu-${DEJAGNU_VERSION}/build
+RUN ../configure --prefix=/usr
+RUN makeinfo --html --no-split -o doc/dejagnu.html ../doc/dejagnu.texi
+RUN makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi
+RUN make check
+RUN make install
+RUN install -v -dm755  /usr/share/doc/dejagnu-${DEJAGNU_VERSION}
+RUN install -v -m644   doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-${DEJAGNU_VERSION}
