@@ -24,15 +24,18 @@ ARG LINUX_VERSION=${LINUX_MAJOR}.1.8
 ARG LZ4_VERSION=1.10.0
 ARG MAKE_VERSION=4.4.1
 ARG MAN_PAGES_VERSION=6.18
+ARG MESON_VERSION=1.12.0
 ARG MPC_VERSION=1.4.1
 ARG MPDECIMAL_VERSION=4.0.1
 ARG MPFR_VERSION=4.2.2
 ARG M4_VERSION=1.4.21
 ARG NCURSES_VERSION=6.6
+ARG NINJA_VERSION=1.13.2
 ARG PATCH_VERSION=2.8
 ARG PCRE2_VERSION=10.47
 ARG PERL_MAJOR_MINOR_VERSION=5.44
 ARG PERL_VERSION=${PERL_MAJOR_MINOR_VERSION}.0
+ARG PKGCONF_VERSION=3.0.5
 ARG PYTHON_VERSION=3.14.7
 ARG READLINE_VERSION=8.3
 ARG SED_VERSION=4.10
@@ -1094,3 +1097,42 @@ RUN make check
 RUN make install
 RUN install -v -dm755  /usr/share/doc/dejagnu-${DEJAGNU_VERSION}
 RUN install -v -m644   doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-${DEJAGNU_VERSION}
+
+FROM ch7.4 AS ch8.20
+WORKDIR /work
+COPY --from=ch8.19 --link / /
+ARG NINJA_VERSION
+COPY packages/ninja-${NINJA_VERSION}.tar.gz .
+RUN tar -xf ninja-${NINJA_VERSION}.tar.gz
+WORKDIR /work/ninja-${NINJA_VERSION}
+ENV NINJAJOBS=7
+RUN sed -i '/int Guess/a \
+    int   j = 0;\
+    char* jobs = getenv( "NINJAJOBS" );\
+    if ( jobs != NULL ) j = atoi( jobs );\
+    if ( j > 0 ) return j;\
+' src/ninja.cc
+RUN python3 configure.py --bootstrap --verbose
+RUN install -vm755 ninja /usr/bin/
+RUN install -vDm644 misc/bash-completion /usr/share/bash-completion/completions/ninja
+RUN install -vDm644 misc/zsh-completion  /usr/share/zsh/site-functions/_ninja
+
+FROM ch7.4 AS ch8.21
+WORKDIR /work
+COPY --from=ch8.20 --link / /
+ARG PKGCONF_VERSION
+ARG MESON_VERSION
+COPY packages/pkgconf-${PKGCONF_VERSION}.tar.xz .
+COPY packages/meson-${MESON_VERSION}.tar.gz .
+RUN tar -xf pkgconf-${PKGCONF_VERSION}.tar.xz
+WORKDIR /work/pkgconf-${PKGCONF_VERSION}
+RUN tar -xf ../meson-${MESON_VERSION}.tar.gz
+RUN mkdir -pv build
+WORKDIR /work/pkgconf-${PKGCONF_VERSION}/build
+RUN python3 ../meson-${MESON_VERSION}/meson.py setup --prefix=/usr --buildtype=release ..
+RUN ninja
+RUN ninja test
+RUN ninja install
+RUN mv /usr/share/doc/pkgconf{,${PKGCONF_VERSION}}
+RUN ln -sv pkgconf   /usr/bin/pkg-config
+RUN ln -sv pkgconf.1 /usr/share/man/man1/pkg-config.1
