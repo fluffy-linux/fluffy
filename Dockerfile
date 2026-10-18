@@ -7,11 +7,13 @@ ARG BASH_VERSION_=5.3
 ARG BC_VERSION=7.0.3
 ARG BINUTILS_VERSION=2.47
 ARG BISON_VERSION=3.8.2
+ARG BTRFS_PROGS_VERSION=7.1
 ARG BZIP2_VERSION=1.0.8
 ARG COREUTILS_VERSION=9.11
 ARG DEJAGNU_VERSION=1.6.3
 ARG DIFFUTILS_VERSION=3.12
 ARG ELFUTILS_VERSION=0.195
+ARG E2FSPROGS_VERSION=1.47.4
 ARG EXPAT_VERSION=2.8.3
 ARG EXPECT_VERSION=5.45.4
 ARG FILE_VERSION=5.48
@@ -44,6 +46,7 @@ ARG LIBXCRYPT_VERSION=4.5.2
 ARG LINUX_MAJOR=7
 ARG LINUX_VERSION=${LINUX_MAJOR}.1.8
 ARG LZ4_VERSION=1.10.0
+ARG LZO_VERSION=2.10
 ARG MAKE_VERSION=4.4.1
 ARG MAN_PAGES_VERSION=6.18
 ARG MARKUPSAFE_VERSION=3.0.3
@@ -61,6 +64,7 @@ ARG PCRE2_VERSION=10.47
 ARG PERL_MAJOR_MINOR_VERSION=5.44
 ARG PERL_VERSION=${PERL_MAJOR_MINOR_VERSION}.0
 ARG PKGCONF_VERSION=3.0.5
+ARG PROCPS_NG_VERSION=4.0.7
 ARG PSMISC_VERSION=23.7
 ARG PYTHON_VERSION=3.14.7
 ARG READLINE_VERSION=8.3
@@ -122,18 +126,16 @@ ENV PATH=$LFS/tools/bin:/bin:/usr/bin
 ENV CONFIG_SITE=$LFS/usr/share/config.site
 ENV MAKEFLAGS=-j7
 
-FROM ch4 AS packages
-WORKDIR /packages
-COPY --chown=lfs packages /packages
-
 FROM ch4 AS ch5
 WORKDIR /work
+
+
 ARG BINUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BINUTILS_ARCHIVE=binutils-${BINUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${BINUTILS_ARCHIVE},target=/packages/${BINUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/binutils-${BINUTILS_VERSION}.tar.xz
-cd binutils-${BINUTILS_VERSION}
+source /packages/prepare ${BINUTILS_ARCHIVE}
 mkdir -pv build
 cd build
 ../configure --prefix=$LFS/tools \
@@ -146,25 +148,29 @@ cd build
     --enable-default-hash-style=gnu
 make
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GLIBC_VERSION
 ARG GCC_VERSION
+ARG GCC_ARCHIVE=gcc-${GCC_VERSION}.tar.xz
 ARG MPFR_VERSION
+ARG MPFR_ARCHIVE=mpfr-${MPFR_VERSION}.tar.xz
 ARG MPC_VERSION
+ARG MPC_ARCHIVE=mpc-${MPC_VERSION}.tar.xz
 ARG GMP_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GMP_ARCHIVE=gmp-${GMP_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GCC_ARCHIVE},target=/packages/${GCC_ARCHIVE} \
+--mount=type=bind,source=packages/${MPFR_ARCHIVE},target=/packages/${MPFR_ARCHIVE} \
+--mount=type=bind,source=packages/${MPC_ARCHIVE},target=/packages/${MPC_ARCHIVE} \
+--mount=type=bind,source=packages/${GMP_ARCHIVE},target=/packages/${GMP_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gcc-${GCC_VERSION}.tar.xz
-cd gcc-${GCC_VERSION}
-tar -xf /packages/mpfr-${MPFR_VERSION}.tar.xz
+source /packages/prepare ${GCC_ARCHIVE}
+tar -xf /packages/${MPFR_ARCHIVE}
 mv -v mpfr-${MPFR_VERSION} mpfr
-tar -xf /packages/mpc-${MPC_VERSION}.tar.xz
+tar -xf /packages/${MPC_ARCHIVE}
 mv -v mpc-${MPC_VERSION} mpc
-tar -xf /packages/gmp-${GMP_VERSION}.tar.xz
+tar -xf /packages/${GMP_ARCHIVE}
 mv -v gmp-${GMP_VERSION} gmp
 sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
 mkdir -pv build
@@ -193,31 +199,29 @@ cd build
 make
 make install
 cat ../gcc/{limitx,glimits,limity}.h > $($LFS_TGT-gcc -print-file-name=include)/limits.h
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG LINUX_MAJOR
 ARG LINUX_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG LINUX_ARCHIVE=linux-${LINUX_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${LINUX_ARCHIVE},target=/packages/${LINUX_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/linux-${LINUX_VERSION}.tar.xz
-cd linux-${LINUX_VERSION}
+source /packages/prepare ${LINUX_ARCHIVE}
 make mrproper
 make headers
 find usr/include -type f ! -name '*.h' -delete
 cp -rv usr/include $LFS/usr
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GLIBC_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GLIBC_ARCHIVE=glibc-${GLIBC_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GLIBC_ARCHIVE},target=/packages/${GLIBC_ARCHIVE} \
+--mount=type=bind,source=packages/glibc-fhs-1.patch,target=/packages/glibc-fhs-1.patch \
+--mount=type=bind,source=packages/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch,target=/packages/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/glibc-${GLIBC_VERSION}.tar.xz
-cd glibc-${GLIBC_VERSION}
+source /packages/prepare ${GLIBC_ARCHIVE}
 ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64
 ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64/ld-lsb-x86-64.so.3
 patch -Np1 -i /packages/glibc-fhs-1.patch
@@ -239,16 +243,14 @@ sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
 echo 'int main(){}' | $LFS_TGT-gcc -x c - -v -Wl,--verbose &> dummy.log
 $LFS_TGT-readelf -l a.out | grep ': /lib'
 rm a.out dummy.log
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GCC_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GCC_ARCHIVE=gcc-${GCC_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GCC_ARCHIVE},target=/packages/${GCC_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gcc-${GCC_VERSION}.tar.xz
-cd gcc-${GCC_VERSION}
+source /packages/prepare ${GCC_ARCHIVE}
 mkdir -pv build
 cd build
 ../libstdc++-v3/configure   \
@@ -263,34 +265,30 @@ cd build
 make
 make DESTDIR=$LFS install
 rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 FROM ch5 AS ch6
 ARG M4_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG M4_ARCHIVE=m4-${M4_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${M4_ARCHIVE},target=/packages/${M4_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
+source /packages/prepare ${M4_ARCHIVE}
 echo ac_cv_func_posix_spawn_file_actions_addchdir=yes >> $LFS/usr/share/config.site
 echo ac_cv_func_posix_spawn_file_actions_addfchdir=yes >> $LFS/usr/share/config.site
-tar -xf /packages/m4-${M4_VERSION}.tar.xz
-cd m4-${M4_VERSION}
 ./configure --prefix=/usr   \
     --host=$LFS_TGT             \
     --build=$(build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG NCURSES_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG NCURSES_ARCHIVE=ncurses-${NCURSES_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${NCURSES_ARCHIVE},target=/packages/${NCURSES_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/ncurses-${NCURSES_VERSION}.tar.gz
-cd ncurses-${NCURSES_VERSION}
+source /packages/prepare ${NCURSES_ARCHIVE}
 mkdir -pv build
 pushd build
     ../configure --prefix=$LFS/tools AWK=gawk
@@ -314,16 +312,14 @@ make
 make DESTDIR=$LFS install
 ln -sv libncursesw.so $LFS/usr/lib/libncurses.so
 sed -e 's/^#if.*XOPEN.*$/#if 1/' -i $LFS/usr/include/curses.h
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG BASH_VERSION_
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BASH_ARCHIVE=bash-${BASH_VERSION_}.tar.gz
+RUN --mount=type=bind,source=packages/${BASH_ARCHIVE},target=/packages/${BASH_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/bash-${BASH_VERSION_}.tar.gz
-cd bash-${BASH_VERSION_}
+source /packages/prepare ${BASH_ARCHIVE}
 ./configure --prefix=/usr           \
     --build=$(sh support/config.guess)  \
     --host=$LFS_TGT                     \
@@ -332,16 +328,14 @@ cd bash-${BASH_VERSION_}
 make
 make DESTDIR=$LFS install
 ln -sv bash $LFS/bin/sh
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG COREUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG COREUTILS_ARCHIVE=coreutils-${COREUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${COREUTILS_ARCHIVE},target=/packages/${COREUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/coreutils-${COREUTILS_VERSION}.tar.xz
-cd coreutils-${COREUTILS_VERSION}
+source /packages/prepare ${COREUTILS_ARCHIVE}
 ./configure --prefix=/usr           \
     --host=$LFS_TGT                     \
     --build=$(build-aux/config.guess)   \
@@ -352,32 +346,28 @@ mv -v $LFS/usr/bin/chroot              $LFS/usr/sbin
 mkdir -pv $LFS/usr/share/man/man8
 mv -v $LFS/usr/share/man/man1/chroot.1 $LFS/usr/share/man/man8/chroot.8
 sed -i 's/"1"/"8"/'                    $LFS/usr/share/man/man8/chroot.8
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG DIFFUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG DIFFUTILS_ARCHIVE=diffutils-${DIFFUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${DIFFUTILS_ARCHIVE},target=/packages/${DIFFUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/diffutils-${DIFFUTILS_VERSION}.tar.xz
-cd diffutils-${DIFFUTILS_VERSION}
+source /packages/prepare ${DIFFUTILS_ARCHIVE}
 ./configure --prefix=/usr       \
     --host=$LFS_TGT                 \
     gl_cv_func_strcasecmp_works=yes \
     --build=$(./build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG FILE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG FILE_ARCHIVE=file-${FILE_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${FILE_ARCHIVE},target=/packages/${FILE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/file-${FILE_VERSION}.tar.gz
-cd file-${FILE_VERSION}
+source /packages/prepare ${FILE_ARCHIVE}
 mkdir build
 pushd build
     ../configure            \
@@ -394,137 +384,119 @@ popd
 make FILE_COMPILE=$(pwd)/build/src/file
 make DESTDIR=$LFS install
 rm -v $LFS/usr/lib/libmagic.la
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG FINDUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG FINDUTILS_ARCHIVE=findutils-${FINDUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${FINDUTILS_ARCHIVE},target=/packages/${FINDUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/findutils-${FINDUTILS_VERSION}.tar.xz
-cd findutils-${FINDUTILS_VERSION}
+source /packages/prepare ${FINDUTILS_ARCHIVE}
 ./configure --prefix=/usr       \
     --localstatedir=/var/lib/locate \
     --host=$LFS_TGT                 \
     --build=$(build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GAWK_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GAWK_ARCHIVE=gawk-${GAWK_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GAWK_ARCHIVE},target=/packages/${GAWK_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gawk-${GAWK_VERSION}.tar.xz
-cd gawk-${GAWK_VERSION}
+source /packages/prepare ${GAWK_ARCHIVE}
 sed -i 's/extras//' Makefile.in
 ./configure --prefix=/usr           \
     --host=$LFS_TGT                     \
     --build=$(build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GREP_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GREP_ARCHIVE=grep-${GREP_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GREP_ARCHIVE},target=/packages/${GREP_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/grep-${GREP_VERSION}.tar.xz
-cd grep-${GREP_VERSION}
+source /packages/prepare ${GREP_ARCHIVE}
 ./configure --prefix=/usr           \
     --host=$LFS_TGT                     \
     --build=$(./build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GZIP_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GZIP_ARCHIVE=gzip-${GZIP_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GZIP_ARCHIVE},target=/packages/${GZIP_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gzip-${GZIP_VERSION}.tar.xz
-cd gzip-${GZIP_VERSION}
+source /packages/prepare ${GZIP_ARCHIVE}
 ./configure --prefix=/usr   \
     --host=$LFS_TGT
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG MAKE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MAKE_ARCHIVE=make-${MAKE_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${MAKE_ARCHIVE},target=/packages/${MAKE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/make-${MAKE_VERSION}.tar.gz
-cd make-${MAKE_VERSION}
+source /packages/prepare ${MAKE_ARCHIVE}
 ./configure --prefix=/usr   \
     --host=$LFS_TGT             \
     --build=$(build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG PATCH_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG PATCH_ARCHIVE=patch-${PATCH_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${PATCH_ARCHIVE},target=/packages/${PATCH_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/patch-${PATCH_VERSION}.tar.xz
-cd patch-${PATCH_VERSION}
+source /packages/prepare ${PATCH_ARCHIVE}
 ./configure --prefix=/usr   \
     --host=$LFS_TGT             \
     --build=$(build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG SED_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG SED_ARCHIVE=sed-${SED_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${SED_ARCHIVE},target=/packages/${SED_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/sed-${SED_VERSION}.tar.xz
-cd sed-${SED_VERSION}
+source /packages/prepare ${SED_ARCHIVE}
 ./configure --prefix=/usr   \
     --host=$LFS_TGT             \
     --build=$(./build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG TAR_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG TAR_ARCHIVE=tar-${TAR_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${TAR_ARCHIVE},target=/packages/${TAR_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/tar-${TAR_VERSION}.tar.xz
-cd tar-${TAR_VERSION}
+source /packages/prepare ${TAR_ARCHIVE}
 ./configure --prefix=/usr   \
     --host=$LFS_TGT             \
     --build=$(build-aux/config.guess)
 make
 make DESTDIR=$LFS install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG XZ_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG XZ_ARCHIVE=xz-${XZ_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${XZ_ARCHIVE},target=/packages/${XZ_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/xz-${XZ_VERSION}.tar.xz
-cd xz-${XZ_VERSION}
+source /packages/prepare ${XZ_ARCHIVE}
 ./configure --prefix=/usr           \
     --host=$LFS_TGT                     \
     --build=$(build-aux/config.guess)   \
@@ -533,17 +505,15 @@ cd xz-${XZ_VERSION}
 make
 make DESTDIR=$LFS install
 rm -v $LFS/usr/lib/liblzma.la
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 # binutils pass 2
 ARG BINUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BINUTILS_ARCHIVE=binutils-${BINUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${BINUTILS_ARCHIVE},target=/packages/${BINUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/binutils-${BINUTILS_VERSION}.tar.xz
-cd binutils-${BINUTILS_VERSION}
+source /packages/prepare ${BINUTILS_ARCHIVE}
 sed '6031s/$add_dir//' -i ltmain.sh
 mkdir -v build
 cd build
@@ -561,26 +531,30 @@ cd build
 make
 make DESTDIR=$LFS install
 rm -v $LFS/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 # gcc pass 2
 ARG GLIBC_VERSION
 ARG GCC_VERSION
+ARG GCC_ARCHIVE=gcc-${GCC_VERSION}.tar.xz
 ARG MPFR_VERSION
+ARG MPFR_ARCHIVE=mpfr-${MPFR_VERSION}.tar.xz
 ARG MPC_VERSION
+ARG MPC_ARCHIVE=mpc-${MPC_VERSION}.tar.xz
 ARG GMP_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GMP_ARCHIVE=gmp-${GMP_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GCC_ARCHIVE},target=/packages/${GCC_ARCHIVE} \
+--mount=type=bind,source=packages/${MPFR_ARCHIVE},target=/packages/${MPFR_ARCHIVE} \
+--mount=type=bind,source=packages/${MPC_ARCHIVE},target=/packages/${MPC_ARCHIVE} \
+--mount=type=bind,source=packages/${GMP_ARCHIVE},target=/packages/${GMP_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gcc-${GCC_VERSION}.tar.xz
-cd gcc-${GCC_VERSION}
-tar -xf /packages/mpfr-${MPFR_VERSION}.tar.xz
+source /packages/prepare ${GCC_ARCHIVE}
+tar -xf /packages/${MPFR_ARCHIVE}
 mv -v mpfr-${MPFR_VERSION} mpfr
-tar -xf /packages/mpc-${MPC_VERSION}.tar.xz
+tar -xf /packages/${MPC_ARCHIVE}
 mv -v mpc-${MPC_VERSION} mpc
-tar -xf /packages/gmp-${GMP_VERSION}.tar.xz
+tar -xf /packages/${GMP_ARCHIVE}
 mv -v gmp-${GMP_VERSION} gmp
 sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
 sed '/thread_header =/s/@.*@/gthr-posix.h/' -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
@@ -610,8 +584,6 @@ cd build
 make
 make DESTDIR=$LFS install
 ln -sv gcc $LFS/usr/bin/cc
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 USER root
@@ -717,39 +689,35 @@ EOF
 
 WORKDIR /work
 ARG GETTEXT_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GETTEXT_ARCHIVE=gettext-${GETTEXT_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GETTEXT_ARCHIVE},target=/packages/${GETTEXT_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gettext-${GETTEXT_VERSION}.tar.xz
-cd gettext-${GETTEXT_VERSION}
+source /packages/prepare ${GETTEXT_ARCHIVE}
 ./configure --disable-shared
 make
 cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG BISON_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BISON_ARCHIVE=bison-${BISON_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${BISON_ARCHIVE},target=/packages/${BISON_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/bison-${BISON_VERSION}.tar.xz
-cd bison-${BISON_VERSION}
+source /packages/prepare ${BISON_ARCHIVE}
 ./configure --prefix=/usr \
     --docdir=/usr/share/doc/bison-${BISON_VERSION}
 make
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG PERL_MAJOR_MINOR_VERSION
 ARG PERL_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG PERL_ARCHIVE=perl-${PERL_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${PERL_ARCHIVE},target=/packages/${PERL_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/perl-${PERL_VERSION}.tar.xz
-cd perl-${PERL_VERSION}
+source /packages/prepare ${PERL_ARCHIVE}
 sh Configure -des                               \
     -D prefix=/usr                                  \
     -D vendorprefix=/usr                            \
@@ -762,74 +730,64 @@ sh Configure -des                               \
     -D vendorarch=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/vendor_perl
 make
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG ZLIB_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG ZLIB_ARCHIVE=zlib-${ZLIB_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${ZLIB_ARCHIVE},target=/packages/${ZLIB_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/zlib-${ZLIB_VERSION}.tar.gz
-cd zlib-${ZLIB_VERSION}
+source /packages/prepare ${ZLIB_ARCHIVE}
 ./configure --prefix=/usr
 make
 make install
 rm -fv /usr/lib/libz.a
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG MPDECIMAL_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MPDECIMAL_ARCHIVE=mpdecimal-${MPDECIMAL_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${MPDECIMAL_ARCHIVE},target=/packages/${MPDECIMAL_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/mpdecimal-${MPDECIMAL_VERSION}.tar.gz
-cd mpdecimal-${MPDECIMAL_VERSION}
+source /packages/prepare ${MPDECIMAL_ARCHIVE}
 ./configure --prefix=/usr   \
     --disable-static            \
     --docdir=/usr/share/doc/mpdecimal-${MPDECIMAL_VERSION}
 make
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG PYTHON_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG PYTHON_ARCHIVE=Python-${PYTHON_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${PYTHON_ARCHIVE},target=/packages/${PYTHON_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/Python-${PYTHON_VERSION}.tar.xz
-cd Python-${PYTHON_VERSION}
+source /packages/prepare ${PYTHON_ARCHIVE}
 ./configure --prefix=/usr   \
     --enable-shared             \
     --without-ensurepip         \
     --without-static-libpython
 make
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG TEXINFO_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG TEXINFO_ARCHIVE=texinfo-${TEXINFO_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${TEXINFO_ARCHIVE},target=/packages/${TEXINFO_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/texinfo-${TEXINFO_VERSION}.tar.xz
-cd texinfo-${TEXINFO_VERSION}
+source /packages/prepare ${TEXINFO_ARCHIVE}
 ./configure --prefix=/usr
 make
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG UTIL_LINUX_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG UTIL_LINUX_ARCHIVE=util-linux-${UTIL_LINUX_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${UTIL_LINUX_ARCHIVE},target=/packages/${UTIL_LINUX_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/util-linux-${UTIL_LINUX_VERSION}.tar.xz
-cd util-linux-${UTIL_LINUX_VERSION}
+source /packages/prepare ${UTIL_LINUX_ARCHIVE}
 mkdir -pv /var/lib/hwclock
 ./configure --libdir=/usr/lib     \
     --runstatedir=/run    \
@@ -847,8 +805,6 @@ mkdir -pv /var/lib/hwclock
     --docdir=/usr/share/doc/util-linux-${UTIL_LINUX_VERSION}
 make
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 RUN <<EOF
@@ -860,36 +816,36 @@ EOF
 
 FROM ch7 AS ch8
 ARG MAN_PAGES_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MAN_PAGES_ARCHIVE=man-pages-${MAN_PAGES_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${MAN_PAGES_ARCHIVE},target=/packages/${MAN_PAGES_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/man-pages-${MAN_PAGES_VERSION}.tar.xz
-cd man-pages-${MAN_PAGES_VERSION}
+source /packages/prepare ${MAN_PAGES_ARCHIVE}
 rm -v man3/crypt*
 make -R GIT=false prefix=/usr install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG IANA_ETC_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG IANA_ETC_ARCHIVE=iana-etc-${IANA_ETC_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${IANA_ETC_ARCHIVE},target=/packages/${IANA_ETC_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/iana-etc-${IANA_ETC_VERSION}.tar.gz
-cd iana-etc-${IANA_ETC_VERSION}
+source /packages/prepare ${IANA_ETC_ARCHIVE}
 cp -v services protocols /etc
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GLIBC_VERSION
+ARG GLIBC_ARCHIVE=glibc-${GLIBC_VERSION}.tar.xz
 ARG LINUX_VERSION
 ARG TZDATA_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG TZDATA_ARCHIVE=tzdata${TZDATA_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${GLIBC_ARCHIVE},target=/packages/${GLIBC_ARCHIVE} \
+--mount=type=bind,source=packages/${TZDATA_ARCHIVE},target=/packages/${TZDATA_ARCHIVE} \
+--mount=type=bind,source=packages/glibc-fhs-1.patch,target=/packages/glibc-fhs-1.patch \
+--mount=type=bind,source=packages/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch,target=/packages/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/glibc-${GLIBC_VERSION}.tar.xz
-cd glibc-${GLIBC_VERSION}
+source /packages/prepare ${GLIBC_ARCHIVE}
 patch -Np1 -i /packages/glibc-fhs-1.patch
 patch -Np1 -i /packages/glibc-${GLIBC_VERSION}-upstream_fixes-1.patch
 mkdir -v build
@@ -924,7 +880,7 @@ rpc: files
 
 # End /etc/nsswitch.conf
 NSSWITCH
-tar -xf /packages/tzdata${TZDATA_VERSION}.tar.gz
+tar -xf /packages/${TZDATA_ARCHIVE}
 ZONEINFO=/usr/share/zoneinfo
 mkdir -pv $ZONEINFO/{posix,right}
 for tz in etcetera southamerica northamerica europe africa antarctica asia australasia backward
@@ -949,31 +905,28 @@ include /etc/ld.so.conf.d/*.conf
 
 LDSOCONF
 mkdir -pv /etc/ld.so.conf.d
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG ZLIB_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG ZLIB_ARCHIVE=zlib-${ZLIB_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${ZLIB_ARCHIVE},target=/packages/${ZLIB_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/zlib-${ZLIB_VERSION}.tar.gz
-cd zlib-${ZLIB_VERSION}
+source /packages/prepare ${ZLIB_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
 make install
 rm -fv /usr/lib/libz.a
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG BZIP2_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BZIP2_ARCHIVE=bzip2-${BZIP2_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${BZIP2_ARCHIVE},target=/packages/${BZIP2_ARCHIVE} \
+--mount=type=bind,source=packages/bzip2-${BZIP2_VERSION}-install_docs-1.patch,target=/packages/bzip2-${BZIP2_VERSION}-install_docs-1.patch \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/bzip2-${BZIP2_VERSION}.tar.gz
-cd bzip2-${BZIP2_VERSION}
+source /packages/prepare ${BZIP2_ARCHIVE}
 patch -Np1 -i /packages/bzip2-${BZIP2_VERSION}-install_docs-1.patch
 sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
 sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
@@ -990,73 +943,63 @@ do
     ln -sfv bzip2 $i
 done
 rm -fv /usr/lib/libbz2.a
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG XZ_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG XZ_ARCHIVE=xz-${XZ_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${XZ_ARCHIVE},target=/packages/${XZ_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/xz-${XZ_VERSION}.tar.xz
-cd xz-${XZ_VERSION}
+source /packages/prepare ${XZ_ARCHIVE}
 ./configure --prefix=/usr   \
     --disable-static            \
     --docdir=/usr/share/doc/xz-${XZ_VERSION}
 make
 make check
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG LZ4_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG LZ4_ARCHIVE=lz4-${LZ4_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${LZ4_ARCHIVE},target=/packages/${LZ4_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/lz4-${LZ4_VERSION}.tar.gz
-cd lz4-${LZ4_VERSION}
+source /packages/prepare ${LZ4_ARCHIVE}
 make BUILD_STATIC=no PREFIX=/usr
 make -j1 check
 make BUILD_STATIC=no PREFIX=/usr install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG ZSTD_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG ZSTD_ARCHIVE=zstd-${ZSTD_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${ZSTD_ARCHIVE},target=/packages/${ZSTD_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/zstd-${ZSTD_VERSION}.tar.gz
-cd zstd-${ZSTD_VERSION}
+source /packages/prepare ${ZSTD_ARCHIVE}
 make prefix=/usr
 make check
 make prefix=/usr install
 rm -v /usr/lib/libzstd.a
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG FILE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG FILE_ARCHIVE=file-${FILE_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${FILE_ARCHIVE},target=/packages/${FILE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/file-${FILE_VERSION}.tar.gz
-cd file-${FILE_VERSION}
+source /packages/prepare ${FILE_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG READLINE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG READLINE_ARCHIVE=readline-${READLINE_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${READLINE_ARCHIVE},target=/packages/${READLINE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/readline-${READLINE_VERSION}.tar.gz
-cd readline-${READLINE_VERSION}
+source /packages/prepare ${READLINE_ARCHIVE}
 sed -i '/MV.*old/d' Makefile.in
 sed -i '/{OLDSUFF}/c:' support/shlib-install
 sed -i 's/-Wl,-rpath,[^ ]*//' support/shobj-conf
@@ -1072,16 +1015,14 @@ sed -e '270a\
 make SHLIB_LIBS="-lncursesw"
 make install
 install -v -m644 doc/*.{ps,pdf,html,dvi} /usr/share/doc/readline-${READLINE_VERSION}
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG PCRE2_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG PCRE2_ARCHIVE=pcre2-${PCRE2_VERSION}.tar.bz2
+RUN --mount=type=bind,source=packages/${PCRE2_ARCHIVE},target=/packages/${PCRE2_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/pcre2-${PCRE2_VERSION}.tar.bz2
-cd pcre2-${PCRE2_VERSION}
+source /packages/prepare ${PCRE2_ARCHIVE}
 ./configure --prefix=/usr                       \
     --docdir=/usr/share/doc/pcre2-${PCRE2_VERSION}  \
     --enable-unicode                                \
@@ -1095,44 +1036,38 @@ cd pcre2-${PCRE2_VERSION}
 make
 make check
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG M4_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG M4_ARCHIVE=m4-${M4_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${M4_ARCHIVE},target=/packages/${M4_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/m4-${M4_VERSION}.tar.xz
-cd m4-${M4_VERSION}
+source /packages/prepare ${M4_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG BC_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BC_ARCHIVE=bc-${BC_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${BC_ARCHIVE},target=/packages/${BC_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/bc-${BC_VERSION}.tar.xz
-cd bc-${BC_VERSION}
+source /packages/prepare ${BC_ARCHIVE}
 CC='gcc -std=c99' ./configure --prefix=/usr -G -O3 -r
 make
 make test
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG FLEX_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG FLEX_ARCHIVE=flex-${FLEX_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${FLEX_ARCHIVE},target=/packages/${FLEX_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/flex-${FLEX_VERSION}.tar.gz
-cd flex-${FLEX_VERSION}
+source /packages/prepare ${FLEX_ARCHIVE}
 ./configure --prefix=/usr       \
     --disable-static                \
     --docdir=/usr/share/doc/flex-${FLEX_VERSION}
@@ -1141,17 +1076,18 @@ make check
 make install
 ln -sv flex   /usr/bin/lex
 ln -sv flex.1 /usr/share/man/man1/lex.1
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG TCL_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG TCL_ARCHIVE=tcl${TCL_VERSION}-src.tar.gz
+ARG TCL_HTML_ARCHIVE=tcl${TCL_VERSION}-html.tar.gz
+RUN --mount=type=bind,source=packages/${TCL_ARCHIVE},target=/packages/${TCL_ARCHIVE} \
+--mount=type=bind,source=packages/${TCL_HTML_ARCHIVE},target=/packages/${TCL_HTML_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/tcl${TCL_VERSION}-src.tar.gz
+source /packages/prepare ${TCL_ARCHIVE}
 SRCDIR=/work/tcl${TCL_VERSION}
-cd tcl${TCL_VERSION}/unix
+cd unix
 ./configure --prefix=/usr   \
     --mandir=/usr/share/man     \
     --disable-rpath
@@ -1177,19 +1113,18 @@ make install-private-headers
 ln -sfv tclsh8.6 /usr/bin/tclsh
 mv -v /usr/share/man/man3/{Thread,Tcl_Thread}.3
 cd ..
-tar -xf /packages/tcl${TCL_VERSION}-html.tar.gz --strip-components=1
+tar -xf /packages/${TCL_HTML_ARCHIVE} --strip-components=1
 mkdir -v -p /usr/share/doc/tcl-${TCL_VERSION}
 cp -v -r  ./html/* /usr/share/doc/tcl-${TCL_VERSION}
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG EXPECT_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG EXPECT_ARCHIVE=expect${EXPECT_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${EXPECT_ARCHIVE},target=/packages/${EXPECT_ARCHIVE} \
+--mount=type=bind,source=packages/expect-${EXPECT_VERSION}-gcc15-1.patch,target=/packages/expect-${EXPECT_VERSION}-gcc15-1.patch \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/expect${EXPECT_VERSION}.tar.gz
-cd expect${EXPECT_VERSION}
+source /packages/prepare ${EXPECT_ARCHIVE}
 patch -Np1 -i /packages/expect-${EXPECT_VERSION}-gcc15-1.patch
 ./configure --prefix=/usr   \
     --with-tcl=/usr/lib         \
@@ -1201,16 +1136,14 @@ make
 make test
 make install
 ln -svf expect${EXPECT_VERSION}/libexpect${EXPECT_VERSION}.so /usr/lib
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG DEJAGNU_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG DEJAGNU_ARCHIVE=dejagnu-${DEJAGNU_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${DEJAGNU_ARCHIVE},target=/packages/${DEJAGNU_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/dejagnu-${DEJAGNU_VERSION}.tar.gz
-cd dejagnu-${DEJAGNU_VERSION}
+source /packages/prepare ${DEJAGNU_ARCHIVE}
 mkdir -pv build
 cd build
 ../configure --prefix=/usr
@@ -1220,17 +1153,15 @@ make check
 make install
 install -v -dm755  /usr/share/doc/dejagnu-${DEJAGNU_VERSION}
 install -v -m644   doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-${DEJAGNU_VERSION}
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG NINJA_VERSION
+ARG NINJA_ARCHIVE=ninja-${NINJA_VERSION}.tar.gz
 ENV NINJAJOBS=7
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+RUN --mount=type=bind,source=packages/${NINJA_ARCHIVE},target=/packages/${NINJA_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/ninja-${NINJA_VERSION}.tar.gz
-cd ninja-${NINJA_VERSION}
+source /packages/prepare ${NINJA_ARCHIVE}
 sed -i '/int Guess/a \
     int   j = 0;\
     char* jobs = getenv( "NINJAJOBS" );\
@@ -1241,18 +1172,18 @@ python3 configure.py --bootstrap --verbose
 install -vm755 ninja /usr/bin/
 install -vDm644 misc/bash-completion /usr/share/bash-completion/completions/ninja
 install -vDm644 misc/zsh-completion  /usr/share/zsh/site-functions/_ninja
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG PKGCONF_VERSION
+ARG PKGCONF_ARCHIVE=pkgconf-${PKGCONF_VERSION}.tar.xz
 ARG MESON_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MESON_ARCHIVE=meson-${MESON_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${PKGCONF_ARCHIVE},target=/packages/${PKGCONF_ARCHIVE} \
+--mount=type=bind,source=packages/${MESON_ARCHIVE},target=/packages/${MESON_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/pkgconf-${PKGCONF_VERSION}.tar.xz
-cd pkgconf-${PKGCONF_VERSION}
-tar -xf /packages/meson-${MESON_VERSION}.tar.gz
+source /packages/prepare ${PKGCONF_ARCHIVE}
+tar -xf /packages/${MESON_ARCHIVE}
 mkdir -pv build
 cd build
 python3 ../meson-${MESON_VERSION}/meson.py setup --prefix=/usr --buildtype=release ..
@@ -1262,16 +1193,14 @@ ninja install
 mv /usr/share/doc/pkgconf{,${PKGCONF_VERSION}}
 ln -sv pkgconf   /usr/bin/pkg-config
 ln -sv pkgconf.1 /usr/share/man/man1/pkg-config.1
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG BINUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BINUTILS_ARCHIVE=binutils-${BINUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${BINUTILS_ARCHIVE},target=/packages/${BINUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/binutils-${BINUTILS_VERSION}.tar.xz
-cd binutils-${BINUTILS_VERSION}
+source /packages/prepare ${BINUTILS_ARCHIVE}
 mkdir -v build
 cd       build
 ../configure --prefix=/usr       \
@@ -1289,16 +1218,14 @@ make tooldir=/usr
 make -k check && true
 test $(grep '^FAIL:' $(find -name '*.log') | wc -l) -le 1
 make tooldir=/usr install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GMP_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GMP_ARCHIVE=gmp-${GMP_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GMP_ARCHIVE},target=/packages/${GMP_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gmp-${GMP_VERSION}.tar.xz
-cd gmp-${GMP_VERSION}
+source /packages/prepare ${GMP_ARCHIVE}
 sed -i '/long long t1;/,+1s/()/(...)/' configure
 ./configure --prefix=/usr    \
             --enable-cxx     \
@@ -1310,16 +1237,14 @@ make check
 test $(cat $(find -name '*.log') | grep -c ^PASS) -ge 199
 make install
 make install-html
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG MPFR_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MPFR_ARCHIVE=mpfr-${MPFR_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${MPFR_ARCHIVE},target=/packages/${MPFR_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/mpfr-${MPFR_VERSION}.tar.xz
-cd mpfr-${MPFR_VERSION}
+source /packages/prepare ${MPFR_ARCHIVE}
 ./configure --prefix=/usr        \
             --disable-static     \
             --enable-thread-safe \
@@ -1329,16 +1254,14 @@ make html
 make check
 make install
 make install-html
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG MPC_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MPC_ARCHIVE=mpc-${MPC_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${MPC_ARCHIVE},target=/packages/${MPC_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/mpc-${MPC_VERSION}.tar.xz
-cd mpc-${MPC_VERSION}
+source /packages/prepare ${MPC_ARCHIVE}
 ./configure --prefix=/usr    \
             --disable-static \
             --docdir=/usr/share/doc/mpc-${MPC_VERSION}
@@ -1347,16 +1270,14 @@ make html
 make check
 make install
 make install-html
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG ATTR_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG ATTR_ARCHIVE=attr-${ATTR_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${ATTR_ARCHIVE},target=/packages/${ATTR_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/attr-${ATTR_VERSION}.tar.gz
-cd attr-${ATTR_VERSION}
+source /packages/prepare ${ATTR_ARCHIVE}
 ./configure --prefix=/usr       \
             --disable-static    \
             --sysconfdir=/etc   \
@@ -1364,46 +1285,40 @@ cd attr-${ATTR_VERSION}
 make
 # make check # docker doesn't support attr
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG ACL_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG ACL_ARCHIVE=acl-${ACL_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${ACL_ARCHIVE},target=/packages/${ACL_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/acl-${ACL_VERSION}.tar.xz
-cd acl-${ACL_VERSION}
+source /packages/prepare ${ACL_ARCHIVE}
 ./configure --prefix=/usr       \
             --disable-static    \
             --docdir=/usr/share/doc/acl-${ACL_VERSION}
 make
 # make check # docker doesn't support ACL
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG LIBCAP_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG LIBCAP_ARCHIVE=libcap-${LIBCAP_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${LIBCAP_ARCHIVE},target=/packages/${LIBCAP_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/libcap-${LIBCAP_VERSION}.tar.xz
-cd libcap-${LIBCAP_VERSION}
+source /packages/prepare ${LIBCAP_ARCHIVE}
 sed -i '/install -m.*STA/d' libcap/Makefile
 make prefix=/usr lib=lib
 make test
 make prefix=/usr lib=lib install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG LIBXCRYPT_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG LIBXCRYPT_ARCHIVE=libxcrypt-${LIBXCRYPT_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${LIBXCRYPT_ARCHIVE},target=/packages/${LIBXCRYPT_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/libxcrypt-${LIBXCRYPT_VERSION}.tar.xz
-cd libxcrypt-${LIBXCRYPT_VERSION}
+source /packages/prepare ${LIBXCRYPT_ARCHIVE}
 sed -i '/strchr/s/const//' lib/crypt-{sm3,gost}-yescrypt.c
 ./configure --prefix=/usr                \
             --enable-hashes=strong,glibc \
@@ -1413,16 +1328,14 @@ sed -i '/strchr/s/const//' lib/crypt-{sm3,gost}-yescrypt.c
 make
 make check
 make install
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG SHADOW_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG SHADOW_ARCHIVE=shadow-${SHADOW_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${SHADOW_ARCHIVE},target=/packages/${SHADOW_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/shadow-${SHADOW_VERSION}.tar.xz
-cd shadow-${SHADOW_VERSION}
+source /packages/prepare ${SHADOW_ARCHIVE}
 find man -name Makefile.in -exec sed -i 's/getspnam\.3 / /' {} \;
 find man -name Makefile.in -exec sed -i 's/passwd\.5 / /'   {} \;
 sed -e 's:#ENCRYPT_METHOD SHA512:ENCRYPT_METHOD YESCRYPT:' \
@@ -1446,16 +1359,14 @@ useradd -D --gid 999
 sed -i '/MAIL/s/yes/no/' /etc/default/useradd
 touch /etc/sub{u,g}id
 echo root:root | chpasswd # TODO: change after first login
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GAWK_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GAWK_ARCHIVE=gawk-${GAWK_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GAWK_ARCHIVE},target=/packages/${GAWK_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gawk-${GAWK_VERSION}.tar.xz
-cd gawk-${GAWK_VERSION}
+source /packages/prepare ${GAWK_ARCHIVE}
 sed -i 's/extras//' Makefile.in
 ./configure --prefix=/usr
 make
@@ -1465,16 +1376,14 @@ rm -f /usr/bin/gawk-${GAWK_VERSION}
 make install
 ln -sv gawk.1 /usr/share/man/man1/awk.1
 install -vDm644 doc/{awkforai.txt,*.{eps,pdf,jpg}} -t /usr/share/doc/gawk-${GAWK_VERSION}
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG GCC_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GCC_ARCHIVE=gcc-${GCC_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GCC_ARCHIVE},target=/packages/${GCC_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-set -euo pipefail
-tar -xf /packages/gcc-${GCC_VERSION}.tar.xz
-cd gcc-${GCC_VERSION}
+source /packages/prepare ${GCC_ARCHIVE}
 sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
 mkdir -v build
 cd       build
@@ -1504,15 +1413,14 @@ readelf -l a.out | grep ': /lib'
 rm -v a.out dummy.log
 mkdir -pv /usr/share/gdb/auto-load/usr/lib
 mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib
-shopt -s dotglob
-rm -fr /work/*
 EOF
 
 ARG NCURSES_VERSION
-COPY prepare /work/
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG NCURSES_ARCHIVE=ncurses-${NCURSES_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${NCURSES_ARCHIVE},target=/packages/${NCURSES_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare ncurses-${NCURSES_VERSION}.tar.gz
+source /packages/prepare ${NCURSES_ARCHIVE}
 ./configure --prefix=/usr           \
             --mandir=/usr/share/man \
             --with-shared           \
@@ -1543,9 +1451,11 @@ cp -av lib/lib*.so.5* /usr/lib
 EOF
 
 ARG SED_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG SED_ARCHIVE=sed-${SED_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${SED_ARCHIVE},target=/packages/${SED_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare sed-${SED_VERSION}.tar.xz
+source /packages/prepare ${SED_ARCHIVE}
 ./configure --prefix=/usr
 make
 make html
@@ -1556,9 +1466,11 @@ install -vDm644 doc/sed.html -t /usr/share/doc/sed-${SED_VERSION}
 EOF
 
 ARG PSMISC_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG PSMISC_ARCHIVE=psmisc-${PSMISC_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${PSMISC_ARCHIVE},target=/packages/${PSMISC_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare psmisc-${PSMISC_VERSION}.tar.xz
+source /packages/prepare ${PSMISC_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
@@ -1566,9 +1478,11 @@ make install
 EOF
 
 ARG GETTEXT_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GETTEXT_ARCHIVE=gettext-${GETTEXT_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GETTEXT_ARCHIVE},target=/packages/${GETTEXT_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare gettext-${GETTEXT_VERSION}.tar.xz
+source /packages/prepare ${GETTEXT_ARCHIVE}
 ./configure --prefix=/usr    \
             --disable-static \
             --docdir=/usr/share/doc/gettext-${GETTEXT_VERSION}
@@ -1579,9 +1493,11 @@ chmod -v 0755 /usr/lib/preloadable_libintl.so
 EOF
 
 ARG BISON_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BISON_ARCHIVE=bison-${BISON_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${BISON_ARCHIVE},target=/packages/${BISON_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare bison-${BISON_VERSION}.tar.xz
+source /packages/prepare ${BISON_ARCHIVE}
 ./configure --prefix=/usr --docdir=/usr/share/doc/bison-${BISON_VERSION}
 make
 make check
@@ -1589,9 +1505,11 @@ make install
 EOF
 
 ARG GREP_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GREP_ARCHIVE=grep-${GREP_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GREP_ARCHIVE},target=/packages/${GREP_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare grep-${GREP_VERSION}.tar.xz
+source /packages/prepare ${GREP_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
@@ -1599,9 +1517,11 @@ make install
 EOF
 
 ARG BASH_VERSION_
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG BASH_ARCHIVE=bash-${BASH_VERSION_}.tar.gz
+RUN --mount=type=bind,source=packages/${BASH_ARCHIVE},target=/packages/${BASH_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare bash-${BASH_VERSION_}.tar.gz
+source /packages/prepare ${BASH_ARCHIVE}
 ./configure --prefix=/usr             \
             --without-bash-malloc     \
             --with-installed-readline \
@@ -1619,9 +1539,11 @@ make install
 EOF
 
 ARG LIBTOOL_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG LIBTOOL_ARCHIVE=libtool-${LIBTOOL_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${LIBTOOL_ARCHIVE},target=/packages/${LIBTOOL_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare libtool-${LIBTOOL_VERSION}.tar.xz
+source /packages/prepare ${LIBTOOL_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
@@ -1630,9 +1552,11 @@ rm -fv /usr/lib/libltdl.a
 EOF
 
 ARG GDBM_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GDBM_ARCHIVE=gdbm-${GDBM_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${GDBM_ARCHIVE},target=/packages/${GDBM_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare gdbm-${GDBM_VERSION}.tar.gz
+source /packages/prepare ${GDBM_ARCHIVE}
 ./configure --prefix=/usr    \
             --disable-static \
             --enable-libgdbm-compat
@@ -1642,9 +1566,11 @@ make install
 EOF
 
 ARG GPERF_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GPERF_ARCHIVE=gperf-${GPERF_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${GPERF_ARCHIVE},target=/packages/${GPERF_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare gperf-${GPERF_VERSION}.tar.gz
+source /packages/prepare ${GPERF_ARCHIVE}
 ./configure --prefix=/usr --docdir=/usr/share/doc/gperf-${GPERF_VERSION}
 make
 make check
@@ -1652,9 +1578,11 @@ make install
 EOF
 
 ARG EXPAT_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG EXPAT_ARCHIVE=expat-${EXPAT_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${EXPAT_ARCHIVE},target=/packages/${EXPAT_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare expat-${EXPAT_VERSION}.tar.xz
+source /packages/prepare ${EXPAT_ARCHIVE}
 ./configure --prefix=/usr    \
             --disable-static \
             --docdir=/usr/share/doc/expat-${EXPAT_VERSION}
@@ -1665,9 +1593,11 @@ install -v -m644 doc/*.{html,css} /usr/share/doc/expat-2.8.3
 EOF
 
 ARG INET_UTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG INET_UTILS_ARCHIVE=inetutils-${INET_UTILS_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${INET_UTILS_ARCHIVE},target=/packages/${INET_UTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare inetutils-${INET_UTILS_VERSION}.tar.gz
+source /packages/prepare ${INET_UTILS_ARCHIVE}
 sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c
 ./configure --prefix=/usr        \
             --bindir=/usr/bin    \
@@ -1686,19 +1616,23 @@ mv -v /usr/{,s}bin/ifconfig
 EOF
 
 ARG LESS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG LESS_ARCHIVE=less-${LESS_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${LESS_ARCHIVE},target=/packages/${LESS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare less-${LESS_VERSION}.tar.gz
+source /packages/prepare ${LESS_ARCHIVE}
 ./configure --prefix=/usr --sysconfdir=/etc
 make
 make install
 EOF
 
 ARG PERL_VERSION
+ARG PERL_ARCHIVE=perl-${PERL_VERSION}.tar.xz
 ARG PERL_MAJOR_MINOR_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+RUN --mount=type=bind,source=packages/${PERL_ARCHIVE},target=/packages/${PERL_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare perl-${PERL_VERSION}.tar.xz
+source /packages/prepare ${PERL_ARCHIVE}
 export BUILD_ZLIB=False
 export BUILD_BZIP2=0
 sh Configure -des                                          \
@@ -1721,9 +1655,11 @@ make install
 EOF
 
 ARG AUTOCONF_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG AUTOCONF_ARCHIVE=autoconf-${AUTOCONF_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${AUTOCONF_ARCHIVE},target=/packages/${AUTOCONF_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare autoconf-${AUTOCONF_VERSION}.tar.xz
+source /packages/prepare ${AUTOCONF_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
@@ -1731,9 +1667,11 @@ make install
 EOF
 
 ARG AUTOMAKE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG AUTOMAKE_ARCHIVE=automake-${AUTOMAKE_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${AUTOMAKE_ARCHIVE},target=/packages/${AUTOMAKE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare automake-${AUTOMAKE_VERSION}.tar.xz
+source /packages/prepare ${AUTOMAKE_ARCHIVE}
 ./configure --prefix=/usr --docdir=/usr/share/doc/automake-${AUTOMAKE_VERSION}
 make
 make check
@@ -1741,9 +1679,11 @@ make install
 EOF
 
 ARG OPENSSL_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG OPENSSL_ARCHIVE=openssl-${OPENSSL_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${OPENSSL_ARCHIVE},target=/packages/${OPENSSL_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare openssl-${OPENSSL_VERSION}.tar.gz
+source /packages/prepare ${OPENSSL_ARCHIVE}
 ./config --prefix=/usr         \
          --openssldir=/etc/ssl \
          --libdir=lib          \
@@ -1757,9 +1697,11 @@ cp -vfr doc/* /usr/share/doc/openssl-${OPENSSL_VERSION}
 EOF
 
 ARG ELFUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG ELFUTILS_ARCHIVE=elfutils-${ELFUTILS_VERSION}.tar.bz2
+RUN --mount=type=bind,source=packages/${ELFUTILS_ARCHIVE},target=/packages/${ELFUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare elfutils-${ELFUTILS_VERSION}.tar.bz2
+source /packages/prepare ${ELFUTILS_ARCHIVE}
 ./configure --prefix=/usr        \
             --disable-debuginfod \
             --enable-libdebuginfod=dummy
@@ -1772,9 +1714,11 @@ rm /usr/lib/libelf.a
 EOF
 
 ARG LIBFFI_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG LIBFFI_ARCHIVE=libffi-${LIBFFI_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${LIBFFI_ARCHIVE},target=/packages/${LIBFFI_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare libffi-${LIBFFI_VERSION}.tar.gz
+source /packages/prepare ${LIBFFI_ARCHIVE}
 ./configure --prefix=/usr    \
             --disable-static \
             --with-gcc-arch=native
@@ -1784,11 +1728,15 @@ make install
 EOF
 
 ARG SQLITE_VERSION
+ARG SQLITE_ARCHIVE=sqlite-autoconf-${SQLITE_VERSION}.tar.gz
+ARG SQLITE_DOC_ARCHIVE=sqlite-doc-${SQLITE_VERSION}.zip
 ARG SQLITE_MMM_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+RUN --mount=type=bind,source=packages/${SQLITE_ARCHIVE},target=/packages/${SQLITE_ARCHIVE} \
+--mount=type=bind,source=packages/${SQLITE_DOC_ARCHIVE},target=/packages/${SQLITE_DOC_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare sqlite-autoconf-${SQLITE_VERSION}.tar.gz
-python3 -m zipfile -e /packages/sqlite-doc-${SQLITE_VERSION}.zip .
+source /packages/prepare ${SQLITE_ARCHIVE}
+python3 -m zipfile -e /packages/${SQLITE_DOC_ARCHIVE} .
 ./configure --prefix=/usr     \
             --disable-static  \
             --enable-fts{4,5} \
@@ -1802,9 +1750,11 @@ cp -v -R sqlite-doc-${SQLITE_VERSION} -T /usr/share/doc/sqlite-${SQLITE_MMM_VERS
 EOF
 
 ARG MPDECIMAL_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MPDECIMAL_ARCHIVE=mpdecimal-${MPDECIMAL_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${MPDECIMAL_ARCHIVE},target=/packages/${MPDECIMAL_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare mpdecimal-${MPDECIMAL_VERSION}.tar.gz
+source /packages/prepare ${MPDECIMAL_ARCHIVE}
 ./configure --prefix=/usr    \
             --disable-static \
             --docdir=/usr/share/doc/mpdecimal-${MPDECIMAL_VERSION}
@@ -1814,9 +1764,14 @@ make install
 EOF
 
 ARG PYTHON_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG PYTHON_ARCHIVE=Python-${PYTHON_VERSION}.tar.xz
+ARG PYTHON_DOCS_ARCHIVE=python-${PYTHON_VERSION}-docs-html.tar.bz2
+RUN --mount=type=bind,source=packages/${PYTHON_ARCHIVE},target=/packages/${PYTHON_ARCHIVE} \
+--mount=type=bind,source=packages/${PYTHON_DOCS_ARCHIVE},target=/packages/${PYTHON_DOCS_ARCHIVE} \
+--mount=type=bind,source=packages/Python-3.14.7-openssl_4-1.patch,target=/packages/Python-3.14.7-openssl_4-1.patch \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare Python-${PYTHON_VERSION}.tar.xz
+source /packages/prepare ${PYTHON_ARCHIVE}
 patch -Np1 -i /packages/Python-3.14.7-openssl_4-1.patch
 ./configure --prefix=/usr          \
             --enable-shared        \
@@ -1838,45 +1793,55 @@ tar --strip-components=1  \
     --no-same-owner       \
     --no-same-permissions \
     -C /usr/share/doc/python-${PYTHON_VERSION}/html \
-    -xvf /packages/python-${PYTHON_VERSION}-docs-html.tar.bz2
+    -xvf /packages/${PYTHON_DOCS_ARCHIVE}
 EOF
 
 ARG FLIT_CORE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG FLIT_CORE_ARCHIVE=flit_core-${FLIT_CORE_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${FLIT_CORE_ARCHIVE},target=/packages/${FLIT_CORE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare flit_core-${FLIT_CORE_VERSION}.tar.gz
+source /packages/prepare ${FLIT_CORE_ARCHIVE}
 pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 pip3 install --no-index --find-links dist flit_core
 EOF
 
 ARG PACKAGING_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG PACKAGING_ARCHIVE=packaging-${PACKAGING_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${PACKAGING_ARCHIVE},target=/packages/${PACKAGING_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare packaging-${PACKAGING_VERSION}.tar.gz
+source /packages/prepare ${PACKAGING_ARCHIVE}
 pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 pip3 install --no-index --find-links dist packaging
 EOF
 
 ARG WHEEL_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG WHEEL_ARCHIVE=wheel-${WHEEL_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${WHEEL_ARCHIVE},target=/packages/${WHEEL_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare wheel-${WHEEL_VERSION}.tar.gz
+source /packages/prepare ${WHEEL_ARCHIVE}
 pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 pip3 install --no-index --find-links dist wheel
 EOF
 
 ARG SETUPTOOLS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG SETUPTOOLS_ARCHIVE=setuptools-${SETUPTOOLS_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${SETUPTOOLS_ARCHIVE},target=/packages/${SETUPTOOLS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare setuptools-${SETUPTOOLS_VERSION}.tar.gz
+source /packages/prepare ${SETUPTOOLS_ARCHIVE}
 pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 pip3 install --no-index --find-links dist setuptools
 EOF
 
 ARG MESON_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MESON_ARCHIVE=meson-${MESON_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${MESON_ARCHIVE},target=/packages/${MESON_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare meson-${MESON_VERSION}.tar.gz
+source /packages/prepare ${MESON_ARCHIVE}
 pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 pip3 install --no-index --find-links dist meson
 install -vDm644 data/shell-completions/bash/meson /usr/share/bash-completion/completions/meson
@@ -1884,9 +1849,11 @@ install -vDm644 data/shell-completions/zsh/_meson /usr/share/zsh/site-functions/
 EOF
 
 ARG KMOD_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG KMOD_ARCHIVE=kmod-${KMOD_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${KMOD_ARCHIVE},target=/packages/${KMOD_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare kmod-${KMOD_VERSION}.tar.xz
+source /packages/prepare ${KMOD_ARCHIVE}
 mkdir -p build
 cd       build
 
@@ -1898,9 +1865,12 @@ ninja install
 EOF
 
 ARG COREUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG COREUTILS_ARCHIVE=coreutils-${COREUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${COREUTILS_ARCHIVE},target=/packages/${COREUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/coreutils-9.11-i18n-1.patch,target=/packages/coreutils-9.11-i18n-1.patch \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare coreutils-${COREUTILS_VERSION}.tar.xz
+source /packages/prepare ${COREUTILS_ARCHIVE}
 patch -Np1 -i /packages/coreutils-9.11-i18n-1.patch
 autoreconf -fv
 automake -af
@@ -1919,9 +1889,11 @@ sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
 EOF
 
 ARG DIFFUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG DIFFUTILS_ARCHIVE=diffutils-${DIFFUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${DIFFUTILS_ARCHIVE},target=/packages/${DIFFUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare diffutils-${DIFFUTILS_VERSION}.tar.xz
+source /packages/prepare ${DIFFUTILS_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
@@ -1929,9 +1901,11 @@ make install
 EOF
 
 ARG FINDUTILS_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG FINDUTILS_ARCHIVE=findutils-${FINDUTILS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${FINDUTILS_ARCHIVE},target=/packages/${FINDUTILS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare findutils-${FINDUTILS_VERSION}.tar.xz
+source /packages/prepare ${FINDUTILS_ARCHIVE}
 ./configure --prefix=/usr --localstatedir=/var/lib/locate
 make
 # exits 1 under docker
@@ -1941,9 +1915,11 @@ make install
 EOF
 
 ARG GROFF_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GROFF_ARCHIVE=groff-${GROFF_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${GROFF_ARCHIVE},target=/packages/${GROFF_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare groff-${GROFF_VERSION}.tar.gz
+source /packages/prepare ${GROFF_ARCHIVE}
 PAGE=letter ./configure --prefix=/usr
 make -j1
 # make check # one expected failure, but still exits 1 under docker.  TODO
@@ -1951,9 +1927,11 @@ make install
 EOF
 
 ARG GRUB_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GRUB_ARCHIVE=grub-${GRUB_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GRUB_ARCHIVE},target=/packages/${GRUB_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare grub-${GRUB_VERSION}.tar.xz
+source /packages/prepare ${GRUB_ARCHIVE}
 sed 's/--image-base/--nonexist-linker-option/' -i configure
 ./configure --prefix=/usr     \
             --sysconfdir=/etc \
@@ -1973,9 +1951,11 @@ make install
 EOF
 
 ARG GZIP_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG GZIP_ARCHIVE=gzip-${GZIP_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${GZIP_ARCHIVE},target=/packages/${GZIP_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare gzip-${GZIP_VERSION}.tar.xz
+source /packages/prepare ${GZIP_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
@@ -1983,9 +1963,11 @@ make install
 EOF
 
 ARG IPROUTE2_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG IPROUTE2_ARCHIVE=iproute2-${IPROUTE2_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${IPROUTE2_ARCHIVE},target=/packages/${IPROUTE2_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare iproute2-${IPROUTE2_VERSION}.tar.xz
+source /packages/prepare ${IPROUTE2_ARCHIVE}
 sed -i /ARPD/d Makefile
 rm -fv man/man8/arpd.8
 make NETNS_RUN_DIR=/run/netns
@@ -1994,18 +1976,22 @@ install -vDm644 COPYING README* -t /usr/share/doc/iproute2-${IPROUTE2_VERSION}
 EOF
 
 ARG LIBPIPELINE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG LIBPIPELINE_ARCHIVE=libpipeline-${LIBPIPELINE_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${LIBPIPELINE_ARCHIVE},target=/packages/${LIBPIPELINE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare libpipeline-${LIBPIPELINE_VERSION}.tar.gz
+source /packages/prepare ${LIBPIPELINE_ARCHIVE}
 ./configure --prefix=/usr
 make
 make install
 EOF
 
 ARG MAKE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MAKE_ARCHIVE=make-${MAKE_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${MAKE_ARCHIVE},target=/packages/${MAKE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare make-${MAKE_VERSION}.tar.gz
+source /packages/prepare ${MAKE_ARCHIVE}
 ./configure --prefix=/usr
 make
 chown -R tester .
@@ -2014,9 +2000,11 @@ make install
 EOF
 
 ARG PATCH_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG PATCH_ARCHIVE=patch-${PATCH_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${PATCH_ARCHIVE},target=/packages/${PATCH_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare patch-${PATCH_VERSION}.tar.xz
+source /packages/prepare ${PATCH_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
@@ -2024,9 +2012,12 @@ make install
 EOF
 
 ARG TAR_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG TAR_ARCHIVE=tar-${TAR_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${TAR_ARCHIVE},target=/packages/${TAR_ARCHIVE} \
+--mount=type=bind,source=packages/tar-1.35-acl_fix-1.patch,target=/packages/tar-1.35-acl_fix-1.patch \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare tar-${TAR_VERSION}.tar.xz
+source /packages/prepare ${TAR_ARCHIVE}
 patch -Np1 -i /packages/tar-1.35-acl_fix-1.patch
 FORCE_UNSAFE_CONFIGURE=1 ./configure --prefix=/usr
 make
@@ -2036,9 +2027,11 @@ make -C doc install-html docdir=/usr/share/doc/tar-${TAR_VERSION}
 EOF
 
 ARG TEXINFO_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG TEXINFO_ARCHIVE=texinfo-${TEXINFO_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${TEXINFO_ARCHIVE},target=/packages/${TEXINFO_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare texinfo-${TEXINFO_VERSION}.tar.xz
+source /packages/prepare ${TEXINFO_ARCHIVE}
 ./configure --prefix=/usr
 make
 make check
@@ -2047,9 +2040,11 @@ make TEXMF=/usr/share/texmf install-tex
 EOF
 
 ARG VIM_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG VIM_ARCHIVE=vim-${VIM_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${VIM_ARCHIVE},target=/packages/${VIM_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare vim-${VIM_VERSION}.tar.gz
+source /packages/prepare ${VIM_ARCHIVE}
 echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
 ./configure --prefix=/usr
 make
@@ -2065,25 +2060,33 @@ ln -sv ../vim/vim92/doc /usr/share/doc/vim-${VIM_VERSION}
 EOF
 
 ARG MARKUPSAFE_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG MARKUPSAFE_ARCHIVE=markupsafe-${MARKUPSAFE_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${MARKUPSAFE_ARCHIVE},target=/packages/${MARKUPSAFE_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare markupsafe-${MARKUPSAFE_VERSION}.tar.gz
+source /packages/prepare ${MARKUPSAFE_ARCHIVE}
 pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 pip3 install --no-index --find-links dist Markupsafe
 EOF
 
 ARG JINJA2_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG JINJA2_ARCHIVE=jinja2-${JINJA2_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${JINJA2_ARCHIVE},target=/packages/${JINJA2_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare jinja2-${JINJA2_VERSION}.tar.gz
+source /packages/prepare ${JINJA2_ARCHIVE}
 pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 pip3 install --no-index --find-links dist Jinja2
 EOF
 
 ARG SYSTEMD_VERSION
-RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+ARG SYSTEMD_ARCHIVE=systemd-${SYSTEMD_VERSION}.tar.gz
+ARG SYSTEMD_MAN_PAGES_ARCHIVE=systemd-man-pages-${SYSTEMD_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${SYSTEMD_ARCHIVE},target=/packages/${SYSTEMD_ARCHIVE} \
+--mount=type=bind,source=packages/${SYSTEMD_MAN_PAGES_ARCHIVE},target=/packages/${SYSTEMD_MAN_PAGES_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
 <<EOF
-source prepare systemd-${SYSTEMD_VERSION}.tar.gz
+source /packages/prepare ${SYSTEMD_ARCHIVE}
 sed -e 's/GROUP="render"/GROUP="video"/' \
     -e 's/GROUP="sgx", //'               \
     -i rules.d/50-udev-default.rules.in
@@ -2115,10 +2118,105 @@ echo 'NAME="Linux From Scratch"' > /etc/os-release
 # unshare -m ninja test
 ninja install
 
-tar -xf /packages/systemd-man-pages-${SYSTEMD_VERSION}.tar.xz \
+tar -xf /packages/${SYSTEMD_MAN_PAGES_ARCHIVE} \
     --no-same-owner --strip-components=1     \
     -C /usr/share/man
 
 systemd-machine-id-setup
 systemctl preset-all
+EOF
+
+ARG PROCPS_NG_VERSION
+ARG PROCPS_NG_ARCHIVE=procps-ng-${PROCPS_NG_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${PROCPS_NG_ARCHIVE},target=/packages/${PROCPS_NG_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${PROCPS_NG_ARCHIVE}
+./configure --prefix=/usr                           \
+            --docdir=/usr/share/doc/procps-ng-${PROCPS_NG_VERSION} \
+            --disable-static                        \
+            --disable-kill                          \
+            --enable-watch8bit                      \
+            --with-systemd
+make
+chown -R tester .
+su tester -c "PATH=$PATH make check"
+make install
+EOF
+
+ARG UTIL_LINUX_VERSION
+ARG UTIL_LINUX_ARCHIVE=util-linux-${UTIL_LINUX_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${UTIL_LINUX_ARCHIVE},target=/packages/${UTIL_LINUX_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${UTIL_LINUX_ARCHIVE}
+./configure --bindir=/usr/bin     \
+            --libdir=/usr/lib     \
+            --runstatedir=/run    \
+            --sbindir=/usr/sbin   \
+            --disable-chfn-chsh   \
+            --disable-login       \
+            --disable-nologin     \
+            --disable-su          \
+            --disable-setpriv     \
+            --disable-runuser     \
+            --disable-pylibmount  \
+            --disable-liblastlog2 \
+            --disable-static      \
+            --without-python      \
+            ADJTIME_PATH=/var/lib/hwclock/adjtime \
+            --docdir=/usr/share/doc/util-linux-${UTIL_LINUX_VERSION}
+make
+touch /etc/fstab
+# chown -R tester . # fails in docker
+# su tester -c "make -k check"
+make install
+EOF
+
+ARG E2FSPROGS_VERSION
+ARG E2FSPROGS_ARCHIVE=e2fsprogs-${E2FSPROGS_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${E2FSPROGS_ARCHIVE},target=/packages/${E2FSPROGS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${E2FSPROGS_ARCHIVE}
+mkdir -v build
+cd       build
+../configure --prefix=/usr       \
+             --sysconfdir=/etc   \
+             --enable-elf-shlibs \
+             --disable-libblkid  \
+             --disable-libuuid   \
+             --disable-uuidd     \
+             --disable-fsck
+make
+make check
+make install
+rm -fv /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
+EOF
+
+ARG LZO_VERSION
+ARG LZO_ARCHIVE=lzo-${LZO_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${LZO_ARCHIVE},target=/packages/${LZO_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${LZO_ARCHIVE}
+./configure --prefix=/usr    \
+            --enable-shared  \
+            --disable-static \
+            --docdir=/usr/share/doc/lzo-${LZO_VERSION}
+make
+make install
+EOF
+
+ARG BTRFS_PROGS_VERSION
+ARG BTRFS_PROGS_ARCHIVE=btrfs-progs-v${BTRFS_PROGS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${BTRFS_PROGS_ARCHIVE},target=/packages/${BTRFS_PROGS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${BTRFS_PROGS_ARCHIVE}
+./configure --prefix=/usr           \
+            --disable-static        \
+            --disable-documentation
+make
+make install
 EOF

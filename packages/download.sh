@@ -42,5 +42,6 @@ then
 fi
 
 mv "$TMP" "$TARGET_FILE"
+chmod a+r "$TARGET_FILE"
 trap - EXIT INT TERM HUP
 echo "Successfully downloaded and verified $TARGET_FILE."
