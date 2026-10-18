@@ -2111,6 +2111,7 @@ meson setup ..                \
       -D nobody-group=nogroup \
       -D sysupdate=disabled   \
       -D ukify=disabled       \
+      -D default-kill-user-processes=false \
       -D docdir=/usr/share/doc/systemd-${SYSTEMD_VERSION}
 
 ninja
@@ -2219,4 +2220,139 @@ source /packages/prepare ${BTRFS_PROGS_ARCHIVE}
             --disable-documentation
 make
 make install
+EOF
+
+# 8.85
+RUN <<EOF
+set -euo pipefail
+# There are also several files in the /usr/lib and /usr/libexec directories with a file name extension of .la. These are "libtool archive" files. On a modern Linux system the libtool .la files are only useful for libltdl. No libraries in LFS are expected to be loaded by libltdl, and it's known that some .la files can break BLFS package builds. Remove those files now:
+find /usr/lib /usr/libexec -name \*.la -delete
+# For more information about libtool archive files, see the BLFS section "About Libtool Archive (.la) files".
+# The compiler built in Chapter 6 and Chapter 7 is still partially installed and not needed anymore. Remove it with:
+find /usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf
+# Finally, remove the temporary 'tester' user account created at the beginning of the previous chapter.
+userdel -r tester
+EOF
+
+FROM ch8 AS ch9
+RUN <<EOF
+set -euo pipefail
+
+echo mufasa > /etc/hostname
+# TODO /etc/hosts after docker
+
+cat > /etc/adjtime << "EOT"
+0.0 0 0.0
+0
+LOCAL
+EOT
+
+echo FONT=Lat2-Terminus16 > /etc/vconsole.conf
+echo LANG=en_US.UTF-8 > /etc/locale.conf
+cat > /etc/profile << "EOP"
+# Begin /etc/profile
+for i in $(locale); do
+  unset ${i%=*}
+done
+
+if [[ "$TERM" = linux ]]; then
+  export LANG=C.UTF-8
+else
+  source /etc/locale.conf
+
+  for i in $(locale); do
+    key=${i%=*}
+    if [[ -v $key ]]; then
+      export $key
+    fi
+  done
+fi
+# End /etc/profile
+EOP
+
+cat > /etc/inputrc << "EOI"
+# Begin /etc/inputrc
+# Modified by Chris Lynn <roryo@roryo.dynup.net>
+
+# Allow the command prompt to wrap to the next line
+set horizontal-scroll-mode Off
+
+# Enable 8-bit input
+set meta-flag On
+set input-meta On
+
+# Turns off 8th bit stripping
+set convert-meta Off
+
+# Keep the 8th bit for display
+set output-meta On
+
+# none, visible or audible
+set bell-style none
+
+# All of the following map the escape sequence of the value
+# contained in the 1st argument to the readline specific functions
+"\eOd": backward-word
+"\eOc": forward-word
+
+# for linux console
+"\e[1~": beginning-of-line
+"\e[4~": end-of-line
+"\e[5~": beginning-of-history
+"\e[6~": end-of-history
+"\e[3~": delete-char
+"\e[2~": quoted-insert
+
+# for xterm
+"\eOH": beginning-of-line
+"\eOF": end-of-line
+
+# for Konsole
+"\e[H": beginning-of-line
+"\e[F": end-of-line
+
+# uncomment for history search mode with up/down
+# "\e[A": history-search-backward
+# "\e[B": history-search-forward
+# End /etc/inputrc
+EOI
+
+cat > /etc/shells << "EOS"
+# Begin /etc/shells
+/bin/sh
+/bin/bash
+# End /etc/shells
+EOS
+
+mkdir -pv /etc/systemd/system/getty@tty1.service.d
+cat > /etc/systemd/system/getty@tty1.service.d/noclear.conf << EOT
+[Service]
+TTYVTDisallocate=no
+EOT
+
+mkdir -pv /etc/systemd/coredump.conf.d
+
+cat > /etc/systemd/coredump.conf.d/maxuse.conf << EOC
+[Coredump]
+MaxUse=5G
+EOC
+EOF
+ARG LINUX_MAJOR
+ARG LINUX_VERSION
+ARG LINUX_ARCHIVE=linux-${LINUX_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${LINUX_ARCHIVE},target=/packages/${LINUX_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+--mount=type=bind,source=kconfig,target=/kconfig \
+<<EOF
+source /packages/prepare ${LINUX_ARCHIVE}
+make mrproper
+cp /kconfig .config
+make
+make modules_install
+cp -iv arch/x86/boot/bzImage /boot/vmlinuz-${LINUX_VERSION}-lfs-13.1-systemd
+cp -iv System.map /boot/System.map-${LINUX_VERSION}
+cp -iv .config /boot/config-${LINUX_VERSION}
+cp -r Documentation -T /usr/share/doc/linux-${LINUX_VERSION}
+find usr/include -type f ! -name '*.h' -delete
+cp -rv usr/include $LFS/usr
 EOF
