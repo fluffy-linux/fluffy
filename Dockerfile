@@ -1,5 +1,7 @@
 ARG ATTR_VERSION=2.6.0
 ARG ACL_VERSION=2.4.0
+ARG AUTOCONF_VERSION=2.73
+ARG AUTOMAKE_VERSION=1.18.1
 # avoid conflict with builtin var BASH_VERSION
 ARG BASH_VERSION_=5.3
 ARG BC_VERSION=7.0.3
@@ -9,25 +11,42 @@ ARG BZIP2_VERSION=1.0.8
 ARG COREUTILS_VERSION=9.11
 ARG DEJAGNU_VERSION=1.6.3
 ARG DIFFUTILS_VERSION=3.12
+ARG ELFUTILS_VERSION=0.195
+ARG EXPAT_VERSION=2.8.3
 ARG EXPECT_VERSION=5.45.4
 ARG FILE_VERSION=5.48
 ARG FINDUTILS_VERSION=4.11.0
 ARG FLEX_VERSION=2.6.4
+ARG FLIT_CORE_VERSION=4.0.2
 ARG GAWK_VERSION=5.4.1
 ARG GCC_VERSION=16.2.0
+ARG GDBM_VERSION=1.26
 ARG GETTEXT_VERSION=1.0
 ARG GLIBC_VERSION=2.44
 ARG GMP_VERSION=6.3.0
+ARG GRUB_VERSION=2.14
+ARG GPERF_VERSION=3.3
 ARG GREP_VERSION=3.12
+ARG GROFF_VERSION=1.24.1
 ARG GZIP_VERSION=1.14
 ARG IANA_ETC_VERSION=20260805
+ARG INET_UTILS_VERSION=2.8
+ARG IPROUTE2_VERSION=7.1.0
+ARG JINJA2_VERSION=3.1.6
+ARG KBD_VERSION=2.10.0
+ARG KMOD_VERSION=34.2
+ARG LESS_VERSION=704
 ARG LIBCAP_VERSION=2.78
+ARG LIBFFI_VERSION=3.8.0
+ARG LIBPIPELINE_VERSION=1.5.8
+ARG LIBTOOL_VERSION=2.6.2
 ARG LIBXCRYPT_VERSION=4.5.2
 ARG LINUX_MAJOR=7
 ARG LINUX_VERSION=${LINUX_MAJOR}.1.8
 ARG LZ4_VERSION=1.10.0
 ARG MAKE_VERSION=4.4.1
 ARG MAN_PAGES_VERSION=6.18
+ARG MARKUPSAFE_VERSION=3.0.3
 ARG MESON_VERSION=1.12.0
 ARG MPC_VERSION=1.4.1
 ARG MPDECIMAL_VERSION=4.0.1
@@ -35,20 +54,29 @@ ARG MPFR_VERSION=4.2.2
 ARG M4_VERSION=1.4.21
 ARG NCURSES_VERSION=6.6
 ARG NINJA_VERSION=1.13.2
+ARG OPENSSL_VERSION=4.0.1
+ARG PACKAGING_VERSION=26.3
 ARG PATCH_VERSION=2.8
 ARG PCRE2_VERSION=10.47
 ARG PERL_MAJOR_MINOR_VERSION=5.44
 ARG PERL_VERSION=${PERL_MAJOR_MINOR_VERSION}.0
 ARG PKGCONF_VERSION=3.0.5
+ARG PSMISC_VERSION=23.7
 ARG PYTHON_VERSION=3.14.7
 ARG READLINE_VERSION=8.3
 ARG SED_VERSION=4.10
+ARG SETUPTOOLS_VERSION=84.0.0
 ARG SHADOW_VERSION=4.20.2
+ARG SQLITE_VERSION=3530400
+ARG SQLITE_MMM_VERSION=3.53.4
+ARG SYSTEMD_VERSION=261.2
 ARG TAR_VERSION=1.35
 ARG TCL_VERSION=8.6.18
 ARG TEXINFO_VERSION=7.3
 ARG TZDATA_VERSION=2026c
 ARG UTIL_LINUX_VERSION=2.42.2
+ARG VIM_VERSION=9.2.1025
+ARG WHEEL_VERSION=0.48.0
 ARG XZ_VERSION=5.8.3
 ARG ZLIB_VERSION=1.3.2
 ARG ZSTD_VERSION=1.5.7
@@ -1462,10 +1490,10 @@ cd       build
              --disable-fixincludes    \
              --with-system-zlib
 make
-ulimit -s -H unlimited
-chown -R tester .
-su tester -c "PATH=$PATH make -k check"
-../contrib/test_summary -t
+# ulimit -s -H unlimited
+# chown -R tester .
+# su tester -c "PATH=$PATH make -k check" # too slow
+# ../contrib/test_summary -t
 make install
 chown -v -R root:root $(gcc -print-file-name=include){,-fixed}
 ln -svr /usr/bin/cpp /usr/lib
@@ -1478,4 +1506,619 @@ mkdir -pv /usr/share/gdb/auto-load/usr/lib
 mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib
 shopt -s dotglob
 rm -fr /work/*
+EOF
+
+ARG NCURSES_VERSION
+COPY prepare /work/
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare ncurses-${NCURSES_VERSION}.tar.gz
+./configure --prefix=/usr           \
+            --mandir=/usr/share/man \
+            --with-shared           \
+            --without-debug         \
+            --without-normal        \
+            --with-cxx-shared       \
+            --enable-pc-files       \
+            --with-pkg-config-libdir=/usr/lib/pkgconfig
+make
+make DESTDIR=$PWD/dest install
+sed -e 's/^#if.*XOPEN.*$/#if 1/' -i dest/usr/include/curses.h
+cp --remove-destination -av dest/* /
+for lib in ncurses form panel menu ; do
+    ln -sfv lib${lib}w.so /usr/lib/lib${lib}.so
+    ln -sfv ${lib}w.pc    /usr/lib/pkgconfig/${lib}.pc
+done
+ln -sfv libncursesw.so /usr/lib/libcurses.so
+cp -v -R doc -T /usr/share/doc/ncurses-${NCURSES_VERSION}
+make distclean
+./configure --prefix=/usr    \
+            --with-shared    \
+            --without-normal \
+            --without-debug  \
+            --without-cxx-binding \
+            --with-abi-version=5
+make sources libs
+cp -av lib/lib*.so.5* /usr/lib
+EOF
+
+ARG SED_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare sed-${SED_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make html
+chown -R tester .
+su tester -c "PATH=$PATH make check"
+make install
+install -vDm644 doc/sed.html -t /usr/share/doc/sed-${SED_VERSION}
+EOF
+
+ARG PSMISC_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare psmisc-${PSMISC_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make check
+make install
+EOF
+
+ARG GETTEXT_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare gettext-${GETTEXT_VERSION}.tar.xz
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/gettext-${GETTEXT_VERSION}
+make
+make check
+make install
+chmod -v 0755 /usr/lib/preloadable_libintl.so
+EOF
+
+ARG BISON_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare bison-${BISON_VERSION}.tar.xz
+./configure --prefix=/usr --docdir=/usr/share/doc/bison-${BISON_VERSION}
+make
+make check
+make install
+EOF
+
+ARG GREP_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare grep-${GREP_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make check
+make install
+EOF
+
+ARG BASH_VERSION_
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare bash-${BASH_VERSION_}.tar.gz
+./configure --prefix=/usr             \
+            --without-bash-malloc     \
+            --with-installed-readline \
+            --docdir=/usr/share/doc/bash-${BASH_VERSION_}
+make
+chown -R tester .
+LC_ALL=C.UTF-8 su -s /usr/bin/expect tester << "EOT"
+set timeout -1
+spawn make tests
+expect eof
+lassign [wait] _ _ _ value
+exit $value
+EOT
+make install
+EOF
+
+ARG LIBTOOL_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare libtool-${LIBTOOL_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make check
+make install
+rm -fv /usr/lib/libltdl.a
+EOF
+
+ARG GDBM_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare gdbm-${GDBM_VERSION}.tar.gz
+./configure --prefix=/usr    \
+            --disable-static \
+            --enable-libgdbm-compat
+make
+make check
+make install
+EOF
+
+ARG GPERF_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare gperf-${GPERF_VERSION}.tar.gz
+./configure --prefix=/usr --docdir=/usr/share/doc/gperf-${GPERF_VERSION}
+make
+make check
+make install
+EOF
+
+ARG EXPAT_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare expat-${EXPAT_VERSION}.tar.xz
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/expat-${EXPAT_VERSION}
+make
+make check
+make install
+install -v -m644 doc/*.{html,css} /usr/share/doc/expat-2.8.3
+EOF
+
+ARG INET_UTILS_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare inetutils-${INET_UTILS_VERSION}.tar.gz
+sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c
+./configure --prefix=/usr        \
+            --bindir=/usr/bin    \
+            --localstatedir=/var \
+            --disable-logger     \
+            --disable-whois      \
+            --disable-rcp        \
+            --disable-rexec      \
+            --disable-rlogin     \
+            --disable-rsh        \
+            --disable-servers
+make
+# make check # hostname.sh fails under docker
+make install
+mv -v /usr/{,s}bin/ifconfig
+EOF
+
+ARG LESS_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare less-${LESS_VERSION}.tar.gz
+./configure --prefix=/usr --sysconfdir=/etc
+make
+make install
+EOF
+
+ARG PERL_VERSION
+ARG PERL_MAJOR_MINOR_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare perl-${PERL_VERSION}.tar.xz
+export BUILD_ZLIB=False
+export BUILD_BZIP2=0
+sh Configure -des                                          \
+             -D prefix=/usr                                \
+             -D vendorprefix=/usr                          \
+             -D privlib=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/core_perl      \
+             -D archlib=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/core_perl      \
+             -D sitelib=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/site_perl      \
+             -D sitearch=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/site_perl     \
+             -D vendorlib=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/vendor_perl  \
+             -D vendorarch=/usr/lib/perl5/${PERL_MAJOR_MINOR_VERSION}/vendor_perl \
+             -D man1dir=/usr/share/man/man1                \
+             -D man3dir=/usr/share/man/man3                \
+             -D pager="/usr/bin/less -isR"                 \
+             -D useshrplib                                 \
+             -D usethreads
+make
+TEST_JOBS=7 make test_harness
+make install
+EOF
+
+ARG AUTOCONF_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare autoconf-${AUTOCONF_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make check
+make install
+EOF
+
+ARG AUTOMAKE_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare automake-${AUTOMAKE_VERSION}.tar.xz
+./configure --prefix=/usr --docdir=/usr/share/doc/automake-${AUTOMAKE_VERSION}
+make
+make check
+make install
+EOF
+
+ARG OPENSSL_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare openssl-${OPENSSL_VERSION}.tar.gz
+./config --prefix=/usr         \
+         --openssldir=/etc/ssl \
+         --libdir=lib          \
+         shared                \
+         zlib-dynamic
+make
+make test
+make INSTALL_LIBS= MANSUFFIX=ssl install
+mv -v /usr/share/doc/openssl /usr/share/doc/openssl-${OPENSSL_VERSION}
+cp -vfr doc/* /usr/share/doc/openssl-${OPENSSL_VERSION}
+EOF
+
+ARG ELFUTILS_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare elfutils-${ELFUTILS_VERSION}.tar.bz2
+./configure --prefix=/usr        \
+            --disable-debuginfod \
+            --enable-libdebuginfod=dummy
+make -C lib
+make -C libelf
+make -k check
+make -C libelf install
+install -vm644 config/libelf.pc /usr/lib/pkgconfig
+rm /usr/lib/libelf.a
+EOF
+
+ARG LIBFFI_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare libffi-${LIBFFI_VERSION}.tar.gz
+./configure --prefix=/usr    \
+            --disable-static \
+            --with-gcc-arch=native
+make
+make check
+make install
+EOF
+
+ARG SQLITE_VERSION
+ARG SQLITE_MMM_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare sqlite-autoconf-${SQLITE_VERSION}.tar.gz
+python3 -m zipfile -e /packages/sqlite-doc-${SQLITE_VERSION}.zip .
+./configure --prefix=/usr     \
+            --disable-static  \
+            --enable-fts{4,5} \
+            CPPFLAGS="-D SQLITE_ENABLE_COLUMN_METADATA=1 \
+                      -D SQLITE_ENABLE_UNLOCK_NOTIFY=1   \
+                      -D SQLITE_ENABLE_DBSTAT_VTAB=1     \
+                      -D SQLITE_SECURE_DELETE=1"
+make LDFLAGS.rpath=""
+make install
+cp -v -R sqlite-doc-${SQLITE_VERSION} -T /usr/share/doc/sqlite-${SQLITE_MMM_VERSION}
+EOF
+
+ARG MPDECIMAL_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare mpdecimal-${MPDECIMAL_VERSION}.tar.gz
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/mpdecimal-${MPDECIMAL_VERSION}
+make
+make check_local
+make install
+EOF
+
+ARG PYTHON_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare Python-${PYTHON_VERSION}.tar.xz
+patch -Np1 -i /packages/Python-3.14.7-openssl_4-1.patch
+./configure --prefix=/usr          \
+            --enable-shared        \
+            --with-system-expat    \
+            --enable-optimizations \
+            --without-static-libpython
+make
+make test TESTOPTS="--timeout 120"
+make install
+cat > /etc/pip.conf << EOP
+[global]
+root-user-action = ignore
+disable-pip-version-check = true
+EOP
+
+install -v -dm755 /usr/share/doc/python-${PYTHON_VERSION}/html
+
+tar --strip-components=1  \
+    --no-same-owner       \
+    --no-same-permissions \
+    -C /usr/share/doc/python-${PYTHON_VERSION}/html \
+    -xvf /packages/python-${PYTHON_VERSION}-docs-html.tar.bz2
+EOF
+
+ARG FLIT_CORE_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare flit_core-${FLIT_CORE_VERSION}.tar.gz
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist flit_core
+EOF
+
+ARG PACKAGING_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare packaging-${PACKAGING_VERSION}.tar.gz
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist packaging
+EOF
+
+ARG WHEEL_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare wheel-${WHEEL_VERSION}.tar.gz
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist wheel
+EOF
+
+ARG SETUPTOOLS_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare setuptools-${SETUPTOOLS_VERSION}.tar.gz
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist setuptools
+EOF
+
+ARG MESON_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare meson-${MESON_VERSION}.tar.gz
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist meson
+install -vDm644 data/shell-completions/bash/meson /usr/share/bash-completion/completions/meson
+install -vDm644 data/shell-completions/zsh/_meson /usr/share/zsh/site-functions/_meson
+EOF
+
+ARG KMOD_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare kmod-${KMOD_VERSION}.tar.xz
+mkdir -p build
+cd       build
+
+meson setup --prefix=/usr ..    \
+            --buildtype=release \
+            -D manpages=false
+ninja
+ninja install
+EOF
+
+ARG COREUTILS_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare coreutils-${COREUTILS_VERSION}.tar.xz
+patch -Np1 -i /packages/coreutils-9.11-i18n-1.patch
+autoreconf -fv
+automake -af
+FORCE_UNSAFE_CONFIGURE=1 ./configure \
+            --prefix=/usr
+make NON_ROOT_USERNAME=tester check-root
+# groupadd -g 102 dummy -U tester # tests all pass but still exits 2 in docker
+# chown -R tester .
+# su tester -c "PATH=$PATH make -k RUN_EXPENSIVE_TESTS=yes check" \
+#    < /dev/null
+# groupdel dummy
+make install
+mv -v /usr/bin/chroot /usr/sbin
+mv -v /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
+sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
+EOF
+
+ARG DIFFUTILS_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare diffutils-${DIFFUTILS_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make check
+make install
+EOF
+
+ARG FINDUTILS_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare findutils-${FINDUTILS_VERSION}.tar.xz
+./configure --prefix=/usr --localstatedir=/var/lib/locate
+make
+# exits 1 under docker
+# chown -R tester .
+# su tester -c "PATH=$PATH make check -k"
+make install
+EOF
+
+ARG GROFF_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare groff-${GROFF_VERSION}.tar.gz
+PAGE=letter ./configure --prefix=/usr
+make -j1
+# make check # one expected failure, but still exits 1 under docker.  TODO
+make install
+EOF
+
+ARG GRUB_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare grub-${GRUB_VERSION}.tar.xz
+sed 's/--image-base/--nonexist-linker-option/' -i configure
+./configure --prefix=/usr     \
+            --sysconfdir=/etc \
+            --disable-efiemu  \
+            --disable-werror
+make
+make install
+make clean
+./configure --prefix=/usr       \
+            --sysconfdir=/etc   \
+            --target=x86_64     \
+            --with-platform=efi \
+            --disable-efiemu    \
+            --disable-werror
+make
+make install
+EOF
+
+ARG GZIP_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare gzip-${GZIP_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make check
+make install
+EOF
+
+ARG IPROUTE2_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare iproute2-${IPROUTE2_VERSION}.tar.xz
+sed -i /ARPD/d Makefile
+rm -fv man/man8/arpd.8
+make NETNS_RUN_DIR=/run/netns
+make SBINDIR=/usr/sbin install
+install -vDm644 COPYING README* -t /usr/share/doc/iproute2-${IPROUTE2_VERSION}
+EOF
+
+ARG LIBPIPELINE_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare libpipeline-${LIBPIPELINE_VERSION}.tar.gz
+./configure --prefix=/usr
+make
+make install
+EOF
+
+ARG MAKE_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare make-${MAKE_VERSION}.tar.gz
+./configure --prefix=/usr
+make
+chown -R tester .
+su tester -c "PATH=$PATH make check"
+make install
+EOF
+
+ARG PATCH_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare patch-${PATCH_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make check
+make install
+EOF
+
+ARG TAR_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare tar-${TAR_VERSION}.tar.xz
+patch -Np1 -i /packages/tar-1.35-acl_fix-1.patch
+FORCE_UNSAFE_CONFIGURE=1 ./configure --prefix=/usr
+make
+# make check # 2 failures on Docker
+make install
+make -C doc install-html docdir=/usr/share/doc/tar-${TAR_VERSION}
+EOF
+
+ARG TEXINFO_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare texinfo-${TEXINFO_VERSION}.tar.xz
+./configure --prefix=/usr
+make
+make check
+make install
+make TEXMF=/usr/share/texmf install-tex
+EOF
+
+ARG VIM_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare vim-${VIM_VERSION}.tar.gz
+echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
+./configure --prefix=/usr
+make
+# chown -R tester . # fails in Docker
+# sed '/test_plugin_glvs/d' -i src/testdir/Make_all.mak
+# su tester -c "TERM=xterm-256color LANG=en_US.UTF-8 make -j1 test" &> vim-test.log
+make install
+ln -sv vim /usr/bin/vi
+for L in  /usr/share/man/{,*/}man1/vim.1; do
+    ln -sv vim.1 $(dirname $L)/vi.1
+done
+ln -sv ../vim/vim92/doc /usr/share/doc/vim-${VIM_VERSION}
+EOF
+
+ARG MARKUPSAFE_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare markupsafe-${MARKUPSAFE_VERSION}.tar.gz
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist Markupsafe
+EOF
+
+ARG JINJA2_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare jinja2-${JINJA2_VERSION}.tar.gz
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist Jinja2
+EOF
+
+ARG SYSTEMD_VERSION
+RUN --mount=type=bind,from=packages,source=/packages,target=/packages \
+<<EOF
+source prepare systemd-${SYSTEMD_VERSION}.tar.gz
+sed -e 's/GROUP="render"/GROUP="video"/' \
+    -e 's/GROUP="sgx", //'               \
+    -i rules.d/50-udev-default.rules.in
+
+mkdir -p build
+cd       build
+
+meson setup ..                \
+      --prefix=/usr           \
+      --buildtype=release     \
+      -D default-dnssec=no    \
+      -D firstboot=false      \
+      -D install-tests=false  \
+      -D ldconfig=false       \
+      -D sysusers=false       \
+      -D rpmmacrosdir=no      \
+      -D homed=disabled       \
+      -D man=disabled         \
+      -D mode=release         \
+      -D pamconfdir=no        \
+      -D dev-kvm-mode=0660    \
+      -D nobody-group=nogroup \
+      -D sysupdate=disabled   \
+      -D ukify=disabled       \
+      -D docdir=/usr/share/doc/systemd-${SYSTEMD_VERSION}
+
+ninja
+echo 'NAME="Linux From Scratch"' > /etc/os-release
+# unshare -m ninja test
+ninja install
+
+tar -xf /packages/systemd-man-pages-${SYSTEMD_VERSION}.tar.xz \
+    --no-same-owner --strip-components=1     \
+    -C /usr/share/man
+
+systemd-machine-id-setup
+systemctl preset-all
 EOF

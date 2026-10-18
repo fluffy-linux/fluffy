@@ -1,0 +1,16 @@
+set -euo pipefail
+shopt -s extglob
+
+tar -xf /packages/$1
+cd /work/${1%.@(tar.*|zip)}
+
+cleanup() {
+    local ret=$?
+    shopt -s dotglob
+    mv /work/prepare /tmp
+    rm -fr /work/*
+    mv /tmp/prepare /work
+    exit $ret
+}
+
+trap cleanup EXIT
