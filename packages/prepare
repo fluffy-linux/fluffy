@@ -2,14 +2,15 @@ set -euo pipefail
 shopt -s extglob
 
 tar -xf /packages/$1
-cd /work/${1%.@(tar.*|zip)}
+pushd ./${1%%?(-src).tar.*}
+
+shopt -u extglob
 
 cleanup() {
     local ret=$?
+    popd
     shopt -s dotglob
-    mv /work/prepare /tmp
-    rm -fr /work/*
-    mv /tmp/prepare /work
+    rm -fr *
     exit $ret
 }
 
