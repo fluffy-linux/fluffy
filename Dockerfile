@@ -2337,22 +2337,25 @@ cat > /etc/systemd/coredump.conf.d/maxuse.conf << EOC
 MaxUse=5G
 EOC
 EOF
-ARG LINUX_MAJOR
-ARG LINUX_VERSION
-ARG LINUX_ARCHIVE=linux-${LINUX_VERSION}.tar.xz
-RUN --mount=type=bind,source=packages/${LINUX_ARCHIVE},target=/packages/${LINUX_ARCHIVE} \
---mount=type=bind,source=packages/prepare,target=/packages/prepare \
---mount=type=bind,source=kconfig,target=/kconfig \
-<<EOF
-source /packages/prepare ${LINUX_ARCHIVE}
-make mrproper
-cp /kconfig .config
-make
-make modules_install
-cp -iv arch/x86/boot/bzImage /boot/vmlinuz-${LINUX_VERSION}-lfs-13.1-systemd
-cp -iv System.map /boot/System.map-${LINUX_VERSION}
-cp -iv .config /boot/config-${LINUX_VERSION}
-cp -r Documentation -T /usr/share/doc/linux-${LINUX_VERSION}
-find usr/include -type f ! -name '*.h' -delete
-cp -rv usr/include $LFS/usr
-EOF
+# ARG LINUX_MAJOR
+# ARG LINUX_VERSION
+# ARG LINUX_ARCHIVE=linux-${LINUX_VERSION}.tar.xz
+# RUN --mount=type=bind,source=packages/${LINUX_ARCHIVE},target=/packages/${LINUX_ARCHIVE} \
+# --mount=type=bind,source=packages/prepare,target=/packages/prepare \
+# --mount=type=bind,source=kconfig,target=/kconfig \
+# <<EOF
+# source /packages/prepare ${LINUX_ARCHIVE}
+# set -x
+# make mrproper
+# cp /kconfig .config
+# chmod 644 .config
+# chown root:root .config
+# make
+# make modules_install
+# cp -iv arch/x86/boot/bzImage /boot/vmlinuz-${LINUX_VERSION}-lfs-13.1-systemd
+# cp -iv System.map /boot/System.map-${LINUX_VERSION}
+# cp -iv .config /boot/config-${LINUX_VERSION}
+# cp -r Documentation -T /usr/share/doc/linux-${LINUX_VERSION}
+# find usr/include -type f ! -name '*.h' -delete
+# cp -rv usr/include $LFS/usr
+# EOF
