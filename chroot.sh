@@ -10,15 +10,15 @@ cleanup() {
     umount -v $LFS/run || echo "Failed to umount $LFS/run"
     umount -v $LFS/sys || echo "Failed to umount $LFS/sys"
     umount -v $LFS/proc || echo "Failed to umount $LFS/proc"
-    umount -lv $LFS/dev || echo "Failed to umount $LFS/dev"
     umount -v $LFS/dev/pts || echo "Failed to umount $LFS/dev/pts"
+    umount -lv $LFS/dev || echo "Failed to umount $LFS/dev"
     exit $ret
 }
 
 trap cleanup EXIT
 
-mount -vt devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
 mount -v --bind /dev $LFS/dev
+mount -vt devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
 mount -vt proc proc $LFS/proc
 mount -vt sysfs sysfs $LFS/sys
 mount -vt tmpfs tmpfs $LFS/run
