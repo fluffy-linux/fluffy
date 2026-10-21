@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cd "$(dirname "$BASH_SOURCE[0]")"
+
+root="$(pwd)"
+
+log() {
+    echo "$@" >&2
+}
+
+fatal() {
+    log "$@"
+    exit 1
+}
+
+if test $# -ne 1; then
+    fatal "Usage: $0 <package>"
+fi
+
+if test ! -f $1; then
+    fatal "Package not found: $1"
+fi
+
+declare -a SOURCES
+declare -a archives
+
+log
+log "---- PREPARE ------------------------------------------------------------------"
+log
+
+source $1
+
+if test "$(type -t INSTALL)" != function
+then
+    fatal "no INSTALL function defined"
+fi
+
+if (( ${#SOURCES[@]} % 2 != 0 )); then
+    fatal "Invalid number of items: ${#items[@]}"
+fi
+
+for ((i=0; i<${#SOURCES[@]}; i+=2)); do
+    md5="${SOURCES[i]}"
+    url="${SOURCES[i+1]}"
+    filename="${url##*/}"
+    archives+=("$filename")
+    if test -f "pkg/$filename"; then
+        # assume downloaded
+        continue
+    fi
+    tmpfile="$(mktemp)"
+    log -n "downloading $filename... "
+    wget --quiet --output-document "$tmpfile" "$url"
+    actual_md5="$(md5sum "$tmpfile" | cut -d' ' -f1)"
+    if test "$actual_md5" != "$md5"; then
+        rm "$tmpfile"
+        fatal "checksum mismatch: $actual_md5 != $md5"
+    fi
+    mv "$tmpfile" "pkg/$filename"
+    log "done"
+done
+
+if test -d work; then
+    log -n "deleting stale work area... "
+    rm -rf work
+    log "done"
+fi
+
+log "creating fresh work area"
+mkdir work
+cd work
+for archive in "${archives[@]}"; do
+    log -n "extracting $archive..."
+    tar -xf "$root/pkg/$archive"
+    log "done"
+done
+
+# the first archive is special and we change to its directory
+# so that the build scripts can be run from there
+shopt -s extglob
+cd "${archives[0]%%?(-src).tar.*}"
+shopt -u extglob
+
+
+if test "$(type -t MAKE)" == function
+then
+    log
+    log "---- MAKE ---------------------------------------------------------------------"
+    log
+    MAKE
+fi
+
+if test "$(type -t CHECK)" == function
+then
+    log
+    log "---- CHECK --------------------------------------------------------------------"
+    log
+    CHECK
+fi
+
+log
+log "---- INSTALL ------------------------------------------------------------------"
+log
+# INSTALL
+
+
+log "cleaning up work area"
+cd "$root"
+rm -rf work
