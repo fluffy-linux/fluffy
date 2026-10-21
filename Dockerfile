@@ -7,9 +7,11 @@ ARG BASH_VERSION_=5.3
 ARG BC_VERSION=7.0.3
 ARG BINUTILS_VERSION=2.47
 ARG BISON_VERSION=3.8.2
+ARG BLFS_SYSTEMD_UNITS_VERSION=20251204
 ARG BTRFS_PROGS_VERSION=7.1
 ARG BZIP2_VERSION=1.0.8
 ARG COREUTILS_VERSION=9.11
+ARG DBUS_VERSION=1.16.2
 ARG DEJAGNU_VERSION=1.6.3
 ARG DIFFUTILS_VERSION=3.12
 ARG ELFUTILS_VERSION=0.195
@@ -41,13 +43,16 @@ ARG LESS_VERSION=704
 ARG LIBCAP_VERSION=2.78
 ARG LIBFFI_VERSION=3.8.0
 ARG LIBPIPELINE_VERSION=1.5.8
+ARG LIBTASN1_VERSION=4.21.0
 ARG LIBTOOL_VERSION=2.6.2
 ARG LIBXCRYPT_VERSION=4.5.2
 ARG LINUX_MAJOR=7
 ARG LINUX_VERSION=${LINUX_MAJOR}.1.8
 ARG LZ4_VERSION=1.10.0
 ARG LZO_VERSION=2.10
+ARG MAKE_CA_VERSION=1.16.1
 ARG MAKE_VERSION=4.4.1
+ARG MAN_DB_VERSION=2.13.1
 ARG MAN_PAGES_VERSION=6.18
 ARG MARKUPSAFE_VERSION=3.0.3
 ARG MESON_VERSION=1.12.0
@@ -57,7 +62,9 @@ ARG MPFR_VERSION=4.2.2
 ARG M4_VERSION=1.4.21
 ARG NCURSES_VERSION=6.6
 ARG NINJA_VERSION=1.13.2
+ARG OPENSSH_VERSION=10.5p1
 ARG OPENSSL_VERSION=4.0.1
+ARG P11_KIT_VERSION=0.26.5
 ARG PACKAGING_VERSION=26.3
 ARG PATCH_VERSION=2.8
 ARG PCRE2_VERSION=10.47
@@ -80,6 +87,7 @@ ARG TEXINFO_VERSION=7.3
 ARG TZDATA_VERSION=2026c
 ARG UTIL_LINUX_VERSION=2.42.2
 ARG VIM_VERSION=9.2.1025
+ARG WGET_VERSION=1.25.0
 ARG WHEEL_VERSION=0.48.0
 ARG XZ_VERSION=5.8.3
 ARG ZLIB_VERSION=1.3.2
@@ -2127,6 +2135,40 @@ systemd-machine-id-setup
 systemctl preset-all
 EOF
 
+ARG DBUS_VERSION
+ARG DBUS_ARCHIVE=dbus-${DBUS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${DBUS_ARCHIVE},target=/packages/${DBUS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${DBUS_ARCHIVE}
+mkdir build
+cd    build
+
+meson setup --prefix=/usr --buildtype=release --wrap-mode=nofallback ..
+ninja
+ninja test
+ninja install
+EOF
+
+ARG MAN_DB_VERSION
+ARG MAN_DB_ARCHIVE=man-db-${MAN_DB_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${MAN_DB_ARCHIVE},target=/packages/${MAN_DB_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${MAN_DB_ARCHIVE}
+./configure --prefix=/usr                         \
+            --docdir=/usr/share/doc/man-db-${MAN_DB_VERSION} \
+            --sysconfdir=/etc                     \
+            --disable-setuid                      \
+            --enable-cache-owner=bin              \
+            --with-browser=/usr/bin/lynx          \
+            --with-vgrind=/usr/bin/vgrind         \
+            --with-grap=/usr/bin/grap
+make
+make check
+make install
+EOF
+
 ARG PROCPS_NG_VERSION
 ARG PROCPS_NG_ARCHIVE=procps-ng-${PROCPS_NG_VERSION}.tar.xz
 RUN --mount=type=bind,source=packages/${PROCPS_NG_ARCHIVE},target=/packages/${PROCPS_NG_ARCHIVE} \
@@ -2195,6 +2237,8 @@ make install
 rm -fv /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
 EOF
 
+# blfs
+
 ARG LZO_VERSION
 ARG LZO_ARCHIVE=lzo-${LZO_VERSION}.tar.gz
 RUN --mount=type=bind,source=packages/${LZO_ARCHIVE},target=/packages/${LZO_ARCHIVE} \
@@ -2220,6 +2264,120 @@ source /packages/prepare ${BTRFS_PROGS_ARCHIVE}
             --disable-documentation
 make
 make install
+EOF
+
+ARG OPENSSH_VERSION
+ARG OPENSSH_ARCHIVE=openssh-${OPENSSH_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${OPENSSH_ARCHIVE},target=/packages/${OPENSSH_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${OPENSSH_ARCHIVE}
+install -v -g sys -m700 -d /var/lib/sshd
+groupadd -g 50 sshd
+useradd  -c 'sshd PrivSep' \
+         -d /var/lib/sshd  \
+         -g sshd           \
+         -s /bin/false     \
+         -u 50 sshd
+./configure --prefix=/usr                            \
+            --sysconfdir=/etc/ssh                    \
+            --with-privsep-path=/var/lib/sshd        \
+            --with-default-path=/usr/bin             \
+            --with-superuser-path=/usr/sbin:/usr/bin \
+            --with-pid-dir=/run
+make
+make -j1 tests
+make install
+install -v -m755    contrib/ssh-copy-id /usr/bin
+install -v -m644    contrib/ssh-copy-id.1 \
+                    /usr/share/man/man1
+install -v -m755 -d /usr/share/doc/openssh-${OPENSSH_VERSION}
+install -v -m644    INSTALL LICENCE OVERVIEW README* \
+                    /usr/share/doc/openssh-${OPENSSH_VERSION}
+echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+EOF
+
+ARG LIBTASN1_VERSION
+ARG LIBTASN1_ARCHIVE=libtasn1-${LIBTASN1_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${LIBTASN1_ARCHIVE},target=/packages/${LIBTASN1_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${LIBTASN1_ARCHIVE}
+./configure --prefix=/usr --disable-static
+make
+make check
+make install
+EOF
+
+ARG P11_KIT_VERSION
+ARG P11_KIT_ARCHIVE=p11-kit-${P11_KIT_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${P11_KIT_ARCHIVE},target=/packages/${P11_KIT_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${P11_KIT_ARCHIVE}
+sed '20,$ d' -i trust/trust-extract-compat
+
+cat >> trust/trust-extract-compat << "EOT"
+# Copy existing anchor modifications to /etc/ssl/local
+/usr/libexec/make-ca/copy-trust-modifications
+
+# Update trust stores
+/usr/sbin/make-ca -r
+EOT
+mkdir p11-build
+cd    p11-build
+
+meson setup ..            \
+      --prefix=/usr       \
+      --buildtype=release \
+      -D trust_paths=/etc/pki/anchors
+ninja
+ninja install
+ln -sfv /usr/libexec/p11-kit/trust-extract-compat \
+        /usr/bin/update-ca-certificates
+ln -sfv ./pkcs11/p11-kit-trust.so /usr/lib/libnssckbi.so
+EOF
+
+ARG MAKE_CA_VERSION
+ARG MAKE_CA_ARCHIVE=make-ca-${MAKE_CA_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${MAKE_CA_ARCHIVE},target=/packages/${MAKE_CA_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${MAKE_CA_ARCHIVE}
+sed '/mktemp/s/-t //' -i make-ca
+make install
+install -vdm755 /etc/ssl/local
+/usr/sbin/make-ca -g
+# TODO cron
+EOF
+
+ARG WGET_VERSION
+ARG WGET_ARCHIVE=wget-${WGET_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${WGET_ARCHIVE},target=/packages/${WGET_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${WGET_ARCHIVE}
+NEW_LINE='#if !defined OPENSSL_NO_SSL3_METHOD '
+NEW_LINE+='&& OPENSSL_VERSION_NUMBER < 0x40000000L'
+
+sed -i "/SSL3/c $NEW_LINE" src/openssl.c
+
+unset NEW_LINE
+
+./configure --prefix=/usr      \
+            --sysconfdir=/etc  \
+            --with-ssl=openssl
+make
+make install
+EOF
+
+ARG BLFS_SYSTEMD_UNITS_VERSION
+ARG BLFS_SYSTEMD_UNITS_ARCHIVE=blfs-systemd-units-${BLFS_SYSTEMD_UNITS_VERSION}.tar.xz
+RUN --mount=type=bind,source=packages/${BLFS_SYSTEMD_UNITS_ARCHIVE},target=/packages/${BLFS_SYSTEMD_UNITS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${BLFS_SYSTEMD_UNITS_ARCHIVE}
+make install-sshd
 EOF
 
 # 8.85
@@ -2336,6 +2494,11 @@ cat > /etc/systemd/coredump.conf.d/maxuse.conf << EOC
 [Coredump]
 MaxUse=5G
 EOC
+
+cat > /etc/fstab << "EOD"
+# <file system>                                         <mount point>   <type>      <options>               <dump>  <pass>
+/dev/disk/by-uuid/103b03ca-d079-46fe-8bdc-eab2518e63c7  /               btrfs       defaults                1       1
+EOD
 EOF
 # ARG LINUX_MAJOR
 # ARG LINUX_VERSION
