@@ -2,6 +2,18 @@
 
 set -euo pipefail
 
+source ctypes.sh
+
+CLONE_FS=0x00000200
+CLONE_NEWNS=0x00020000
+CLONE_NEWNET=0x40000000
+
+MS_RDONLY=0x00000001
+MS_REMOUNT=0x00000020
+MS_BIND=0x00001000
+MS_REC=0x00004000
+MS_PRIVATE=0x00040000
+
 cd "$(dirname "$BASH_SOURCE[0]")"
 
 root="$(pwd)"
@@ -13,6 +25,15 @@ log() {
 fatal() {
     log "$@"
     exit 1
+}
+
+call() {
+    local ret
+    dlcall -n ret -r int "$@"
+    if (( ${ret#*:} == -1 ))
+    then
+        return 1
+    fi
 }
 
 if test $# -ne 1; then
@@ -89,7 +110,30 @@ then
     log
     log "---- MAKE ---------------------------------------------------------------------"
     log
-    MAKE
+    trap 'fatal "MAKE failed with exit code $?"' ERR
+    (
+        wd="$(pwd)"
+
+        # no network access for builds, and MAKE gets ro / and rw /work
+        call unshare $(( CLONE_NEWNET | CLONE_NEWNS ))
+
+        # stop mount propagation back to the parent/host namespace
+        call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+
+        # mount pwd read-write
+        call mount "$wd" "$wd" $NULL $(( MS_BIND | MS_REC )) $NULL
+
+        # bind-mount / to itself so VFS lets us change its per-mount ro flag,
+        # then remount the / bind-mount read-only
+        call mount / / $NULL $(( MS_BIND )) $NULL
+        call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
+
+        # re-enter workdir so our cwd is on top of the writable mount, not shadowed underneath
+        cd "$wd"
+
+        MAKE
+    )
+    trap - ERR
 fi
 
 if test "$(type -t CHECK)" == function
@@ -103,7 +147,7 @@ fi
 log
 log "---- INSTALL ------------------------------------------------------------------"
 log
-# INSTALL
+INSTALL
 
 
 log "cleaning up work area"

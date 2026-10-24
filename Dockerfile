@@ -11,6 +11,7 @@ ARG BLFS_SYSTEMD_UNITS_VERSION=20251204
 ARG BTRFS_PROGS_VERSION=7.1
 ARG BZIP2_VERSION=1.0.8
 ARG COREUTILS_VERSION=9.11
+ARG CTYPES_SH_VERSION=1.3
 ARG DBUS_VERSION=1.16.2
 ARG DEJAGNU_VERSION=1.6.3
 ARG DIFFUTILS_VERSION=3.12
@@ -2378,6 +2379,18 @@ RUN --mount=type=bind,source=packages/${BLFS_SYSTEMD_UNITS_ARCHIVE},target=/pack
 <<EOF
 source /packages/prepare ${BLFS_SYSTEMD_UNITS_ARCHIVE}
 make install-sshd
+EOF
+
+# my stuff
+ARG CTYPES_SH_VERSION
+ARG CTYPES_SH_ARCHIVE=ctypes-sh-${CTYPES_SH_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${CTYPES_SH_ARCHIVE},target=/packages/${CTYPES_SH_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${CTYPES_SH_ARCHIVE}
+./configure --prefix=/usr
+make
+make install
 EOF
 
 # 8.85
