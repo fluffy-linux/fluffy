@@ -2409,6 +2409,10 @@ FROM ch8 AS ch9
 RUN <<EOF
 set -euo pipefail
 
+echo "builder:x:1000:1000::/home/builder:/bin/bash" >> /etc/passwd
+echo "builder:x:1000:" >> /etc/group
+install -o builder -d /home/builder
+
 echo mufasa > /etc/hostname
 # TODO /etc/hosts after docker
 
