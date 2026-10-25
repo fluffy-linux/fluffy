@@ -11,6 +11,7 @@ cleanup() {
     umount -v $LFS/sys || echo "Failed to umount $LFS/sys"
     umount -v $LFS/proc || echo "Failed to umount $LFS/proc"
     umount -v $LFS/dev/pts || echo "Failed to umount $LFS/dev/pts"
+    umount -v $LFS/etc/resolv.conf || echo "Failed to umount $LFS/etc/resolv.conf"
     umount -lv $LFS/dev || echo "Failed to umount $LFS/dev"
     umount -v $LFS/ || echo "Failed to umount $LFS/"
     exit $ret
@@ -19,6 +20,7 @@ cleanup() {
 trap cleanup EXIT
 mount $LFS/
 mount -v --bind /dev $LFS/dev
+mount -v --bind /etc/resolv.conf $LFS/etc/resolv.conf
 mount -vt devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
 mount -vt proc proc $LFS/proc
 mount -vt sysfs sysfs $LFS/sys

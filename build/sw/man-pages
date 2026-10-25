@@ -1,6 +1,6 @@
 VERSION=6.18
 
-SOURCES=(
+ARCHIVES=(
     44915a91e4a28161dc421636a193fb3a https://www.kernel.org/pub/linux/docs/man-pages/man-pages-$VERSION.tar.xz
 )
 
@@ -9,5 +9,5 @@ MAKE() {
 }
 
 INSTALL() {
-    make -R GIT=false prefix=/usr install
+    make -R GIT=false prefix=/sw/man-pages install
 }
