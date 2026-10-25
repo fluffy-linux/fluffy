@@ -81,6 +81,7 @@ ARG SETUPTOOLS_VERSION=84.0.0
 ARG SHADOW_VERSION=4.20.2
 ARG SQLITE_VERSION=3530400
 ARG SQLITE_MMM_VERSION=3.53.4
+ARG SQUASHFS_TOOLS_VERSION=4.7.5
 ARG SYSTEMD_VERSION=261.2
 ARG TAR_VERSION=1.35
 ARG TCL_VERSION=8.6.18
@@ -90,6 +91,7 @@ ARG UTIL_LINUX_VERSION=2.42.2
 ARG VIM_VERSION=9.2.1025
 ARG WGET_VERSION=1.25.0
 ARG WHEEL_VERSION=0.48.0
+ARG WHICH_VERSION=2.25
 ARG XZ_VERSION=5.8.3
 ARG ZLIB_VERSION=1.3.2
 ARG ZSTD_VERSION=1.5.7
@@ -2391,6 +2393,28 @@ source /packages/prepare ${CTYPES_SH_ARCHIVE}
 ./configure --prefix=/usr
 make
 make install
+EOF
+
+ARG WHICH_VERSION
+ARG WHICH_ARCHIVE=which-${WHICH_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${WHICH_ARCHIVE},target=/packages/${WHICH_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${WHICH_ARCHIVE}
+./configure --prefix=/usr
+make
+make install
+EOF
+
+ARG SQUASHFS_TOOLS_VERSION
+ARG SQUASHFS_TOOLS_ARCHIVE=squashfs-tools-${SQUASHFS_TOOLS_VERSION}.tar.gz
+RUN --mount=type=bind,source=packages/${SQUASHFS_TOOLS_ARCHIVE},target=/packages/${SQUASHFS_TOOLS_ARCHIVE} \
+--mount=type=bind,source=packages/prepare,target=/packages/prepare \
+<<EOF
+source /packages/prepare ${SQUASHFS_TOOLS_ARCHIVE}
+cd squashfs-tools
+make INSTALL_PREFIX=/usr
+make INSTALL_PREFIX=/usr install
 EOF
 
 # 8.85

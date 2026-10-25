@@ -45,6 +45,7 @@ call() {
 }
 
 lockdown() {
+    banner $1
     trap "fatal \"$1 failed with exit code \$?\"" ERR
     (
         wd="$(pwd)"
@@ -57,17 +58,14 @@ lockdown() {
 
         case "$1" in
             MAKE)
-                banner MAKE
                 # mount pwd read-write
                 call mount "$wd" "$wd" $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             CHECK)
-                banner CHECK
                 mkdir -p "$root/work/test-results" "$root/work/test-work"
                 call mount overlay "$wd" overlay 0 "lowerdir=$wd,upperdir=$root/work/test-results,workdir=$root/work/test-work"
                 ;;
             INSTALL)
-                banner INSTALL
                 call mount "$wd" "$wd" $NULL $(( MS_BIND | MS_REC )) $NULL
                 mkdir -p "$root/work/installed" "/sw/$pkg"
                 call mount "$root/work/installed" "/sw/$pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
@@ -156,8 +154,10 @@ done
 
 # the first archive is special and we change to its directory
 # so that the build scripts can be run from there
+# it also serves as our squashfs output filename
 shopt -s extglob
-cd "${archives[0]%%?(-src).tar.*}"
+archive_name="${archives[0]%%?(-src).tar.*}"
+cd $archive_name
 shopt -u extglob
 
 
@@ -173,6 +173,18 @@ fi
 
 lockdown INSTALL
 
-log "cleaning up work area"
+banner SQUASHFS
+
+rm -f "$root/sw/$archive_name.squashfs"
+mksquashfs \
+    "$root/work/installed" "$root/sw/$archive_name.squashfs" \
+    -all-root \
+    -comp zstd \
+    -quiet \
+    -no-progress
+
+log "squashfs created: sw/$archive_name.squashfs"
+
+banner CLEANUP
 cd "$root"
 rm -rf work
