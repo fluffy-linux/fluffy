@@ -4,9 +4,15 @@ ARCHIVES=(
     44915a91e4a28161dc421636a193fb3a https://www.kernel.org/pub/linux/docs/man-pages/man-pages-$VERSION.tar.xz
 )
 
+# TODO
+MAKE_NEEDS=(make which)
+
 MAKE() {
     rm -v man3/crypt*
 }
+
+# TODO
+INSTALL_NEEDS=(make which)
 
 INSTALL() {
     make -R GIT=false prefix=/sw/man-pages install
