@@ -1,0 +1,27 @@
+VERSION=10.47
+
+ARCHIVES=(
+    aded5840ab5a7d772dd4e16fc294b665 https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$VERSION/pcre2-$VERSION.tar.bz2
+)
+
+MAKE() {
+    ./configure --prefix=/sw/pcre2 \
+        --docdir=/sw/pcre2/share/doc/pcre2-$VERSION \
+        --enable-unicode \
+        --enable-jit \
+        --enable-pcre2-16 \
+        --enable-pcre2-32 \
+        --enable-pcre2grep-libz \
+        --enable-pcre2grep-libbz2 \
+        --enable-pcre2test-libreadline \
+        --disable-static
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

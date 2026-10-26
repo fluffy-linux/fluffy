@@ -1,0 +1,18 @@
+VERSION=5.48
+
+ARCHIVES=(
+    423686e97f731d8c24e9cd1a22b03dec https://astron.com/pub/file/file-$VERSION.tar.gz
+)
+
+MAKE() {
+    ./configure --prefix=/sw/file
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

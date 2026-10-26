@@ -1,0 +1,19 @@
+VERSION=1.3.2
+
+ARCHIVES=(
+    a1e6c958597af3c67d162995a342138a https://zlib.net/fossils/zlib-$VERSION.tar.gz
+)
+
+MAKE() {
+    ./configure --prefix=/sw/zlib
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    rm -fv /sw/zlib/lib/libz.a
+}

@@ -1,0 +1,17 @@
+VERSION=1.10.0
+
+ARCHIVES=(
+    dead9f5f1966d9ae56e1e32761e4e675 https://github.com/lz4/lz4/releases/download/v$VERSION/lz4-$VERSION.tar.gz
+)
+
+MAKE() {
+    make BUILD_STATIC=no PREFIX=/sw/lz4
+}
+
+CHECK() {
+    make -j1 check
+}
+
+INSTALL() {
+    make BUILD_STATIC=no PREFIX=/sw/lz4 install
+}
