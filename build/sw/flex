@@ -1,0 +1,22 @@
+VERSION=2.6.4
+
+ARCHIVES=(
+    2882e3179748cc9f9c23ec593d6adc8d https://github.com/westes/flex/releases/download/v$VERSION/flex-$VERSION.tar.gz
+)
+
+MAKE() {
+    ./configure --prefix=/sw/flex \
+        --disable-static \
+        --docdir=/sw/flex/share/doc/flex-$VERSION
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    ln -sv flex /sw/flex/bin/lex
+    ln -sv flex.1 /sw/flex/share/man/man1/lex.1
+}

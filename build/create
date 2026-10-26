@@ -62,12 +62,12 @@ lockdown() {
                 call mount "$wd" "$wd" $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             CHECK)
-                mkdir -p "$root/work/test-results" "$root/work/test-work"
+                install -o "$builder_uid" -g "$builder_gid" -d "$root/work/test-results" "$root/work/test-work"
                 call mount overlay "$wd" overlay 0 "lowerdir=$wd,upperdir=$root/work/test-results,workdir=$root/work/test-work"
                 ;;
             INSTALL)
                 call mount "$wd" "$wd" $NULL $(( MS_BIND | MS_REC )) $NULL
-                mkdir -p "$root/work/installed" "/sw/$pkg"
+                install -o "$builder_uid" -g "$builder_gid" -d "$root/work/installed" "/sw/$pkg"
                 call mount "$root/work/installed" "/sw/$pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             *)
@@ -80,8 +80,15 @@ lockdown() {
         call mount / / $NULL $(( MS_BIND )) $NULL
         call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
 
+        # mount a fresh private tmpfs on /tmp that is automatically destroyed when the namespace exits
+        call mount tmpfs /tmp tmpfs 0 $NULL
+
         # re-enter workdir so our cwd is on top of the writable mount, not shadowed underneath
         cd "$wd"
+
+        call setgroups 0 $NULL
+        call setresgid "$builder_gid" "$builder_gid" "$builder_gid"
+        call setresuid "$builder_uid" "$builder_uid" "$builder_uid"
 
         "$1"
     )
@@ -95,6 +102,9 @@ fi
 if test ! -f $1; then
     fatal "Package not found: $1"
 fi
+
+builder_uid="$(id -u builder 2>/dev/null)" || fatal "user 'builder' not found"
+builder_gid="$(id -g builder 2>/dev/null)" || fatal "group for 'builder' not found"
 
 pkg="$(basename "$1")"
 
@@ -147,10 +157,18 @@ log "creating fresh work area"
 mkdir work
 cd work
 for archive in "${archives[@]}"; do
-    log -n "extracting $archive..."
-    tar -xf "$root/archives/$archive"
-    log "done"
+    case "$archive" in
+        *.tar.*)
+            log -n "extracting $archive..."
+            tar --no-same-owner -xf "$root/archives/$archive"
+            log "done"
+            ;;
+        *)
+            cp "$root/archives/$archive" .
+            ;;
+    esac
 done
+chown -R "$builder_uid:$builder_gid" "$root/work"
 
 # the first archive is special and we change to its directory
 # so that the build scripts can be run from there

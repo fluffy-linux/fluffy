@@ -1,0 +1,10 @@
+VERSION=20260805
+
+ARCHIVES=(
+    f6d2619cfac3a68f91392e28fe4067c3 https://github.com/Mic92/iana-etc/releases/download/$VERSION/iana-etc-$VERSION.tar.gz
+)
+
+INSTALL() {
+    install -d /sw/iana-etc/etc
+    cp -v services protocols /sw/iana-etc/etc
+}

@@ -1,0 +1,18 @@
+VERSION=1.4.21
+
+ARCHIVES=(
+    8051eef7239b2f187791f2ab0034d6b7 https://ftpmirror.gnu.org/m4/m4-$VERSION.tar.xz
+)
+
+MAKE() {
+    ./configure --prefix=/sw/m4
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

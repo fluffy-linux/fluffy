@@ -1,0 +1,20 @@
+VERSION=5.8.3
+
+ARCHIVES=(
+    a02753f34e5546d20213b87f876a0933 https://github.com/tukaani-project/xz/releases/download/v$VERSION/xz-$VERSION.tar.xz
+)
+
+MAKE() {
+    ./configure --prefix=/sw/xz \
+        --disable-static \
+        --docdir=/sw/xz/share/doc/xz-$VERSION
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

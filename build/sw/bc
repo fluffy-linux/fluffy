@@ -1,0 +1,18 @@
+VERSION=7.0.3
+
+ARCHIVES=(
+    ad4db5a0eb4fdbb3f6813be4b6b3da74 https://github.com/gavinhoward/bc/releases/download/$VERSION/bc-$VERSION.tar.xz
+)
+
+MAKE() {
+    CC='gcc -std=c99' ./configure --prefix=/sw/bc -G -O3 -r
+    make
+}
+
+CHECK() {
+    make test
+}
+
+INSTALL() {
+    make install
+}
