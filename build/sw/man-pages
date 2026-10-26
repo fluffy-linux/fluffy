@@ -1,7 +1,7 @@
 VERSION=6.18
 
 ARCHIVES=(
-    44915a91e4a28161dc421636a193fb3a https://www.kernel.org/pub/linux/docs/man-pages/man-pages-$VERSION.tar.xz
+    c934fadc8b59748c68227a34f6581d2ddf8282b73cdcd52546c8cd88b74b24d1 https://www.kernel.org/pub/linux/docs/man-pages/man-pages-$VERSION.tar.xz
 )
 
 # TODO

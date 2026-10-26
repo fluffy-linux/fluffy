@@ -56,39 +56,99 @@ lockdown() {
         # stop mount propagation back to the parent/host namespace
         call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
 
+        if test "$ON" == host; then
+            call mount /mnt/fluffy/sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
+        fi
+
+        local -n needs="${1}_NEEDS"
+        local dep_path=""
+        for dep in "${needs[@]}"; do
+            shopt -s nullglob
+            local matches=(/sw/"$dep"-[0-9]*.squashfs)
+            shopt -u nullglob
+            if (( ${#matches[@]} == 0 )); then
+                fatal "no squashfs found for dependency: $dep"
+            fi
+            if (( ${#matches[@]} > 1 )); then
+                fatal "multiple squashfs found for dependency $dep: ${matches[*]}"
+            fi
+            local dep_mount="/sw/${dep%-pass*}"
+            mkdir -p "$dep_mount"
+            mount -t squashfs -o ro "${matches[0]}" "$dep_mount"
+            dep_path="${dep_path:+$dep_path:}$dep_mount/bin"
+        done
+
         case "$1" in
             MAKE)
-                # mount pwd read-write
-                call mount "$wd" "$wd" $NULL $(( MS_BIND | MS_REC )) $NULL
+                # mount pwd read-write at /work
+                call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             CHECK)
-                install -o "$builder_uid" -g "$builder_gid" -d "$root/work/test-results" "$root/work/test-work"
-                call mount overlay "$wd" overlay 0 "lowerdir=$wd,upperdir=$root/work/test-results,workdir=$root/work/test-work"
+                install -o "$builder_uid" -g "$builder_gid" -d "$work_dir/test-results" "$work_dir/test-work"
+                call mount overlay /work overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
                 ;;
             INSTALL)
-                call mount "$wd" "$wd" $NULL $(( MS_BIND | MS_REC )) $NULL
-                install -o "$builder_uid" -g "$builder_gid" -d "$root/work/installed" "/sw/$pkg"
-                call mount "$root/work/installed" "/sw/$pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
+                install -o "$builder_uid" -g "$builder_gid" -d "$work_dir/installed" "/sw/$mount_pkg"
+                call mount "$work_dir/installed" "/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
+                call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
+                dep_path="/sw/$mount_pkg/bin${dep_path:+:$dep_path}"
                 ;;
             *)
                 fatal "unknown phase: $1"
                 ;;
         esac
 
+        if test "$ON" == host; then
+            call mount none /sw $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
+        fi
+
         # bind-mount / to itself so VFS lets us change its per-mount ro flag,
         # then remount the / bind-mount read-only
-        call mount / / $NULL $(( MS_BIND )) $NULL
+        call mount / / $NULL $(( MS_BIND | MS_REC )) $NULL
         call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
 
         # mount a fresh private tmpfs on /tmp that is automatically destroyed when the namespace exits
         call mount tmpfs /tmp tmpfs 0 $NULL
 
-        # re-enter workdir so our cwd is on top of the writable mount, not shadowed underneath
-        cd "$wd"
+        # enter /work so our cwd is on top of the writable mount
+        cd /work
 
         call setgroups 0 $NULL
         call setresgid "$builder_gid" "$builder_gid" "$builder_gid"
         call setresuid "$builder_uid" "$builder_uid" "$builder_uid"
+
+        set +h
+        umask 022
+
+        local saved_term="${TERM:-dumb}"
+        local nproc_val="$(nproc)"
+        local uname_m="$(uname -m)"
+
+        # scrub environment variables so host variables cannot leak into builds
+        for var in $(compgen -e); do
+            case "$var" in
+                PWD|SHLVL|_) ;;
+                *) unset "$var" ;;
+            esac
+        done
+
+        export HOME=/home/builder
+        export TERM="$saved_term"
+        export LC_ALL=POSIX
+        export MAKEFLAGS="-j$(( nproc_val > 1 ? nproc_val - 1 : 1 ))"
+        export PATH=/usr/bin
+        if test ! -L /bin; then
+            export PATH="/bin:$PATH"
+        fi
+        if test -n "$dep_path"; then
+            export PATH="$dep_path:$PATH"
+        fi
+
+        if test "$ON" == host; then
+            export FLUFFY=/mnt/fluffy
+            export FLUFFY_TGT="${uname_m}-fluffy-linux-gnu"
+            export CONFIG_SITE=/dev/null
+        fi
 
         "$1"
     )
@@ -107,13 +167,22 @@ builder_uid="$(id -u builder 2>/dev/null)" || fatal "user 'builder' not found"
 builder_gid="$(id -g builder 2>/dev/null)" || fatal "group for 'builder' not found"
 
 pkg="$(basename "$1")"
+mount_pkg="${pkg%-pass*}"
 
 declare -a ARCHIVES
 declare -a archives
+declare -a MAKE_NEEDS=()
+declare -a CHECK_NEEDS=()
+declare -a INSTALL_NEEDS=()
 
 banner PREPARE
 
+ON=fluffy
 source $1
+
+if test -z "${VERSION:-}"; then
+    fatal "no VERSION defined"
+fi
 
 if test "$(type -t INSTALL)" != function
 then
@@ -121,13 +190,27 @@ then
 fi
 
 if (( ${#ARCHIVES[@]} % 2 != 0 )); then
-    fatal "Invalid number of items: ${#items[@]}"
+    fatal "Invalid number of items: ${#ARCHIVES[@]}"
 fi
+
+case "$ON" in
+    host)
+        sw_dir="/mnt/fluffy/sw"
+        work_dir="/mnt/fluffy/work"
+        ;;
+    fluffy)
+        sw_dir="/sw"
+        work_dir="/work"
+        ;;
+    *)
+        fatal "Invalid ON target: $ON"
+        ;;
+esac
 
 mkdir -p archives
 
 for ((i=0; i<${#ARCHIVES[@]}; i+=2)); do
-    md5="${ARCHIVES[i]}"
+    sha256="${ARCHIVES[i]}"
     url="${ARCHIVES[i+1]}"
     filename="${url##*/}"
     archives+=("$filename")
@@ -138,25 +221,33 @@ for ((i=0; i<${#ARCHIVES[@]}; i+=2)); do
     tmpfile="$(mktemp)"
     log -n "downloading $filename... "
     wget --quiet --output-document "$tmpfile" "$url"
-    actual_md5="$(md5sum "$tmpfile" | cut -d' ' -f1)"
-    if test "$actual_md5" != "$md5"; then
+    actual_sha256="$(sha256sum "$tmpfile" | cut -d' ' -f1)"
+    if test "$actual_sha256" != "$sha256"; then
         rm "$tmpfile"
-        fatal "checksum mismatch: $actual_md5 != $md5"
+        fatal "checksum mismatch: $actual_sha256 != $sha256"
     fi
     mv "$tmpfile" "archives/$filename"
     log "done"
 done
 
-if test -d work; then
-    log -n "deleting stale work area... "
-    rm -rf work
-    log "done"
-fi
+log -n "cleaning work area... "
+rm -rf "$work_dir"
+mkdir -p "$work_dir"
+log "done"
 
-log "creating fresh work area"
-mkdir work
-cd work
-for archive in "${archives[@]}"; do
+cd "$work_dir"
+log -n "extracting ${archives[0]}..."
+tar --no-same-owner -xf "$root/archives/${archives[0]}"
+log "done"
+
+# the first archive is special and we change to its directory
+# so that the build scripts can be run from there
+shopt -s extglob
+archive_name="${archives[0]%%?(-src).tar.*}"
+cd "$archive_name"
+shopt -u extglob
+
+for archive in "${archives[@]:1}"; do
     case "$archive" in
         *.tar.*)
             log -n "extracting $archive..."
@@ -168,15 +259,7 @@ for archive in "${archives[@]}"; do
             ;;
     esac
 done
-chown -R "$builder_uid:$builder_gid" "$root/work"
-
-# the first archive is special and we change to its directory
-# so that the build scripts can be run from there
-# it also serves as our squashfs output filename
-shopt -s extglob
-archive_name="${archives[0]%%?(-src).tar.*}"
-cd $archive_name
-shopt -u extglob
+chown -R "$builder_uid:$builder_gid" "$work_dir"
 
 
 if test "$(type -t MAKE)" == function
@@ -193,16 +276,17 @@ lockdown INSTALL
 
 banner SQUASHFS
 
-rm -f "$root/sw/$archive_name.squashfs"
+squashfs_file="$sw_dir/$pkg-$VERSION.squashfs"
+rm -f "$squashfs_file"
 mksquashfs \
-    "$root/work/installed" "$root/sw/$archive_name.squashfs" \
+    "$work_dir/installed" "$squashfs_file" \
     -all-root \
     -comp zstd \
     -quiet \
     -no-progress
 
-log "squashfs created: sw/$archive_name.squashfs"
+log "squashfs created: $squashfs_file"
 
 banner CLEANUP
 cd "$root"
-rm -rf work
+rm -rf "$work_dir"/*
