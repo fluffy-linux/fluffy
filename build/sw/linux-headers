@@ -1,0 +1,17 @@
+ON=host
+
+VERSION=7.1.8
+
+ARCHIVES=(
+    ff01dcb449279d5b4cfccdb01fee639cf5ff1803f1749a77844dd33915422c49 https://www.kernel.org/pub/linux/kernel/v7.x/linux-$VERSION.tar.xz
+)
+
+MAKE() {
+    make mrproper
+    make headers
+    find usr/include -type f ! -name '*.h' -delete
+}
+
+INSTALL() {
+    cp -rv usr/include /sw/linux-headers
+}

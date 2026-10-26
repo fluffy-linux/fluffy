@@ -1,0 +1,26 @@
+ON=host
+
+VERSION=2.47
+
+ARCHIVES=(
+    154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff https://sourceware.org/pub/binutils/releases/binutils-$VERSION.tar.xz
+)
+
+MAKE() {
+    mkdir -v build
+    cd build
+    ../configure \
+        --prefix=/sw/binutils \
+        --target=$FLUFFY_TGT \
+        --disable-nls \
+        --enable-gprofng=no \
+        --disable-werror \
+        --enable-new-dtags \
+        --enable-default-hash-style=gnu
+    make
+}
+
+INSTALL() {
+    cd build
+    make install
+}

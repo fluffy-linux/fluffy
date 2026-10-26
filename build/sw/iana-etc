@@ -1,7 +1,7 @@
 VERSION=20260805
 
 ARCHIVES=(
-    f6d2619cfac3a68f91392e28fe4067c3 https://github.com/Mic92/iana-etc/releases/download/$VERSION/iana-etc-$VERSION.tar.gz
+    29270860664e324107537f32ea476a333ca52d71b59c74bc06ecc3b0fa9cf490 https://github.com/Mic92/iana-etc/releases/download/$VERSION/iana-etc-$VERSION.tar.gz
 )
 
 INSTALL() {
