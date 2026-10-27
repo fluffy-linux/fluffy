@@ -1,0 +1,39 @@
+ON=host
+
+VERSION=2.47
+
+ARCHIVES=(
+    fb2a0f2fb12b6e89a2ef4ef380c5530c5a4d91a59f7561734b1e8a5c7e90a015 https://ftpmirror.gnu.org/binutils/binutils-$VERSION.tar.xz
+    519994f4f77062ad66395a980b5e049df395dd1ea17dc7a4ca7788d7bf454554 file://binutils-$VERSION-fluffy.patch
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    patch -Np1 -i binutils-$VERSION-fluffy.patch
+    sed '6031s/$add_dir//' -i ltmain.sh
+
+    mkdir -v build
+    cd build
+    ../configure \
+        --prefix=/sw/binutils \
+        --build=$(../config.guess) \
+        --host=$FLUFFY_TGT \
+        --disable-nls \
+        --enable-shared \
+        --enable-gprofng=no \
+        --disable-werror \
+        --enable-64-bit-bfd \
+        --enable-new-dtags \
+        --enable-default-hash-style=gnu
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    cd build
+    make install
+    rm -v /sw/binutils/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+}

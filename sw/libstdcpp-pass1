@@ -1,0 +1,32 @@
+ON=host
+
+VERSION=16.2.0
+
+ARCHIVES=(
+    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    mkdir -v build
+    cd build
+    ../libstdc++-v3/configure \
+        --host=$FLUFFY_TGT \
+        --build=$(../config.guess) \
+        CXX=$FLUFFY_TGT-gcc \
+        --prefix=/sw/libstdcpp \
+        --disable-multilib \
+        --disable-nls \
+        --disable-libstdcxx-pch
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    cd build
+    make install
+    rm -v /sw/libstdcpp/lib/lib{stdc++{,exp,fs},supc++}.la
+}

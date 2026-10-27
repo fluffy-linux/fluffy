@@ -1,0 +1,24 @@
+ON=host
+
+VERSION=4.10
+
+ARCHIVES=(
+    b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7 https://ftpmirror.gnu.org/sed/sed-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/sed \
+        --host=$FLUFFY_TGT \
+        --build=$(./build-aux/config.guess)
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+}

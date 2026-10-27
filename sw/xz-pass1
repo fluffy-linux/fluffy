@@ -1,0 +1,27 @@
+ON=host
+
+VERSION=5.8.3
+
+ARCHIVES=(
+    fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6 https://github.com/tukaani-project/xz/releases/download/v$VERSION/xz-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/xz \
+        --host=$FLUFFY_TGT \
+        --build=$(build-aux/config.guess) \
+        --disable-static \
+        --docdir=/sw/xz/share/doc/xz-$VERSION
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+    rm -v /sw/xz/lib/liblzma.la
+}

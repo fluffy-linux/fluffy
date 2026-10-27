@@ -14,10 +14,6 @@ MS_BIND=0x00001000
 MS_REC=0x00004000
 MS_PRIVATE=0x00040000
 
-cd "$(dirname "$BASH_SOURCE[0]")"
-
-root="$(pwd)"
-
 log() {
     echo "$@" >&2
 }
@@ -50,21 +46,10 @@ lockdown() {
     (
         wd="$(pwd)"
 
-        # no network access for builds, ro / and rw /work
-        call unshare $(( CLONE_NEWNET | CLONE_NEWNS ))
-
-        # stop mount propagation back to the parent/host namespace
-        call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
-
-        if test "$ON" == host
-        then
-            call mount /bin/bash /bin/sh $NULL $MS_BIND $NULL
-            call mount /mnt/fluffy/sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
-        fi
-
         local -n phase_needs="${1}_NEEDS"
         local -a queue=("${phase_needs[@]}")
         local -A seen=()
+        local -a resolved_deps=()
         local dep_path=""
 
         while (( ${#queue[@]} > 0 ))
@@ -93,7 +78,41 @@ lockdown() {
                 fi
             )
             queue+=("${sub_needs[@]}")
+            resolved_deps+=("$dep")
+        done
 
+        case "$1" in
+            MAKE)
+                ;;
+            CHECK)
+                mkdir -p "$work_dir/test-results" "$work_dir/test-work"
+                ;;
+            INSTALL)
+                mkdir -p "$work_dir/installed"
+                ;;
+            *)
+                fatal "unknown phase: $1"
+                ;;
+        esac
+
+        # elevate back to root strictly to set up namespaces and mounts
+        call setresuid 0 0 0
+        call setresgid 0 0 0
+
+        # no network access for builds, ro / and rw /work
+        call unshare $(( CLONE_NEWNET | CLONE_NEWNS ))
+
+        # stop mount propagation back to the parent/host namespace
+        call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+
+        if test "$ON" == host
+        then
+            call mount /bin/bash /bin/sh $NULL $MS_BIND $NULL
+            call mount /mnt/fluffy/sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
+        fi
+
+        for dep in "${resolved_deps[@]}"
+        do
             shopt -s nullglob
             local matches=(/sw/"$dep"-[0-9]*.squashfs)
             shopt -u nullglob
@@ -117,17 +136,13 @@ lockdown() {
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             CHECK)
-                install -o "$builder_uid" -g "$builder_gid" -d "$work_dir/test-results" "$work_dir/test-work"
                 call mount overlay /work overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
                 ;;
             INSTALL)
-                install -o "$builder_uid" -g "$builder_gid" -d "$work_dir/installed" "/sw/$mount_pkg"
+                mkdir -p "/sw/$mount_pkg"
                 call mount "$work_dir/installed" "/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 dep_path="/sw/$mount_pkg/bin${dep_path:+:$dep_path}"
-                ;;
-            *)
-                fatal "unknown phase: $1"
                 ;;
         esac
 
@@ -147,9 +162,10 @@ lockdown() {
         # enter /work so our cwd is on top of the writable mount
         cd /work
 
+        # permanently drop root (including saved UID/GID) for the build phase
         call setgroups 0 $NULL
-        call setresgid "$builder_gid" "$builder_gid" "$builder_gid"
-        call setresuid "$builder_uid" "$builder_uid" "$builder_uid"
+        call setresgid "$SUDO_GID" "$SUDO_GID" "$SUDO_GID"
+        call setresuid "$SUDO_UID" "$SUDO_UID" "$SUDO_UID"
 
         set +h
         umask 022
@@ -170,7 +186,7 @@ lockdown() {
             esac
         done
 
-        export HOME=/home/builder
+        export HOME=/tmp
         export TERM="$saved_term"
         export LC_ALL=POSIX
         export MAKEFLAGS="-j$(( nproc_val > 1 ? nproc_val - 1 : 1 ))"
@@ -201,15 +217,33 @@ then
     fatal "Usage: $0 <package>"
 fi
 
-if test ! -f $1
+if test -z "${SUDO_UID:-}" || test -z "${SUDO_GID:-}"
+then
+    fatal "must be run via sudo"
+fi
+
+pkg_file="$(realpath -e "$1" 2>/dev/null || true)"
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+root="$(pwd)"
+work_dir="$root/work"
+
+# drop to the calling user immediately, keeping saved UID/GID 0 only for lockdown mounts
+call setgroups 0 $NULL
+call setresgid "$SUDO_GID" "$SUDO_GID" 0
+call setresuid "$SUDO_UID" "$SUDO_UID" 0
+
+if test -z "$pkg_file" && test -f "$root/sw/$1"
+then
+    pkg_file="$root/sw/$1"
+fi
+
+if test -z "$pkg_file" || test ! -f "$pkg_file"
 then
     fatal "Package not found: $1"
 fi
 
-builder_uid="$(id -u builder 2>/dev/null)" || fatal "user 'builder' not found"
-builder_gid="$(id -g builder 2>/dev/null)" || fatal "group for 'builder' not found"
-
-pkg="$(basename "$1")"
+pkg="$(basename "$pkg_file")"
 mount_pkg="${pkg%-pass*}"
 
 declare -a ARCHIVES
@@ -222,7 +256,7 @@ declare -a INSTALL_NEEDS=()
 banner PREPARE
 
 ON=fluffy
-source $1
+source "$pkg_file"
 
 if test -z "${VERSION:-}"
 then
@@ -242,18 +276,16 @@ fi
 case "$ON" in
     host)
         sw_dir="/mnt/fluffy/sw"
-        work_dir="/mnt/fluffy/work"
         ;;
     fluffy)
         sw_dir="/sw"
-        work_dir="/work"
         ;;
     *)
         fatal "Invalid ON target: $ON"
         ;;
 esac
 
-mkdir -p archives
+mkdir -p "$work_dir/archives"
 
 for ((i=0; i<${#ARCHIVES[@]}; i+=2))
 do
@@ -273,10 +305,10 @@ do
         then
             fatal "checksum mismatch for $filename: $actual_sha256 != $sha256"
         fi
-        cp "$local_path" "archives/$filename"
+        cp "$local_path" "$work_dir/archives/$filename"
         continue
     fi
-    if test -f "archives/$filename"
+    if test -f "$work_dir/archives/$filename"
     then
         # assume downloaded
         continue
@@ -290,18 +322,18 @@ do
         rm "$tmpfile"
         fatal "checksum mismatch: $actual_sha256 != $sha256"
     fi
-    mv "$tmpfile" "archives/$filename"
+    mv "$tmpfile" "$work_dir/archives/$filename"
     log "done"
 done
 
 log -n "cleaning work area... "
-rm -rf "$work_dir"
-mkdir -p "$work_dir"
+rm -rf "$work_dir"/{src,installed,test-results,test-work}
+mkdir -p "$work_dir/src"
 log "done"
 
-cd "$work_dir"
+cd "$work_dir/src"
 log -n "extracting ${archives[0]}..."
-tar --no-same-owner -xf "$root/archives/${archives[0]}"
+tar -xf "$work_dir/archives/${archives[0]}"
 log "done"
 
 # the first archive is special and we change to its directory
@@ -316,15 +348,14 @@ do
     case "$archive" in
         *.tar.*)
             log -n "extracting $archive..."
-            tar --no-same-owner -xf "$root/archives/$archive"
+            tar -xf "$work_dir/archives/$archive"
             log "done"
             ;;
         *)
-            cp "$root/archives/$archive" .
+            cp "$work_dir/archives/$archive" .
             ;;
     esac
 done
-chown -R "$builder_uid:$builder_gid" "$work_dir"
 
 
 if test "$(type -t MAKE)" == function
@@ -342,16 +373,20 @@ lockdown INSTALL
 banner SQUASHFS
 
 squashfs_file="$sw_dir/$pkg-$VERSION.squashfs"
-rm -f "$squashfs_file"
-mksquashfs \
-    "$work_dir/installed" "$squashfs_file" \
-    -all-root \
-    -comp zstd \
-    -quiet \
-    -no-progress
+(
+    call setresuid 0 0 0
+    call setresgid 0 0 0
+    rm -f "$squashfs_file"
+    mksquashfs \
+        "$work_dir/installed" "$squashfs_file" \
+        -all-root \
+        -comp zstd \
+        -quiet \
+        -no-progress
+)
 
 log "squashfs created: $squashfs_file"
 
 banner CLEANUP
 cd "$root"
-rm -rf "$work_dir"/*
+rm -rf "$work_dir"/{src,installed,test-results,test-work}
