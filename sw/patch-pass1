@@ -1,0 +1,24 @@
+ON=host
+
+VERSION=2.8
+
+ARCHIVES=(
+    f87cee69eec2b4fcbf60a396b030ad6aa3415f192aa5f7ee84cad5e11f7f5ae3 https://ftpmirror.gnu.org/patch/patch-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/patch \
+        --host=$FLUFFY_TGT \
+        --build=$(build-aux/config.guess)
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+}

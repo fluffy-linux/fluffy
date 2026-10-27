@@ -1,0 +1,24 @@
+ON=host
+
+VERSION=1.4.21
+
+ARCHIVES=(
+    f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66 https://ftpmirror.gnu.org/m4/m4-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/m4 \
+        --host=$FLUFFY_TGT \
+        --build=$(build-aux/config.guess)
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+}

@@ -149,3 +149,8 @@
    *aelem = NULL;
  
    /* This points to the map of the main object.  If there is no main
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-10-27 18:16:00.000000000 -0400
+@@ -1 +1 @@
+-s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\264\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_
++s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\2\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_

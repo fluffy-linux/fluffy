@@ -1,0 +1,25 @@
+ON=host
+
+VERSION=5.4.1
+
+ARCHIVES=(
+    07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://ftpmirror.gnu.org/gawk/gawk-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    sed -i 's/extras//' Makefile.in
+    ./configure \
+        --prefix=/sw/gawk \
+        --host=$FLUFFY_TGT \
+        --build=$(build-aux/config.guess)
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+}

@@ -1,0 +1,24 @@
+ON=host
+
+VERSION=3.12
+
+ARCHIVES=(
+    2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9 https://ftpmirror.gnu.org/grep/grep-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/grep \
+        --host=$FLUFFY_TGT \
+        --build=$(./build-aux/config.guess)
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+}

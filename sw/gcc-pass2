@@ -4,21 +4,22 @@ VERSION=16.2.0
 MPFR_VERSION=4.2.2
 MPC_VERSION=1.4.1
 GMP_VERSION=6.3.0
-GLIBC_VERSION=2.44
 
 ARCHIVES=(
     e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
     b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$MPFR_VERSION.tar.xz
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$MPC_VERSION.tar.xz
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$GMP_VERSION.tar.xz
-    8f5ab2ac60c6ccce908b9ce6fd8f5f1f3b5385d69df0d05bf59c9273e9777c71 file://gcc-$VERSION-fluffy.patch
+    c3e782a8eee855a260988b7fe0ae01b1735bf93950d3f5e45820b73ae77c90d8 file://gcc-$VERSION-fluffy.patch
 )
 
-NEEDS=(binutils-pass1)
-MAKE_NEEDS=(binutils-pass1)
+NEEDS=(binutils-pass2 glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 libstdcpp-pass1 linux-headers)
 
 MAKE() {
     patch -Np1 -i gcc-$VERSION-fluffy.patch
+    sed '/thread_header =/s/@.*@/gthr-posix.h/' \
+        -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
 
     mv -v mpfr-$MPFR_VERSION mpfr
     mv -v mpc-$MPC_VERSION mpc
@@ -27,33 +28,32 @@ MAKE() {
     mkdir -v build
     cd build
     ../configure \
+        --build=$(../config.guess) \
+        --host=$FLUFFY_TGT \
         --target=$FLUFFY_TGT \
         --prefix=/sw/gcc \
-        --with-glibc-version=$GLIBC_VERSION \
-        --with-newlib \
-        --without-headers \
         --enable-default-pie \
         --enable-default-ssp \
         --disable-fixincludes \
         --disable-nls \
-        --disable-shared \
         --disable-multilib \
-        --disable-threads \
         --disable-libatomic \
         --disable-libgomp \
         --disable-libquadmath \
+        --disable-libsanitizer \
         --disable-libssp \
         --disable-libvtv \
-        --disable-libstdcxx \
-        --enable-languages=c,c++
+        --enable-languages=c,c++ \
+        CXX_FOR_TARGET="$FLUFFY_TGT-gcc -nostdinc++" \
+        LDFLAGS_FOR_TARGET=-L$PWD/$FLUFFY_TGT/libgcc \
+        target_configargs=gcc_cv_target_thread_file=posix
     make
 }
 
-INSTALL_NEEDS=(binutils-pass1)
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 libstdcpp-pass1 linux-headers)
 
 INSTALL() {
     cd build
     make install
-    cat ../gcc/{limitx,glimits,limity}.h > \
-        $($FLUFFY_TGT-gcc -print-file-name=include)/limits.h
+    ln -sv gcc /sw/gcc/bin/cc
 }

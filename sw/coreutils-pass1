@@ -1,0 +1,25 @@
+ON=host
+
+VERSION=9.11
+
+ARCHIVES=(
+    394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3 https://ftpmirror.gnu.org/coreutils/coreutils-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/coreutils \
+        --host=$FLUFFY_TGT \
+        --build=$(build-aux/config.guess) \
+        --enable-install-program=hostname
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+}

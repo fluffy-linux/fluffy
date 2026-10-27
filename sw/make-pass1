@@ -1,0 +1,24 @@
+ON=host
+
+VERSION=4.4.1
+
+ARCHIVES=(
+    dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3 https://ftpmirror.gnu.org/make/make-$VERSION.tar.gz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/make \
+        --host=$FLUFFY_TGT \
+        --build=$(build-aux/config.guess)
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+}

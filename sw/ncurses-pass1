@@ -1,0 +1,42 @@
+ON=host
+
+VERSION=6.6
+
+ARCHIVES=(
+    355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://invisible-mirror.net/archives/ncurses/ncurses-$VERSION.tar.gz
+)
+
+NEEDS=(glibc-pass1 libstdcpp-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 libstdcpp-pass1 linux-headers)
+
+MAKE() {
+    mkdir -pv build
+    pushd build
+        ../configure AWK=gawk
+        make -C include
+        make -C progs tic
+    popd
+
+    ./configure \
+        --prefix=/sw/ncurses \
+        --host=$FLUFFY_TGT \
+        --build=$(./config.guess) \
+        --mandir=/sw/ncurses/share/man \
+        --with-manpage-format=normal \
+        --with-shared \
+        --without-normal \
+        --with-cxx-shared \
+        --without-debug \
+        --without-ada \
+        --disable-stripping \
+        AWK=gawk
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 libstdcpp-pass1 linux-headers)
+
+INSTALL() {
+    PATH="$PWD/build/progs:$PATH" make install
+    ln -sv libncursesw.so /sw/ncurses/lib/libncurses.so
+    sed -e 's/^#if.*XOPEN.*$/#if 1/' -i /sw/ncurses/include/curses.h
+}

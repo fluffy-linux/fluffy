@@ -1,0 +1,34 @@
+ON=host
+
+VERSION=5.48
+
+ARCHIVES=(
+    ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283 https://astron.com/pub/file/file-$VERSION.tar.gz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    mkdir build
+    pushd build
+        ../configure \
+            --disable-bzlib \
+            --disable-libseccomp \
+            --disable-xzlib \
+            --disable-zlib
+        make
+    popd
+    ./configure \
+        --prefix=/sw/file \
+        --host=$FLUFFY_TGT \
+        --build=$(./config.guess)
+    make FILE_COMPILE=$(pwd)/build/src/file
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+    rm -v /sw/file/lib/libmagic.la
+}
