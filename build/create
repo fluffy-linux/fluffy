@@ -56,20 +56,53 @@ lockdown() {
         # stop mount propagation back to the parent/host namespace
         call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
 
-        if test "$ON" == host; then
+        if test "$ON" == host
+        then
+            call mount /bin/bash /bin/sh $NULL $MS_BIND $NULL
             call mount /mnt/fluffy/sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
         fi
 
-        local -n needs="${1}_NEEDS"
+        local -n phase_needs="${1}_NEEDS"
+        local -a queue=("${phase_needs[@]}")
+        local -A seen=()
         local dep_path=""
-        for dep in "${needs[@]}"; do
+
+        while (( ${#queue[@]} > 0 ))
+        do
+            local dep="${queue[0]}"
+            queue=("${queue[@]:1}")
+
+            if test -n "${seen[$dep]:-}"
+            then
+                continue
+            fi
+            seen[$dep]=1
+
+            if test ! -f "$root/sw/$dep"
+            then
+                fatal "dependency package file not found: $root/sw/$dep"
+            fi
+
+            local -a sub_needs=()
+            readarray -t sub_needs < <(
+                NEEDS=()
+                source "$root/sw/$dep"
+                if (( ${#NEEDS[@]} > 0 ))
+                then
+                    printf '%s\n' "${NEEDS[@]}"
+                fi
+            )
+            queue+=("${sub_needs[@]}")
+
             shopt -s nullglob
             local matches=(/sw/"$dep"-[0-9]*.squashfs)
             shopt -u nullglob
-            if (( ${#matches[@]} == 0 )); then
+            if (( ${#matches[@]} == 0 ))
+            then
                 fatal "no squashfs found for dependency: $dep"
             fi
-            if (( ${#matches[@]} > 1 )); then
+            if (( ${#matches[@]} > 1 ))
+            then
                 fatal "multiple squashfs found for dependency $dep: ${matches[*]}"
             fi
             local dep_mount="/sw/${dep%-pass*}"
@@ -98,7 +131,8 @@ lockdown() {
                 ;;
         esac
 
-        if test "$ON" == host; then
+        if test "$ON" == host
+        then
             call mount none /sw $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
         fi
 
@@ -125,10 +159,14 @@ lockdown() {
         local uname_m="$(uname -m)"
 
         # scrub environment variables so host variables cannot leak into builds
-        for var in $(compgen -e); do
+        for var in $(compgen -e)
+        do
             case "$var" in
-                PWD|SHLVL|_) ;;
-                *) unset "$var" ;;
+                PWD|SHLVL|_)
+                    ;;
+                *)
+                    unset "$var"
+                    ;;
             esac
         done
 
@@ -137,14 +175,17 @@ lockdown() {
         export LC_ALL=POSIX
         export MAKEFLAGS="-j$(( nproc_val > 1 ? nproc_val - 1 : 1 ))"
         export PATH=/usr/bin
-        if test ! -L /bin; then
+        if test ! -L /bin
+        then
             export PATH="/bin:$PATH"
         fi
-        if test -n "$dep_path"; then
+        if test -n "$dep_path"
+        then
             export PATH="$dep_path:$PATH"
         fi
 
-        if test "$ON" == host; then
+        if test "$ON" == host
+        then
             export FLUFFY=/mnt/fluffy
             export FLUFFY_TGT="${uname_m}-fluffy-linux-gnu"
             export CONFIG_SITE=/dev/null
@@ -155,11 +196,13 @@ lockdown() {
     trap - ERR
 }
 
-if test $# -ne 1; then
+if test $# -ne 1
+then
     fatal "Usage: $0 <package>"
 fi
 
-if test ! -f $1; then
+if test ! -f $1
+then
     fatal "Package not found: $1"
 fi
 
@@ -171,6 +214,7 @@ mount_pkg="${pkg%-pass*}"
 
 declare -a ARCHIVES
 declare -a archives
+declare -a NEEDS=()
 declare -a MAKE_NEEDS=()
 declare -a CHECK_NEEDS=()
 declare -a INSTALL_NEEDS=()
@@ -180,7 +224,8 @@ banner PREPARE
 ON=fluffy
 source $1
 
-if test -z "${VERSION:-}"; then
+if test -z "${VERSION:-}"
+then
     fatal "no VERSION defined"
 fi
 
@@ -189,7 +234,8 @@ then
     fatal "no INSTALL function defined"
 fi
 
-if (( ${#ARCHIVES[@]} % 2 != 0 )); then
+if (( ${#ARCHIVES[@]} % 2 != 0 ))
+then
     fatal "Invalid number of items: ${#ARCHIVES[@]}"
 fi
 
@@ -209,12 +255,29 @@ esac
 
 mkdir -p archives
 
-for ((i=0; i<${#ARCHIVES[@]}; i+=2)); do
+for ((i=0; i<${#ARCHIVES[@]}; i+=2))
+do
     sha256="${ARCHIVES[i]}"
     url="${ARCHIVES[i+1]}"
     filename="${url##*/}"
     archives+=("$filename")
-    if test -f "archives/$filename"; then
+    if [[ "$url" != *://* || "$url" == file://* ]]
+    then
+        local_path="$root/sw/${url#file://}"
+        if test ! -f "$local_path"
+        then
+            fatal "local archive not found: $local_path"
+        fi
+        actual_sha256="$(sha256sum "$local_path" | cut -d' ' -f1)"
+        if test "$actual_sha256" != "$sha256"
+        then
+            fatal "checksum mismatch for $filename: $actual_sha256 != $sha256"
+        fi
+        cp "$local_path" "archives/$filename"
+        continue
+    fi
+    if test -f "archives/$filename"
+    then
         # assume downloaded
         continue
     fi
@@ -222,7 +285,8 @@ for ((i=0; i<${#ARCHIVES[@]}; i+=2)); do
     log -n "downloading $filename... "
     wget --quiet --output-document "$tmpfile" "$url"
     actual_sha256="$(sha256sum "$tmpfile" | cut -d' ' -f1)"
-    if test "$actual_sha256" != "$sha256"; then
+    if test "$actual_sha256" != "$sha256"
+    then
         rm "$tmpfile"
         fatal "checksum mismatch: $actual_sha256 != $sha256"
     fi
@@ -247,7 +311,8 @@ archive_name="${archives[0]%%?(-src).tar.*}"
 cd "$archive_name"
 shopt -u extglob
 
-for archive in "${archives[@]:1}"; do
+for archive in "${archives[@]:1}"
+do
     case "$archive" in
         *.tar.*)
             log -n "extracting $archive..."

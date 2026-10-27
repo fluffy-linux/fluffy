@@ -1,0 +1,151 @@
+--- glibc-2.44.orig/elf/dl-load.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/elf/dl-load.c	2026-10-27 17:09:13.752880092 -0400
+@@ -19,6 +19,7 @@
+ 
+ #include <elf.h>
+ #include <errno.h>
++#include <dirent.h>
+ #include <fcntl.h>
+ #include <libintl.h>
+ #include <stdbool.h>
+@@ -150,6 +151,13 @@
+       trun += system_dirs_len[idx] + 1;
+     }
+ 
++  if (!result && wnp - npath > 5 && memcmp (npath, "/sw/", 4) == 0)
++    {
++      const char *slash = memchr (npath + 4, '/', (wnp - npath) - 4);
++      if (slash != NULL && wnp - slash >= 5 && memcmp (slash, "/lib/", 5) == 0)
++	result = true;
++    }
++
+   dl_scratch_buffer_free (&scratch);
+   return result;
+ }
+@@ -691,8 +699,68 @@
+ #endif
+ 
+   /* First set up the rest of the default search directory entries.  */
++  size_t sw_count = 0;
++  size_t sw_cap = 0;
++  char **sw_dirs = NULL;
++  int sw_fd = __open64_nocancel ("/sw", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++  if (sw_fd >= 0)
++    {
++      char dent_buf[4096];
++      ssize_t nread;
++      while ((nread = __getdents64 (sw_fd, dent_buf, sizeof (dent_buf))) > 0)
++	{
++	  for (ssize_t bpos = 0; bpos < nread; )
++	    {
++	      struct dirent64 *d = (struct dirent64 *) (dent_buf + bpos);
++	      bpos += d->d_reclen;
++	      if (d->d_name[0] == '.')
++		continue;
++	      size_t namelen = strlen (d->d_name);
++	      char *p = malloc (4 + namelen + 5 + 1);
++	      if (p == NULL)
++		continue;
++	      memcpy (p, "/sw/", 4);
++	      memcpy (p + 4, d->d_name, namelen);
++	      memcpy (p + 4 + namelen, "/lib/", 6);
++	      struct __stat64_t64 st;
++	      if (__stat64_time64 (p, &st) == 0 && S_ISDIR (st.st_mode))
++		{
++		  if (sw_count == sw_cap)
++		    {
++		      size_t new_cap = sw_cap == 0 ? 32 : sw_cap * 2;
++		      char **new_dirs = malloc (new_cap * sizeof (char *));
++		      if (new_dirs == NULL)
++			{
++			  free (p);
++			  continue;
++			}
++		      if (sw_dirs != NULL)
++			{
++			  memcpy (new_dirs, sw_dirs, sw_count * sizeof (char *));
++			  free (sw_dirs);
++			}
++		      sw_dirs = new_dirs;
++		      sw_cap = new_cap;
++		    }
++		  size_t pos = sw_count;
++		  while (pos > 0 && strcmp (sw_dirs[pos - 1], p) > 0)
++		    {
++		      sw_dirs[pos] = sw_dirs[pos - 1];
++		      --pos;
++		    }
++		  sw_dirs[pos] = p;
++		  ++sw_count;
++		}
++	      else
++		free (p);
++	    }
++	}
++      __close_nocancel_nostatus (sw_fd);
++    }
++
++  size_t total_dirs = sw_count > 0 ? sw_count : nsystem_dirs_len;
+   aelem = __rtld_search_dirs.dirs = (struct r_search_path_elem **)
+-    malloc ((nsystem_dirs_len + 1) * sizeof (struct r_search_path_elem *));
++    malloc ((total_dirs + 1) * sizeof (struct r_search_path_elem *));
+   if (__rtld_search_dirs.dirs == NULL)
+     {
+       errstring = N_("cannot create search path array");
+@@ -705,7 +773,7 @@
+ 		/ sizeof (struct r_search_path_elem));
+ 
+   __rtld_search_dirs.dirs[0]
+-    = malloc (nsystem_dirs_len * round_size
++    = malloc (total_dirs * round_size
+ 	      * sizeof (*__rtld_search_dirs.dirs[0]));
+   if (__rtld_search_dirs.dirs[0] == NULL)
+     {
+@@ -715,6 +783,7 @@
+ 
+   __rtld_search_dirs.malloced = 0;
+   pelem = GL(dl_all_dirs) = __rtld_search_dirs.dirs[0];
++  max_dirnamelen = SYSTEM_DIRS_MAX_LEN;
+   strp = system_dirs;
+   idx = 0;
+ 
+@@ -727,22 +796,32 @@
+       pelem->what = "system search path";
+       pelem->where = NULL;
+ 
+-      pelem->dirname = strp;
+-      pelem->dirnamelen = system_dirs_len[idx];
+-      strp += system_dirs_len[idx] + 1;
++      if (sw_count > 0)
++	{
++	  pelem->dirname = sw_dirs[idx];
++	  pelem->dirnamelen = strlen (sw_dirs[idx]);
++	  if (pelem->dirnamelen > max_dirnamelen)
++	    max_dirnamelen = pelem->dirnamelen;
++	}
++      else
++	{
++	  pelem->dirname = strp;
++	  pelem->dirnamelen = system_dirs_len[idx];
++	  strp += system_dirs_len[idx] + 1;
++	}
+ 
+       /* System paths must be absolute.  */
+       assert (pelem->dirname[0] == '/');
+       for (cnt = 0; cnt < ncapstr; ++cnt)
+-	pelem->status[cnt] = unknown;
++	pelem->status[cnt] = (sw_count > 0 && cnt == ncapstr - 1) ? existing : unknown;
+ 
+-      pelem->next = (++idx == nsystem_dirs_len ? NULL : (pelem + round_size));
++      pelem->next = (++idx == total_dirs ? NULL : (pelem + round_size));
+ 
+       pelem += round_size;
+     }
+-  while (idx < nsystem_dirs_len);
++  while (idx < total_dirs);
+ 
+-  max_dirnamelen = SYSTEM_DIRS_MAX_LEN;
++  free (sw_dirs);
+   *aelem = NULL;
+ 
+   /* This points to the map of the main object.  If there is no main
