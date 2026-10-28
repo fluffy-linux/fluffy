@@ -1,0 +1,32 @@
+ON=host
+
+VERSION=4.7.5
+
+ARCHIVES=(
+    547b7b7f4d2e44bf91b6fc554664850c69563701deab9fd9cd7e21f694c88ea6 https://github.com/plougher/squashfs-tools/releases/download/$VERSION/squashfs-tools-$VERSION.tar.gz
+)
+
+NEEDS=(glibc-pass1 zstd-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers zstd-pass1)
+
+MAKE() {
+    make -C squashfs-tools \
+        CC=$FLUFFY_TGT-gcc \
+        GZIP_SUPPORT=0 \
+        XZ_SUPPORT=0 \
+        ZSTD_SUPPORT=1 \
+        LZO_SUPPORT=0 \
+        LZ4_SUPPORT=0 \
+        COMP_DEFAULT=zstd \
+        EXTRA_CFLAGS="-I/sw/zstd/include" \
+        EXTRA_LDFLAGS="-L/sw/zstd/lib"
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1)
+
+INSTALL() {
+    mkdir -pv /sw/squashfs-tools/bin
+    cp -v squashfs-tools/{mksquashfs,unsquashfs} /sw/squashfs-tools/bin
+    ln -sv unsquashfs /sw/squashfs-tools/bin/sqfscat
+    ln -sv mksquashfs /sw/squashfs-tools/bin/sqfstar
+}

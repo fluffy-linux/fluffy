@@ -29,6 +29,8 @@ MAKE() {
         --without-debug \
         --without-ada \
         --disable-stripping \
+        --enable-widec \
+        --enable-overwrite \
         AWK=gawk
     make
 }

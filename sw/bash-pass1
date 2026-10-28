@@ -4,12 +4,15 @@ VERSION=5.3
 
 ARCHIVES=(
     0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz
+    9dd1e607089d21baff2db33932059035482948d5b21fa30bd671dc4cfff6f294 file://bash-$VERSION-fluffy.patch
 )
 
 NEEDS=(glibc-pass1 ncurses-pass1)
 MAKE_NEEDS=(gcc-pass1 glibc-pass1 ncurses-pass1 linux-headers)
 
 MAKE() {
+    patch -Np1 -i bash-$VERSION-fluffy.patch
+
     ./configure \
         --prefix=/sw/bash \
         --build=$(sh support/config.guess) \

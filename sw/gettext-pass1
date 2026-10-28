@@ -1,0 +1,22 @@
+VERSION=1.0
+
+ARCHIVES=(
+    71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7 https://ftpmirror.gnu.org/gettext/gettext-$VERSION.tar.xz
+    1e1aba9e11c08de86d4c1b056c110966fafdf8ba18e1124e454b9a7750c2a86b file://gettext-$VERSION-fluffy.patch
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(bash-pass1 binutils-pass2 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc-pass1 grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1)
+
+MAKE() {
+    patch -Np1 -i gettext-$VERSION-fluffy.patch
+    ./configure --disable-shared
+    make
+}
+
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1)
+
+INSTALL() {
+    mkdir -pv /sw/gettext/bin
+    cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /sw/gettext/bin
+}

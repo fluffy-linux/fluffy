@@ -1,5 +1,6 @@
+diff -ruN glibc-2.44.orig/elf/dl-load.c glibc-2.44/elf/dl-load.c
 --- glibc-2.44.orig/elf/dl-load.c	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/elf/dl-load.c	2026-10-27 17:09:13.752880092 -0400
++++ glibc-2.44/elf/dl-load.c	2026-10-27 23:26:48.351700344 -0400
 @@ -19,6 +19,7 @@
  
  #include <elf.h>
@@ -149,8 +150,191 @@
    *aelem = NULL;
  
    /* This points to the map of the main object.  If there is no main
+diff -ruN glibc-2.44.orig/posix/execvpe.c glibc-2.44/posix/execvpe.c
+--- glibc-2.44.orig/posix/execvpe.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/execvpe.c	2026-10-27 23:27:23.904708374 -0400
+@@ -20,6 +20,9 @@
+ #include <stdbool.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <dirent.h>
++#include <fcntl.h>
++#include <not-cancel.h>
+ #include <errno.h>
+ #include <paths.h>
+ #include <confstr.h>
+@@ -128,6 +131,120 @@
+ 	  continue;
+ 	}
+ 
++      const char *star = memchr (p, '*', subp - p);
++      if (star != NULL)
++	{
++	  const char *last_slash = star;
++	  while (last_slash > p && *last_slash != '/')
++	    last_slash--;
++
++	  char prefix_buf[PATH_MAX];
++	  size_t prefix_len;
++	  if (last_slash == p && *last_slash != '/')
++	    {
++	      prefix_buf[0] = '.';
++	      prefix_buf[1] = '\0';
++	      prefix_len = 1;
++	    }
++	  else
++	    {
++	      prefix_len = (last_slash == p) ? 1 : (last_slash - p);
++	      if (prefix_len >= sizeof (prefix_buf))
++		goto next_elem;
++	      memcpy (prefix_buf, p, prefix_len);
++	      prefix_buf[prefix_len] = '\0';
++	    }
++
++	  const char *next_slash = memchr (star, '/', subp - star);
++	  const char *suffix = next_slash ? next_slash : "";
++	  size_t suffix_len = next_slash ? (subp - next_slash) : 0;
++
++	  int dir_fd = __open64_nocancel (prefix_buf, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++	  if (dir_fd >= 0)
++	    {
++	      char dent_buf[4096];
++	      char name_buf[4096];
++	      const char *entries[128];
++	      size_t nentries = 0;
++	      size_t name_buf_pos = 0;
++	      ssize_t nread;
++
++	      while ((nread = __getdents64 (dir_fd, dent_buf, sizeof (dent_buf))) > 0)
++		{
++		  for (ssize_t bpos = 0; bpos < nread; )
++		    {
++		      struct dirent64 *d = (struct dirent64 *) (dent_buf + bpos);
++		      bpos += d->d_reclen;
++		      if (d->d_name[0] == '.' || d->d_type == DT_REG)
++			continue;
++		      size_t dlen = strlen (d->d_name);
++		      if (name_buf_pos + dlen + 1 > sizeof (name_buf) || nentries >= 128)
++			break;
++		      char *stored_name = name_buf + name_buf_pos;
++		      memcpy (stored_name, d->d_name, dlen + 1);
++		      name_buf_pos += dlen + 1;
++
++		      size_t pos = nentries;
++		      while (pos > 0 && strcmp (entries[pos - 1], stored_name) > 0)
++			{
++			  entries[pos] = entries[pos - 1];
++			  --pos;
++			}
++		      entries[pos] = stored_name;
++		      ++nentries;
++		    }
++		}
++	      __close_nocancel_nostatus (dir_fd);
++
++	      char exec_buf[PATH_MAX];
++	      for (size_t i = 0; i < nentries; ++i)
++		{
++		  size_t elen = strlen (entries[i]);
++		  if (prefix_len + 1 + elen + suffix_len + 1 + file_len > sizeof (exec_buf))
++		    continue;
++
++		  char *eb = exec_buf;
++		  memcpy (eb, prefix_buf, prefix_len);
++		  eb += prefix_len;
++		  if (eb > exec_buf && *(eb - 1) != '/')
++		    *eb++ = '/';
++		  memcpy (eb, entries[i], elen);
++		  eb += elen;
++		  if (suffix_len > 0)
++		    {
++		      memcpy (eb, suffix, suffix_len);
++		      eb += suffix_len;
++		    }
++		  if (eb > exec_buf && *(eb - 1) != '/')
++		    *eb++ = '/';
++		  memcpy (eb, file, file_len);
++
++		  __execve (exec_buf, argv, envp);
++
++		  if (errno == ENOEXEC && exec_script)
++		    maybe_script_execute (exec_buf, argv, envp);
++
++		  switch (errno)
++		    {
++		      case EACCES:
++			got_eacces = true;
++			[[fallthrough]];
++		      case ENOENT:
++		      case ESTALE:
++		      case ENOTDIR:
++		      case ENAMETOOLONG:
++		      case ENODEV:
++		      case ETIMEDOUT:
++			break;
++
++		      default:
++			return -1;
++		    }
++		}
++	    }
++	  goto next_elem;
++	}
++
+       /* Use the current path entry, plus a '/' if nonempty, plus the file to
+          execute.  */
+       char *pend = mempcpy (buffer, p, subp - p);
+@@ -174,6 +291,7 @@
+ 	    return -1;
+ 	}
+ 
++next_elem:
+       if (*subp++ == '\0')
+ 	break;
+     }
+diff -ruN glibc-2.44.orig/sysdeps/posix/system.c glibc-2.44/sysdeps/posix/system.c
+--- glibc-2.44.orig/sysdeps/posix/system.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/sysdeps/posix/system.c	2026-10-27 23:27:05.032376581 -0400
+@@ -25,14 +25,15 @@
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <stdio.h>
++#include <paths.h>
+ 
+ #include <libc-lock.h>
+ #include <not-errno.h>
+ #include <not-cancel.h>
+ #include <internal-signals.h>
+ 
+-#define	SHELL_PATH	"/bin/sh"	/* Path of the shell.  */
+-#define	SHELL_NAME	"sh"		/* Name to give it.  */
++#define	SHELL_PATH	_PATH_BSHELL	/* Path of the shell.  */
++#define	SHELL_NAME	"bash"		/* Name to give it.  */
+ 
+ 
+ /* This system implementation aims to be thread-safe, which requires to
+diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h glibc-2.44/sysdeps/unix/sysv/linux/paths.h
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/sysdeps/unix/sysv/linux/paths.h	2026-10-27 23:26:58.891424204 -0400
+@@ -33,12 +33,11 @@
+ #define	_PATHS_H_
+ 
+ /* Default search path. */
+-#define	_PATH_DEFPATH	"/usr/bin:/bin"
++#define	_PATH_DEFPATH	"/sw/*/bin"
+ /* All standard utilities path. */
+-#define	_PATH_STDPATH \
+-	"/usr/bin:/bin:/usr/sbin:/sbin"
++#define	_PATH_STDPATH	"/sw/*/bin:/sw/*/sbin"
+ 
+-#define	_PATH_BSHELL	"/bin/sh"
++#define	_PATH_BSHELL	"/sw/bash/bin/bash"
+ #define	_PATH_CONSOLE	"/dev/console"
+ #define	_PATH_CSHELL	"/bin/csh"
+ #define	_PATH_DEVDB	"/var/run/dev.db"
+diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed
 --- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-10-27 18:16:00.000000000 -0400
++++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-10-27 23:26:48.352447341 -0400
 @@ -1 +1 @@
 -s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\264\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_
 +s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\2\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_

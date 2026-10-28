@@ -27,17 +27,24 @@
      - Even if a build tool (`configure`, a linker, etc.) resolves a `/sw/<pkg>/...` path during build, the input to that build should never require hardcoding `--with-foo=/sw/bar`. And wherever possible, runtime tools should traverse `/sw/*` dynamically (caching per-process, which is always safe because `/sw` mounts never change within a launched process's mount namespace).
      - **Why this matters**: Packages can be split into subpackages, merged, or reorganized later (e.g. `libstdcpp` separate from `gcc` vs. bundled) and everything continues to work with zero flag changes.
    - Concrete `/sw/*` discovery points:
-     - **`PATH` (`@SW` sentinel)**: `glibc` (`execvp`/`execvpe`/`posix_spawnp`), `bash`, and `which` expand `@SW` to `/sw/*/bin` (and `/sw/*/sbin`), cached once per process.
-     - **Dynamic linker (`ld.so`)**: Iterates `/sw/*/lib` (`_dl_init_paths`) to resolve shared libraries at runtime.
-     - **Linker (`binutils` `ld`) & Compiler (`gcc`)**: Linker scripts and compiler search paths iterate `/sw/*/lib`, `/sw/*/include` (and `/sw/*/include/c++/<ver>` for C++ headers), and `/sw/*/bin` (plus `/sw/*/<target>/bin`)—requiring zero `-I`, `-L`, or `--with-*` path flags in package definitions.
+     - **`PATH` (`/sw/*/bin` only — zero `sbin`)**:
+       - Fluffy does not use `sbin` directories anywhere. All utilities, system binaries, and administrative daemons reside in `/sw/<pkg>/bin` (configured via `--sbindir=/sw/<pkg>/bin` or `rootsbindir=/sw/<pkg>/bin`).
+       - `bash`: `findcmd.c` and `bashline.c` dynamically glob and iterate `/sw/*/bin` for command resolution and TAB completion.
+       - `glibc`: `posix/execvpe.c` (`__execvpe_common`) parses wildcard PATH entries like `/sw/*/bin`, discovers all `/sw/<pkg>/bin` directories via `__getdents64` without heap allocations (`vfork`/`CLONE_VM` safe), and tests executables in alphabetical order. All POSIX execution APIs (`execvp`, `execvpe`, `execlp`, `posix_spawnp`) work transparently with literal wildcard `PATH`.
+       - Shell defaults in `paths.h` and `system.c`: `_PATH_DEFPATH` defaults to `"/sw/*/bin"`, `_PATH_STDPATH` to `"/sw/*/bin:/sw/*/sbin"`, and `_PATH_BSHELL` / `SHELL_PATH` to `"/sw/bash/bin/bash"`, ensuring `system()` and `popen()` run natively without `/bin/sh`.
+     - **Dynamic Linker (`ld.so`)**: Iterates `/sw/*/lib` (`_dl_init_paths` in `elf/dl-load.c`) to resolve shared libraries dynamically at runtime.
+     - **Final Pass Toolchain Vision (Glibc & GCC Native Wildcard Inclusion)**:
+       - **GCC Preprocessor (`cppdefault.cc`)**: In the final native pass, patch GCC's include directory search logic to natively understand `/sw/*/include` (and `/sw/*/include/c++/<ver>`) instead of hardcoding `/usr/include`. GCC's CPP will discover and include headers across all mounted packages without passing a single `-I` flag.
+       - **Linker (`binutils` `ld`) & Specs**: Set default library search paths to `/sw/*/lib` instead of `/usr/lib` or `/lib`.
+       - **Zero `-I`/`-L` Flags & Deprecation of `pkg-config`**: Because GCC, LD, and LD.SO dynamically iterate all `/sw/*/{include,lib}`, packages built for Fluffy never need `-I` or `-L` directory path flags or `pkg-config` path overrides. Upstream packages link against external libraries simply with `-l<name>`.
+     - **Systemd Unit Files (`/sw/*/lib/systemd/system`)**: `systemd` (`lookup_paths_init` in `sd-path/path-lookup.c`) iterates `/sw/*/lib/systemd/system` (and `/sw/*/lib/systemd/user`) so services install their own `.service` / `.socket` files directly in `/sw/<pkg>/lib/systemd/system/` (via a heredoc or local file in `INSTALL()`), eliminating any need for external meta-packages like `blfs-systemd-units`.
 
 5. **Hermetic, Unprivileged Builds & Dependency DAG (`create`)**
    - Immediately upon launch via `sudo`, `create` drops real/effective UID and GID to `$SUDO_UID:$SUDO_GID` (`setresgid`/`setresuid` keeping saved UID/GID `0` only for mount setup), so all downloaded archives and extracted files under `work/` (`work/archives`, `work/src`, `work/installed`, `work/test-results`, `work/test-work`) are naturally owned by the calling user.
    - Package definitions in `sw/` declare runtime dependencies via `NEEDS=()` and phase-specific build dependencies via `MAKE_NEEDS=()`, `CHECK_NEEDS=()`, and `INSTALL_NEEDS=()`.
-   - For each phase, `create` starts from `${phase}_NEEDS` and transitively mounts each dependency's `NEEDS` DAG under `/sw/<pkg>` (stripping any `-pass*` suffix from the mountpoint).
+   - For each phase, `create` starts from `${phase}_NEEDS` and transitively mounts each dependency's `NEEDS` DAG under `/sw/<pkg>` (stripping any `-pass*` suffix from the mountpoint). If a dependency's base mountpoint collides with the package being built (e.g. `binutils-pass1` when building `binutils-pass2`), the dependency is mounted at its full name (`/sw/$dep`) so the package's install mount does not shadow the toolchain.
    - `PREPARE`: Downloads and SHA-256 verifies tarballs and `file://` patches into `work/archives/`, extracts into `work/src/` as the calling user.
-   - `lockdown` (for `MAKE`, `CHECK`, `INSTALL`):
-     - Briefly regains saved UID `0` inside the subshell (`setresuid 0 0 0`), enters private network and mount namespaces (`unshare(CLONE_NEWNET | CLONE_NEWNS)`), sets `/` propagation to `MS_REC | MS_PRIVATE`.
+   - `lockdown` (for `MAKE`, `CHECK`, `INSTALL`):\n     - Briefly regains saved UID `0` inside the subshell (`setresuid 0 0 0`), enters private network and mount namespaces (`unshare(CLONE_NEWNET | CLONE_NEWNS)`), sets `/` propagation to `MS_REC | MS_PRIVATE`.
      - Mounts only the resolved dependency closure for that phase under `/sw/*`.
      - Phase-specific writable mounts:
        - `MAKE`: `$wd` bind-mounted read-write at `/work`.
@@ -45,27 +52,43 @@
        - `INSTALL`: `$wd` bind-mounted read-write at `/work`, plus `$work_dir/installed` bind-mounted at `/sw/$mount_pkg`.
      - Remounts `/` read-only (`MS_BIND | MS_REMOUNT | MS_RDONLY`) and mounts a fresh private `tmpfs` at `/tmp` (with `HOME=/tmp`).
      - Permanently drops root (real, effective, and saved UID/GID all set to `$SUDO_UID:$SUDO_GID`), clearing all kernel capabilities (`CAP_SYS_ADMIN`, etc.).
-   - `SQUASHFS`: Packs `work/installed` into `work/$pkg-$VERSION.squashfs` as the calling user and moves it into `$sw_dir/$pkg-$VERSION.squashfs`.
+   - `SQUASHFS`: Packs `work/installed` into `$sw_dir/$pkg-$VERSION.squashfs` directly as root in the `SQUASHFS` subshell, leaving all intermediate files owned by `$SUDO_UID:$SUDO_GID`.
 
-6. **Future Evolution: `fluffy.fstab` as Build & Package Repository Manifest (`X-fluffy.*` + `libmount`)**
-   - The repository/package manifest (`fluffy.fstab`)(`fluffy.fstab`) willwill bebe a literalliteral `fstab(5)` file, storing package metadata in `util-linux` `X-*` userspace comment mount options:
+6. **Self-Signed Repository Manifest as a Literal `fstab` (`fluffy.fstab`) & Embedded Trust Root**
+   - The repository manifest is formatted as a single, self-signed `fstab(5)` file:
      ```fstab
+     # fluffy:sig:<base64-ed25519-signature-over-remaining-lines>
      /sw/foo-1.23.squashfs /sw/foo squashfs X-mount.mkdir,X-fluffy.sha256=abc123,X-fluffy.needs="bar,baz" 0 0
+     /sw/bar-2.0.squashfs /sw/bar squashfs X-mount.mkdir,X-fluffy.sha256=def456 0 0
      ```
-   - **`build/create` Integration (Replacing Manual `build/sw/*` Sourcing)**:
-     - At the end of `SQUASHFS`, `build/create` can update `fluffy.fstab` in place using `libmount` (`mnt_new_table_from_file`, `mnt_table_find_target`, `mnt_fs_set_source`, `mnt_fs_set_options`, `mnt_table_replace_file`) via `ctypes.sh`.
-     - Keying entries by target mountpoint (`/sw/<pkg>`) means bootstrap passes (`gcc-pass1` -> `gcc-pass2` -> `gcc`) simply update the `.squashfs` backing `/sw/gcc` in `fluffy.fstab`, so downstream packages can declare canonical names (`MAKE_NEEDS=(gcc)`) without `-pass*` suffixes.
-     - In `lockdown()`, instead of sourcing `build/sw/$need_pkg` scripts to discover `$VERSION` and `NEEDS=()` and manually locating `.squashfs` files, `lockdown()` can read `fluffy.fstab` directly to resolve `X-fluffy.needs` and mount the dependency closure by target (e.g. `mount -T fluffy.fstab /sw/{foo,bar,baz}` or via `libmount` `mnt_context_mount` in `ctypes.sh`).
-   - **Package Manager (`apt-get`-ish Tool) & Boot Integration**:
-     - Using `libmount` (`dlopen libmount.so.1` via `ctypes.sh` or C), an installer/updater can parse a remote `fluffy.fstab`, walk `X-fluffy.needs`, download missing `.squashfs` images, and verify `X-fluffy.sha256`.
-     - Producing the system's active mount table (e.g. for `fstab` / `fstab.d` or `mount -a -T ...`) is literally just filtering/grepping the desired package lines out of `fluffy.fstab`.
-   - **`create` Integration (Replacing Manual `sw/*` Sourcing)**:
-     - At the end of `SQUASHFS`, `create` can update `fluffy.fstab` in place using `libmount` (`mnt_new_table_from_file`, `mnt_table_find_target`, `mnt_fs_set_source`, `mnt_fs_set_options`, `mnt_table_replace_file`) via `ctypes.sh`.
-     - Keying entries by target mountpoint (`/sw/<pkg>`) means bootstrap passes (`gcc-pass1` -> `gcc-pass2` -> `gcc`) simply update the `.squashfs` backing `/sw/gcc` in `fluffy.fstab`, so downstream packages can declare canonical names (`MAKE_NEEDS=(gcc)`) without `-pass*` suffixes.
-     - In `lockdown()`, instead of sourcing `sw/$need_pkg` scripts to discover `$VERSION` and `NEEDS=()` and manually locating `.squashfs` files, `lockdown()` can read `fluffy.fstab` directly to resolve `X-fluffy.needs` and mount the dependency closure by target (e.g. `mount -T fluffy.fstab /sw/{foo,bar,baz}` or via `libmount` `mnt_context_mount` in `ctypes.sh`).
-   - **Package Manager (`apt-get`-ish Tool) & Boot Integration**:
-     - Using `libmount` (`dlopen libmount.so.1` via `ctypes.sh` or C), an installer/updater can parse a remote `fluffy.fstab`, walk `X-fluffy.needs`, download missing `.squashfs` images, and verify `X-fluffy.sha256`.
-     - Producing the system's active mount table (e.g. for `fstab` / `fstab.d` or `mount -a -T ...`) is literally just filtering/grepping the desired package lines out of `fluffy.fstab`.
+   - **Why this design is so powerful**:
+     - **Directly mountable by standard tools**: `libmount`, `mount -a -T`, and `systemd-fstab-generator` treat `#` as a comment line by default. No stripping or pre-processing is needed to use `fluffy.fstab` as a mount table.
+     - **Compact Ed25519 signatures**: Raw Ed25519 signatures are exactly 64 bytes (88 base64 characters)—no massive ASCII armor blocks or multi-kilobyte RSA blobs.
+     - **Single-file verification**: The signature on line 1 covers lines 2 through EOF. Verifying line 1 against the trusted public key validates the entire repository index in one shot (all package filenames, mountpoints, SHA-256 digests, and dependency closures) without needing separate detached `.sig` files that can get out of sync or 404:
+       ```bash
+       sig=$(sed -n '1s/^# fluffy:sig://p' fluffy.fstab)
+       sed '1d' fluffy.fstab | verify "$PUBLIC_KEY" "$sig"
+       ```
+     - **Trust Root / Bootstrap**: The distro release signing public key (32 bytes base64) cannot live inside a package squashfs (which would be circular). Instead, it is embedded directly in the distro's minimal bootstrap script / initramfs (e.g. `/etc/fluffy/keys/release.pub`), providing the root of trust from day one.
+     - **In-process parsing & mounting**: `libmount` (`<libmount/libmount.h>` called via `ctypes.sh`) parses the manifest, resolves dependencies, checks options (`X-mount.mkdir`, `X-fluffy.sha256`, `X-fluffy.needs`), and mounts the squashfs images directly in-process.
+
+7. **Runtime State Separation (`/var/<pkg>`) & Dynamic Users**
+   - Packages in `/sw/<pkg>` are strictly immutable, code/asset-only squashfs images packed with `-all-root` (everything owned by `root:root`).
+   - Packages that require persistent mutable runtime state (databases, spools, caches) store it in `/var/<pkg>` (e.g. `/var/locate`, `/var/systemd`).
+   - To avoid coordinating hardcoded static UIDs across package definitions at build time, runtime services run under dynamic users (e.g. `DynamicUser=yes` with `StateDirectory=` under systemd, or `sysusers.d` allocation at install/boot).
+   - This ensures `/var/<pkg>` directories are mode `0700` and accessible only to that specific package's service, with zero UID baked into the package image itself.
+
+## Bootstrap Milestones
+
+- **Chapter 7 In-Chroot Native Compilation Active**:
+  - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.
+  - `create` executes inside a pure Fluffy chroot for `ON=fluffy`, mounting a minimal 9-package base (`glibc-pass1`, `ncurses-pass1`, `bash-pass1`, `libffi-pass1`, `ctypes-sh-pass1`, `coreutils-pass1`, `tar-pass1`, `xz-pass1`, `gzip-pass1`).
+  - Isolated `lockdown SQUASHFS` phase mounts strictly `SQUASHFS_NEEDS` (`squashfs-tools-pass1`, `gcc-pass2`, transitively `zstd-pass1` and `glibc-pass1`), completely isolating packaging tools from `MAKE`, `CHECK`, and `INSTALL`.
+  - `gettext-pass1` (1.0) built, installed, and packaged into `gettext-pass1-1.0.squashfs` inside the chroot with zero FHS symlinks and zero `sbin`.
+
+- **Chapters 5 & 6 Toolchain Complete & Verified (`check-toolchain`)**:
+  - Full cross-toolchain (`binutils-pass1`, `gcc-pass1`, `glibc-pass1`, `libstdcpp-pass1`, `linux-headers`) and temporary tools (`m4-pass1`, `ncurses-pass1`, `bash-pass1`, `libffi-pass1`, `ctypes-sh-pass1`, `coreutils-pass1`, `diffutils-pass1`, `file-pass1`, `findutils-pass1`, `gawk-pass1`, `grep-pass1`, `gzip-pass1`, `make-pass1`, `patch-pass1`, `sed-pass1`, `tar-pass1`, `xz-pass1`, `binutils-pass2`, `gcc-pass2`) are built and verified.
+  - Verified via [`check-toolchain`](check-toolchain): C and C++ compilation, `<iostream>` and `<ffi.h>` inclusion, `PT_INTERP` pointing to `/sw/glibc/lib/ld-linux-x86-64.so.2`, and dynamic execution—all with zero `-I` and zero `-L` flags.
 
 ## Open Bootstrap / Init Questions (Future)
 

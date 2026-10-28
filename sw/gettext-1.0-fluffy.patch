@@ -1,0 +1,333 @@
+diff -ruN gettext-1.0.orig/build-aux/compile gettext-1.0/build-aux/compile
+--- gettext-1.0.orig/build-aux/compile	2026-01-28 18:39:23.000000000 -0500
++++ gettext-1.0/build-aux/compile	2026-10-27 23:50:14.177462013 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/build-aux/config.guess gettext-1.0/build-aux/config.guess
+--- gettext-1.0.orig/build-aux/config.guess	2025-07-19 10:18:34.000000000 -0400
++++ gettext-1.0/build-aux/config.guess	2026-10-27 23:50:14.176037559 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+diff -ruN gettext-1.0.orig/build-aux/config.libpath gettext-1.0/build-aux/config.libpath
+--- gettext-1.0.orig/build-aux/config.libpath	2026-01-02 05:16:13.000000000 -0500
++++ gettext-1.0/build-aux/config.libpath	2026-10-27 23:50:14.176314290 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in an executable at run time.
+ #
+diff -ruN gettext-1.0.orig/build-aux/config.rpath gettext-1.0/build-aux/config.rpath
+--- gettext-1.0.orig/build-aux/config.rpath	2026-01-02 05:16:13.000000000 -0500
++++ gettext-1.0/build-aux/config.rpath	2026-10-27 23:50:14.176216478 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff -ruN gettext-1.0.orig/build-aux/config.sub gettext-1.0/build-aux/config.sub
+--- gettext-1.0.orig/build-aux/config.sub	2025-07-19 10:18:34.000000000 -0400
++++ gettext-1.0/build-aux/config.sub	2026-10-27 23:50:14.177155034 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+diff -ruN gettext-1.0.orig/build-aux/depcomp gettext-1.0/build-aux/depcomp
+--- gettext-1.0.orig/build-aux/depcomp	2026-01-28 18:39:23.000000000 -0500
++++ gettext-1.0/build-aux/depcomp	2026-10-27 23:50:14.177546868 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/build-aux/git-version-gen gettext-1.0/build-aux/git-version-gen
+--- gettext-1.0.orig/build-aux/git-version-gen	2026-01-02 05:16:50.000000000 -0500
++++ gettext-1.0/build-aux/git-version-gen	2026-10-27 23:50:14.175852594 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2025-06-10.02; # UTC
+ 
+diff -ruN gettext-1.0.orig/build-aux/install-reloc gettext-1.0/build-aux/install-reloc
+--- gettext-1.0.orig/build-aux/install-reloc	2026-01-02 05:16:13.000000000 -0500
++++ gettext-1.0/build-aux/install-reloc	2026-10-27 23:50:14.176747033 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install-reloc - install a program including a relocating wrapper
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+ # Written by Bruno Haible <bruno@clisp.org>, 2003.
+diff -ruN gettext-1.0.orig/build-aux/install-sh gettext-1.0/build-aux/install-sh
+--- gettext-1.0.orig/build-aux/install-sh	2026-01-28 18:39:23.000000000 -0500
++++ gettext-1.0/build-aux/install-sh	2026-10-27 23:50:14.177684712 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/build-aux/jar-cf gettext-1.0/build-aux/jar-cf
+--- gettext-1.0.orig/build-aux/jar-cf	2026-01-26 23:45:13.000000000 -0500
++++ gettext-1.0/build-aux/jar-cf	2026-10-27 23:50:14.175952904 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Creating a Java archive (.jar).
+ 
+ # Copyright (C) 2024-2026 Free Software Foundation, Inc.
+diff -ruN gettext-1.0.orig/build-aux/libtool-reloc gettext-1.0/build-aux/libtool-reloc
+--- gettext-1.0.orig/build-aux/libtool-reloc	2026-01-02 05:16:13.000000000 -0500
++++ gettext-1.0/build-aux/libtool-reloc	2026-10-27 23:50:14.177378132 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # libtool-reloc - libtool wrapper with support for relocatable programs
+ # Copyright (C) 2019-2026 Free Software Foundation, Inc.
+ # Written by Bruno Haible <bruno@clisp.org>, 2019.
+diff -ruN gettext-1.0.orig/build-aux/mdate-sh gettext-1.0/build-aux/mdate-sh
+--- gettext-1.0.orig/build-aux/mdate-sh	2026-01-28 18:39:43.000000000 -0500
++++ gettext-1.0/build-aux/mdate-sh	2026-10-27 23:50:14.176576795 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory, or value of
+ # $SOURCE_DATE_EPOCH, and pretty-print it, formatted like 1 January 2000.
+ 
+diff -ruN gettext-1.0.orig/build-aux/missing gettext-1.0/build-aux/missing
+--- gettext-1.0.orig/build-aux/missing	2026-01-28 18:39:23.000000000 -0500
++++ gettext-1.0/build-aux/missing	2026-10-27 23:50:14.176854381 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/build-aux/mkinstalldirs gettext-1.0/build-aux/mkinstalldirs
+--- gettext-1.0.orig/build-aux/mkinstalldirs	2019-05-11 07:29:32.000000000 -0400
++++ gettext-1.0/build-aux/mkinstalldirs	2026-10-27 23:50:14.176406009 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # mkinstalldirs --- make directory hierarchy
+ 
+ scriptversion=2005-06-29.22
+diff -ruN gettext-1.0.orig/build-aux/reloc-ldflags gettext-1.0/build-aux/reloc-ldflags
+--- gettext-1.0.orig/build-aux/reloc-ldflags	2026-01-02 05:16:13.000000000 -0500
++++ gettext-1.0/build-aux/reloc-ldflags	2026-10-27 23:50:14.176117500 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent compiler option for putting a relocatable library
+ # search path into an executable.
+ #
+diff -ruN gettext-1.0.orig/build-aux/test-driver gettext-1.0/build-aux/test-driver
+--- gettext-1.0.orig/build-aux/test-driver	2026-01-28 18:39:32.000000000 -0500
++++ gettext-1.0/build-aux/test-driver	2026-10-27 23:50:14.177274293 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/build-aux/ylwrap gettext-1.0/build-aux/ylwrap
+--- gettext-1.0.orig/build-aux/ylwrap	2026-01-28 18:39:23.000000000 -0500
++++ gettext-1.0/build-aux/ylwrap	2026-10-27 23:50:14.176494890 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # ylwrap - wrapper for lex/yacc invocations.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/configure gettext-1.0/configure
+--- gettext-1.0.orig/configure	2026-01-28 18:37:31.000000000 -0500
++++ gettext-1.0/configure	2026-10-27 23:50:14.102861770 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for gettext package.
+ #
+diff -ruN gettext-1.0.orig/gettext-runtime/configure gettext-1.0/gettext-runtime/configure
+--- gettext-1.0.orig/gettext-runtime/configure	2026-01-28 18:39:29.000000000 -0500
++++ gettext-1.0/gettext-runtime/configure	2026-10-27 23:50:14.179973617 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for gettext-runtime package.
+ #
+diff -ruN gettext-1.0.orig/gettext-runtime/intl/configure gettext-1.0/gettext-runtime/intl/configure
+--- gettext-1.0.orig/gettext-runtime/intl/configure	2026-01-28 18:39:22.000000000 -0500
++++ gettext-1.0/gettext-runtime/intl/configure	2026-10-27 23:50:14.189632878 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for libintl package.
+ #
+diff -ruN gettext-1.0.orig/gettext-runtime/libasprintf/configure gettext-1.0/gettext-runtime/libasprintf/configure
+--- gettext-1.0.orig/gettext-runtime/libasprintf/configure	2026-01-28 18:39:25.000000000 -0500
++++ gettext-1.0/gettext-runtime/libasprintf/configure	2026-10-27 23:50:14.185270293 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for libasprintf 1.0.
+ #
+diff -ruN gettext-1.0.orig/gettext-tools/configure gettext-1.0/gettext-tools/configure
+--- gettext-1.0.orig/gettext-tools/configure	2026-01-28 18:37:49.000000000 -0500
++++ gettext-1.0/gettext-tools/configure	2026-10-27 23:50:14.109626356 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for gettext-tools package.
+ #
+diff -ruN gettext-1.0.orig/gettext-tools/examples/configure gettext-1.0/gettext-tools/examples/configure
+--- gettext-1.0.orig/gettext-tools/examples/configure	2026-01-28 18:39:38.000000000 -0500
++++ gettext-1.0/gettext-tools/examples/configure	2026-10-27 23:50:14.130533385 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for gettext package.
+ #
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/compile gettext-1.0/libtextstyle/build-aux/compile
+--- gettext-1.0.orig/libtextstyle/build-aux/compile	2026-01-28 18:39:37.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/compile	2026-10-27 23:50:14.211315579 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/config.guess gettext-1.0/libtextstyle/build-aux/config.guess
+--- gettext-1.0.orig/libtextstyle/build-aux/config.guess	2025-07-19 10:18:47.000000000 -0400
++++ gettext-1.0/libtextstyle/build-aux/config.guess	2026-10-27 23:50:14.210292773 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/config.rpath gettext-1.0/libtextstyle/build-aux/config.rpath
+--- gettext-1.0.orig/libtextstyle/build-aux/config.rpath	2026-01-02 05:17:03.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/config.rpath	2026-10-27 23:50:14.210460247 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/config.sub gettext-1.0/libtextstyle/build-aux/config.sub
+--- gettext-1.0.orig/libtextstyle/build-aux/config.sub	2025-07-19 10:18:47.000000000 -0400
++++ gettext-1.0/libtextstyle/build-aux/config.sub	2026-10-27 23:50:14.211160309 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/depcomp gettext-1.0/libtextstyle/build-aux/depcomp
+--- gettext-1.0.orig/libtextstyle/build-aux/depcomp	2026-01-28 18:39:37.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/depcomp	2026-10-27 23:50:14.211388402 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/install-sh gettext-1.0/libtextstyle/build-aux/install-sh
+--- gettext-1.0.orig/libtextstyle/build-aux/install-sh	2026-01-28 18:39:37.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/install-sh	2026-10-27 23:50:14.211515656 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/join-v-1 gettext-1.0/libtextstyle/build-aux/join-v-1
+--- gettext-1.0.orig/libtextstyle/build-aux/join-v-1	2026-01-26 23:45:13.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/join-v-1	2026-10-27 23:50:14.210814071 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # join-v-1 - Filter out a set of items from another set of items.
+ 
+ # Copyright (C) 2021-2026 Free Software Foundation, Inc.
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/mdate-sh gettext-1.0/libtextstyle/build-aux/mdate-sh
+--- gettext-1.0.orig/libtextstyle/build-aux/mdate-sh	2026-01-28 18:39:37.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/mdate-sh	2026-10-27 23:50:14.210618990 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory, or value of
+ # $SOURCE_DATE_EPOCH, and pretty-print it, formatted like 1 January 2000.
+ 
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/missing gettext-1.0/libtextstyle/build-aux/missing
+--- gettext-1.0.orig/libtextstyle/build-aux/missing	2026-01-28 18:39:37.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/missing	2026-10-27 23:50:14.210882455 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/moopp gettext-1.0/libtextstyle/build-aux/moopp
+--- gettext-1.0.orig/libtextstyle/build-aux/moopp	2026-01-28 07:59:46.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/moopp	2026-10-27 23:50:14.210540555 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Minimal Object-Oriented style PreProcessor.
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/run-test gettext-1.0/libtextstyle/build-aux/run-test
+--- gettext-1.0.orig/libtextstyle/build-aux/run-test	2026-01-02 05:17:03.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/run-test	2026-10-27 23:50:14.210384113 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ #
+diff -ruN gettext-1.0.orig/libtextstyle/build-aux/test-driver gettext-1.0/libtextstyle/build-aux/test-driver
+--- gettext-1.0.orig/libtextstyle/build-aux/test-driver	2026-01-28 18:39:37.000000000 -0500
++++ gettext-1.0/libtextstyle/build-aux/test-driver	2026-10-27 23:50:14.211245005 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -ruN gettext-1.0.orig/libtextstyle/configure gettext-1.0/libtextstyle/configure
+--- gettext-1.0.orig/libtextstyle/configure	2026-01-28 18:39:36.000000000 -0500
++++ gettext-1.0/libtextstyle/configure	2026-10-27 23:50:14.198464197 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for libtextstyle package.
+ #
+diff -ruN gettext-1.0.orig/libtextstyle/gnulib-local/build-aux/moopp gettext-1.0/libtextstyle/gnulib-local/build-aux/moopp
+--- gettext-1.0.orig/libtextstyle/gnulib-local/build-aux/moopp	2026-01-27 03:04:37.000000000 -0500
++++ gettext-1.0/libtextstyle/gnulib-local/build-aux/moopp	2026-10-27 23:50:14.203582183 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Minimal Object-Oriented style PreProcessor.
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.

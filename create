@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -euo pipefail
 
@@ -9,6 +9,8 @@ CLONE_NEWNS=0x00020000
 CLONE_NEWNET=0x40000000
 
 MS_RDONLY=0x00000001
+MS_NOSUID=0x00000002
+MS_NODEV=0x00000004
 MS_REMOUNT=0x00000020
 MS_BIND=0x00001000
 MS_REC=0x00004000
@@ -40,9 +42,67 @@ call() {
     fi
 }
 
+mount_squashfs() {
+    local img="$1"
+    local target="$2"
+    mkdir -p "$target"
+
+    local ctrl_ret=""
+    dlcall -n ctrl_ret -r int open "/dev/loop-control" 2
+    local ctrl_fd="${ctrl_ret#*:}"
+    if (( ctrl_fd == -1 ))
+    then
+        fatal "failed to open /dev/loop-control"
+    fi
+
+    local devnr_ret=""
+    dlcall -n devnr_ret -r int ioctl int:$ctrl_fd 0x4C82
+    dlcall -r int close int:$ctrl_fd
+    local devnr="${devnr_ret#*:}"
+    if (( devnr == -1 ))
+    then
+        fatal "failed to get free loop device"
+    fi
+
+    local loop_dev="/dev/loop$devnr"
+    if test ! -b "$loop_dev"
+    then
+        mknod "$loop_dev" b 7 "$devnr"
+    fi
+
+    local img_ret=""
+    dlcall -n img_ret -r int open "$img" 0
+    local img_fd="${img_ret#*:}"
+    if (( img_fd == -1 ))
+    then
+        fatal "failed to open squashfs image: $img"
+    fi
+
+    local loop_ret=""
+    dlcall -n loop_ret -r int open "$loop_dev" 2
+    local loop_fd="${loop_ret#*:}"
+    if (( loop_fd == -1 ))
+    then
+        dlcall -r int close int:$img_fd
+        fatal "failed to open loop device: $loop_dev"
+    fi
+
+    local set_ret=""
+    dlcall -n set_ret -r int ioctl int:$loop_fd 0x4C00 int:$img_fd
+    dlcall -r int close int:$loop_fd
+    dlcall -r int close int:$img_fd
+
+    if (( ${set_ret#*:} == -1 ))
+    then
+        fatal "failed to attach $img to $loop_dev"
+    fi
+
+    call mount "$loop_dev" "$target" squashfs $MS_RDONLY $NULL
+}
+
 lockdown() {
     banner $1
-    trap "fatal \"$1 failed with exit code \$?\"" ERR
+    trap 'fatal "$1 failed with exit code $?"' ERR
     (
         wd="$(pwd)"
 
@@ -51,6 +111,7 @@ lockdown() {
         local -A seen=()
         local -a resolved_deps=()
         local dep_path=""
+        local uname_m="$(uname -m)"
 
         while (( ${#queue[@]} > 0 ))
         do
@@ -90,6 +151,8 @@ lockdown() {
             INSTALL)
                 mkdir -p "$work_dir/installed"
                 ;;
+            SQUASHFS)
+                ;;
             *)
                 fatal "unknown phase: $1"
                 ;;
@@ -104,10 +167,13 @@ lockdown() {
 
         # stop mount propagation back to the parent/host namespace
         call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+        if test -d /mnt/fluffy
+        then
+            call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+        fi
 
         if test "$ON" == host
         then
-            call mount /bin/bash /bin/sh $NULL $MS_BIND $NULL
             call mount /mnt/fluffy/sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
         fi
 
@@ -125,9 +191,16 @@ lockdown() {
                 fatal "multiple squashfs found for dependency $dep: ${matches[*]}"
             fi
             local dep_mount="/sw/${dep%-pass*}"
-            mkdir -p "$dep_mount"
-            mount -t squashfs -o ro "${matches[0]}" "$dep_mount"
+            if test "$dep_mount" == "/sw/$mount_pkg"
+            then
+                dep_mount="/sw/$dep"
+            fi
+            mount_squashfs "${matches[0]}" "$dep_mount"
             dep_path="${dep_path:+$dep_path:}$dep_mount/bin"
+            if test -d "$dep_mount/${uname_m}-fluffy-linux-gnu/bin"
+            then
+                dep_path="$dep_path:$dep_mount/${uname_m}-fluffy-linux-gnu/bin"
+            fi
         done
 
         case "$1" in
@@ -144,6 +217,9 @@ lockdown() {
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 dep_path="/sw/$mount_pkg/bin${dep_path:+:$dep_path}"
                 ;;
+            SQUASHFS)
+                call mount "$sw_dir" "$sw_dir" $NULL $(( MS_BIND | MS_REC )) $NULL
+                ;;
         esac
 
         if test "$ON" == host
@@ -156,23 +232,29 @@ lockdown() {
         call mount / / $NULL $(( MS_BIND | MS_REC )) $NULL
         call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
 
+        if test "$1" == SQUASHFS
+        then
+            call mount none "$sw_dir" $NULL $(( MS_BIND | MS_REMOUNT )) $NULL
+        fi
+
         # mount a fresh private tmpfs on /tmp that is automatically destroyed when the namespace exits
         call mount tmpfs /tmp tmpfs 0 $NULL
 
-        # enter /work so our cwd is on top of the writable mount
-        cd /work
-
-        # permanently drop root (including saved UID/GID) for the build phase
-        call setgroups 0 $NULL
-        call setresgid "$SUDO_GID" "$SUDO_GID" "$SUDO_GID"
-        call setresuid "$SUDO_UID" "$SUDO_UID" "$SUDO_UID"
+        if test "$1" != SQUASHFS
+        then
+            cd /work
+            call setgroups 0 $NULL
+            call setresgid "$SUDO_GID" "$SUDO_GID" "$SUDO_GID"
+            call setresuid "$SUDO_UID" "$SUDO_UID" "$SUDO_UID"
+        else
+            cd "$root"
+        fi
 
         set +h
         umask 022
 
         local saved_term="${TERM:-dumb}"
         local nproc_val="$(nproc)"
-        local uname_m="$(uname -m)"
 
         # scrub environment variables so host variables cannot leak into builds
         for var in $(compgen -e)
@@ -190,18 +272,22 @@ lockdown() {
         export TERM="$saved_term"
         export LC_ALL=POSIX
         export MAKEFLAGS="-j$(( nproc_val > 1 ? nproc_val - 1 : 1 ))"
-        export PATH=/usr/bin
-        if test ! -L /bin
+        if test "$ON" == fluffy
         then
-            export PATH="/bin:$PATH"
-        fi
-        if test -n "$dep_path"
-        then
-            export PATH="$dep_path:$PATH"
-        fi
-
-        if test "$ON" == host
-        then
+            export PATH='/sw/*/bin'
+            export SHELL=/sw/bash/bin/bash
+            export CONFIG_SHELL=/sw/bash/bin/bash
+            export GCC_EXEC_PREFIX=/sw/gcc/lib/gcc/
+        else
+            export PATH=/usr/bin
+            if test ! -L /bin
+            then
+                export PATH="/bin:$PATH"
+            fi
+            if test -n "$dep_path"
+            then
+                export PATH="$dep_path:$PATH"
+            fi
             export FLUFFY=/mnt/fluffy
             export FLUFFY_TGT="${uname_m}-fluffy-linux-gnu"
             export CONFIG_SITE=/dev/null
@@ -224,9 +310,23 @@ fi
 
 pkg_file="$(realpath -e "$1" 2>/dev/null || true)"
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+script_dir="${BASH_SOURCE[0]%/*}"
+if test "$script_dir" == "${BASH_SOURCE[0]}"
+then
+    script_dir="."
+fi
+cd "$script_dir"
 root="$(pwd)"
 work_dir="$root/work"
+
+# if running on the host, enter a private mount namespace immediately so
+# any mounts created during execution are automatically destroyed on exit
+if test -d /mnt/fluffy/sw
+then
+    call unshare $CLONE_NEWNS
+    call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+    call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+fi
 
 # drop to the calling user immediately, keeping saved UID/GID 0 only for lockdown mounts
 call setgroups 0 $NULL
@@ -243,7 +343,7 @@ then
     fatal "Package not found: $1"
 fi
 
-pkg="$(basename "$pkg_file")"
+pkg="${pkg_file##*/}"
 mount_pkg="${pkg%-pass*}"
 
 declare -a ARCHIVES
@@ -252,11 +352,20 @@ declare -a NEEDS=()
 declare -a MAKE_NEEDS=()
 declare -a CHECK_NEEDS=()
 declare -a INSTALL_NEEDS=()
+declare -a SQUASHFS_NEEDS=()
 
-banner PREPARE
+SQUASHFS() {
+    rm -f "$squashfs_file"
+    mksquashfs \
+        "$work_dir/installed" "$squashfs_file" \
+        -all-root \
+        -comp zstd \
+        -quiet \
+        -no-progress
+}
 
 ON=fluffy
-source "$pkg_file"
+source "$pkg_file" 
 
 if test -z "${VERSION:-}"
 then
@@ -273,12 +382,99 @@ then
     fatal "Invalid number of items: ${#ARCHIVES[@]}"
 fi
 
+# If building natively for Fluffy but running on the host, enter a private
+# mount namespace, set up the chroot environment, and re-exec create inside it.
+if test "$ON" == fluffy && test -d /mnt/fluffy/sw
+then
+    log "entering chroot on /mnt/fluffy for $pkg..."
+    (
+        call setresuid 0 0 0
+        call setresgid 0 0 0
+
+        # get new mount namespace
+        call unshare $CLONE_NEWNS
+
+        # stop mount propagation back to the parent/host namespace
+        call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+        call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+
+        FLUFFY=/mnt/fluffy
+
+        # virtual kernel filesystems
+        mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp}
+        call mount /dev "$FLUFFY/dev" $NULL $MS_BIND $NULL
+        call mount /dev/pts "$FLUFFY/dev/pts" $NULL $MS_BIND $NULL
+        call mount proc "$FLUFFY/proc" proc 0 $NULL
+        call mount sysfs "$FLUFFY/sys" sysfs 0 $NULL
+        call mount tmpfs "$FLUFFY/run" tmpfs 0 $NULL
+        call mount tmpfs "$FLUFFY/tmp" tmpfs 0 $NULL
+        if test -h "$FLUFFY/dev/shm"
+        then
+            mkdir -p "$FLUFFY$(realpath /dev/shm)"
+            chmod 1777 "$FLUFFY$(realpath /dev/shm)"
+        else
+            call mount tmpfs "$FLUFFY/dev/shm" tmpfs $(( MS_NOSUID | MS_NODEV )) $NULL
+        fi
+        if test -f /etc/resolv.conf
+        then
+            touch "$FLUFFY/etc/resolv.conf"
+            call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
+        fi
+
+        # bind-mount repository at identical path inside the chroot
+        mkdir -p "$FLUFFY$root"
+        call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
+
+        # mount bare minimum needed for bash, ctypes, extraction, and packaging
+        declare -a chroot_base_pkgs=(
+            glibc-pass1
+            ncurses-pass1
+            bash-pass1
+            libffi-pass1
+            ctypes-sh-pass1
+            coreutils-pass1
+            tar-pass1
+            xz-pass1
+            gzip-pass1
+        )
+        for p in "${chroot_base_pkgs[@]}"
+        do
+            shopt -s nullglob
+            imgs=("$FLUFFY/sw/$p"-[0-9]*.squashfs)
+            shopt -u nullglob
+            if (( ${#imgs[@]} == 0 ))
+            then
+                fatal "no squashfs found for chroot base package: $p"
+            fi
+            if (( ${#imgs[@]} > 1 ))
+            then
+                fatal "multiple squashfs found for chroot base package $p: ${imgs[*]}"
+            fi
+            mount_squashfs "${imgs[0]}" "$FLUFFY/sw/${p%-pass*}"
+        done
+
+        # chroot into $FLUFFY and chdir to repo
+        call chroot "$FLUFFY"
+        call chdir "$root"
+
+        export PATH='/sw/*/bin'
+        exec /sw/bash/bin/bash "$root/create" "$@"
+    )
+    exit $?
+fi
+
+banner PREPARE
+
 case "$ON" in
     host)
         sw_dir="/mnt/fluffy/sw"
         ;;
     fluffy)
         sw_dir="/sw"
+        if (( ${#SQUASHFS_NEEDS[@]} == 0 ))
+        then
+            SQUASHFS_NEEDS=(squashfs-tools-pass1 gcc-pass2)
+        fi
         ;;
     *)
         fatal "Invalid ON target: $ON"
@@ -332,7 +528,7 @@ mkdir -p "$work_dir/src"
 log "done"
 
 cd "$work_dir/src"
-log -n "extracting ${archives[0]}..."
+log -n "extracting ${archives[0]}... "
 tar -xf "$work_dir/archives/${archives[0]}"
 log "done"
 
@@ -347,7 +543,7 @@ for archive in "${archives[@]:1}"
 do
     case "$archive" in
         *.tar.*)
-            log -n "extracting $archive..."
+            log -n "extracting $archive... "
             tar -xf "$work_dir/archives/$archive"
             log "done"
             ;;
@@ -370,20 +566,8 @@ fi
 
 lockdown INSTALL
 
-banner SQUASHFS
-
 squashfs_file="$sw_dir/$pkg-$VERSION.squashfs"
-(
-    call setresuid 0 0 0
-    call setresgid 0 0 0
-    rm -f "$squashfs_file"
-    mksquashfs \
-        "$work_dir/installed" "$squashfs_file" \
-        -all-root \
-        -comp zstd \
-        -quiet \
-        -no-progress
-)
+lockdown SQUASHFS
 
 log "squashfs created: $squashfs_file"
 
