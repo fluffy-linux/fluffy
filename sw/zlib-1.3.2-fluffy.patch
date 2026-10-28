@@ -1,0 +1,21 @@
+diff -Naur zlib-1.3.2.orig/configure zlib-1.3.2/configure
+--- zlib-1.3.2.orig/configure	2026-02-17 04:13:25.000000000 -0500
++++ zlib-1.3.2/configure	2026-10-28 01:48:51.932845195 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # configure script for zlib.
+ #
+ # Normally configure builds both a static and a shared library.
+diff -Naur zlib-1.3.2.orig/Makefile.in zlib-1.3.2/Makefile.in
+--- zlib-1.3.2.orig/Makefile.in	2026-02-17 07:47:06.000000000 -0500
++++ zlib-1.3.2/Makefile.in	2026-10-28 01:48:51.932942766 -0400
+@@ -41,7 +41,7 @@
+ LDCONFIG=ldconfig
+ LDSHAREDLIBC=-lc
+ TAR=tar
+-SHELL=/bin/sh
++SHELL=/sw/bash/bin/bash
+ EXE=
+ 
+ prefix = /usr/local

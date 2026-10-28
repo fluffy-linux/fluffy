@@ -1,0 +1,321 @@
+diff -Naur perl-5.44.0.orig/cflags.SH perl-5.44.0/cflags.SH
+--- perl-5.44.0.orig/cflags.SH	2026-06-22 10:48:00.000000000 -0400
++++ perl-5.44.0/cflags.SH	2026-10-28 01:39:41.525612478 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Generate the cflags script, which is used to determine what cflags
+ # to pass to the compiler for compiling the core perl.
+diff -Naur perl-5.44.0.orig/config_h.SH perl-5.44.0/config_h.SH
+--- perl-5.44.0.orig/config_h.SH	2026-06-22 10:48:00.000000000 -0400
++++ perl-5.44.0/config_h.SH	2026-10-28 01:39:41.462022608 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # THIS IS A GENERATED FILE
+ # DO NOT HAND-EDIT
+diff -Naur perl-5.44.0.orig/Configure perl-5.44.0/Configure
+--- perl-5.44.0.orig/Configure	2026-06-22 10:48:00.000000000 -0400
++++ perl-5.44.0/Configure	2026-10-28 01:39:41.473298243 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # If these # comments don't work, trim them. Don't worry about any other
+ # shell scripts, Configure will trim # comments from them for you.
+diff -Naur perl-5.44.0.orig/configure.gnu perl-5.44.0/configure.gnu
+--- perl-5.44.0.orig/configure.gnu	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/configure.gnu	2026-10-28 01:39:41.525379450 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # GNU configure-like front end to metaconfig's Configure.
+ #
+diff -Naur perl-5.44.0.orig/cpan/bignum/gentest/scope-nested-const.sh perl-5.44.0/cpan/bignum/gentest/scope-nested-const.sh
+--- perl-5.44.0.orig/cpan/bignum/gentest/scope-nested-const.sh	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/cpan/bignum/gentest/scope-nested-const.sh	2026-10-28 01:39:41.723989752 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # -*- mode: cperl; coding: utf-8-unix; -*-
+ 
+ eval 'exec ${PERL-perl} -Sx "$0" ${1+"$@"}'
+diff -Naur perl-5.44.0.orig/cpan/bignum/gentest/scope-nested-hex-oct.sh perl-5.44.0/cpan/bignum/gentest/scope-nested-hex-oct.sh
+--- perl-5.44.0.orig/cpan/bignum/gentest/scope-nested-hex-oct.sh	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/cpan/bignum/gentest/scope-nested-hex-oct.sh	2026-10-28 01:39:41.724083965 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # -*- mode: cperl; coding: utf-8-unix; -*-
+ 
+ eval 'exec ${PERL-perl} -Sx "$0" ${1+"$@"}'
+diff -Naur perl-5.44.0.orig/cpan/Memoize/t/st_concurrency perl-5.44.0/cpan/Memoize/t/st_concurrency
+--- perl-5.44.0.orig/cpan/Memoize/t/st_concurrency	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/cpan/Memoize/t/st_concurrency	2026-10-28 01:39:41.747811303 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # running this script intermittently yields
+ #
+diff -Naur perl-5.44.0.orig/cpan/Test-Harness/t/source_tests/source_args.sh perl-5.44.0/cpan/Test-Harness/t/source_tests/source_args.sh
+--- perl-5.44.0.orig/cpan/Test-Harness/t/source_tests/source_args.sh	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/cpan/Test-Harness/t/source_tests/source_args.sh	2026-10-28 01:39:41.694636141 -0400
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ echo "1..1"
+ echo "ok 1 - source_args.sh $1"
+diff -Naur perl-5.44.0.orig/cpan/Test-Harness/t/source_tests/source.sh perl-5.44.0/cpan/Test-Harness/t/source_tests/source.sh
+--- perl-5.44.0.orig/cpan/Test-Harness/t/source_tests/source.sh	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/cpan/Test-Harness/t/source_tests/source.sh	2026-10-28 01:39:41.694485081 -0400
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ echo "1..1"
+ echo "ok 1 - source.sh"
+diff -Naur perl-5.44.0.orig/cpan/Test-Harness/t/subclass_tests/non_perl_source perl-5.44.0/cpan/Test-Harness/t/subclass_tests/non_perl_source
+--- perl-5.44.0.orig/cpan/Test-Harness/t/subclass_tests/non_perl_source	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/cpan/Test-Harness/t/subclass_tests/non_perl_source	2026-10-28 01:39:41.694814744 -0400
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ echo "1..1"
+ echo "ok 1 - this is a test"
+diff -Naur perl-5.44.0.orig/Cross/cflags-cross-arm perl-5.44.0/Cross/cflags-cross-arm
+--- perl-5.44.0.orig/Cross/cflags-cross-arm	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/Cross/cflags-cross-arm	2026-10-28 01:39:41.819793894 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Extra warnings, used e.g. for gcc.
+ warn="-Wall -Wextra -Wendif-labels -Wc++-compat"
+diff -Naur perl-5.44.0.orig/Cross/config.sh-arm-linux perl-5.44.0/Cross/config.sh-arm-linux
+--- perl-5.44.0.orig/Cross/config.sh-arm-linux	2026-06-22 20:51:45.000000000 -0400
++++ perl-5.44.0/Cross/config.sh-arm-linux	2026-10-28 01:39:41.819465736 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # This file was produced by running the Configure script. It holds all the
+ # definitions figured out by Configure. Should you modify one of these values,
+diff -Naur perl-5.44.0.orig/Cross/config.sh-arm-linux-n770 perl-5.44.0/Cross/config.sh-arm-linux-n770
+--- perl-5.44.0.orig/Cross/config.sh-arm-linux-n770	2026-06-22 20:51:45.000000000 -0400
++++ perl-5.44.0/Cross/config.sh-arm-linux-n770	2026-10-28 01:39:41.819960126 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # This file was produced by running the Configure script. It holds all the
+ # definitions figured out by Configure. Should you modify one of these values,
+diff -Naur perl-5.44.0.orig/Cross/Makefile-cross-SH perl-5.44.0/Cross/Makefile-cross-SH
+--- perl-5.44.0.orig/Cross/Makefile-cross-SH	2026-06-22 10:48:00.000000000 -0400
++++ perl-5.44.0/Cross/Makefile-cross-SH	2026-10-28 01:39:41.820395725 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # This file is used to create generic Makefile for cross-compile
+ # (borrowed from Makefile.SH)
+diff -Naur perl-5.44.0.orig/Cross/warp perl-5.44.0/Cross/warp
+--- perl-5.44.0.orig/Cross/warp	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/Cross/warp	2026-10-28 01:39:41.819661489 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ 
+ ## This script contains an rm -rf.  This may alarm you.
+ ## These directories need to be recursively deleted.
+diff -Naur perl-5.44.0.orig/ext/SDBM_File/grind perl-5.44.0/ext/SDBM_File/grind
+--- perl-5.44.0.orig/ext/SDBM_File/grind	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/ext/SDBM_File/grind	2026-10-28 01:39:41.567050171 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ rm -f /tmp/*.dir /tmp/*.pag
+ awk -e '{
+         printf "%s\t", $0
+diff -Naur perl-5.44.0.orig/hints/cygwin.sh perl-5.44.0/hints/cygwin.sh
+--- perl-5.44.0.orig/hints/cygwin.sh	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/hints/cygwin.sh	2026-10-28 01:39:41.827623324 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # cygwin.sh - hints for building perl using the Cygwin environment for Win32
+ #
+ 
+diff -Naur perl-5.44.0.orig/hints/gnukfreebsd.sh perl-5.44.0/hints/gnukfreebsd.sh
+--- perl-5.44.0.orig/hints/gnukfreebsd.sh	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/hints/gnukfreebsd.sh	2026-10-28 01:39:41.829321146 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Support for Debian GNU/kFreeBSD (kfreebsd-gnu)
+ # A port of the Debian GNU system using the FreeBSD kernel.
+diff -Naur perl-5.44.0.orig/hints/gnuknetbsd.sh perl-5.44.0/hints/gnuknetbsd.sh
+--- perl-5.44.0.orig/hints/gnuknetbsd.sh	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/hints/gnuknetbsd.sh	2026-10-28 01:39:41.828846853 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Support for Debian GNU/NetBSD (netbsd-i386 and netbsd-alpha)
+ # A port of the Debian GNU system using the NetBSD kernel.
+diff -Naur perl-5.44.0.orig/hints/os2.sh perl-5.44.0/hints/os2.sh
+--- perl-5.44.0.orig/hints/os2.sh	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/hints/os2.sh	2026-10-28 01:39:41.828373472 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # hints/os2.sh
+ # This file reflects the tireless work of
+ # Ilya Zakharevich <ilya@math.ohio-state.edu>
+diff -Naur perl-5.44.0.orig/hints/riscos.sh perl-5.44.0/hints/riscos.sh
+--- perl-5.44.0.orig/hints/riscos.sh	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/hints/riscos.sh	2026-10-28 01:39:41.829019204 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # riscos.sh - hints for building perl using the gccsdk cross compiler for RISC OS
+ #
+ 
+diff -Naur perl-5.44.0.orig/makedependfile.SH perl-5.44.0/makedependfile.SH
+--- perl-5.44.0.orig/makedependfile.SH	2026-06-22 10:48:00.000000000 -0400
++++ perl-5.44.0/makedependfile.SH	2026-10-28 01:39:41.523811892 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ case $PERL_CONFIG_SH in
+ '')
+ 	if test -f config.sh; then TOP=.;
+diff -Naur perl-5.44.0.orig/makedepend.SH perl-5.44.0/makedepend.SH
+--- perl-5.44.0.orig/makedepend.SH	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/makedepend.SH	2026-10-28 01:39:41.470666011 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ case $PERL_CONFIG_SH in
+ '')
+ 	if test -f config.sh; then TOP=.;
+diff -Naur perl-5.44.0.orig/Makefile.SH perl-5.44.0/Makefile.SH
+--- perl-5.44.0.orig/Makefile.SH	2026-06-22 20:51:45.000000000 -0400
++++ perl-5.44.0/Makefile.SH	2026-10-28 01:39:41.520235352 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # quote() - Creates a shell literal
+ # Usage:  echo "...` quote "..." `..."
+diff -Naur perl-5.44.0.orig/metaconfig.SH perl-5.44.0/metaconfig.SH
+--- perl-5.44.0.orig/metaconfig.SH	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/metaconfig.SH	2026-10-28 01:39:41.478359268 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # This is a placeholder file for symbols that should be exported
+ # into config_h.SH and Porting/Glossary. See also metaconfig.h
+diff -Naur perl-5.44.0.orig/myconfig.SH perl-5.44.0/myconfig.SH
+--- perl-5.44.0.orig/myconfig.SH	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/myconfig.SH	2026-10-28 01:39:41.463987825 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ case $PERL_CONFIG_SH in
+ '')
+diff -Naur perl-5.44.0.orig/plan9/config_sh.sample perl-5.44.0/plan9/config_sh.sample
+--- perl-5.44.0.orig/plan9/config_sh.sample	2026-06-22 20:51:45.000000000 -0400
++++ perl-5.44.0/plan9/config_sh.sample	2026-10-28 01:39:41.634424560 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # This file was produced by running the Configure script. It holds all the
+ # definitions figured out by Configure. Should you modify one of these values,
+diff -Naur perl-5.44.0.orig/Policy_sh.SH perl-5.44.0/Policy_sh.SH
+--- perl-5.44.0.orig/Policy_sh.SH	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/Policy_sh.SH	2026-10-28 01:39:41.522675370 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ case $PERL_CONFIG_SH in
+ '') . ./config.sh ;;
+diff -Naur perl-5.44.0.orig/Porting/bisect-example.sh perl-5.44.0/Porting/bisect-example.sh
+--- perl-5.44.0.orig/Porting/bisect-example.sh	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/Porting/bisect-example.sh	2026-10-28 01:39:41.825197193 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ echo >&2 You need to edit this to run your test case
+ exit 1
+ 
+diff -Naur perl-5.44.0.orig/Porting/config.sh perl-5.44.0/Porting/config.sh
+--- perl-5.44.0.orig/Porting/config.sh	2026-06-22 20:51:45.000000000 -0400
++++ perl-5.44.0/Porting/config.sh	2026-10-28 01:39:41.821072921 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # This file was produced by running the Configure script. It holds all the
+ # definitions figured out by Configure. Should you modify one of these values,
+diff -Naur perl-5.44.0.orig/Porting/git-make-p4-refs perl-5.44.0/Porting/git-make-p4-refs
+--- perl-5.44.0.orig/Porting/git-make-p4-refs	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/Porting/git-make-p4-refs	2026-10-28 01:39:41.822277143 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # this script creates a tag for every p4raw-id
+ # the output can be appended to .git/packed-refs, but make sure to back up
+diff -Naur perl-5.44.0.orig/Porting/mksample perl-5.44.0/Porting/mksample
+--- perl-5.44.0.orig/Porting/mksample	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/Porting/mksample	2026-10-28 01:39:41.821710586 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # This script can be used to keep Porting/config_H (which is an example
+ # config.h) up-to-date with the latest Configure.
+diff -Naur perl-5.44.0.orig/Porting/rt_list_patches perl-5.44.0/Porting/rt_list_patches
+--- perl-5.44.0.orig/Porting/rt_list_patches	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/Porting/rt_list_patches	2026-10-28 01:39:41.821943837 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ if [ -z "$RTUSER" ]; then
+     echo "You need to set the environment variable RTUSER to your rt.perl.org username"
+diff -Naur perl-5.44.0.orig/qnx/ar perl-5.44.0/qnx/ar
+--- perl-5.44.0.orig/qnx/ar	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/qnx/ar	2026-10-28 01:39:41.608216397 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #__USAGE
+ #%C	key library name ...
+ #	Crude cover for wlib to be compatible with ar
+diff -Naur perl-5.44.0.orig/qnx/cpp perl-5.44.0/qnx/cpp
+--- perl-5.44.0.orig/qnx/cpp	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/qnx/cpp	2026-10-28 01:39:41.608328021 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #__USAGE
+ #%C	[-P] [-C] other options
+ #	cpp is a wrapper for wcc to make it work like other cpp's
+diff -Naur perl-5.44.0.orig/runtests.SH perl-5.44.0/runtests.SH
+--- perl-5.44.0.orig/runtests.SH	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/runtests.SH	2026-10-28 01:39:41.478271282 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ case $PERL_CONFIG_SH in
+ '')

@@ -1,0 +1,210 @@
+diff -Naur wget-1.25.0.orig/build-aux/announce-gen wget-1.25.0/build-aux/announce-gen
+--- wget-1.25.0.orig/build-aux/announce-gen	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/announce-gen	2026-10-28 01:23:55.031941765 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Generate a release announcement message.
+diff -Naur wget-1.25.0.orig/build-aux/compile wget-1.25.0/build-aux/compile
+--- wget-1.25.0.orig/build-aux/compile	2024-11-10 16:27:45.000000000 -0500
++++ wget-1.25.0/build-aux/compile	2026-10-28 01:23:55.034310481 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur wget-1.25.0.orig/build-aux/config.guess wget-1.25.0/build-aux/config.guess
+--- wget-1.25.0.orig/build-aux/config.guess	2024-11-10 16:27:45.000000000 -0500
++++ wget-1.25.0/build-aux/config.guess	2026-10-28 01:23:55.032213536 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+diff -Naur wget-1.25.0.orig/build-aux/config.rpath wget-1.25.0/build-aux/config.rpath
+--- wget-1.25.0.orig/build-aux/config.rpath	2024-11-10 16:27:33.000000000 -0500
++++ wget-1.25.0/build-aux/config.rpath	2026-10-28 01:23:55.032616085 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in an executable.
+ #
+diff -Naur wget-1.25.0.orig/build-aux/config.sub wget-1.25.0/build-aux/config.sub
+--- wget-1.25.0.orig/build-aux/config.sub	2024-11-10 16:27:45.000000000 -0500
++++ wget-1.25.0/build-aux/config.sub	2026-10-28 01:23:55.033658605 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+diff -Naur wget-1.25.0.orig/build-aux/depcomp wget-1.25.0/build-aux/depcomp
+--- wget-1.25.0.orig/build-aux/depcomp	2024-11-10 16:27:46.000000000 -0500
++++ wget-1.25.0/build-aux/depcomp	2026-10-28 01:23:55.034466599 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur wget-1.25.0.orig/build-aux/do-release-commit-and-tag wget-1.25.0/build-aux/do-release-commit-and-tag
+--- wget-1.25.0.orig/build-aux/do-release-commit-and-tag	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/do-release-commit-and-tag	2026-10-28 01:23:55.032485138 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # In a git/autoconf/automake-enabled project with a NEWS file and a version-
+ # controlled .prev-version file, automate the procedure by which we record
+ # the date, release-type and version string in the NEWS file.  That commit
+diff -Naur wget-1.25.0.orig/build-aux/gendocs.sh wget-1.25.0/build-aux/gendocs.sh
+--- wget-1.25.0.orig/build-aux/gendocs.sh	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/gendocs.sh	2026-10-28 01:23:55.033965312 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ # gendocs.sh -- generate a GNU manual in many formats.  This script is
+ #   mentioned in maintain.texi.  See the help message below for usage details.
+ 
+diff -Naur wget-1.25.0.orig/build-aux/gitlog-to-changelog wget-1.25.0/build-aux/gitlog-to-changelog
+--- wget-1.25.0.orig/build-aux/gitlog-to-changelog	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/gitlog-to-changelog	2026-10-28 01:23:55.033384695 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Convert git log output to ChangeLog format.
+diff -Naur wget-1.25.0.orig/build-aux/git-version-gen wget-1.25.0/build-aux/git-version-gen
+--- wget-1.25.0.orig/build-aux/git-version-gen	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/git-version-gen	2026-10-28 01:23:55.031567846 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2024-07-04.10; # UTC
+ 
+diff -Naur wget-1.25.0.orig/build-aux/gnupload wget-1.25.0/build-aux/gnupload
+--- wget-1.25.0.orig/build-aux/gnupload	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/gnupload	2026-10-28 01:23:55.032887703 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2024-07-04.10; # UTC
+diff -Naur wget-1.25.0.orig/build-aux/gnu-web-doc-update wget-1.25.0/build-aux/gnu-web-doc-update
+--- wget-1.25.0.orig/build-aux/gnu-web-doc-update	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/gnu-web-doc-update	2026-10-28 01:23:55.033248902 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Run this after each non-alpha release, to update the web documentation at
+ # https://www.gnu.org/software/$pkg/manual/
+ 
+diff -Naur wget-1.25.0.orig/build-aux/install-sh wget-1.25.0/build-aux/install-sh
+--- wget-1.25.0.orig/build-aux/install-sh	2024-11-10 16:27:45.000000000 -0500
++++ wget-1.25.0/build-aux/install-sh	2026-10-28 01:23:55.035509692 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur wget-1.25.0.orig/build-aux/mdate-sh wget-1.25.0/build-aux/mdate-sh
+--- wget-1.25.0.orig/build-aux/mdate-sh	2024-11-10 16:27:45.000000000 -0500
++++ wget-1.25.0/build-aux/mdate-sh	2026-10-28 01:23:55.033022384 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur wget-1.25.0.orig/build-aux/missing wget-1.25.0/build-aux/missing
+--- wget-1.25.0.orig/build-aux/missing	2024-11-10 16:27:45.000000000 -0500
++++ wget-1.25.0/build-aux/missing	2026-10-28 01:23:55.033126028 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2024-06-07.14; # UTC
+diff -Naur wget-1.25.0.orig/build-aux/test-driver wget-1.25.0/build-aux/test-driver
+--- wget-1.25.0.orig/build-aux/test-driver	2024-11-10 16:27:46.000000000 -0500
++++ wget-1.25.0/build-aux/test-driver	2026-10-28 01:23:55.034191112 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur wget-1.25.0.orig/build-aux/update-copyright wget-1.25.0/build-aux/update-copyright
+--- wget-1.25.0.orig/build-aux/update-copyright	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/update-copyright	2026-10-28 01:23:55.031791267 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Update an FSF copyright year list to include the current year.
+diff -Naur wget-1.25.0.orig/build-aux/useless-if-before-free wget-1.25.0/build-aux/useless-if-before-free
+--- wget-1.25.0.orig/build-aux/useless-if-before-free	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/useless-if-before-free	2026-10-28 01:23:55.032766163 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Detect instances of "if (p) free (p);".
+diff -Naur wget-1.25.0.orig/build-aux/vc-list-files wget-1.25.0/build-aux/vc-list-files
+--- wget-1.25.0.orig/build-aux/vc-list-files	2024-11-10 16:27:18.000000000 -0500
++++ wget-1.25.0/build-aux/vc-list-files	2026-10-28 01:23:55.031691942 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # List version-controlled file names.
+ 
+ # Print a version string.
+diff -Naur wget-1.25.0.orig/configure wget-1.25.0/configure
+--- wget-1.25.0.orig/configure	2024-11-10 16:29:15.000000000 -0500
++++ wget-1.25.0/configure	2026-10-28 01:23:54.980869553 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for wget 1.25.0.
+ #
+diff -Naur wget-1.25.0.orig/src/openssl.c wget-1.25.0/src/openssl.c
+--- wget-1.25.0.orig/src/openssl.c	2024-03-11 18:59:02.000000000 -0400
++++ wget-1.25.0/src/openssl.c	2026-10-28 01:23:55.051598930 -0400
+@@ -226,7 +226,7 @@
+       break;
+ 
+     case secure_protocol_sslv3:
+-#ifndef OPENSSL_NO_SSL3_METHOD
++#if !defined OPENSSL_NO_SSL3_METHOD && OPENSSL_VERSION_NUMBER < 0x40000000L
+       meth = SSLv3_client_method ();
+ #endif
+       break;
+diff -Naur wget-1.25.0.orig/testenv/certs/make_ca.sh wget-1.25.0/testenv/certs/make_ca.sh
+--- wget-1.25.0.orig/testenv/certs/make_ca.sh	2024-03-11 18:59:02.000000000 -0400
++++ wget-1.25.0/testenv/certs/make_ca.sh	2026-10-28 01:23:54.999454545 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ 
+ # create a self signed CA certificate
+ certtool --generate-privkey --outfile ca-key.pem
+diff -Naur wget-1.25.0.orig/tests/certs/create-certs.sh wget-1.25.0/tests/certs/create-certs.sh
+--- wget-1.25.0.orig/tests/certs/create-certs.sh	2024-03-11 18:59:02.000000000 -0400
++++ wget-1.25.0/tests/certs/create-certs.sh	2026-10-28 01:23:54.996163183 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ #create key for CA self-signed certificate
+ certtool --generate-privkey --outfile test-ca-key.pem --rsa

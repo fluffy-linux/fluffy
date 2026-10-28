@@ -1,0 +1,19 @@
+VERSION=1.25.0
+
+ARCHIVES=(
+    766e48423e79359ea31e41db9e5c289675947a7fcf2efdcedb726ac9d0da3784 https://ftpmirror.gnu.org/wget/wget-$VERSION.tar.gz
+    256d47554899d2c8bbf0947fa9de192c99eaa8bb69e0a396d80c947eab37bc2b file://wget-$VERSION-fluffy.patch
+)
+
+MAKE() {
+    patch -Np1 -i wget-$VERSION-fluffy.patch
+    ./configure \
+        --prefix=/sw/wget \
+        --sysconfdir=/etc \
+        --with-ssl=openssl
+    make
+}
+
+INSTALL() {
+    make install
+}

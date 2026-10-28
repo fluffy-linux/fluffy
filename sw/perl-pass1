@@ -1,0 +1,33 @@
+VERSION=5.44.0
+
+ARCHIVES=(
+    505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://www.cpan.org/src/5.0/perl-$VERSION.tar.xz
+    b524c656efdbf2e4ef50972523c2ccf9a82472228c438d70f01d2c2acf1a93e3 file://perl-$VERSION-fluffy.patch
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(bash-pass1 binutils-pass2 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc-pass1 grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1)
+
+MAKE() {
+    patch -Np1 -i perl-$VERSION-fluffy.patch
+    sh Configure -des \
+        -D prefix=/sw/perl \
+        -D vendorprefix=/sw/perl \
+        -D useshrplib \
+        -D privlib=/sw/perl/lib/perl5/5.44/core_perl \
+        -D archlib=/sw/perl/lib/perl5/5.44/core_perl \
+        -D sitelib=/sw/perl/lib/perl5/5.44/site_perl \
+        -D sitearch=/sw/perl/lib/perl5/5.44/site_perl \
+        -D vendorlib=/sw/perl/lib/perl5/5.44/vendor_perl \
+        -D vendorarch=/sw/perl/lib/perl5/5.44/vendor_perl \
+        -D targetsh=/sw/bash/bin/bash \
+        -D locincpth="" \
+        -D loclibpth=""
+    make
+}
+
+INSTALL_NEEDS=(bash-pass1 binutils-pass2 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc-pass1 grep-pass1 linux-headers make-pass1 sed-pass1)
+
+INSTALL() {
+    make install
+}

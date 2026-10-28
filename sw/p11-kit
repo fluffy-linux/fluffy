@@ -1,0 +1,27 @@
+VERSION=0.26.5
+
+ARCHIVES=(
+    f2cc09111e44bf3fea58f023180b33acea90aa82d042d6fbb623fbc5ba033bb7 https://github.com/p11-glue/p11-kit/releases/download/$VERSION/p11-kit-$VERSION.tar.xz
+    d260b3758fbbb3bf8ab7b6c2a8608a217b9385474da0ecb78a97af4e98e3fd68 file://p11-kit-$VERSION-fluffy.patch
+)
+
+MAKE() {
+    patch -Np1 -i p11-kit-$VERSION-fluffy.patch
+    ./configure \
+        --prefix=/sw/p11-kit \
+        --sysconfdir=/etc \
+        --with-trust-paths=/etc/pki/anchors \
+        --disable-static
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    ln -sfv /sw/p11-kit/libexec/p11-kit/trust-extract-compat \
+        /sw/p11-kit/bin/update-ca-certificates
+    ln -sfv ./pkcs11/p11-kit-trust.so /sw/p11-kit/lib/libnssckbi.so
+}

@@ -509,6 +509,16 @@ do
         # assume downloaded
         continue
     fi
+    if test -f "$root/packages/$filename"
+    then
+        actual_sha256="$(sha256sum "$root/packages/$filename" | cut -d" " -f1)"
+        if test "$actual_sha256" != "$sha256"
+        then
+            fatal "checksum mismatch for $filename: $actual_sha256 != $sha256"
+        fi
+        cp "$root/packages/$filename" "$work_dir/archives/$filename"
+        continue
+    fi
     tmpfile="$(mktemp)"
     log -n "downloading $filename... "
     wget --quiet --output-document "$tmpfile" "$url"
