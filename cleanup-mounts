@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if test "${EUID:-$(id -u)}" -ne 0
+then
+    echo "Must be run as root (sudo $0)" >&2
+    exit 1
+fi
+
+FLUFFY="${FLUFFY:-/mnt/fluffy}"
+
+echo "Checking for active mounts under $FLUFFY..."
+
+# Find all mountpoints under $FLUFFY (excluding $FLUFFY itself), longest path first
+mounts="$(awk -v prefix="$FLUFFY/" '$2 ~ "^" prefix { print $2 }' /proc/mounts | sort -r || true)"
+
+if test -n "$mounts"
+then
+    while IFS= read -r m
+    do
+        if test -n "$m"
+        then
+            echo "Unmounting $m..."
+            umount -v "$m" || umount -l "$m" || true
+        fi
+    done <<< "$mounts"
+else
+    echo "No active submounts found under $FLUFFY."
+fi
+
+# Remove stale dummy squashfs-tools directory if present
+if test -f "$FLUFFY/sw/squashfs-tools/bin/mksquashfs" && test ! -s "$FLUFFY/sw/squashfs-tools/bin/mksquashfs"
+then
+    echo "Removing stale dummy $FLUFFY/sw/squashfs-tools..."
+    rm -rf "$FLUFFY/sw/squashfs-tools"
+fi
+
+# Remove empty leftover mountpoint directories in $FLUFFY/sw (keeps all .squashfs files)
+if test -d "$FLUFFY/sw"
+then
+    echo "Cleaning up empty mountpoint directories under $FLUFFY/sw..."
+    find "$FLUFFY/sw" -mindepth 1 -maxdepth 1 -type d -empty -delete
+fi
+
+# Remove empty directory trees under $FLUFFY/home
+if test -d "$FLUFFY/home"
+then
+    echo "Cleaning up empty directories under $FLUFFY/home..."
+    find "$FLUFFY/home" -depth -mindepth 1 -type d -empty -delete 2>/dev/null || true
+fi
+
+
+# Detach any unused loop devices
+if command -v losetup >/dev/null 2>&1
+then
+    echo "Detaching unused loop devices..."
+    losetup -D 2>/dev/null || true
+fi
+
+echo "Cleanup complete."

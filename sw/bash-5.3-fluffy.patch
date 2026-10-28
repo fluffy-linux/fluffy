@@ -1,0 +1,148 @@
+--- bash-5.3.orig/findcmd.c	2026-10-27 22:42:53.341373280 -0400
++++ bash-5.3/findcmd.c	2026-10-27 22:44:23.807381430 -0400
+@@ -485,6 +485,34 @@ user_command_matches (const char *name,
+ 	  if (path_element == 0)
+ 	    break;
+ 
++	  if (unquoted_glob_pattern_p (path_element))
++	    {
++	      char **dirs;
++	      dirs = shell_glob_filename (path_element, 0);
++	      if (dirs && GLOB_FAILED (dirs) == 0)
++		{
++		  int j;
++		  for (j = 0; dirs[j]; j++)
++		    {
++		      match = find_in_path_element (name, dirs[j], flags, name_len, &dotinfo, (int *)0);
++		      if (match == 0)
++			continue;
++		      if (match_index + 1 == match_list_size)
++			{
++			  match_list_size += 10;
++			  match_list = strvec_resize (match_list, (match_list_size + 1));
++			}
++		      match_list[match_index++] = match;
++		      match_list[match_index] = (char *)NULL;
++		      FREE (file_to_lose_on);
++		      file_to_lose_on = (char *)NULL;
++		    }
++		  strvec_dispose (dirs);
++		}
++	      free (path_element);
++	      continue;
++	    }
++
+ 	  match = find_in_path_element (name, path_element, flags, name_len, &dotinfo, (int *)0);
+ 	  free (path_element);
+ 
+@@ -658,6 +686,38 @@ find_user_command_in_path (const char *n
+       if (path == 0)
+ 	break;
+ 
++      if (unquoted_glob_pattern_p (path))
++	{
++	  char **dirs;
++	  dirs = shell_glob_filename (path, 0);
++	  if (dirs && GLOB_FAILED (dirs) == 0)
++	    {
++	      int i;
++	      for (i = 0; dirs[i]; i++)
++		{
++		  QUIT;
++		  full_path = find_in_path_element (name, dirs[i], flags, name_len, &dotinfo, &rflags);
++		  if (full_path && (rflags & FS_DIRECTORY))
++		    {
++		      free (full_path);
++		      continue;
++		    }
++		  if (full_path)
++		    {
++		      if (rflagsp)
++			*rflagsp = rflags;
++		      FREE (file_to_lose_on);
++		      strvec_dispose (dirs);
++		      free (path);
++		      return (full_path);
++		    }
++		}
++	      strvec_dispose (dirs);
++	    }
++	  free (path);
++	  continue;
++	}
++
+       /* Side effects: sets dot_found_in_search, possibly sets
+ 	 file_to_lose_on. */
+       full_path = find_in_path_element (name, path, flags, name_len, &dotinfo, &rflags);
+--- bash-5.3.orig/bashline.c	2026-10-27 22:42:53.289060898 -0400
++++ bash-5.3/bashline.c	2026-10-27 22:44:23.807872061 -0400
+@@ -2012,6 +2012,8 @@ command_word_completion_function (const
+   static char *dequoted_hint = (char *)NULL;
+   static char *directory_part = (char *)NULL;
+   static char **glob_matches = (char **)NULL;
++static char **glob_path_dirs = (char **)NULL;
++static int glob_path_index = 0;
+   static int path_index, istate, igncase;
+   static size_t hint_len;
+   static int mapping_over, local_index, searching_path, hint_is_dir;
+@@ -2050,6 +2052,13 @@ command_word_completion_function (const
+ 	  glob_matches = (char **)NULL;
+ 	}
+ 
++      if (glob_path_dirs)
++	{
++	  strvec_dispose (glob_path_dirs);
++	  glob_path_dirs = (char **)NULL;
++	}
++      glob_path_index = 0;
++
+       if (directory_part)
+ 	{
+ 	  free (directory_part);
+@@ -2301,11 +2310,41 @@ globword:
+ 
+       rl_completion_found_quote = orig_found_quote;
+ 
+-      /* Get the next directory from the path.  If there is none, then we
+-	 are all done. */
+-      if (path == 0 || path[path_index] == 0 ||
+-	  (current_path = extract_colon_unit (path, &path_index)) == 0)
+-	return ((char *)NULL);
++      if (glob_path_dirs && glob_path_dirs[glob_path_index])
++	current_path = savestring (glob_path_dirs[glob_path_index++]);
++      else
++	{
++	  if (glob_path_dirs)
++	    {
++	      strvec_dispose (glob_path_dirs);
++	      glob_path_dirs = (char **)NULL;
++	    }
++	  glob_path_index = 0;
++
++	  /* Get the next directory from the path.  If there is none, then we
++	     are all done. */
++	  if (path == 0 || path[path_index] == 0 ||
++	      (current_path = extract_colon_unit (path, &path_index)) == 0)
++	    return ((char *)NULL);
++
++	  if (unquoted_glob_pattern_p (current_path))
++	    {
++	      glob_path_dirs = shell_glob_filename (current_path, 0);
++	      free (current_path);
++	      if (glob_path_dirs && GLOB_FAILED (glob_path_dirs) == 0 && glob_path_dirs[0])
++		{
++		  glob_path_index = 1;
++		  current_path = savestring (glob_path_dirs[0]);
++		}
++	      else
++		{
++		  if (glob_path_dirs && GLOB_FAILED (glob_path_dirs) == 0)
++		    strvec_dispose (glob_path_dirs);
++		  glob_path_dirs = (char **)NULL;
++		  goto outer;
++		}
++	    }
++	}
+ 
+       searching_path = 1;
+       if (*current_path == 0)

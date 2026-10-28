@@ -1,0 +1,27 @@
+ON=host
+
+VERSION=3.8.0
+
+ARCHIVES=(
+    7da3e2d9a171eb0a038f592ecad3ff2bb2550f3496d87b3b29ad0cf4430c0db4 https://github.com/libffi/libffi/releases/download/v$VERSION/libffi-$VERSION.tar.gz
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/libffi \
+        --host=$FLUFFY_TGT \
+        --build=$(./config.guess) \
+        --disable-static \
+        --disable-multi-os-directory
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+
+INSTALL() {
+    make install
+    rm -v /sw/libffi/lib/libffi.la
+}
