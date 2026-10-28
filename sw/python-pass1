@@ -1,0 +1,25 @@
+VERSION=3.14.7
+
+ARCHIVES=(
+    3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz
+    e74f768aa6c33186f11aecab40583c02a321a2b23b95e612e989d28efbb94d70 file://Python-$VERSION-fluffy.patch
+)
+
+NEEDS=(glibc-pass1 mpdecimal-pass1 zlib-pass1)
+MAKE_NEEDS=(bash-pass1 binutils-pass2 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc-pass1 grep-pass1 gzip-pass1 linux-headers make-pass1 mpdecimal-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1 zlib-pass1)
+
+MAKE() {
+    patch -Np1 -i Python-$VERSION-fluffy.patch
+    CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+        --prefix=/sw/python \
+        --enable-shared \
+        --without-ensurepip \
+        --without-static-libpython
+    make SHELL=/sw/bash/bin/bash
+}
+
+INSTALL_NEEDS=(bash-pass1 binutils-pass2 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc-pass1 grep-pass1 linux-headers make-pass1 mpdecimal-pass1 sed-pass1 zlib-pass1)
+
+INSTALL() {
+    make SHELL=/sw/bash/bin/bash install
+}

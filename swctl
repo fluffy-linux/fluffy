@@ -1,0 +1,143 @@
+#!/sw/bash/bin/bash
+
+set -euo pipefail
+
+source ctypes.sh
+
+log() {
+    echo "$@" >&2
+}
+
+fatal() {
+    log "$@"
+    exit 1
+}
+
+# Calls a C function returning int, failing if return value is not 0 (success)
+call() {
+    local ret
+    dlcall -r int -n ret "$@"
+    if test "$ret" != "int:0"
+    then
+        fatal "$1 failed (${ret#*:})"
+    fi
+}
+
+# Calls a C function returning a pointer into the given variable name
+call_ptr() {
+    local __var="$1"
+    shift
+    dlcall -r pointer -n "$__var" "$@"
+}
+
+cleanup() {
+    local ret=$?
+    if test -v mnt_table
+    then
+        dlcall mnt_free_table "$mnt_table"
+        unset mnt_table
+    fi
+    exit $ret
+}
+
+if test $# -eq 0
+then
+    fatal "no arguments provided"
+fi
+
+trap cleanup EXIT
+
+# TODO less hacky
+if test -d /mnt/fluffy
+then
+    FSTAB=${FSTAB:-/mnt/fluffy/sw/fluffy.fstab}
+else
+    FSTAB=${FSTAB:-/sw/fluffy.fstab}
+fi
+
+dlopen libmount.so.1
+
+MNT_ITER_FORWARD=0
+MNT_ITER_BACKWARD=1
+
+call_ptr mnt_table mnt_new_table
+if test "$mnt_table" == "$NULL"
+then
+    fatal "failed to create mnt_table"
+fi
+
+dlcall mnt_table_enable_comments "$mnt_table" "int:1"
+
+call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
+
+case "$1" in
+register)
+    mountpoint="$2"
+    squashfs="$3"
+    shift 3
+
+    old_ifs="$IFS"
+    IFS=,
+    needs="$*"
+    IFS="$old_ifs"
+
+    # does this mount point already exist?
+    call_ptr mnt_fs mnt_table_find_target "$mnt_table" "string:$mountpoint" "int:$MNT_ITER_FORWARD"
+    if test "$mnt_fs" == "$NULL"
+    then
+        log "doesn't exist - creating"
+        call_ptr mnt_fs mnt_new_fs
+        if test "$mnt_fs" == "$NULL"
+        then
+            fatal "failed to create mnt_fs"
+        fi
+
+        # Find first entry with target > $mountpoint to insert alphabetically
+        call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
+        call_ptr p_fs malloc "ulong:8"
+        val=(pointer:0)
+        pack "$p_fs" val
+
+        pos="$NULL"
+        while true
+        do
+            dlcall -r int -n ret mnt_table_next_fs "$mnt_table" "$itr" "$p_fs"
+            if test "$ret" != "int:0"
+            then
+                break
+            fi
+            unpack "$p_fs" val
+            curr_fs="${val[0]}"
+            dlcall -r string -n curr_tgt mnt_fs_get_target "$curr_fs"
+            curr_tgt="${curr_tgt#string:}"
+
+            if [[ "$curr_tgt" > "$mountpoint" ]]
+            then
+                pos="$curr_fs"
+                break
+            fi
+        done
+
+        dlcall free "$p_fs"
+        dlcall mnt_free_iter "$itr"
+
+        if test "$pos" != "$NULL"
+        then
+            # In libmount, before=0 inserts before pos
+            call mnt_table_insert_fs "$mnt_table" "int:0" "$pos" "$mnt_fs"
+        else
+            call mnt_table_add_fs "$mnt_table" "$mnt_fs"
+        fi
+        dlcall mnt_unref_fs "$mnt_fs" # table holds a reference to mnt_fs
+    else
+        log "exists - updating"
+    fi
+
+    call mnt_fs_set_source "$mnt_fs" "string:$squashfs"
+    call mnt_fs_set_target "$mnt_fs" "string:$mountpoint"
+    call mnt_fs_set_fstype "$mnt_fs" "string:squashfs"
+    call mnt_fs_set_options "$mnt_fs" "string:-Xfluffy.signature=PLACEHOLDER,-Xfluffy.needs=\"$needs\""
+    call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
+    ;;
+*) fatal "unknown command: $1" ;;
+esac

@@ -14,13 +14,21 @@
    - **Desktop / Interactive UX**: Users do *not* need to log out to use newly installed or upgraded software. Opening a new shell/terminal tab or launching an application enters `/proc/1/ns/mnt` (`setns`), immediately forks a fresh private mount namespace (`unshare(CLONE_NEWNS)`) with `MS_PRIVATE`, and execs the shell/app—so new shells and newly launched apps see the new environment immediately while already-running apps continue uninterrupted until restarted.
    - Old `.squashfs` mounts stay alive in existing namespaces until the last process using them exits.
 
-3. **Versioned `/etc` via Btrfs Snapshots & Idempotent Package Configuration**
-   - The root filesystem uses **btrfs**, and `/etc` is managed as versioned btrfs subvolumes/snapshots across package operations:
-     - Each package can provide an **idempotent configuration script/hook** responsible for installing or upgrading `/etc` configuration to account for version changes (e.g. adding users/groups, updating config files).
-     - Before a package install/upgrade:
-       - The previous `/etc` subvolume stays bound in old processes' mount namespaces (and is marked read-only so old processes still see the exact `/etc` they started with, and users/processes cannot mutate stale `/etc` state).
-       - A new writable btrfs snapshot of `/etc` is created for the new generation, the package's idempotent config hook runs against it, and the new mount namespace binds the new `/etc` snapshot alongside the new `/sw/<pkg>` mounts.
-       - If the install/config hook fails, the new snapshot is simply discarded (atomic rollback).
+3. **Versioned `/etc` via Btrfs Snapshots, Namespace Scoping & `fluffy-init`**
+   - **Package Creation vs. Package Installation**:
+     - Package creation (`create`) builds hermetically and must **never** touch `/etc`. All files install strictly into `/sw/<pkg>`. If package creation wrote to `/etc`, those files would not be in the `.squashfs` image, leaving package installation on another system missing required configuration.
+     - Static configuration that literally never changes within a version goes into `/sw/<pkg>/etc/` within the read-only squashfs image (zero copy, zero state).
+   - **Conventional Mount Hook (`/sw/<pkg>/bin/fluffy-init`)**:
+     - When a squashfs package is mounted, the system convention executes `/sw/<pkg>/bin/fluffy-init` (using shebang `#!/sw/bash/bin/bash`).
+     - It is responsible for **idempotent updates** that **strictly keep user modifications** (never blindly overwriting user-edited configuration files).
+   - **Namespace-Scoped `/etc` (`/etc/<pkg>/...`) & `/var` (`/var/<pkg>/...`)**:
+     - **ALL `/etc` is namespace scoped**: Every package owns and writes only to `/etc/<pkg>/...` (e.g. `/etc/make-ca/...`, `/etc/openssh/...`, including package-scoped user/group records).
+     - **Sandboxed Execution**: When `fluffy-init` runs, it executes in an unshared mount namespace with root `/` and all `/sw` read-only. Writable access is dropped **strictly to `/etc/<pkg>` and `/var/<pkg>`**. It cannot mutate or corrupt any other package's `/etc` directory.
+   - **Btrfs Snapshot Rollback**:
+     - The root filesystem uses **btrfs**, and `/etc` is managed as versioned btrfs subvolumes/snapshots across package operations.
+     - Before running `fluffy-init`, a btrfs snapshot of `/etc` (or `/etc/<pkg>`) is taken.
+     - If `fluffy-init` succeeds (exit `0`), the new state is committed.
+     - If `fluffy-init` fails, the snapshot is restored immediately (atomic rollback) and the package mount aborts.
 
 4. **Late-Bound `/sw/*/foo` Discovery (No Symlink Farms, Zero Hardcoded Package Ownership)**
    - **Principle of Late Binding**: Tools and libraries should never assume or hardcode which `/sw/<pkg>` provides a given header, library, executable, or data file. Instead, resolution should happen as late as possible by walking `/sw/*` alphabetically (`alphasort`) in the current mount namespace.
@@ -44,7 +52,8 @@
    - Package definitions in `sw/` declare runtime dependencies via `NEEDS=()` and phase-specific build dependencies via `MAKE_NEEDS=()`, `CHECK_NEEDS=()`, and `INSTALL_NEEDS=()`.
    - For each phase, `create` starts from `${phase}_NEEDS` and transitively mounts each dependency's `NEEDS` DAG under `/sw/<pkg>` (stripping any `-pass*` suffix from the mountpoint). If a dependency's base mountpoint collides with the package being built (e.g. `binutils-pass1` when building `binutils-pass2`), the dependency is mounted at its full name (`/sw/$dep`) so the package's install mount does not shadow the toolchain.
    - `PREPARE`: Downloads and SHA-256 verifies tarballs and `file://` patches into `work/archives/`, extracts into `work/src/` as the calling user.
-   - `lockdown` (for `MAKE`, `CHECK`, `INSTALL`):\n     - Briefly regains saved UID `0` inside the subshell (`setresuid 0 0 0`), enters private network and mount namespaces (`unshare(CLONE_NEWNET | CLONE_NEWNS)`), sets `/` propagation to `MS_REC | MS_PRIVATE`.
+   - `lockdown` (for `MAKE`, `CHECK`, `INSTALL`):
+     - Briefly regains saved UID `0` inside the subshell (`setresuid 0 0 0`), enters private network and mount namespaces (`unshare(CLONE_NEWNET | CLONE_NEWNS)`), sets `/` propagation to `MS_REC | MS_PRIVATE`.
      - Mounts only the resolved dependency closure for that phase under `/sw/*`.
      - Phase-specific writable mounts:
        - `MAKE`: `$wd` bind-mounted read-write at `/work`.
@@ -171,6 +180,9 @@
   - `gettext-pass1` (1.0) built, installed, and packaged into `gettext-pass1-1.0.squashfs` inside the chroot with zero FHS symlinks and zero `sbin`.
   - `bison-pass1` (3.8.2) built, installed, and packaged into `bison-pass1-3.8.2.squashfs` (1.7M) inside the chroot; `bison` and `yacc` verified.
   - `perl-pass1` (5.44.0) built, installed, and packaged into `perl-pass1-5.44.0.squashfs` (13M) inside the chroot; native `/sw/perl/bin/perl` verified with zero `/bin/sh` or `/usr` references.
+  - `zlib-pass1` (1.3.2) built, tested (`make check`), installed, and packaged into `zlib-pass1-1.3.2.squashfs` (96K) inside the chroot.
+  - `mpdecimal-pass1` (4.0.1) built, tested (`make check`), installed, and packaged into `mpdecimal-pass1-4.0.1.squashfs` (120K) inside the chroot; `libmpdec` and `libmpdec++` verified.
+  - `python-pass1` (3.14.7) built, installed, and packaged into `python-pass1-3.14.7.squashfs` (62M) inside the chroot with shared library support, decimal, and zlib modules.
 
 - **Chapters 5 & 6 Toolchain Complete & Verified (`check-toolchain`)**:
   - Full cross-toolchain (`binutils-pass1`, `gcc-pass1`, `glibc-pass1`, `libstdcpp-pass1`, `linux-headers`) and temporary tools (`m4-pass1`, `ncurses-pass1`, `bash-pass1`, `libffi-pass1`, `ctypes-sh-pass1`, `coreutils-pass1`, `diffutils-pass1`, `file-pass1`, `findutils-pass1`, `gawk-pass1`, `grep-pass1`, `gzip-pass1`, `make-pass1`, `patch-pass1`, `sed-pass1`, `tar-pass1`, `xz-pass1`, `binutils-pass2`, `gcc-pass2`) are built and verified.
