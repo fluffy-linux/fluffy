@@ -78,6 +78,52 @@
    - To avoid coordinating hardcoded static UIDs across package definitions at build time, runtime services run under dynamic users (e.g. `DynamicUser=yes` with `StateDirectory=` under systemd, or `sysusers.d` allocation at install/boot).
    - This ensures `/var/<pkg>` directories are mode `0700` and accessible only to that specific package's service, with zero UID baked into the package image itself.
 
+8. **Pseudopackages (`*-builder`), Manifest-Driven Resolution & Companion Mount Engine**
+   - **Pseudopackages (Virtual Packages) with `ON=""`**:
+     - Packages that define *only* `NEEDS=(...)` with no `MAKE()`, `CHECK()`, or `INSTALL()`.
+     - Pseudopackages declare `ON=""` (empty) as a sentinel so `create` knows they are non-buildable dependency sets and will never recurse trying to build a builder.
+     - Builder profiles encapsulate the environment for each bootstrap phase:
+       - `sw/host-builder`: `ON=""`, `NEEDS=()` (pure host compilation with no `/sw` mounts).
+       - `sw/bootstrap-builder`: `ON=""`, `NEEDS=(glibc-pass1 ncurses-pass1 bash-pass1 libffi-pass1 ctypes-sh-pass1 coreutils-pass1 tar-pass1 xz-pass1 gzip-pass1 ...)` (the frozen temporary toolchain scaffold needed to run `create` and `PREPARE` inside chroot during Chapters 7 & 8).
+       - `sw/fluffy-builder`: `ON=""`, `NEEDS=(glibc ncurses bash libffi ctypes-sh coreutils tar xz gzip ...)` (the final native Fluffy self-hosting environment).
+     - Regular package definitions reference these profiles directly via `ON=bootstrap-builder` or `ON=fluffy-builder`, completely eliminating hardcoded package lists inside `create`.
+   - **Strict Circular Dependency Detection**:
+     - Before performing any mount operations, the dependency traversal executes a cycle check (depth-first search tracking unvisited, active in-stack, and completed nodes).
+     - Any circular dependency (direct or transitive) is rejected immediately with a fatal diagnostic displaying the exact dependency loop path before touching mounts or namespaces.
+   - **Manifest-Driven Resolution via `/sw/fluffy.fstab`**:
+     - `create` stops scanning filesystem glob patterns (`/sw/"$dep"-[0-9]*.squashfs`).
+     - `/sw/fluffy.fstab` is the single source of truth for all built squashfs images, mount targets, checksums, and transitive requirements (`X-fluffy.needs="dep1,dep2"`).
+     - After `SQUASHFS` completes, the newly created image is recorded into `/sw/fluffy.fstab` via `libmount`:
+       - Newly built packages append a line.
+       - Rebuilt packages or package upgrades (e.g. `pass1` -> final) perform an in-place upsert targeting the mountpoint `/sw/<pkg>`.
+   - **Decoupled Companion Mount Engine (Package Manager Seed)**:
+     - All mount, unmount, loop device ioctl, namespace preparation, dependency resolution, and `fstab` manipulation logic is extracted out of `create` into a standalone companion script (name TBD by user, e.g. sitting alongside `create`).
+     - `create` calls this companion tool liberally:
+       - Resolving dependency DAGs and detecting circular references.
+       - Setting up the outer harness mounts for `$ON`.
+       - Cleaning `/sw` inside `lockdown` and mounting strictly the phase dependency closure.
+       - Upserting entries into `fluffy.fstab` on packaging completion.
+     - **Runtime / System Package Operations**:
+       - Mounting software for system boot and user sessions.
+       - Orchestrating `fluffy-init` hooks during installs and upgrades.
+       - Managing timestamp state tracking to guarantee once-only execution.
+   - **`fluffy-init` Hook & Sandboxed Configuration Lifecycle**:
+     - Packages requiring initial configuration or schema/version migrations define an idempotent `fluffy-init` hook.
+     - **Strict Topological Dependency Ordering**:
+       - When installing or upgrading packages, the package manager resolves the full dependency DAG.
+       - `fluffy-init` hooks execute strictly in **topological dependency order**: all dependencies run their `fluffy-init` successfully before any dependent package's hook runs.
+     - **Sandboxed Lockdown (Only `/etc/<pkg>` Writable)**:
+       - The package manager executes each `fluffy-init` in its own isolated mount namespace (`CLONE_NEWNS` + `CLONE_NEWNET`).
+       - The root filesystem `/` and all `/sw/*` mounts are strictly read-only (`MS_RDONLY`).
+       - **Blast-Radius Isolation**: Only `/etc/<pkg>` is bind-mounted read-write (with `/etc` itself backed by the transaction's new Btrfs snapshot). A package hook is physically incapable of mutating, clobbering, or corrupting another package's configuration files.
+     - **Once-Only Execution & Timestamp Maintenance**:
+       - Handled entirely by the package manager engine.
+       - Compares the modification time (`mtime`) of the `.squashfs` image against the target mount directory / state marker.
+       - If the `.squashfs` image is newer than the marker:
+         1. The package manager spawns the locked-down `fluffy-init`.
+         2. Upon successful exit (code `0`), the package manager updates the state timestamp marker.
+         3. If `fluffy-init` fails, the timestamp is not updated, the new Btrfs `/etc` snapshot is discarded, and the transaction is cleanly rolled back with zero side effects.
+
 ## Bootstrap Milestones
 
 - **Chapter 7 In-Chroot Native Compilation Active**:
