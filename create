@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/sw/bash/bin/bash
 
 set -euo pipefail
 
@@ -365,7 +365,7 @@ SQUASHFS() {
 }
 
 ON=fluffy
-source "$pkg_file" 
+source "$pkg_file"
 
 if test -z "${VERSION:-}"
 then
