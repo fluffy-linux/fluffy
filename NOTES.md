@@ -105,24 +105,62 @@
        - Upserting entries into `fluffy.fstab` on packaging completion.
      - **Runtime / System Package Operations**:
        - Mounting software for system boot and user sessions.
-       - Orchestrating `fluffy-init` hooks during installs and upgrades.
+       - Orchestrating `fluffy-upsert` hooks during installs and upgrades.
        - Managing timestamp state tracking to guarantee once-only execution.
-   - **`fluffy-init` Hook & Sandboxed Configuration Lifecycle**:
-     - Packages requiring initial configuration or schema/version migrations define an idempotent `fluffy-init` hook.
+   - **`fluffy-upsert` Hook & Sandboxed Configuration Lifecycle**:
+     - Packages requiring initial configuration or schema/version migrations define an idempotent `fluffy-upsert` hook.
      - **Strict Topological Dependency Ordering**:
        - When installing or upgrading packages, the package manager resolves the full dependency DAG.
-       - `fluffy-init` hooks execute strictly in **topological dependency order**: all dependencies run their `fluffy-init` successfully before any dependent package's hook runs.
+       - `fluffy-upsert` hooks execute strictly in **topological dependency order**: all dependencies run their `fluffy-upsert` successfully before any dependent package's hook runs.
      - **Sandboxed Lockdown (Only `/etc/<pkg>` Writable)**:
-       - The package manager executes each `fluffy-init` in its own isolated mount namespace (`CLONE_NEWNS` + `CLONE_NEWNET`).
+       - The package manager executes each `fluffy-upsert` in its own isolated mount namespace (`CLONE_NEWNS` + `CLONE_NEWNET`).
        - The root filesystem `/` and all `/sw/*` mounts are strictly read-only (`MS_RDONLY`).
        - **Blast-Radius Isolation**: Only `/etc/<pkg>` is bind-mounted read-write (with `/etc` itself backed by the transaction's new Btrfs snapshot). A package hook is physically incapable of mutating, clobbering, or corrupting another package's configuration files.
      - **Once-Only Execution & Timestamp Maintenance**:
        - Handled entirely by the package manager engine.
        - Compares the modification time (`mtime`) of the `.squashfs` image against the target mount directory / state marker.
        - If the `.squashfs` image is newer than the marker:
-         1. The package manager spawns the locked-down `fluffy-init`.
+         1. The package manager spawns the locked-down `fluffy-upsert`.
          2. Upon successful exit (code `0`), the package manager updates the state timestamp marker.
-         3. If `fluffy-init` fails, the timestamp is not updated, the new Btrfs `/etc` snapshot is discarded, and the transaction is cleanly rolled back with zero side effects.
+         3. If `fluffy-upsert` fails, the timestamp is not updated, the new Btrfs `/etc` snapshot is discarded, and the transaction is cleanly rolled back with zero side effects.
+        - `fluffy-upsert` never runs at boot time; it executes exclusively during package manager transactions.
+
+9. **Garbage Collection & Retention Model (`prune`)**
+   - **Git-Style Lazy Garbage Collection**:
+     - Upgrades and package removals do not delete active `.squashfs` files immediately. They update `/sw/fluffy.fstab` and rebind mounts in new namespaces.
+     - Running processes continue to execute against old `.squashfs` images safely in their private mount namespaces.
+   - **Pruning Policy (`<pkgmgr> prune`)**:
+     - Scans `/sw/*.squashfs` periodically (cron/timer) or manually.
+     - An image is a candidate for deletion if:
+       1. It is no longer referenced by the active `/sw/fluffy.fstab`.
+       2. It is not currently held open/mounted in any running mount namespace (verified via `/proc/*/mountinfo`).
+       3. Optional retention window: unreferenced, unmounted images can be kept for a grace period (e.g. 30 days) to allow instant rollback to older generations.
+   - **Btrfs Snapshot Protection**:
+     - System generations and `/etc` are preserved via Btrfs snapshots.
+     - Standard Linux POSIX file semantics ensure that even if an image is unlinked while still open in a dying namespace, its disk blocks remain allocated until the last referencing process exits.
+
+10. **Boot Architecture: GRUB Direct-Mount, Kernel Squashfs & `fluffy-initramfs`**
+    - **Kernel & Modules in `/sw/linux`**:
+      - The Linux kernel and its loadable kernel modules are packaged together in `/sw/linux-<version>.squashfs` and mounted at `/sw/linux`.
+      - Modules live in `/sw/linux/lib/modules/<kernel-version>/`.
+    - **GRUB Squashfs & Btrfs Native Direct-Mount**:
+      - GRUB natively includes filesystem drivers for both Btrfs and Squashfs (`insmod btrfs`, `insmod squash4`).
+      - GRUB mounts the Btrfs root filesystem, reads `/sw/fluffy.fstab` to locate the active kernel squashfs (`/sw/linux-*.squashfs`), and mounts/reads the squashfs image directly on the fly.
+      - GRUB streams the kernel (`vmlinuz`) and `initramfs` directly into RAM from the `.squashfs` image without requiring any intermediate unpacking on disk.
+    - **The `fluffy-initramfs` Package**:
+      - Built like any standard Fluffy package (`sw/fluffy-initramfs`) using `create`.
+      - Contains a minimal boot environment (e.g. statically linked BusyBox and a lightweight shell script, or minimal Fluffy C runtime with `libmount`).
+      - Extracted or bundled directly with the kernel squashfs image.
+    - **Early Boot Sequence (Prior to PID 1)**:
+      1. Kernel boots and executes `/init` in `fluffy-initramfs`.
+      2. Initramfs mounts the real Btrfs root at `/sysroot`.
+      3. Binds the active `/etc` Btrfs subvolume/snapshot to `/sysroot/etc`.
+      4. Executes `mount -a -T /sysroot/sw/fluffy.fstab` to mount **all** system packages under `/sysroot/sw/<pkg>`—zero special-casing for systemd or glibc.
+      5. Calls `switch_root /sysroot` and executes `/sw/systemd/lib/systemd/systemd` as PID 1.
+    - **Zero-Hack PID 1 Startup**:
+      - `systemd` starts with all dynamic libraries (`/sw/*/lib`), unit files (`/sw/*/lib/systemd/system`), and binaries (`/sw/*/bin`) already mounted and available in `/proc/1/ns/mnt`.
+      - Kernel modules load directly from `/sw/linux/lib/modules/<version>`.
+      - Zero package hooks run during boot; the system starts immediately with full consistency.
 
 ## Bootstrap Milestones
 
@@ -137,11 +175,3 @@
 - **Chapters 5 & 6 Toolchain Complete & Verified (`check-toolchain`)**:
   - Full cross-toolchain (`binutils-pass1`, `gcc-pass1`, `glibc-pass1`, `libstdcpp-pass1`, `linux-headers`) and temporary tools (`m4-pass1`, `ncurses-pass1`, `bash-pass1`, `libffi-pass1`, `ctypes-sh-pass1`, `coreutils-pass1`, `diffutils-pass1`, `file-pass1`, `findutils-pass1`, `gawk-pass1`, `grep-pass1`, `gzip-pass1`, `make-pass1`, `patch-pass1`, `sed-pass1`, `tar-pass1`, `xz-pass1`, `binutils-pass2`, `gcc-pass2`) are built and verified.
   - Verified via [`check-toolchain`](check-toolchain): C and C++ compilation, `<iostream>` and `<ffi.h>` inclusion, `PT_INTERP` pointing to `/sw/glibc/lib/ld-linux-x86-64.so.2`, and dynamic execution—all with zero `-I` and zero `-L` flags.
-
-## Open Bootstrap / Init Questions (Future)
-
-- **PID 1 (`systemd`) & Early Boot via `initramfs`**:
-  - Investigate using an `initramfs` to perform early mounting before `systemd` init runs:
-    - Mount the root btrfs filesystem and active `/etc` subvolume.
-    - Mount `/sw/glibc`, `/sw/systemd`, and all of `systemd`'s runtime dependencies (`NEEDS` closure)—or all active system `/sw/*.squashfs` packages—under `/sw/<pkg>` in the root mount namespace before `switch_root` / `exec`ing `/sw/systemd/lib/systemd/systemd` as PID 1.
-    - Because `systemd`'s dynamic interpreter is `/sw/glibc/lib/ld-linux-x86-64.so.2` and its shared libraries live in `/sw/*/lib`, having the `initramfs` set up these mounts prior to `exec`ing PID 1 means `systemd` starts naturally with zero special-case bootstrap hacks.
