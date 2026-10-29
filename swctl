@@ -30,6 +30,17 @@ call_ptr() {
     dlcall -r pointer -n "$__var" "$@"
 }
 
+is_pseudopackage() {
+    case "$1" in
+        host-build|cross-build|fluffy-build)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 cleanup() {
     local ret=$?
     if test -v mnt_table
@@ -70,22 +81,21 @@ dlcall mnt_table_enable_comments "$mnt_table" "int:1"
 
 call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
 
-case "$1" in
-register)
-    mountpoint="$2"
-    squashfs="$3"
-    shift 3
+register_entry() {
+    local mountpoint="$1"
+    local squashfs="$2"
+    shift 2
 
-    old_ifs="$IFS"
+    local old_ifs="$IFS"
     IFS=,
-    needs="$*"
+    local needs="$*"
     IFS="$old_ifs"
 
     # does this mount point already exist?
     call_ptr mnt_fs mnt_table_find_target "$mnt_table" "string:$mountpoint" "int:$MNT_ITER_FORWARD"
     if test "$mnt_fs" == "$NULL"
     then
-        log "doesn't exist - creating"
+        log "doesn't exist - creating $mountpoint"
         call_ptr mnt_fs mnt_new_fs
         if test "$mnt_fs" == "$NULL"
         then
@@ -95,10 +105,10 @@ register)
         # Find first entry with target > $mountpoint to insert alphabetically
         call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
         call_ptr p_fs malloc "ulong:8"
-        val=(pointer:0)
+        local val=(pointer:0)
         pack "$p_fs" val
 
-        pos="$NULL"
+        local pos="$NULL"
         while true
         do
             dlcall -r int -n ret mnt_table_next_fs "$mnt_table" "$itr" "$p_fs"
@@ -107,7 +117,7 @@ register)
                 break
             fi
             unpack "$p_fs" val
-            curr_fs="${val[0]}"
+            local curr_fs="${val[0]}"
             dlcall -r string -n curr_tgt mnt_fs_get_target "$curr_fs"
             curr_tgt="${curr_tgt#string:}"
 
@@ -130,14 +140,195 @@ register)
         fi
         dlcall mnt_unref_fs "$mnt_fs" # table holds a reference to mnt_fs
     else
-        log "exists - updating"
+        log "exists - updating $mountpoint"
+    fi
+
+    local options="-Xfluffy.signature=PLACEHOLDER"
+    if test -n "$needs"
+    then
+        options="$options,-Xfluffy.needs=\"$needs\""
     fi
 
     call mnt_fs_set_source "$mnt_fs" "string:$squashfs"
     call mnt_fs_set_target "$mnt_fs" "string:$mountpoint"
     call mnt_fs_set_fstype "$mnt_fs" "string:squashfs"
-    call mnt_fs_set_options "$mnt_fs" "string:-Xfluffy.signature=PLACEHOLDER,-Xfluffy.needs=\"$needs\""
+    call mnt_fs_set_options "$mnt_fs" "string:$options"
+}
+
+mount_targets() {
+    local prefix=""
+    while test $# -gt 0
+    do
+        case "$1" in
+            --prefix)
+                prefix="$2"
+                shift 2
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    if test $# -eq 0
+    then
+        fatal "no targets specified to mount"
+    fi
+
+    # Read current mtab (mountinfo) to avoid mounting already-mounted targets
+    call_ptr cxt mnt_new_context
+    if test "$cxt" == "$NULL"
+    then
+        fatal "failed to create mount context"
+    fi
+    call_ptr p_mtab malloc "ulong:8"
+    call mnt_context_get_mtab "$cxt" "$p_mtab"
+    local val=(pointer:0)
+    pack "$p_mtab" val
+    unpack "$p_mtab" val
+    local mtab="${val[0]}"
+    dlcall free "$p_mtab"
+    dlcall mnt_free_context "$cxt"
+
+    local -a queue=("$@")
+    local -A seen=()
+    local -a order=()
+
+    while (( ${#queue[@]} > 0 ))
+    do
+        local target="${queue[0]}"
+        queue=("${queue[@]:1}")
+
+        if [[ "$target" != /* ]]
+        then
+            target="/sw/$target"
+        fi
+
+        call_ptr fs mnt_table_find_target "$mnt_table" "string:$target" "int:0"
+        if test "$fs" == "$NULL"
+        then
+            local pkg_name="${target##*/}"
+            local base_name="${pkg_name%-pass*}"
+            call_ptr fs mnt_table_find_target "$mnt_table" "string:/sw/$base_name" "int:0"
+        fi
+
+        if test "$fs" == "$NULL"
+        then
+            if is_pseudopackage "${target##*/}"
+            then
+                continue
+            fi
+            fatal "target $target not found in $FSTAB"
+        fi
+
+        dlcall -r string -n fs_tgt mnt_fs_get_target "$fs"
+        local canon_tgt="${fs_tgt#string:}"
+
+        if test -n "${seen[$canon_tgt]:-}"
+        then
+            continue
+        fi
+        seen[$canon_tgt]=1
+
+        dlcall -r string -n fs_opts mnt_fs_get_options "$fs"
+        local opts="${fs_opts#string:}"
+        local needs=""
+        if [[ "$opts" =~ -?X-?fluffy\.needs=\"([^\"]*)\" || "$opts" =~ -?X-?fluffy\.needs=([^, ]*) ]]
+        then
+            needs="${BASH_REMATCH[1]}"
+        fi
+
+        if test -n "$needs"
+        then
+            local old_ifs="$IFS"
+            IFS=,
+            local -a sub_needs=()
+            read -ra sub_needs <<< "$needs"
+            IFS="$old_ifs"
+            queue+=("${sub_needs[@]}")
+        fi
+
+        order+=("$canon_tgt")
+    done
+
+    # Mount in reverse order of discovery so dependencies are mounted first
+    local idx
+    for (( idx=${#order[@]}-1; idx>=0; idx-- ))
+    do
+        local tgt="${order[idx]}"
+        call_ptr fs mnt_table_find_target "$mnt_table" "string:$tgt" "int:0"
+        if test "$fs" == "$NULL"
+        then
+            continue
+        fi
+
+        dlcall -r string -n src_str mnt_fs_get_source "$fs"
+        local src="${src_str#string:}"
+        dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
+        tgt="${tgt_str#string:}"
+
+        local real_src
+        local real_tgt
+        if test -n "$prefix"
+        then
+            real_src="$prefix$src"
+            real_tgt="$prefix$tgt"
+        else
+            real_src="$src"
+            real_tgt="$tgt"
+        fi
+
+        if test ! -f "$real_src"
+        then
+            if is_pseudopackage "${tgt##*/}"
+            then
+                continue
+            fi
+            fatal "squashfs file not found: $real_src"
+        fi
+
+        # Check if target is already mounted
+        call_ptr is_mnt mnt_table_find_target "$mtab" "string:$real_tgt" "int:0"
+        if test "$is_mnt" != "$NULL"
+        then
+            continue
+        fi
+
+        mkdir -p "$real_tgt"
+
+        call_ptr cxt mnt_new_context
+        if test "$cxt" == "$NULL"
+        then
+            fatal "failed to create mount context"
+        fi
+
+        call mnt_context_set_source "$cxt" "string:$real_src"
+        call mnt_context_set_target "$cxt" "string:$real_tgt"
+        call mnt_context_set_fstype "$cxt" "string:squashfs"
+        call mnt_context_set_options "$cxt" "string:ro,X-mount.mkdir"
+
+        dlcall -r int -n ret mnt_context_mount "$cxt"
+        if test "$ret" != "int:0"
+        then
+            dlcall -r int -n sys_err mnt_context_get_syscall_errno "$cxt"
+            fatal "failed to mount $real_src on $real_tgt: rc=${ret#*:} errno=${sys_err#*:}"
+        fi
+        dlcall mnt_free_context "$cxt"
+        log "mounted $real_src on $real_tgt"
+    done
+}
+
+case "$1" in
+register)
+    shift
+    register_entry "$@"
     call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
     ;;
-*) fatal "unknown command: $1" ;;
+mount)
+    shift
+    mount_targets "$@"
+    ;;
+*)
+    fatal "unknown command: $1"
+    ;;
 esac

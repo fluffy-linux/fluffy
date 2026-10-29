@@ -1,4 +1,4 @@
-ON=host
+ON=host-build
 
 VERSION=16.2.0
 MPFR_VERSION=4.2.2
