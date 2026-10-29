@@ -64,6 +64,15 @@ lockdown() {
     (
         wd="$(pwd)"
 
+        case "$1" in
+            CHECK)
+                mkdir -p "$work_dir/test-results" "$work_dir/test-work"
+                ;;
+            INSTALL)
+                mkdir -p "$work_dir/installed"
+                ;;
+        esac
+
         # elevate back to root strictly to set up namespaces and mounts
         call setresuid 0 0 0
         call setresgid 0 0 0
@@ -108,11 +117,10 @@ lockdown() {
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             CHECK)
-                mkdir -p "$work_dir/test-results" "$work_dir/test-work"
                 call mount overlay /work overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
                 ;;
             INSTALL)
-                mkdir -p "$work_dir/installed" "/sw/$mount_pkg"
+                mkdir -p "/sw/$mount_pkg"
                 call mount "$work_dir/installed" "/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
