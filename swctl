@@ -30,17 +30,6 @@ call_ptr() {
     dlcall -r pointer -n "$__var" "$@"
 }
 
-is_pseudopackage() {
-    case "$1" in
-        host-build|cross-build|fluffy-build)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-}
-
 cleanup() {
     local ret=$?
     if test -v mnt_table
@@ -214,10 +203,6 @@ mount_targets() {
 
         if test "$fs" == "$NULL"
         then
-            if is_pseudopackage "${target##*/}"
-            then
-                continue
-            fi
             fatal "target $target not found in $FSTAB"
         fi
 
@@ -280,10 +265,6 @@ mount_targets() {
 
         if test ! -f "$real_src"
         then
-            if is_pseudopackage "${tgt##*/}"
-            then
-                continue
-            fi
             fatal "squashfs file not found: $real_src"
         fi
 
