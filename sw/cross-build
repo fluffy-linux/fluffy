@@ -1,3 +1,7 @@
+ON=host-build
+
+VERSION=1.0
+
 NEEDS=(
     glibc-pass1
     ncurses-pass1

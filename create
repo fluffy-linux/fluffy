@@ -4,7 +4,6 @@ set -euo pipefail
 
 source ctypes.sh
 
-CLONE_FS=0x00000200
 CLONE_NEWNS=0x00020000
 CLONE_NEWNET=0x40000000
 
@@ -42,38 +41,28 @@ call() {
     fi
 }
 
-is_pseudopackage() {
-    case "$1" in
-        host-build|cross-build|fluffy-build)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
+verify_sha256() {
+    local file="$1"
+    local expected="$2"
+    local name="$3"
+    local actual
+    actual="$(sha256sum "$file" | cut -d' ' -f1)"
+    if test "$actual" != "$expected"
+    then
+        fatal "checksum mismatch for $name: $actual != $expected"
+    fi
 }
 
 lockdown() {
+    if test "$(type -t "$1")" != function
+    then
+        return
+    fi
+
     banner $1
     trap 'fatal "$1 failed with exit code $?"' ERR
     (
         wd="$(pwd)"
-
-        case "$1" in
-            MAKE)
-                ;;
-            CHECK)
-                mkdir -p "$work_dir/test-results" "$work_dir/test-work"
-                ;;
-            INSTALL)
-                mkdir -p "$work_dir/installed"
-                ;;
-            SQUASHFS)
-                ;;
-            *)
-                fatal "unknown phase: $1"
-                ;;
-        esac
 
         # elevate back to root strictly to set up namespaces and mounts
         call setresuid 0 0 0
@@ -92,6 +81,9 @@ lockdown() {
         if test "$ON" == host-build
         then
             call mount /mnt/fluffy/sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
+            mkdir -p /sw/bash/bin
+            touch /sw/bash/bin/bash
+            call mount /bin/bash /sw/bash/bin/bash $NULL $MS_BIND $NULL
         fi
 
         local -n phase_needs="${1}_NEEDS"
@@ -116,15 +108,19 @@ lockdown() {
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             CHECK)
+                mkdir -p "$work_dir/test-results" "$work_dir/test-work"
                 call mount overlay /work overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
                 ;;
             INSTALL)
-                mkdir -p "/sw/$mount_pkg"
+                mkdir -p "$work_dir/installed" "/sw/$mount_pkg"
                 call mount "$work_dir/installed" "/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             SQUASHFS)
                 call mount "$sw_dir" "$sw_dir" $NULL $(( MS_BIND | MS_REC )) $NULL
+                ;;
+            *)
+                fatal "unknown phase: $1"
                 ;;
         esac
 
@@ -191,15 +187,19 @@ lockdown() {
                 export PATH="/bin:$PATH"
             fi
             shopt -s nullglob
-            local bin_dirs=(/sw/*/bin)
-            shopt -u nullglob
-            for d in "${bin_dirs[@]}"
+            for d in /sw/*/bin
             do
                 export PATH="$d:$PATH"
             done
+            shopt -u nullglob
             export FLUFFY=/mnt/fluffy
             export FLUFFY_TGT="$(uname -m)-fluffy-linux-gnu"
             export CONFIG_SITE=/dev/null
+        fi
+
+        if test "$1" == INSTALL
+        then
+            export PATH="/sw/$mount_pkg/bin:$PATH"
         fi
 
         "$1"
@@ -216,8 +216,6 @@ if test -z "${SUDO_UID:-}" || test -z "${SUDO_GID:-}"
 then
     fatal "must be run via sudo"
 fi
-
-pkg_file="$(realpath -e "$1" 2>/dev/null || true)"
 
 script_dir="${BASH_SOURCE[0]%/*}"
 if test "$script_dir" == "${BASH_SOURCE[0]}"
@@ -242,11 +240,7 @@ call setgroups 0 $NULL
 call setresgid "$SUDO_GID" "$SUDO_GID" 0
 call setresuid "$SUDO_UID" "$SUDO_UID" 0
 
-if test -z "$pkg_file" && test -f "$root/sw/$1"
-then
-    pkg_file="$root/sw/$1"
-fi
-
+pkg_file="$(realpath -e "$1" 2>/dev/null || realpath -e "$root/sw/$1" 2>/dev/null || true)"
 if test -z "$pkg_file" || test ! -f "$pkg_file"
 then
     fatal "Package not found: $1"
@@ -255,8 +249,8 @@ fi
 pkg="${pkg_file##*/}"
 mount_pkg="${pkg%-pass*}"
 
-declare -a ARCHIVES
-declare -a archives
+declare -a ARCHIVES=()
+declare -a archives=()
 declare -a NEEDS=()
 declare -a MAKE_NEEDS=()
 declare -a CHECK_NEEDS=()
@@ -274,10 +268,6 @@ SQUASHFS() {
 }
 
 ON=fluffy-build
-if is_pseudopackage "$pkg" && test -d /mnt/fluffy/sw
-then
-    ON=host-build
-fi
 source "$pkg_file"
 
 case "$ON" in
@@ -291,24 +281,7 @@ esac
 
 if test -z "${VERSION:-}"
 then
-    if is_pseudopackage "$pkg"
-    then
-        VERSION=1.0
-    else
-        fatal "no VERSION defined"
-    fi
-fi
-
-if test "$(type -t INSTALL)" != function
-then
-    if is_pseudopackage "$pkg"
-    then
-        INSTALL() {
-            :
-        }
-    else
-        fatal "no INSTALL function defined"
-    fi
+    fatal "no VERSION defined"
 fi
 
 if (( ${#ARCHIVES[@]} % 2 != 0 ))
@@ -318,9 +291,10 @@ fi
 
 # If building for Fluffy target but running on host, enter a private mount
 # namespace, set up the chroot environment, and re-exec create inside it.
-if test "$ON" != host-build && ! is_pseudopackage "$pkg" && test -d /mnt/fluffy/sw
+if test "$ON" != host-build && test -d /mnt/fluffy/sw
 then
     log "entering chroot on /mnt/fluffy for $pkg..."
+    trap 'fatal "chroot execution failed with exit code $?"' ERR
     (
         call setresuid 0 0 0
         call setresgid 0 0 0
@@ -367,18 +341,9 @@ then
         call chdir "$root"
 
         export PATH='/sw/*/bin'
-        FLUFFY_CHROOT=1 /sw/bash/bin/bash "$root/create" "$@"
+        /sw/bash/bin/bash "$root/create" "$@"
     )
-    status=$?
-    if test $status -ne 0
-    then
-        exit $status
-    fi
-    (
-        call setresuid 0 0 0
-        call setresgid 0 0 0
-        "$root/swctl" register "/sw/$mount_pkg" "/sw/$pkg-$VERSION.squashfs" "${NEEDS[@]}"
-    )
+    trap - ERR
     exit 0
 fi
 
@@ -415,38 +380,24 @@ do
         then
             fatal "local archive not found: $local_path"
         fi
-        actual_sha256="$(sha256sum "$local_path" | cut -d' ' -f1)"
-        if test "$actual_sha256" != "$sha256"
-        then
-            fatal "checksum mismatch for $filename: $actual_sha256 != $sha256"
-        fi
+        verify_sha256 "$local_path" "$sha256" "$filename"
         cp "$local_path" "$work_dir/archives/$filename"
         continue
     fi
     if test -f "$work_dir/archives/$filename"
     then
-        # assume downloaded
         continue
     fi
     if test -f "$root/packages/$filename"
     then
-        actual_sha256="$(sha256sum "$root/packages/$filename" | cut -d" " -f1)"
-        if test "$actual_sha256" != "$sha256"
-        then
-            fatal "checksum mismatch for $filename: $actual_sha256 != $sha256"
-        fi
+        verify_sha256 "$root/packages/$filename" "$sha256" "$filename"
         cp "$root/packages/$filename" "$work_dir/archives/$filename"
         continue
     fi
     tmpfile="$(mktemp)"
     log -n "downloading $filename... "
     wget --quiet --output-document "$tmpfile" "$url"
-    actual_sha256="$(sha256sum "$tmpfile" | cut -d' ' -f1)"
-    if test "$actual_sha256" != "$sha256"
-    then
-        rm "$tmpfile"
-        fatal "checksum mismatch: $actual_sha256 != $sha256"
-    fi
+    verify_sha256 "$tmpfile" "$sha256" "$filename"
     mv "$tmpfile" "$work_dir/archives/$filename"
     log "done"
 done
@@ -485,31 +436,22 @@ then
     done
 fi
 
-if test "$(type -t MAKE)" == function
-then
-    lockdown MAKE
-fi
-
-if test "$(type -t CHECK)" == function
-then
-    lockdown CHECK
-fi
-
-lockdown INSTALL
-
 squashfs_file="$sw_dir/$pkg-$VERSION.squashfs"
+
+lockdown MAKE
+lockdown CHECK
+lockdown INSTALL
 lockdown SQUASHFS
 
 log "squashfs created: $squashfs_file"
 
-if test -z "${FLUFFY_CHROOT:-}"
-then
-    (
-        call setresuid 0 0 0
-        call setresgid 0 0 0
-        "$root/swctl" register "/sw/$mount_pkg" "/sw/$pkg-$VERSION.squashfs" "${NEEDS[@]}"
-    )
-fi
+trap 'fatal "registration failed with exit code $?"' ERR
+(
+    call setresuid 0 0 0
+    call setresgid 0 0 0
+    "$root/swctl" register "/sw/$mount_pkg" "/sw/$pkg-$VERSION.squashfs" "${NEEDS[@]}"
+)
+trap - ERR
 
 banner CLEANUP
 cd "$root"
