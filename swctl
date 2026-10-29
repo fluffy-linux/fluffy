@@ -129,13 +129,13 @@ register_entry() {
         fi
         dlcall mnt_unref_fs "$mnt_fs" # table holds a reference to mnt_fs
     else
-        log "exists - updating $mountpoint"
+        log "fstab entry exists: updating $mountpoint"
     fi
 
-    local options="-Xfluffy.signature=PLACEHOLDER"
+    local options="X-fluffy.signature=PLACEHOLDER"
     if test -n "$needs"
     then
-        options="$options,-Xfluffy.needs=\"$needs\""
+        options="$options,X-fluffy.needs=\"$needs\""
     fi
 
     call mnt_fs_set_source "$mnt_fs" "string:$squashfs"
@@ -179,15 +179,12 @@ mount_targets() {
     dlcall free "$p_mtab"
     dlcall mnt_free_context "$cxt"
 
-    local -a queue=("$@")
-    local -A seen=()
+    local -A state=()
     local -a order=()
+    local -a call_stack=()
 
-    while (( ${#queue[@]} > 0 ))
-    do
-        local target="${queue[0]}"
-        queue=("${queue[@]:1}")
-
+    dfs() {
+        local target="$1"
         if [[ "$target" != /* ]]
         then
             target="/sw/$target"
@@ -209,11 +206,18 @@ mount_targets() {
         dlcall -r string -n fs_tgt mnt_fs_get_target "$fs"
         local canon_tgt="${fs_tgt#string:}"
 
-        if test -n "${seen[$canon_tgt]:-}"
+        local cur_state="${state[$canon_tgt]:-0}"
+        if test "$cur_state" -eq 2
         then
-            continue
+            return 0
         fi
-        seen[$canon_tgt]=1
+        if test "$cur_state" -eq 1
+        then
+            fatal "circular dependency detected: ${call_stack[*]} -> $canon_tgt"
+        fi
+
+        state[$canon_tgt]=1
+        call_stack+=("$canon_tgt")
 
         dlcall -r string -n fs_opts mnt_fs_get_options "$fs"
         local opts="${fs_opts#string:}"
@@ -230,17 +234,29 @@ mount_targets() {
             local -a sub_needs=()
             read -ra sub_needs <<< "$needs"
             IFS="$old_ifs"
-            queue+=("${sub_needs[@]}")
+
+            local dep
+            for dep in "${sub_needs[@]}"
+            do
+                dfs "$dep"
+            done
         fi
 
+        call_stack=("${call_stack[@]:0:${#call_stack[@]}-1}")
+        state[$canon_tgt]=2
         order+=("$canon_tgt")
+    }
+
+    local root_tgt
+    for root_tgt in "$@"
+    do
+        dfs "$root_tgt"
     done
 
-    # Mount in reverse order of discovery so dependencies are mounted first
-    local idx
-    for (( idx=${#order[@]}-1; idx>=0; idx-- ))
+    # Mount in topological post-order (dependencies mounted first)
+    local tgt
+    for tgt in "${order[@]}"
     do
-        local tgt="${order[idx]}"
         call_ptr fs mnt_table_find_target "$mnt_table" "string:$tgt" "int:0"
         if test "$fs" == "$NULL"
         then

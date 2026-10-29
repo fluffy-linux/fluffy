@@ -67,11 +67,15 @@
    - The repository manifest is formatted as a single, self-signed `fstab(5)` file:
      ```fstab
      # fluffy:sig:<base64-ed25519-signature-over-remaining-lines>
-     /sw/foo-1.23.squashfs /sw/foo squashfs X-mount.mkdir,X-fluffy.sha256=abc123,X-fluffy.needs="bar,baz" 0 0
-     /sw/bar-2.0.squashfs /sw/bar squashfs X-mount.mkdir,X-fluffy.sha256=def456 0 0
+     /sw/foo-1.23.squashfs /sw/foo squashfs X-mount.mkdir,X-fluffy.signature=PLACEHOLDER,X-fluffy.sha256=abc123,X-fluffy.needs="bar,baz" 0 0
+     /sw/bar-2.0.squashfs /sw/bar squashfs X-mount.mkdir,X-fluffy.signature=PLACEHOLDER,X-fluffy.sha256=def456 0 0
      ```
    - **Why this design is so powerful**:
      - **Directly mountable by standard tools**: `libmount`, `mount -a -T`, and `systemd-fstab-generator` treat `#` as a comment line by default. No stripping or pre-processing is needed to use `fluffy.fstab` as a mount table.
+     - **Standard Userspace Options (`X-appname.option`)**: In accordance with the `mount(8)` and `libmount` standard specification, all user-space / application-specific mount options are prefixed with `X-<appname>.<option>` without leading hyphens:
+       - `X-fluffy.signature=<base64-signature>`: package-level verification signature.
+       - `X-fluffy.sha256=<hex-hash>`: SHA-256 digest of the squashfs image.
+       - `X-fluffy.needs="<dep1>,<dep2>"`: comma-separated list of runtime dependency packages.
      - **Compact Ed25519 signatures**: Raw Ed25519 signatures are exactly 64 bytes (88 base64 characters)—no massive ASCII armor blocks or multi-kilobyte RSA blobs.
      - **Single-file verification**: The signature on line 1 covers lines 2 through EOF. Verifying line 1 against the trusted public key validates the entire repository index in one shot (all package filenames, mountpoints, SHA-256 digests, and dependency closures) without needing separate detached `.sig` files that can get out of sync or 404:
        ```bash
@@ -79,7 +83,7 @@
        sed '1d' fluffy.fstab | verify "$PUBLIC_KEY" "$sig"
        ```
      - **Trust Root / Bootstrap**: The distro release signing public key (32 bytes base64) cannot live inside a package squashfs (which would be circular). Instead, it is embedded directly in the distro's minimal bootstrap script / initramfs (e.g. `/etc/fluffy/keys/release.pub`), providing the root of trust from day one.
-     - **In-process parsing & mounting**: `libmount` (`<libmount/libmount.h>` called via `ctypes.sh`) parses the manifest, resolves dependencies, checks options (`X-mount.mkdir`, `X-fluffy.sha256`, `X-fluffy.needs`), and mounts the squashfs images directly in-process.
+     - **In-process parsing & mounting**: `libmount` (`<libmount/libmount.h>` called via `ctypes.sh`) parses the manifest, resolves dependencies, checks options (`X-mount.mkdir`, `X-fluffy.signature`, `X-fluffy.sha256`, `X-fluffy.needs`), and mounts the squashfs images directly in-process.
 
 7. **Runtime State Separation (`/var/<pkg>`) & Dynamic Users**
    - Packages in `/sw/<pkg>` are strictly immutable, code/asset-only squashfs images packed with `-all-root` (everything owned by `root:root`).
@@ -96,9 +100,10 @@
        - `sw/cross-build`: `NEEDS=(glibc-pass1 ncurses-pass1 bash-pass1 libffi-pass1 ctypes-sh-pass1 coreutils-pass1 tar-pass1 xz-pass1 gzip-pass1)` (the frozen temporary toolchain scaffold needed to run `create` and `PREPARE` inside chroot during Chapter 7).
        - `sw/fluffy-build`: `NEEDS=(glibc ncurses bash libffi ctypes-sh coreutils tar xz gzip)` (the final native Fluffy self-hosting environment).
      - Regular package definitions reference these profiles directly via `$ON`, which defaults to `fluffy-build`. `create` transitively resolves the builder profile's `NEEDS` to set up the build environment for each stage before mounting package-specific requirements.
-   - **Strict Circular Dependency Detection**:
-     - Before performing any mount operations, the dependency traversal executes a cycle check (depth-first search tracking unvisited, active in-stack, and completed nodes).
-     - Any circular dependency (direct or transitive) is rejected immediately with a fatal diagnostic displaying the exact dependency loop path before touching mounts or namespaces.
+   - **Strict Circular Dependency Detection & Topological Mount Order**:
+     - Before performing any mount operations, `swctl mount` executes a recursive depth-first search (DFS) tracking node states (0 = unvisited, 1 = visiting/active in-stack, 2 = visited/completed).
+     - Any circular dependency (direct or transitive) is rejected immediately with a fatal diagnostic displaying the exact dependency cycle path before touching mounts or namespaces.
+     - Dependencies are gathered in DFS post-order, producing a strictly topological mount order where every dependency is mounted prior to the packages that depend on it.
    - **Manifest-Driven Resolution via `/sw/fluffy.fstab`**:
      - `create` stops scanning filesystem glob patterns (`/sw/"$dep"-[0-9]*.squashfs`).
      - `/sw/fluffy.fstab` is the single source of truth for all built squashfs images, mount targets, checksums, and transitive requirements (`X-fluffy.needs="dep1,dep2"`).
