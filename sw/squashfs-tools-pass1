@@ -1,4 +1,4 @@
-ON=host
+ON=host-build
 
 VERSION=4.7.5
 

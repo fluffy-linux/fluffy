@@ -42,62 +42,15 @@ call() {
     fi
 }
 
-mount_squashfs() {
-    local img="$1"
-    local target="$2"
-    mkdir -p "$target"
-
-    local ctrl_ret=""
-    dlcall -n ctrl_ret -r int open "/dev/loop-control" 2
-    local ctrl_fd="${ctrl_ret#*:}"
-    if (( ctrl_fd == -1 ))
-    then
-        fatal "failed to open /dev/loop-control"
-    fi
-
-    local devnr_ret=""
-    dlcall -n devnr_ret -r int ioctl int:$ctrl_fd 0x4C82
-    dlcall -r int close int:$ctrl_fd
-    local devnr="${devnr_ret#*:}"
-    if (( devnr == -1 ))
-    then
-        fatal "failed to get free loop device"
-    fi
-
-    local loop_dev="/dev/loop$devnr"
-    if test ! -b "$loop_dev"
-    then
-        mknod "$loop_dev" b 7 "$devnr"
-    fi
-
-    local img_ret=""
-    dlcall -n img_ret -r int open "$img" 0
-    local img_fd="${img_ret#*:}"
-    if (( img_fd == -1 ))
-    then
-        fatal "failed to open squashfs image: $img"
-    fi
-
-    local loop_ret=""
-    dlcall -n loop_ret -r int open "$loop_dev" 2
-    local loop_fd="${loop_ret#*:}"
-    if (( loop_fd == -1 ))
-    then
-        dlcall -r int close int:$img_fd
-        fatal "failed to open loop device: $loop_dev"
-    fi
-
-    local set_ret=""
-    dlcall -n set_ret -r int ioctl int:$loop_fd 0x4C00 int:$img_fd
-    dlcall -r int close int:$loop_fd
-    dlcall -r int close int:$img_fd
-
-    if (( ${set_ret#*:} == -1 ))
-    then
-        fatal "failed to attach $img to $loop_dev"
-    fi
-
-    call mount "$loop_dev" "$target" squashfs $MS_RDONLY $NULL
+is_pseudopackage() {
+    case "$1" in
+        host-build|cross-build|fluffy-build)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 lockdown() {
@@ -105,42 +58,6 @@ lockdown() {
     trap 'fatal "$1 failed with exit code $?"' ERR
     (
         wd="$(pwd)"
-
-        local -n phase_needs="${1}_NEEDS"
-        local -a queue=("${phase_needs[@]}")
-        local -A seen=()
-        local -a resolved_deps=()
-        local dep_path=""
-        local uname_m="$(uname -m)"
-
-        while (( ${#queue[@]} > 0 ))
-        do
-            local dep="${queue[0]}"
-            queue=("${queue[@]:1}")
-
-            if test -n "${seen[$dep]:-}"
-            then
-                continue
-            fi
-            seen[$dep]=1
-
-            if test ! -f "$root/sw/$dep"
-            then
-                fatal "dependency package file not found: $root/sw/$dep"
-            fi
-
-            local -a sub_needs=()
-            readarray -t sub_needs < <(
-                NEEDS=()
-                source "$root/sw/$dep"
-                if (( ${#NEEDS[@]} > 0 ))
-                then
-                    printf '%s\n' "${NEEDS[@]}"
-                fi
-            )
-            queue+=("${sub_needs[@]}")
-            resolved_deps+=("$dep")
-        done
 
         case "$1" in
             MAKE)
@@ -172,36 +89,26 @@ lockdown() {
             call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
         fi
 
-        if test "$ON" == host
+        if test "$ON" == host-build
         then
             call mount /mnt/fluffy/sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
         fi
 
-        for dep in "${resolved_deps[@]}"
+        local -n phase_needs="${1}_NEEDS"
+        local -a mount_targets=()
+        if test "$1" != SQUASHFS && test "$ON" != host-build
+        then
+            mount_targets+=("/sw/$ON")
+        fi
+        for dep in "${phase_needs[@]}"
         do
-            shopt -s nullglob
-            local matches=(/sw/"$dep"-[0-9]*.squashfs)
-            shopt -u nullglob
-            if (( ${#matches[@]} == 0 ))
-            then
-                fatal "no squashfs found for dependency: $dep"
-            fi
-            if (( ${#matches[@]} > 1 ))
-            then
-                fatal "multiple squashfs found for dependency $dep: ${matches[*]}"
-            fi
-            local dep_mount="/sw/${dep%-pass*}"
-            if test "$dep_mount" == "/sw/$mount_pkg"
-            then
-                dep_mount="/sw/$dep"
-            fi
-            mount_squashfs "${matches[0]}" "$dep_mount"
-            dep_path="${dep_path:+$dep_path:}$dep_mount/bin"
-            if test -d "$dep_mount/${uname_m}-fluffy-linux-gnu/bin"
-            then
-                dep_path="$dep_path:$dep_mount/${uname_m}-fluffy-linux-gnu/bin"
-            fi
+            mount_targets+=("/sw/$dep")
         done
+
+        if (( ${#mount_targets[@]} > 0 ))
+        then
+            "$root/swctl" mount "${mount_targets[@]}"
+        fi
 
         case "$1" in
             MAKE)
@@ -215,14 +122,13 @@ lockdown() {
                 mkdir -p "/sw/$mount_pkg"
                 call mount "$work_dir/installed" "/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
-                dep_path="/sw/$mount_pkg/bin${dep_path:+:$dep_path}"
                 ;;
             SQUASHFS)
                 call mount "$sw_dir" "$sw_dir" $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
         esac
 
-        if test "$ON" == host
+        if test "$ON" == host-build
         then
             call mount none /sw $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
         fi
@@ -272,7 +178,7 @@ lockdown() {
         export TERM="$saved_term"
         export LC_ALL=POSIX
         export MAKEFLAGS="-j$(( nproc_val > 1 ? nproc_val - 1 : 1 ))"
-        if test "$ON" == fluffy
+        if test "$ON" != host-build
         then
             export PATH='/sw/*/bin'
             export SHELL=/sw/bash/bin/bash
@@ -284,12 +190,15 @@ lockdown() {
             then
                 export PATH="/bin:$PATH"
             fi
-            if test -n "$dep_path"
-            then
-                export PATH="$dep_path:$PATH"
-            fi
+            shopt -s nullglob
+            local bin_dirs=(/sw/*/bin)
+            shopt -u nullglob
+            for d in "${bin_dirs[@]}"
+            do
+                export PATH="$d:$PATH"
+            done
             export FLUFFY=/mnt/fluffy
-            export FLUFFY_TGT="${uname_m}-fluffy-linux-gnu"
+            export FLUFFY_TGT="$(uname -m)-fluffy-linux-gnu"
             export CONFIG_SITE=/dev/null
         fi
 
@@ -364,17 +273,42 @@ SQUASHFS() {
         -no-progress
 }
 
-ON=fluffy
+ON=fluffy-build
+if is_pseudopackage "$pkg" && test -d /mnt/fluffy/sw
+then
+    ON=host-build
+fi
 source "$pkg_file"
+
+case "$ON" in
+    host)
+        ON=host-build
+        ;;
+    fluffy)
+        ON=fluffy-build
+        ;;
+esac
 
 if test -z "${VERSION:-}"
 then
-    fatal "no VERSION defined"
+    if is_pseudopackage "$pkg"
+    then
+        VERSION=1.0
+    else
+        fatal "no VERSION defined"
+    fi
 fi
 
 if test "$(type -t INSTALL)" != function
 then
-    fatal "no INSTALL function defined"
+    if is_pseudopackage "$pkg"
+    then
+        INSTALL() {
+            :
+        }
+    else
+        fatal "no INSTALL function defined"
+    fi
 fi
 
 if (( ${#ARCHIVES[@]} % 2 != 0 ))
@@ -382,9 +316,9 @@ then
     fatal "Invalid number of items: ${#ARCHIVES[@]}"
 fi
 
-# If building natively for Fluffy but running on the host, enter a private
-# mount namespace, set up the chroot environment, and re-exec create inside it.
-if test "$ON" == fluffy && test -d /mnt/fluffy/sw
+# If building for Fluffy target but running on host, enter a private mount
+# namespace, set up the chroot environment, and re-exec create inside it.
+if test "$ON" != host-build && ! is_pseudopackage "$pkg" && test -d /mnt/fluffy/sw
 then
     log "entering chroot on /mnt/fluffy for $pkg..."
     (
@@ -425,51 +359,36 @@ then
         mkdir -p "$FLUFFY$root"
         call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
 
-        # mount bare minimum needed for bash, ctypes, extraction, and packaging
-        declare -a chroot_base_pkgs=(
-            glibc-pass1
-            ncurses-pass1
-            bash-pass1
-            libffi-pass1
-            ctypes-sh-pass1
-            coreutils-pass1
-            tar-pass1
-            xz-pass1
-            gzip-pass1
-        )
-        for p in "${chroot_base_pkgs[@]}"
-        do
-            shopt -s nullglob
-            imgs=("$FLUFFY/sw/$p"-[0-9]*.squashfs)
-            shopt -u nullglob
-            if (( ${#imgs[@]} == 0 ))
-            then
-                fatal "no squashfs found for chroot base package: $p"
-            fi
-            if (( ${#imgs[@]} > 1 ))
-            then
-                fatal "multiple squashfs found for chroot base package $p: ${imgs[*]}"
-            fi
-            mount_squashfs "${imgs[0]}" "$FLUFFY/sw/${p%-pass*}"
-        done
+        # mount build environment for chroot via swctl
+        "$root/swctl" mount --prefix "$FLUFFY" "/sw/$ON"
 
         # chroot into $FLUFFY and chdir to repo
         call chroot "$FLUFFY"
         call chdir "$root"
 
         export PATH='/sw/*/bin'
-        exec /sw/bash/bin/bash "$root/create" "$@"
+        FLUFFY_CHROOT=1 /sw/bash/bin/bash "$root/create" "$@"
     )
-    exit $?
+    status=$?
+    if test $status -ne 0
+    then
+        exit $status
+    fi
+    (
+        call setresuid 0 0 0
+        call setresgid 0 0 0
+        "$root/swctl" register "/sw/$mount_pkg" "/sw/$pkg-$VERSION.squashfs" "${NEEDS[@]}"
+    )
+    exit 0
 fi
 
 banner PREPARE
 
 case "$ON" in
-    host)
+    host-build)
         sw_dir="/mnt/fluffy/sw"
         ;;
-    fluffy)
+    cross-build|fluffy-build)
         sw_dir="/sw"
         if (( ${#SQUASHFS_NEEDS[@]} == 0 ))
         then
@@ -538,31 +457,33 @@ mkdir -p "$work_dir/src"
 log "done"
 
 cd "$work_dir/src"
-log -n "extracting ${archives[0]}... "
-tar -xf "$work_dir/archives/${archives[0]}"
-log "done"
+if (( ${#archives[@]} > 0 ))
+then
+    log -n "extracting ${archives[0]}... "
+    tar -xf "$work_dir/archives/${archives[0]}"
+    log "done"
 
-# the first archive is special and we change to its directory
-# so that the build scripts can be run from there
-shopt -s extglob
-archive_name="${archives[0]%%?(-src).tar.*}"
-cd "$archive_name"
-shopt -u extglob
+    # the first archive is special and we change to its directory
+    # so that the build scripts can be run from there
+    shopt -s extglob
+    archive_name="${archives[0]%%?(-src).tar.*}"
+    cd "$archive_name"
+    shopt -u extglob
 
-for archive in "${archives[@]:1}"
-do
-    case "$archive" in
-        *.tar.*)
-            log -n "extracting $archive... "
-            tar -xf "$work_dir/archives/$archive"
-            log "done"
-            ;;
-        *)
-            cp "$work_dir/archives/$archive" .
-            ;;
-    esac
-done
-
+    for archive in "${archives[@]:1}"
+    do
+        case "$archive" in
+            *.tar.*)
+                log -n "extracting $archive... "
+                tar -xf "$work_dir/archives/$archive"
+                log "done"
+                ;;
+            *)
+                cp "$work_dir/archives/$archive" .
+                ;;
+        esac
+    done
+fi
 
 if test "$(type -t MAKE)" == function
 then
@@ -580,6 +501,15 @@ squashfs_file="$sw_dir/$pkg-$VERSION.squashfs"
 lockdown SQUASHFS
 
 log "squashfs created: $squashfs_file"
+
+if test -z "${FLUFFY_CHROOT:-}"
+then
+    (
+        call setresuid 0 0 0
+        call setresgid 0 0 0
+        "$root/swctl" register "/sw/$mount_pkg" "/sw/$pkg-$VERSION.squashfs" "${NEEDS[@]}"
+    )
+fi
 
 banner CLEANUP
 cd "$root"

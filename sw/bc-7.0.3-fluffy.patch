@@ -1,0 +1,216 @@
+diff -Naur bc-7.0.3.orig/configure.sh bc-7.0.3/configure.sh
+--- bc-7.0.3.orig/configure.sh	2024-09-23 23:54:02.000000000 -0400
++++ bc-7.0.3/configure.sh	2026-10-28 21:54:02.402566749 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/gen/strgen.sh bc-7.0.3/gen/strgen.sh
+--- bc-7.0.3.orig/gen/strgen.sh	2024-09-23 23:54:02.000000000 -0400
++++ bc-7.0.3/gen/strgen.sh	2026-10-28 21:54:02.432140448 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/scripts/exec-install.sh bc-7.0.3/scripts/exec-install.sh
+--- bc-7.0.3.orig/scripts/exec-install.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/exec-install.sh	2026-10-28 21:54:02.430487387 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/scripts/format.sh bc-7.0.3/scripts/format.sh
+--- bc-7.0.3.orig/scripts/format.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/format.sh	2026-10-28 21:54:02.430961680 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/scripts/functions.sh bc-7.0.3/scripts/functions.sh
+--- bc-7.0.3.orig/scripts/functions.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/functions.sh	2026-10-28 21:54:02.431389284 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/scripts/link.sh bc-7.0.3/scripts/link.sh
+--- bc-7.0.3.orig/scripts/link.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/link.sh	2026-10-28 21:54:02.431063222 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/scripts/lint.sh bc-7.0.3/scripts/lint.sh
+--- bc-7.0.3.orig/scripts/lint.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/lint.sh	2026-10-28 21:54:02.429872493 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/scripts/locale_install.sh bc-7.0.3/scripts/locale_install.sh
+--- bc-7.0.3.orig/scripts/locale_install.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/locale_install.sh	2026-10-28 21:54:02.430374678 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/scripts/locale_uninstall.sh bc-7.0.3/scripts/locale_uninstall.sh
+--- bc-7.0.3.orig/scripts/locale_uninstall.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/locale_uninstall.sh	2026-10-28 21:54:02.430741130 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/scripts/safe-install.sh bc-7.0.3/scripts/safe-install.sh
+--- bc-7.0.3.orig/scripts/safe-install.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/safe-install.sh	2026-10-28 21:54:02.430631826 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Written by Rich Felker, originally as part of musl libc.
+ # Multi-licensed under MIT, 0BSD, and CC0.
+diff -Naur bc-7.0.3.orig/scripts/sqrt_random.sh bc-7.0.3/scripts/sqrt_random.sh
+--- bc-7.0.3.orig/scripts/sqrt_random.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/scripts/sqrt_random.sh	2026-10-28 21:54:02.430054156 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/all.sh bc-7.0.3/tests/all.sh
+--- bc-7.0.3.orig/tests/all.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/all.sh	2026-10-28 21:54:02.403856841 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/bc/timeconst.sh bc-7.0.3/tests/bc/timeconst.sh
+--- bc-7.0.3.orig/tests/bc/timeconst.sh	2024-09-23 23:54:04.000000000 -0400
++++ bc-7.0.3/tests/bc/timeconst.sh	2026-10-28 21:54:02.411830417 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (c) 2018-2024 Gavin D. Howard and contributors.
+ #
+diff -Naur bc-7.0.3.orig/tests/dc/scripts/easter.sh bc-7.0.3/tests/dc/scripts/easter.sh
+--- bc-7.0.3.orig/tests/dc/scripts/easter.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/dc/scripts/easter.sh	2026-10-28 21:54:02.409642367 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/error.sh bc-7.0.3/tests/error.sh
+--- bc-7.0.3.orig/tests/error.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/error.sh	2026-10-28 21:54:02.404586064 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/errors.sh bc-7.0.3/tests/errors.sh
+--- bc-7.0.3.orig/tests/errors.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/errors.sh	2026-10-28 21:54:02.403695384 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/history.sh bc-7.0.3/tests/history.sh
+--- bc-7.0.3.orig/tests/history.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/history.sh	2026-10-28 21:54:02.406024671 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/other.sh bc-7.0.3/tests/other.sh
+--- bc-7.0.3.orig/tests/other.sh	2024-09-23 23:54:03.000000000 -0400
++++ bc-7.0.3/tests/other.sh	2026-10-28 21:54:02.403338034 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+@@ -559,7 +559,7 @@
+ 
+ printf 'Running %s binary file test...' "$d"
+ 
+-bin="/bin/sh"
++bin="/sw/bash/bin/bash"
+ 
+ "$exe" "$@" "$bin" > /dev/null 2> "$out2"
+ err="$?"
+diff -Naur bc-7.0.3.orig/tests/read.sh bc-7.0.3/tests/read.sh
+--- bc-7.0.3.orig/tests/read.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/read.sh	2026-10-28 21:54:02.404852112 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/script.sh bc-7.0.3/tests/script.sh
+--- bc-7.0.3.orig/tests/script.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/script.sh	2026-10-28 21:54:02.404015357 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/scripts.sh bc-7.0.3/tests/scripts.sh
+--- bc-7.0.3.orig/tests/scripts.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/scripts.sh	2026-10-28 21:54:02.404716656 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/stdin.sh bc-7.0.3/tests/stdin.sh
+--- bc-7.0.3.orig/tests/stdin.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/stdin.sh	2026-10-28 21:54:02.405753675 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #
+diff -Naur bc-7.0.3.orig/tests/test.sh bc-7.0.3/tests/test.sh
+--- bc-7.0.3.orig/tests/test.sh	2024-09-23 23:54:05.000000000 -0400
++++ bc-7.0.3/tests/test.sh	2026-10-28 21:54:02.403503746 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # SPDX-License-Identifier: BSD-2-Clause
+ #

@@ -1,3 +1,5 @@
+ON=cross-build
+
 VERSION=4.0.1
 
 ARCHIVES=(

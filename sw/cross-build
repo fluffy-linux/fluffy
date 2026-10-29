@@ -1,0 +1,11 @@
+NEEDS=(
+    glibc-pass1
+    ncurses-pass1
+    bash-pass1
+    libffi-pass1
+    ctypes-sh-pass1
+    coreutils-pass1
+    tar-pass1
+    xz-pass1
+    gzip-pass1
+)

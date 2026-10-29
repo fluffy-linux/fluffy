@@ -87,15 +87,15 @@
    - To avoid coordinating hardcoded static UIDs across package definitions at build time, runtime services run under dynamic users (e.g. `DynamicUser=yes` with `StateDirectory=` under systemd, or `sysusers.d` allocation at install/boot).
    - This ensures `/var/<pkg>` directories are mode `0700` and accessible only to that specific package's service, with zero UID baked into the package image itself.
 
-8. **Pseudopackages (`*-builder`), Manifest-Driven Resolution & Companion Mount Engine**
-   - **Pseudopackages (Virtual Packages) with `ON=""`**:
+8. **Pseudopackages (`*-build`), Manifest-Driven Resolution & Companion Mount Engine**
+   - **Pseudopackages (Virtual Packages) with `NEEDS=(...)` Only**:
      - Packages that define *only* `NEEDS=(...)` with no `MAKE()`, `CHECK()`, or `INSTALL()`.
-     - Pseudopackages declare `ON=""` (empty) as a sentinel so `create` knows they are non-buildable dependency sets and will never recurse trying to build a builder.
+     - When created, pseudopackages produce an empty squashfs and register their dependency closure in `fluffy.fstab`.
      - Builder profiles encapsulate the environment for each bootstrap phase:
-       - `sw/host-builder`: `ON=""`, `NEEDS=()` (pure host compilation with no `/sw` mounts).
-       - `sw/bootstrap-builder`: `ON=""`, `NEEDS=(glibc-pass1 ncurses-pass1 bash-pass1 libffi-pass1 ctypes-sh-pass1 coreutils-pass1 tar-pass1 xz-pass1 gzip-pass1 ...)` (the frozen temporary toolchain scaffold needed to run `create` and `PREPARE` inside chroot during Chapters 7 & 8).
-       - `sw/fluffy-builder`: `ON=""`, `NEEDS=(glibc ncurses bash libffi ctypes-sh coreutils tar xz gzip ...)` (the final native Fluffy self-hosting environment).
-     - Regular package definitions reference these profiles directly via `ON=bootstrap-builder` or `ON=fluffy-builder`, completely eliminating hardcoded package lists inside `create`.
+       - `sw/host-build`: `NEEDS=()` (pure host compilation with no `/sw` mounts).
+       - `sw/cross-build`: `NEEDS=(glibc-pass1 ncurses-pass1 bash-pass1 libffi-pass1 ctypes-sh-pass1 coreutils-pass1 tar-pass1 xz-pass1 gzip-pass1)` (the frozen temporary toolchain scaffold needed to run `create` and `PREPARE` inside chroot during Chapter 7).
+       - `sw/fluffy-build`: `NEEDS=(glibc ncurses bash libffi ctypes-sh coreutils tar xz gzip)` (the final native Fluffy self-hosting environment).
+     - Regular package definitions reference these profiles directly via `$ON`, which defaults to `fluffy-build`. `create` transitively resolves the builder profile's `NEEDS` to set up the build environment for each stage before mounting package-specific requirements.
    - **Strict Circular Dependency Detection**:
      - Before performing any mount operations, the dependency traversal executes a cycle check (depth-first search tracking unvisited, active in-stack, and completed nodes).
      - Any circular dependency (direct or transitive) is rejected immediately with a fatal diagnostic displaying the exact dependency loop path before touching mounts or namespaces.

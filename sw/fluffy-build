@@ -1,0 +1,11 @@
+NEEDS=(
+    glibc
+    ncurses
+    bash
+    libffi
+    ctypes-sh
+    coreutils
+    tar
+    xz
+    gzip
+)
