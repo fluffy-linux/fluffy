@@ -13,8 +13,8 @@ ARCHIVES=(
     c3e782a8eee855a260988b7fe0ae01b1735bf93950d3f5e45820b73ae77c90d8 file://gcc-$VERSION-fluffy.patch
 )
 
-NEEDS=(binutils-pass2 glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 libstdcpp-pass1 linux-headers)
+NEEDS=(binutils-pass2)
+MAKE_NEEDS=(gcc-pass1 libstdcpp-pass1 linux-headers)
 
 MAKE() {
     patch -Np1 -i gcc-$VERSION-fluffy.patch
@@ -50,7 +50,7 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1 libstdcpp-pass1 linux-headers)
+INSTALL_NEEDS=(gcc-pass1 libstdcpp-pass1 linux-headers)
 
 INSTALL() {
     cd build

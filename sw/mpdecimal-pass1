@@ -8,7 +8,7 @@ ARCHIVES=(
 )
 
 NEEDS=(glibc-pass1)
-MAKE_NEEDS=(bash-pass1 binutils-pass2 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc-pass1 grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1)
+MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1)
 
 MAKE() {
     patch -Np1 -i mpdecimal-$VERSION-fluffy.patch

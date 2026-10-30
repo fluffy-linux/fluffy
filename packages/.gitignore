@@ -4,3 +4,4 @@
 *.tgz
 *.zip
 *.patch
+cacert.pem

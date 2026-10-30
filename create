@@ -21,7 +21,7 @@ log() {
 
 banner() {
     local prefix="---- $1 "
-    local dashes="-------------------------------------------------------------------------------"
+    local dashes="---------------------------------------"
     log
     log "${prefix}${dashes:${#prefix}}"
     log
@@ -186,6 +186,7 @@ lockdown() {
         export MAKEFLAGS="-j$(( nproc_val > 1 ? nproc_val - 1 : 1 ))"
         if test "$ON" != host-build
         then
+            export MAKEFLAGS="$MAKEFLAGS SHELL=/sw/bash/bin/bash"
             export PATH='/sw/*/bin'
             export SHELL=/sw/bash/bin/bash
             export CONFIG_SHELL=/sw/bash/bin/bash
@@ -288,6 +289,11 @@ case "$ON" in
         ON=fluffy-build
         ;;
 esac
+
+if test ! -d /mnt/fluffy/sw
+then
+    ON=fluffy-build
+fi
 
 if test -z "${VERSION:-}"
 then
@@ -420,16 +426,23 @@ log "done"
 cd "$work_dir/src"
 if (( ${#archives[@]} > 0 ))
 then
-    log -n "extracting ${archives[0]}... "
-    tar -xf "$work_dir/archives/${archives[0]}"
-    log "done"
+    case "${archives[0]}" in
+        *.tar.*)
+            log -n "extracting ${archives[0]}... "
+            tar -xf "$work_dir/archives/${archives[0]}"
+            log "done"
 
-    # the first archive is special and we change to its directory
-    # so that the build scripts can be run from there
-    shopt -s extglob
-    archive_name="${archives[0]%%?(-src).tar.*}"
-    cd "$archive_name"
-    shopt -u extglob
+            # the first archive is special and we change to its directory
+            # so that the build scripts can be run from there
+            shopt -s extglob
+            archive_name="${archives[0]%%?(-src).tar.*}"
+            cd "$archive_name"
+            shopt -u extglob
+            ;;
+        *)
+            cp "$work_dir/archives/${archives[0]}" .
+            ;;
+    esac
 
     for archive in "${archives[@]:1}"
     do

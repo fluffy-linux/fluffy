@@ -3,15 +3,11 @@ ON=host-build
 VERSION=1.0
 
 NEEDS=(
-    glibc-pass1
-    ncurses-pass1
-    bash-pass1
-    libffi-pass1
     ctypes-sh-pass1
-    coreutils-pass1
-    tar-pass1
-    xz-pass1
     gzip-pass1
-    util-linux-pass1
     signify-pass1
+    tar-pass1
+    util-linux-pass1
+    wget-pass1
+    xz-pass1
 )

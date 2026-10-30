@@ -1,0 +1,18 @@
+VERSION=2026.10.20
+
+ARCHIVES=(
+    796f1389bfea13c0ed78f663b765baaff54a508e5483786bd6ece73c5e3e3cbe https://curl.se/ca/cacert.pem
+    343660904b6b720165a6773e8fda8438e0a21372c01bbdb323869fa069c79ebf file://ca-certificates-fluffy-upsert
+)
+
+NEEDS=(coreutils)
+INSTALL_NEEDS=(coreutils)
+
+INSTALL() {
+    install -vdm755 /sw/ca-certificates/etc/ssl/certs
+    install -vm644 cacert.pem /sw/ca-certificates/etc/ssl/certs/ca-certificates.crt
+    ln -sfv certs/ca-certificates.crt /sw/ca-certificates/etc/ssl/cert.pem
+
+    install -vdm755 /sw/ca-certificates/bin
+    install -vm755 ca-certificates-fluffy-upsert /sw/ca-certificates/bin/fluffy-upsert
+}
