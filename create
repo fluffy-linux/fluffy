@@ -108,7 +108,9 @@ lockdown() {
 
         if (( ${#mount_targets[@]} > 0 ))
         then
+            export FLUFFY_SHADOW_PKG="$mount_pkg"
             "$root/swctl" mount "${mount_targets[@]}"
+            unset FLUFFY_SHADOW_PKG
         fi
 
         case "$1" in
@@ -412,7 +414,7 @@ done
 
 log -n "cleaning work area... "
 rm -rf "$work_dir"/{src,installed,test-results,test-work}
-mkdir -p "$work_dir/src"
+mkdir -p "$work_dir/src" "$work_dir/installed"
 log "done"
 
 cd "$work_dir/src"

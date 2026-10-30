@@ -1,0 +1,44 @@
+ON=host-build
+
+VERSION=2.42.2
+
+ARCHIVES=(
+    03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a https://www.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-$VERSION.tar.xz
+)
+
+NEEDS=(glibc-pass1 ncurses-pass1)
+MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers ncurses-pass1)
+
+MAKE() {
+    ./configure \
+        --prefix=/sw/util-linux \
+        --sbindir=/sw/util-linux/bin \
+        --host=$FLUFFY_TGT \
+        --build=$(./config.guess) \
+        --disable-chfn-chsh \
+        --disable-login \
+        --disable-nologin \
+        --disable-su \
+        --disable-setpriv \
+        --disable-runuser \
+        --disable-pylibmount \
+        --disable-liblastlog2 \
+        --disable-pam-lastlog2 \
+        --disable-static \
+        --disable-bash-completion \
+        --disable-makeinstall-chown \
+        --disable-makeinstall-setuid \
+        --without-python \
+        --without-systemd \
+        --without-udev \
+        --without-tinfo \
+        ADJTIME_PATH=/var/lib/hwclock/adjtime
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers ncurses-pass1)
+
+INSTALL() {
+    make install
+    rm -v /sw/util-linux/lib/lib*.la
+}

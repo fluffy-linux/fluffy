@@ -63,27 +63,26 @@
      - Permanently drops root (real, effective, and saved UID/GID all set to `$SUDO_UID:$SUDO_GID`), clearing all kernel capabilities (`CAP_SYS_ADMIN`, etc.).
    - `SQUASHFS`: Packs `work/installed` into `$sw_dir/$pkg-$VERSION.squashfs` directly as root in the `SQUASHFS` subshell, leaving all intermediate files owned by `$SUDO_UID:$SUDO_GID`.
 
-6. **Self-Signed Repository Manifest as a Literal `fstab` (`fluffy.fstab`) & Embedded Trust Root**
+6. **Self-Signed Repository Manifest as a Literal `fstab` (`/etc/fluffy/fstab`) & Embedded Trust Root**
    - The repository manifest is formatted as a single, self-signed `fstab(5)` file:
      ```fstab
-     # fluffy:sig:<base64-ed25519-signature-over-remaining-lines>
-     /sw/foo-1.23.squashfs /sw/foo squashfs X-mount.mkdir,X-fluffy.signature=PLACEHOLDER,X-fluffy.sha256=abc123,X-fluffy.needs="bar,baz" 0 0
-     /sw/bar-2.0.squashfs /sw/bar squashfs X-mount.mkdir,X-fluffy.signature=PLACEHOLDER,X-fluffy.sha256=def456 0 0
+     # fluffy.signature=<base64-ed25519-signature-over-remaining-lines>
+     /sw/foo-1.23.squashfs /sw/foo squashfs X-mount.mkdir,X-fluffy.signature=<base64-sig>,X-fluffy.needs="bar,baz" 0 0
+     /sw/bar-2.0.squashfs /sw/bar squashfs X-mount.mkdir,X-fluffy.signature=<base64-sig> 0 0
      ```
    - **Why this design is so powerful**:
      - **Directly mountable by standard tools**: `libmount`, `mount -a -T`, and `systemd-fstab-generator` treat `#` as a comment line by default. No stripping or pre-processing is needed to use `fluffy.fstab` as a mount table.
      - **Standard Userspace Options (`X-appname.option`)**: In accordance with the `mount(8)` and `libmount` standard specification, all user-space / application-specific mount options are prefixed with `X-<appname>.<option>` without leading hyphens:
-       - `X-fluffy.signature=<base64-signature>`: package-level verification signature.
-       - `X-fluffy.sha256=<hex-hash>`: SHA-256 digest of the squashfs image.
+       - `X-fluffy.signature=<base64-signature>`: package-level verification signature created by signing the `.squashfs` image with `signify` at registration time.
        - `X-fluffy.needs="<dep1>,<dep2>"`: comma-separated list of runtime dependency packages.
-     - **Compact Ed25519 signatures**: Raw Ed25519 signatures are exactly 64 bytes (88 base64 characters)—no massive ASCII armor blocks or multi-kilobyte RSA blobs.
-     - **Single-file verification**: The signature on line 1 covers lines 2 through EOF. Verifying line 1 against the trusted public key validates the entire repository index in one shot (all package filenames, mountpoints, SHA-256 digests, and dependency closures) without needing separate detached `.sig` files that can get out of sync or 404:
+     - **Compact Ed25519 signatures**: Raw Ed25519 signatures are exactly 64 bytes (88 base64 characters; 100 characters in OpenBSD signify format)—no massive ASCII armor blocks or multi-kilobyte RSA blobs.
+     - **Single-file verification**: The signature on line 1 covers lines 2 through EOF. Verifying line 1 against the trusted public key validates the entire repository index in one shot (all package filenames, mountpoints, squashfs signatures, and dependency closures) without needing separate detached `.sig` files:
        ```bash
-       sig=$(sed -n '1s/^# fluffy:sig://p' fluffy.fstab)
-       sed '1d' fluffy.fstab | verify "$PUBLIC_KEY" "$sig"
+       sig=$(sed -n '1s/^# fluffy\.signature=//p' /etc/fluffy/fstab)
+       # Verify lines 2..EOF against the embedded signature
        ```
-     - **Trust Root / Bootstrap**: The distro release signing public key (32 bytes base64) cannot live inside a package squashfs (which would be circular). Instead, it is embedded directly in the distro's minimal bootstrap script / initramfs (e.g. `/etc/fluffy/keys/release.pub`), providing the root of trust from day one.
-     - **In-process parsing & mounting**: `libmount` (`<libmount/libmount.h>` called via `ctypes.sh`) parses the manifest, resolves dependencies, checks options (`X-mount.mkdir`, `X-fluffy.signature`, `X-fluffy.sha256`, `X-fluffy.needs`), and mounts the squashfs images directly in-process.
+     - **Trust Root / Bootstrap**: The distro release signing public key cannot live inside a package squashfs (which would be circular). Instead, it is embedded directly in the distro's minimal bootstrap script / initramfs (e.g. `/etc/fluffy/keys/release.pub`), providing the root of trust from day one.
+     - **In-process parsing & mounting**: `libmount` (`<libmount/libmount.h>` called via `ctypes.sh`) parses the manifest, resolves dependencies, checks options (`X-mount.mkdir`, `X-fluffy.signature`, `X-fluffy.needs`), and mounts the squashfs images directly in-process.
 
 7. **Runtime State Separation (`/var/<pkg>`) & Dynamic Users**
    - Packages in `/sw/<pkg>` are strictly immutable, code/asset-only squashfs images packed with `-all-root` (everything owned by `root:root`).
@@ -94,7 +93,7 @@
 8. **Pseudopackages (`*-build`), Manifest-Driven Resolution & Companion Mount Engine**
    - **Pseudopackages (Virtual Packages) with `NEEDS=(...)` Only**:
      - Packages that define *only* `NEEDS=(...)` with no `MAKE()`, `CHECK()`, or `INSTALL()`.
-     - When created, pseudopackages produce an empty squashfs and register their dependency closure in `fluffy.fstab`.
+     - When created, pseudopackages produce an empty squashfs and register their dependency closure in `/etc/fluffy/fstab`.
      - Builder profiles encapsulate the environment for each bootstrap phase:
        - `sw/host-build`: `NEEDS=()` (pure host compilation with no `/sw` mounts).
        - `sw/cross-build`: `NEEDS=(glibc-pass1 ncurses-pass1 bash-pass1 libffi-pass1 ctypes-sh-pass1 coreutils-pass1 tar-pass1 xz-pass1 gzip-pass1)` (the frozen temporary toolchain scaffold needed to run `create` and `PREPARE` inside chroot during Chapter 7).
@@ -104,10 +103,10 @@
      - Before performing any mount operations, `swctl mount` executes a recursive depth-first search (DFS) tracking node states (0 = unvisited, 1 = visiting/active in-stack, 2 = visited/completed).
      - Any circular dependency (direct or transitive) is rejected immediately with a fatal diagnostic displaying the exact dependency cycle path before touching mounts or namespaces.
      - Dependencies are gathered in DFS post-order, producing a strictly topological mount order where every dependency is mounted prior to the packages that depend on it.
-   - **Manifest-Driven Resolution via `/sw/fluffy.fstab`**:
+   - **Manifest-Driven Resolution via `/etc/fluffy/fstab`**:
      - `create` stops scanning filesystem glob patterns (`/sw/"$dep"-[0-9]*.squashfs`).
-     - `/sw/fluffy.fstab` is the single source of truth for all built squashfs images, mount targets, checksums, and transitive requirements (`X-fluffy.needs="dep1,dep2"`).
-     - After `SQUASHFS` completes, the newly created image is recorded into `/sw/fluffy.fstab` via `libmount`:
+     - `/etc/fluffy/fstab` is the single source of truth for all built squashfs images, mount targets, package signatures, and transitive requirements (`X-fluffy.needs="dep1,dep2"`).
+     - After `SQUASHFS` completes, the newly created image is recorded into `/etc/fluffy/fstab` via `libmount`:
        - Newly built packages append a line.
        - Rebuilt packages or package upgrades (e.g. `pass1` -> final) perform an in-place upsert targeting the mountpoint `/sw/<pkg>`.
    - **Decoupled Companion Mount Engine (Package Manager Seed)**:
@@ -116,7 +115,7 @@
        - Resolving dependency DAGs and detecting circular references.
        - Setting up the outer harness mounts for `$ON`.
        - Cleaning `/sw` inside `lockdown` and mounting strictly the phase dependency closure.
-       - Upserting entries into `fluffy.fstab` on packaging completion.
+       - Upserting entries into `/etc/fluffy/fstab` on packaging completion.
      - **Runtime / System Package Operations**:
        - Mounting software for system boot and user sessions.
        - Orchestrating `fluffy-upsert` hooks during installs and upgrades.
@@ -141,12 +140,12 @@
 
 9. **Garbage Collection & Retention Model (`prune`)**
    - **Git-Style Lazy Garbage Collection**:
-     - Upgrades and package removals do not delete active `.squashfs` files immediately. They update `/sw/fluffy.fstab` and rebind mounts in new namespaces.
+     - Upgrades and package removals do not delete active `.squashfs` files immediately. They update `/etc/fluffy/fstab` and rebind mounts in new namespaces.
      - Running processes continue to execute against old `.squashfs` images safely in their private mount namespaces.
    - **Pruning Policy (`<pkgmgr> prune`)**:
      - Scans `/sw/*.squashfs` periodically (cron/timer) or manually.
      - An image is a candidate for deletion if:
-       1. It is no longer referenced by the active `/sw/fluffy.fstab`.
+       1. It is no longer referenced by the active `/etc/fluffy/fstab`.
        2. It is not currently held open/mounted in any running mount namespace (verified via `/proc/*/mountinfo`).
        3. Optional retention window: unreferenced, unmounted images can be kept for a grace period (e.g. 30 days) to allow instant rollback to older generations.
    - **Btrfs Snapshot Protection**:
@@ -159,7 +158,7 @@
       - Modules live in `/sw/linux/lib/modules/<kernel-version>/`.
     - **GRUB Squashfs & Btrfs Native Direct-Mount**:
       - GRUB natively includes filesystem drivers for both Btrfs and Squashfs (`insmod btrfs`, `insmod squash4`).
-      - GRUB mounts the Btrfs root filesystem, reads `/sw/fluffy.fstab` to locate the active kernel squashfs (`/sw/linux-*.squashfs`), and mounts/reads the squashfs image directly on the fly.
+      - GRUB mounts the Btrfs root filesystem, reads `/etc/fluffy/fstab` to locate the active kernel squashfs (`/sw/linux-*.squashfs`), and mounts/reads the squashfs image directly on the fly.
       - GRUB streams the kernel (`vmlinuz`) and `initramfs` directly into RAM from the `.squashfs` image without requiring any intermediate unpacking on disk.
     - **The `fluffy-initramfs` Package**:
       - Built like any standard Fluffy package (`sw/fluffy-initramfs`) using `create`.
@@ -169,7 +168,7 @@
       1. Kernel boots and executes `/init` in `fluffy-initramfs`.
       2. Initramfs mounts the real Btrfs root at `/sysroot`.
       3. Binds the active `/etc` Btrfs subvolume/snapshot to `/sysroot/etc`.
-      4. Executes `mount -a -T /sysroot/sw/fluffy.fstab` to mount **all** system packages under `/sysroot/sw/<pkg>`—zero special-casing for systemd or glibc.
+      4. Executes `mount -a -T /sysroot/etc/fluffy/fstab` to mount **all** system packages under `/sysroot/sw/<pkg>`—zero special-casing for systemd or glibc.
       5. Calls `switch_root /sysroot` and executes `/sw/systemd/lib/systemd/systemd` as PID 1.
     - **Zero-Hack PID 1 Startup**:
       - `systemd` starts with all dynamic libraries (`/sw/*/lib`), unit files (`/sw/*/lib/systemd/system`), and binaries (`/sw/*/bin`) already mounted and available in `/proc/1/ns/mnt`.

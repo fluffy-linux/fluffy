@@ -12,4 +12,6 @@ NEEDS=(
     tar
     xz
     gzip
+    util-linux
+    signify
 )
