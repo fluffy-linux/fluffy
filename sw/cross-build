@@ -12,4 +12,6 @@ NEEDS=(
     tar-pass1
     xz-pass1
     gzip-pass1
+    util-linux-pass1
+    signify-pass1
 )

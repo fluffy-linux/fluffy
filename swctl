@@ -1,8 +1,14 @@
 #!/sw/bash/bin/bash
 
+# shellcheck disable=SC2154
+# swctl - manage /sw mounts and manifests in Fluffy Linux
+
 set -euo pipefail
 
 source ctypes.sh
+
+MNT_ITER_FORWARD=0
+MNT_ITER_BACKWARD=1
 
 log() {
     echo "$@" >&2
@@ -13,62 +19,137 @@ fatal() {
     exit 1
 }
 
-# Calls a C function returning int, failing if return value is not 0 (success)
 call() {
     local ret
-    dlcall -r int -n ret "$@"
-    if test "$ret" != "int:0"
+    dlcall -n ret -r int "$@"
+    if (( ${ret#*:} == -1 ))
     then
-        fatal "$1 failed (${ret#*:})"
+        fatal "call failed: $*"
     fi
 }
 
-# Calls a C function returning a pointer into the given variable name
 call_ptr() {
-    local __var="$1"
+    local var="$1"
     shift
-    dlcall -r pointer -n "$__var" "$@"
+    dlcall -n "$var" -r pointer "$@"
+    if test "${!var}" == "$NULL"
+    then
+        fatal "call failed: $*"
+    fi
 }
 
 cleanup() {
-    local ret=$?
-    if test -v mnt_table
+    if test -n "${mnt_table:-}" && test "$mnt_table" != "$NULL"
     then
         dlcall mnt_free_table "$mnt_table"
-        unset mnt_table
     fi
-    exit $ret
 }
 
-if test $# -eq 0
+if test $# -lt 1
 then
     fatal "no arguments provided"
 fi
 
 trap cleanup EXIT
 
-# TODO less hacky
 if test -d /mnt/fluffy
 then
-    FSTAB=${FSTAB:-/mnt/fluffy/sw/fluffy.fstab}
+    FSTAB=${FSTAB:-/mnt/fluffy/etc/fluffy/fstab}
 else
-    FSTAB=${FSTAB:-/sw/fluffy.fstab}
+    FSTAB=${FSTAB:-/etc/fluffy/fstab}
 fi
 
-dlopen libmount.so.1
+KEY_DIR="${FLUFFY_KEY_DIR:-${FSTAB%/*}/keys}"
+SEC_KEY="${FLUFFY_SEC_KEY:-$KEY_DIR/release.sec}"
+PUB_KEY="${FLUFFY_PUB_KEY:-$KEY_DIR/release.pub}"
+SIGNIFY="$(command -v signify || command -v signify-openbsd || true)"
 
-MNT_ITER_FORWARD=0
-MNT_ITER_BACKWARD=1
+ensure_keys() {
+    if test ! -f "$SEC_KEY"
+    then
+        if test -z "$SIGNIFY"
+        then
+            fatal "signify not found: cannot generate release keys"
+        fi
+        mkdir -p "${SEC_KEY%/*}"
+        chmod 700 "${SEC_KEY%/*}"
+        log "generating release keypair at $SEC_KEY..."
+        "$SIGNIFY" -G -n -c "fluffy release key" -p "$PUB_KEY" -s "$SEC_KEY"
+    fi
+}
+
+if test -f /sw/util-linux/lib/libmount.so.1
+then
+    dlopen /sw/util-linux/lib/libmount.so.1
+elif test -f /mnt/fluffy/sw/util-linux/lib/libmount.so.1
+then
+    dlopen /mnt/fluffy/sw/util-linux/lib/libmount.so.1
+else
+    dlopen libmount.so.1
+fi
 
 call_ptr mnt_table mnt_new_table
-if test "$mnt_table" == "$NULL"
+call mnt_table_set_parser_errcb "$mnt_table" $NULL
+
+if test -f "$FSTAB"
 then
-    fatal "failed to create mnt_table"
+    call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
 fi
 
-dlcall mnt_table_enable_comments "$mnt_table" "int:1"
+find_fs_by_pkg() {
+    local query="$1"
+    local __var="$2"
+    local query_base="${query%-pass*}"
 
-call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
+    eval "$__var=\$NULL"
+    local fallback="$NULL"
+
+    call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
+    call_ptr p_fs malloc "ulong:8"
+    local val=(pointer:0)
+    pack "$p_fs" val
+
+    while true
+    do
+        dlcall -r int -n ret mnt_table_next_fs "$mnt_table" "$itr" "$p_fs"
+        if test "$ret" != "int:0"
+        then
+            break
+        fi
+        unpack "$p_fs" val
+        local curr_fs="${val[0]}"
+        dlcall -r string -n src_str mnt_fs_get_source "$curr_fs"
+        local src="${src_str#string:}"
+        local filename="${src##*/}"
+        local base="${filename%.squashfs}"
+        local cur_pkg
+        if [[ "$base" =~ ^(.*)-[0-9] ]]
+        then
+            cur_pkg="${BASH_REMATCH[1]}"
+        else
+            cur_pkg="$base"
+        fi
+
+        if test "$cur_pkg" == "$query"
+        then
+            eval "$__var=\$curr_fs"
+            break
+        fi
+
+        if test "$cur_pkg" == "$query_base" && test "$fallback" == "$NULL"
+        then
+            fallback="$curr_fs"
+        fi
+    done
+
+    dlcall free "$p_fs"
+    dlcall mnt_free_iter "$itr"
+
+    if eval "test \"\$$__var\" == \"\$NULL\"" && test "$fallback" != "$NULL"
+    then
+        eval "$__var=\$fallback"
+    fi
+}
 
 register_entry() {
     local mountpoint="$1"
@@ -80,18 +161,56 @@ register_entry() {
     local needs="$*"
     IFS="$old_ifs"
 
-    # does this mount point already exist?
-    call_ptr mnt_fs mnt_table_find_target "$mnt_table" "string:$mountpoint" "int:$MNT_ITER_FORWARD"
+    local real_squashfs="$squashfs"
+    if test -d /mnt/fluffy && test -f "/mnt/fluffy$squashfs"
+    then
+        real_squashfs="/mnt/fluffy$squashfs"
+    fi
+
+    if test ! -f "$real_squashfs"
+    then
+        fatal "squashfs file not found: $real_squashfs"
+    fi
+
+    ensure_keys
+
+    if test -z "$SIGNIFY"
+    then
+        fatal "signify not found: cannot sign package"
+    fi
+
+    local tmp_sig
+    tmp_sig="$(mktemp)"
+    "$SIGNIFY" -S -s "$SEC_KEY" -m "$real_squashfs" -x "$tmp_sig"
+    local pkg_sig
+    {
+        read -r _
+        read -r pkg_sig
+    } < "$tmp_sig"
+    rm -f "$tmp_sig"
+
+    local pkg_filename="${squashfs##*/}"
+    local pkg_base="${pkg_filename%.squashfs}"
+    local pkg_name
+    if [[ "$pkg_base" =~ ^(.*)-[0-9] ]]
+    then
+        pkg_name="${BASH_REMATCH[1]}"
+    else
+        pkg_name="$pkg_base"
+    fi
+
+    # does an entry for this package already exist?
+    find_fs_by_pkg "$pkg_name" mnt_fs
     if test "$mnt_fs" == "$NULL"
     then
-        log "doesn't exist - creating $mountpoint"
+        log "doesn't exist - creating $mountpoint ($pkg_name)"
         call_ptr mnt_fs mnt_new_fs
         if test "$mnt_fs" == "$NULL"
         then
             fatal "failed to create mnt_fs"
         fi
 
-        # Find first entry with target > $mountpoint to insert alphabetically
+        # Find first entry with target > $mountpoint (or same target and cur_pkg > pkg_name) to insert alphabetically
         call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
         call_ptr p_fs malloc "ulong:8"
         local val=(pointer:0)
@@ -110,7 +229,19 @@ register_entry() {
             dlcall -r string -n curr_tgt mnt_fs_get_target "$curr_fs"
             curr_tgt="${curr_tgt#string:}"
 
-            if [[ "$curr_tgt" > "$mountpoint" ]]
+            dlcall -r string -n curr_src_str mnt_fs_get_source "$curr_fs"
+            local curr_src="${curr_src_str#string:}"
+            local c_filename="${curr_src##*/}"
+            local c_base="${c_filename%.squashfs}"
+            local c_pkg
+            if [[ "$c_base" =~ ^(.*)-[0-9] ]]
+            then
+                c_pkg="${BASH_REMATCH[1]}"
+            else
+                c_pkg="$c_base"
+            fi
+
+            if [[ "$curr_tgt" > "$mountpoint" ]] || ( [[ "$curr_tgt" == "$mountpoint" ]] && [[ "$c_pkg" > "$pkg_name" ]] )
             then
                 pos="$curr_fs"
                 break
@@ -129,10 +260,10 @@ register_entry() {
         fi
         dlcall mnt_unref_fs "$mnt_fs" # table holds a reference to mnt_fs
     else
-        log "fstab entry exists: updating $mountpoint"
+        log "fstab entry exists: updating $mountpoint ($pkg_name)"
     fi
 
-    local options="X-fluffy.signature=PLACEHOLDER"
+    local options="X-fluffy.signature=$pkg_sig"
     if test -n "$needs"
     then
         options="$options,X-fluffy.needs=\"$needs\""
@@ -164,60 +295,44 @@ mount_targets() {
         fatal "no targets specified to mount"
     fi
 
-    # Read current mtab (mountinfo) to avoid mounting already-mounted targets
-    call_ptr cxt mnt_new_context
-    if test "$cxt" == "$NULL"
-    then
-        fatal "failed to create mount context"
-    fi
-    call_ptr p_mtab malloc "ulong:8"
-    call mnt_context_get_mtab "$cxt" "$p_mtab"
-    local val=(pointer:0)
-    pack "$p_mtab" val
-    unpack "$p_mtab" val
-    local mtab="${val[0]}"
-    dlcall free "$p_mtab"
-    dlcall mnt_free_context "$cxt"
-
     local -A state=()
     local -a order=()
     local -a call_stack=()
 
     dfs() {
         local target="$1"
-        if [[ "$target" != /* ]]
-        then
-            target="/sw/$target"
-        fi
+        local pkg_name="${target##*/}"
 
-        call_ptr fs mnt_table_find_target "$mnt_table" "string:$target" "int:0"
+        find_fs_by_pkg "$pkg_name" fs
         if test "$fs" == "$NULL"
         then
-            local pkg_name="${target##*/}"
-            local base_name="${pkg_name%-pass*}"
-            call_ptr fs mnt_table_find_target "$mnt_table" "string:/sw/$base_name" "int:0"
+            fatal "package $target not found in $FSTAB"
         fi
 
-        if test "$fs" == "$NULL"
+        dlcall -r string -n src_str mnt_fs_get_source "$fs"
+        local src="${src_str#string:}"
+        local filename="${src##*/}"
+        local base="${filename%.squashfs}"
+        local canon_pkg
+        if [[ "$base" =~ ^(.*)-[0-9] ]]
         then
-            fatal "target $target not found in $FSTAB"
+            canon_pkg="${BASH_REMATCH[1]}"
+        else
+            canon_pkg="$base"
         fi
 
-        dlcall -r string -n fs_tgt mnt_fs_get_target "$fs"
-        local canon_tgt="${fs_tgt#string:}"
-
-        local cur_state="${state[$canon_tgt]:-0}"
+        local cur_state="${state[$canon_pkg]:-0}"
         if test "$cur_state" -eq 2
         then
             return 0
         fi
         if test "$cur_state" -eq 1
         then
-            fatal "circular dependency detected: ${call_stack[*]} -> $canon_tgt"
+            fatal "circular dependency detected: ${call_stack[*]} -> $canon_pkg"
         fi
 
-        state[$canon_tgt]=1
-        call_stack+=("$canon_tgt")
+        state[$canon_pkg]=1
+        call_stack+=("$canon_pkg")
 
         dlcall -r string -n fs_opts mnt_fs_get_options "$fs"
         local opts="${fs_opts#string:}"
@@ -243,8 +358,8 @@ mount_targets() {
         fi
 
         call_stack=("${call_stack[@]:0:${#call_stack[@]}-1}")
-        state[$canon_tgt]=2
-        order+=("$canon_tgt")
+        state[$canon_pkg]=2
+        order+=("$canon_pkg")
     }
 
     local root_tgt
@@ -253,11 +368,15 @@ mount_targets() {
         dfs "$root_tgt"
     done
 
+    # Read kernel mount table via libmount to avoid mounting already-mounted targets
+    call_ptr mtab mnt_new_table
+    call mnt_table_parse_mtab "$mtab" $NULL
+
     # Mount in topological post-order (dependencies mounted first)
-    local tgt
-    for tgt in "${order[@]}"
+    local pkg
+    for pkg in "${order[@]}"
     do
-        call_ptr fs mnt_table_find_target "$mnt_table" "string:$tgt" "int:0"
+        find_fs_by_pkg "$pkg" fs
         if test "$fs" == "$NULL"
         then
             continue
@@ -266,7 +385,12 @@ mount_targets() {
         dlcall -r string -n src_str mnt_fs_get_source "$fs"
         local src="${src_str#string:}"
         dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
-        tgt="${tgt_str#string:}"
+        local tgt="${tgt_str#string:}"
+
+        if test -n "${FLUFFY_SHADOW_PKG:-}" && test "$tgt" == "/sw/$FLUFFY_SHADOW_PKG"
+        then
+            tgt="/sw/$pkg"
+        fi
 
         local real_src
         local real_tgt
@@ -284,8 +408,9 @@ mount_targets() {
             fatal "squashfs file not found: $real_src"
         fi
 
-        # Check if target is already mounted
-        call_ptr is_mnt mnt_table_find_target "$mtab" "string:$real_tgt" "int:0"
+        # Check if target is already mounted via libmount
+        local is_mnt
+        dlcall -r pointer -n is_mnt mnt_table_find_target "$mtab" "string:$real_tgt" "int:0"
         if test "$is_mnt" != "$NULL"
         then
             continue
@@ -313,13 +438,55 @@ mount_targets() {
         dlcall mnt_free_context "$cxt"
         log "mounted $real_src on $real_tgt"
     done
+    dlcall mnt_free_table "$mtab"
 }
 
 case "$1" in
 register)
     shift
     register_entry "$@"
+
+    dlcall -n intro -r pointer mnt_table_get_intro_comment "$mnt_table"
+    if test "$intro" == "$NULL"
+    then
+        placeholder="$(printf '%0100d' 0)"
+        call mnt_table_set_intro_comment "$mnt_table" "string:# fluffy.signature=$placeholder"$'\n'
+    fi
+
+    mkdir -p "${FSTAB%/*}"
     call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
+
+    # Sign total fstab (lines 2..EOF) and replace placeholder comment
+    tmp_content="$(mktemp)"
+    tmp_sig="$(mktemp)"
+    {
+        read -r _
+        while IFS= read -r line || test -n "$line"
+        do
+            echo "$line"
+        done
+    } < "$FSTAB" > "$tmp_content"
+
+    "$SIGNIFY" -S -s "$SEC_KEY" -m "$tmp_content" -x "$tmp_sig"
+    local fstab_sig
+    {
+        read -r _
+        read -r fstab_sig
+    } < "$tmp_sig"
+    rm -f "$tmp_content" "$tmp_sig"
+
+    tmp_fstab="$(mktemp)"
+    {
+        read -r _
+        echo "# fluffy.signature=$fstab_sig"
+        while IFS= read -r line || test -n "$line"
+        do
+            echo "$line"
+        done
+    } < "$FSTAB" > "$tmp_fstab"
+    cat "$tmp_fstab" > "$FSTAB"
+    rm -f "$tmp_fstab"
+    log "fstab signed: $FSTAB"
     ;;
 mount)
     shift
