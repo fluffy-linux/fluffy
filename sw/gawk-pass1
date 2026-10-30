@@ -4,12 +4,14 @@ VERSION=5.4.1
 
 ARCHIVES=(
     07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://ftpmirror.gnu.org/gawk/gawk-$VERSION.tar.xz
+    e1f1445d26226d77f6bf5d80c90884b095735b799f841c85107b0b673b7baccc file://gawk-$VERSION-fluffy.patch
 )
 
 NEEDS=(glibc-pass1)
 MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
 
 MAKE() {
+    patch -Np1 -i gawk-$VERSION-fluffy.patch
     sed -i 's/extras//' Makefile.in
     ./configure \
         --prefix=/sw/gawk \
