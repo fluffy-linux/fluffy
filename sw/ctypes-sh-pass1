@@ -6,8 +6,8 @@ ARCHIVES=(
     ab032a845d8e579e39159f9bb8e68214892b2d927e6c70834230c88145892165 https://github.com/taviso/ctypes.sh/releases/download/v$VERSION/ctypes-sh-$VERSION.tar.gz
 )
 
-NEEDS=(bash-pass1 glibc-pass1 libffi-pass1)
-MAKE_NEEDS=(bash-pass1 gcc-pass1 glibc-pass1 libffi-pass1 linux-headers)
+NEEDS=(bash-pass1 libffi-pass1)
+MAKE_NEEDS=(bash-pass1 gcc-pass1 libffi-pass1 linux-headers)
 
 MAKE() {
     ./configure \
@@ -17,7 +17,7 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(bash-pass1 gcc-pass1 glibc-pass1 libffi-pass1 linux-headers)
+INSTALL_NEEDS=(bash-pass1 gcc-pass1 libffi-pass1 linux-headers)
 
 INSTALL() {
     make install

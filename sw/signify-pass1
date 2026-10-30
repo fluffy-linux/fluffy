@@ -7,7 +7,7 @@ ARCHIVES=(
 )
 
 NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers make-pass1 coreutils-pass1)
+MAKE_NEEDS=(gcc-pass1 linux-headers make-pass1 coreutils-pass1)
 
 MAKE() {
     make CC="$FLUFFY_TGT-gcc" BUNDLED_LIBBSD=1 EXTRA_CFLAGS="-D_GNU_SOURCE" VERIFY_ONLY=0

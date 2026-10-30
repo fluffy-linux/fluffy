@@ -1,0 +1,31 @@
+ON=host-build
+
+VERSION=4.0.1
+
+ARCHIVES=(
+    2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/openssl/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
+    ed031ab4f9936f86bd353e36c0d5381788f12f192587a25a5ac9e2af614b9fd9 file://openssl-$VERSION-fluffy.patch
+)
+
+NEEDS=(glibc-pass1)
+MAKE_NEEDS=(gcc-pass1 linux-headers make-pass1 coreutils-pass1 patch-pass1)
+
+MAKE() {
+    patch -Np1 -i openssl-$VERSION-fluffy.patch
+    ./Configure linux-x86_64 \
+        --prefix=/sw/openssl \
+        --openssldir=/etc/ssl \
+        --libdir=lib \
+        shared \
+        no-tests \
+        no-static-engine \
+        CC="$FLUFFY_TGT-gcc"
+    make
+}
+
+INSTALL_NEEDS=(make-pass1 coreutils-pass1)
+
+INSTALL() {
+    make install_sw
+    rm -v /sw/openssl/lib/lib*.a 2>/dev/null || true
+}

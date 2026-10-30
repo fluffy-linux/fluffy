@@ -96,9 +96,14 @@
      - When created, pseudopackages produce an empty squashfs and register their dependency closure in `/etc/fluffy/fstab`.
      - Builder profiles encapsulate the environment for each bootstrap phase:
        - `sw/host-build`: `NEEDS=()` (pure host compilation with no `/sw` mounts).
-       - `sw/cross-build`: `NEEDS=(glibc-pass1 ncurses-pass1 bash-pass1 libffi-pass1 ctypes-sh-pass1 coreutils-pass1 tar-pass1 xz-pass1 gzip-pass1)` (the frozen temporary toolchain scaffold needed to run `create` and `PREPARE` inside chroot during Chapter 7).
-       - `sw/fluffy-build`: `NEEDS=(glibc ncurses bash libffi ctypes-sh coreutils tar xz gzip)` (the final native Fluffy self-hosting environment).
+       - `sw/cross-build`: `NEEDS=(ctypes-sh-pass1 gzip-pass1 signify-pass1 tar-pass1 util-linux-pass1 wget-pass1 xz-pass1)` (the trimmed top-level scaffold needed to run `create` and `PREPARE` inside chroot during Chapter 7; transitive dependencies like `bash-pass1`, `glibc-pass1`, `ncurses-pass1`, `openssl-pass1`, `ca-certificates-pass1`, and `coreutils-pass1` are resolved automatically).
+       - `sw/fluffy-build`: `NEEDS=(ctypes-sh gzip signify tar util-linux wget xz)` (the final native Fluffy self-hosting environment).
      - Regular package definitions reference these profiles directly via `$ON`, which defaults to `fluffy-build`. `create` transitively resolves the builder profile's `NEEDS` to set up the build environment for each stage before mounting package-specific requirements.
+   - **Transitive Dependency Reduction (`swctl trim`)**:
+     - `swctl trim <pkg...>` (or `swctl roots <pkg...>`) performs a transitive reduction over the dependency DAG recorded in `/etc/fluffy/fstab`.
+     - Removes any package from the argument list that is already a direct or transitive dependency of another package in the list.
+     - Supports `-1` / `--lines` for newline output, or space-separated by default.
+     - Enables concise recipe definitions (`NEEDS`, `MAKE_NEEDS`, `INSTALL_NEEDS`) where only root dependencies need to be specified (e.g. specifying `bash` automatically implies `ncurses` and `glibc`; `ctypes-sh` implies `libffi` and `bash`).
    - **Strict Circular Dependency Detection & Topological Mount Order**:
      - Before performing any mount operations, `swctl mount` executes a recursive depth-first search (DFS) tracking node states (0 = unvisited, 1 = visiting/active in-stack, 2 = visited/completed).
      - Any circular dependency (direct or transitive) is rejected immediately with a fatal diagnostic displaying the exact dependency cycle path before touching mounts or namespaces.
@@ -175,9 +180,24 @@
       - Kernel modules load directly from `/sw/linux/lib/modules/<version>`.
       - Zero package hooks run during boot; the system starts immediately with full consistency.
 
+11. **Network Independence & TLS Trust Store (`ca-certificates`, `openssl`, `wget`)**
+    - **Single Network-Enabled Lockdown Phase (`PREPARE`)**:
+      - `PREPARE` is the sole `lockdown` phase executed with network access: it runs in an isolated private mount namespace (`CLONE_NEWNS`) with a read-only root (`/`), unprivileged builder user, and `/etc/resolv.conf`, but without `CLONE_NEWNET`.
+      - All subsequent phases (`MAKE`, `CHECK`, `INSTALL`, `SQUASHFS`) are strictly air-gapped via `CLONE_NEWNET`, guaranteeing hermetic, deterministic, offline builds.
+      - To download source archives autonomously without host intervention, `cross-build` and `fluffy-build` incorporate `wget`, `openssl`, and `ca-certificates` in their base environment.
+    - **Sandboxed `fluffy-upsert` & CA Trust Architecture**:
+      - Packages cannot write to `/etc` directly during build/install.
+      - Upstream Mozilla root CA bundle packaged directly via `ca-certificates` using `cacert.pem`.
+      - On initial mount (or squashfs upgrade where `.squashfs` mtime > `/etc/<pkg>` mtime), `swctl` executes `/sw/<pkg>/bin/fluffy-upsert` inside an isolated namespace (`CLONE_NEWNS` + `CLONE_NEWNET`, root `/` read-only, only `/etc/<pkg>` read-write).
+      - After upsert completion, `swctl` updates the mtime of `/etc/<pkg>`, avoiding separate timestamp state files.
+      - OpenSSL and Wget are configured with wildcard CA discovery (`/etc/*/certs/ca-certificates.crt`), allowing decentralized certificates with zero `/etc` contamination.
+    - **Timestamp Preservation Across Fluffy Patches**:
+      - `mkbashpatch.sh` records `os.stat` timestamps and restores exact nanosecond mtimes/atimes using `os.utime()` after rewriting paths to `/sw/bash/bin/bash`.
+      - Diffs are generated in UTC (`TZ=UTC0 LC_ALL=C diff -Naur`) and applied with `patch -Z` (`--set-utc`), perfectly preserving original upstream release file ordering and preventing autotools (`aclocal`, `autoheader`, `automake`) or `help2man` from falsely triggering during compilation.
+
 ## Bootstrap Milestones
 
-- **Chapter 7 In-Chroot Native Compilation Active**:
+- **Chapter 7 Complete (In-Chroot Native Compilation & Network Stack)**:
   - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.
   - `create` executes inside a pure Fluffy chroot for `ON=fluffy`, mounting a minimal 9-package base (`glibc-pass1`, `ncurses-pass1`, `bash-pass1`, `libffi-pass1`, `ctypes-sh-pass1`, `coreutils-pass1`, `tar-pass1`, `xz-pass1`, `gzip-pass1`).
   - Isolated `lockdown SQUASHFS` phase mounts strictly `SQUASHFS_NEEDS` (`squashfs-tools-pass1`, `gcc-pass2`, transitively `zstd-pass1` and `glibc-pass1`), completely isolating packaging tools from `MAKE`, `CHECK`, and `INSTALL`.
@@ -187,6 +207,9 @@
   - `zlib-pass1` (1.3.2) built, tested (`make check`), installed, and packaged into `zlib-pass1-1.3.2.squashfs` (96K) inside the chroot.
   - `mpdecimal-pass1` (4.0.1) built, tested (`make check`), installed, and packaged into `mpdecimal-pass1-4.0.1.squashfs` (120K) inside the chroot; `libmpdec` and `libmpdec++` verified.
   - `python-pass1` (3.14.7) built, installed, and packaged into `python-pass1-3.14.7.squashfs` (62M) inside the chroot with shared library support, decimal, and zlib modules.
+  - `texinfo-pass1` (7.3) built, installed, and packaged into `texinfo-pass1-7.3.squashfs` (3.0M) inside the chroot with timestamp-preserving patches and Libtool install-time relinking.
+  - `util-linux-pass1` (2.42.2) built, installed, and packaged into `util-linux-pass1-2.42.2.squashfs` (16M).
+  - Standalone network & trust stack built and verified: `ca-certificates-pass1` (2026.10.20), `openssl-pass1` (4.0.1), `wget-pass1` (1.25.0), and `signify-pass1` (32) registered into `cross-build-1.0.squashfs`.
 
 - **Chapters 5 & 6 Toolchain Complete & Verified (`check-toolchain`)**:
   - Full cross-toolchain (`binutils-pass1`, `gcc-pass1`, `glibc-pass1`, `libstdcpp-pass1`, `linux-headers`) and temporary tools (`m4-pass1`, `ncurses-pass1`, `bash-pass1`, `libffi-pass1`, `ctypes-sh-pass1`, `coreutils-pass1`, `diffutils-pass1`, `file-pass1`, `findutils-pass1`, `gawk-pass1`, `grep-pass1`, `gzip-pass1`, `make-pass1`, `patch-pass1`, `sed-pass1`, `tar-pass1`, `xz-pass1`, `binutils-pass2`, `gcc-pass2`) are built and verified.

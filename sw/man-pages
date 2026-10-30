@@ -2,18 +2,18 @@ VERSION=6.18
 
 ARCHIVES=(
     c934fadc8b59748c68227a34f6581d2ddf8282b73cdcd52546c8cd88b74b24d1 https://www.kernel.org/pub/linux/docs/man-pages/man-pages-$VERSION.tar.xz
+    b193ebfa771d4fb4d1c97bc302f5fedabc95afcdf151a220c5e55dc96a13299d file://man-pages-$VERSION-fluffy.patch
 )
 
-# TODO
-MAKE_NEEDS=(make which)
+MAKE_NEEDS=(coreutils-pass1 patch-pass1)
 
 MAKE() {
-    rm -v man3/crypt*
+    patch -Z -Np1 -i man-pages-$VERSION-fluffy.patch
+    rm -vf man/man3/crypt*
 }
 
-# TODO
-INSTALL_NEEDS=(make which)
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 findutils-pass1 grep-pass1 make-pass1 sed-pass1)
 
 INSTALL() {
-    make -R GIT=false prefix=/sw/man-pages install
+    make -R GIT=false SHELL=/sw/bash/bin/bash prefix=/sw/man-pages install
 }

@@ -30,8 +30,9 @@ os.makedirs(sw_dir, exist_ok=True)
 
 archives = sys.argv[2:]
 
-doc_exts = {".po", ".pot", ".gmo", ".texi", ".info", ".md", ".rst", ".html"}
-doc_prefixes = ("changelog", "news", "readme", "copying", "license", "authors", "thanks", "todo")
+doc_exts = {".po", ".pot", ".gmo", ".texi", ".info", ".md", ".rst", ".html",
+            ".1", ".2", ".3", ".4", ".5", ".6", ".7", ".8", ".9", ".man", ".doc", ".txt"}
+doc_prefixes = ("changelog", "changes", "news", "readme", "copying", "license", "authors", "thanks", "todo")
 
 for archive in archives:
     archive_path = archive
@@ -73,6 +74,7 @@ for archive in archives:
 
         changed_files = 0
         for root, dirs, files in os.walk(work_dir):
+            dirs[:] = [d for d in dirs if d != ".git"]
             for f in files:
                 path = os.path.join(root, f)
                 if os.path.islink(path):
@@ -94,18 +96,22 @@ for archive in archives:
                 # Replace other references to /bin/bash and /bin/sh (negative lookbehind avoids /sw/bash)
                 s2 = re.sub(r"(?<!/sw/bash)/bin/(ba)?sh\b", r"/sw/bash/bin/bash", s1)
                 if s2 != text:
+                    st = os.stat(path)
                     with open(path, "wb") as fp:
                         fp.write(s2.encode("latin-1"))
+                    os.utime(path, ns=(st.st_atime_ns, st.st_mtime_ns))
                     changed_files += 1
 
         patch_filename = f"{dir_name}-fluffy.patch"
         patch_path = os.path.join(sw_dir, patch_filename)
 
+        diff_env = dict(os.environ, TZ="UTC0", LC_ALL="C")
         diff_proc = subprocess.run(
             ["diff", "-Naur", "--no-dereference", f"{dir_name}.orig", dir_name],
             cwd=tmpdir,
             capture_output=True,
-            text=True
+            text=True,
+            env=diff_env
         )
 
         patch_content = diff_proc.stdout

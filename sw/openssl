@@ -2,7 +2,7 @@ VERSION=4.0.1
 
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/openssl/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
-    fc2b6dd6f767964a1d73ac998e2d9abc0801d3bce1afc3a9ca44129f88c7711e file://openssl-$VERSION-fluffy.patch
+    ed031ab4f9936f86bd353e36c0d5381788f12f192587a25a5ac9e2af614b9fd9 file://openssl-$VERSION-fluffy.patch
 )
 
 MAKE() {

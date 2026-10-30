@@ -7,8 +7,8 @@ ARCHIVES=(
     9dd1e607089d21baff2db33932059035482948d5b21fa30bd671dc4cfff6f294 file://bash-$VERSION-fluffy.patch
 )
 
-NEEDS=(glibc-pass1 ncurses-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 ncurses-pass1 linux-headers)
+NEEDS=(ncurses-pass1)
+MAKE_NEEDS=(gcc-pass1 ncurses-pass1 linux-headers)
 
 MAKE() {
     patch -Np1 -i bash-$VERSION-fluffy.patch
@@ -21,7 +21,7 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1 ncurses-pass1 linux-headers)
+INSTALL_NEEDS=(gcc-pass1 ncurses-pass1 linux-headers)
 
 INSTALL() {
     make install

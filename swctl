@@ -10,6 +10,15 @@ source ctypes.sh
 MNT_ITER_FORWARD=0
 MNT_ITER_BACKWARD=1
 
+CLONE_NEWNS=0x00020000
+CLONE_NEWNET=0x40000000
+
+MS_RDONLY=0x00000001
+MS_REMOUNT=0x00000020
+MS_BIND=0x00001000
+MS_REC=0x00004000
+MS_PRIVATE=0x00040000
+
 log() {
     echo "$@" >&2
 }
@@ -90,6 +99,7 @@ fi
 
 call_ptr mnt_table mnt_new_table
 call mnt_table_set_parser_errcb "$mnt_table" $NULL
+call mnt_table_enable_comments "$mnt_table" "int:1"
 
 if test -f "$FSTAB"
 then
@@ -99,7 +109,8 @@ fi
 find_fs_by_pkg() {
     local query="$1"
     local __var="$2"
-    local query_base="${query%-pass*}"
+    local query_name="${query##*/}"
+    local query_base="${query_name%-pass*}"
 
     eval "$__var=\$NULL"
     local fallback="$NULL"
@@ -130,15 +141,23 @@ find_fs_by_pkg() {
             cur_pkg="$base"
         fi
 
-        if test "$cur_pkg" == "$query"
+        dlcall -r string -n tgt_str mnt_fs_get_target "$curr_fs"
+        local tgt="${tgt_str#string:}"
+        local tgt_pkg="${tgt##*/}"
+        local cur_base="${cur_pkg%-pass*}"
+
+        if test "$cur_pkg" == "$query_name"
         then
             eval "$__var=\$curr_fs"
             break
         fi
 
-        if test "$cur_pkg" == "$query_base" && test "$fallback" == "$NULL"
+        if test "$fallback" == "$NULL"
         then
-            fallback="$curr_fs"
+            if test "$tgt_pkg" == "$query_name" || test "$cur_base" == "$query_name" || test "$cur_pkg" == "$query_base"
+            then
+                fallback="$curr_fs"
+            fi
         fi
     done
 
@@ -386,10 +405,13 @@ mount_targets() {
         local src="${src_str#string:}"
         dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
         local tgt="${tgt_str#string:}"
+        local pkg_name="${tgt##*/}"
+        local is_shadow=0
 
         if test -n "${FLUFFY_SHADOW_PKG:-}" && test "$tgt" == "/sw/$FLUFFY_SHADOW_PKG"
         then
             tgt="/sw/$pkg"
+            is_shadow=1
         fi
 
         local real_src
@@ -437,60 +459,305 @@ mount_targets() {
         fi
         dlcall mnt_free_context "$cxt"
         log "mounted $real_src on $real_tgt"
+
+        local hook=""
+        if test -f "$real_tgt/bin/fluffy-upsert"
+        then
+            hook="$real_tgt/bin/fluffy-upsert"
+        elif test -f "$real_tgt/lib/fluffy-upsert"
+        then
+            hook="$real_tgt/lib/fluffy-upsert"
+        fi
+
+        if test -n "$hook" && test "$is_shadow" -eq 0
+        then
+            local etc_pkg="${prefix}/etc/$pkg_name"
+            if test ! -d "$etc_pkg" || test "$real_src" -nt "$etc_pkg"
+            then
+                log "running fluffy-upsert for $pkg_name..."
+                (
+                    call unshare $(( CLONE_NEWNS | CLONE_NEWNET ))
+                    call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+                    if test -d /mnt/fluffy
+                    then
+                        call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+                    fi
+
+                    if test -n "$prefix"
+                    then
+                        call chroot "$prefix"
+                        call chdir "/"
+                    fi
+
+                    set +h
+                    shopt -s nullglob
+                    export PATH=""
+                    for d in /sw/*/bin
+                    do
+                        PATH="${PATH:+$PATH:}$d"
+                    done
+                    shopt -u nullglob
+                    export HOME=/tmp
+                    export LC_ALL=POSIX
+
+                    mkdir -p "/etc/$pkg_name"
+                    call mount "/etc/$pkg_name" "/etc/$pkg_name" $NULL $(( MS_BIND | MS_REC )) $NULL
+
+                    call mount / / $NULL $(( MS_BIND | MS_REC )) $NULL
+                    call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
+
+                    call mount none "/etc/$pkg_name" $NULL $(( MS_BIND | MS_REMOUNT )) $NULL
+                    call mount tmpfs /tmp tmpfs 0 $NULL
+
+                    local hook_in_ns
+                    if test -f "$tgt/bin/fluffy-upsert"
+                    then
+                        hook_in_ns="$tgt/bin/fluffy-upsert"
+                    else
+                        hook_in_ns="$tgt/lib/fluffy-upsert"
+                    fi
+
+                    "$hook_in_ns"
+                )
+                touch "$etc_pkg"
+                log "fluffy-upsert completed for $pkg_name"
+            fi
+        fi
     done
     dlcall mnt_free_table "$mtab"
 }
 
-case "$1" in
-register)
-    shift
-    register_entry "$@"
+trim_deps() {
+    local one_per_line=0
+    while test $# -gt 0
+    do
+        case "$1" in
+            -1|--lines)
+                one_per_line=1
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
 
-    dlcall -n intro -r pointer mnt_table_get_intro_comment "$mnt_table"
-    if test "$intro" == "$NULL"
+    if test $# -eq 0
     then
-        placeholder="$(printf '%0100d' 0)"
-        call mnt_table_set_intro_comment "$mnt_table" "string:# fluffy.signature=$placeholder"$'\n'
+        return 0
     fi
 
-    mkdir -p "${FSTAB%/*}"
-    call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
+    local -a raw_args=("$@")
+    local -A is_dep=()
+    local -A input_canon=()
+    local -A input_tgt=()
+    local -A seen_input=()
+    local -A visited=()
 
-    # Sign total fstab (lines 2..EOF) and replace placeholder comment
+    collect_transitive() {
+        local cur_pkg="$1"
+
+        find_fs_by_pkg "$cur_pkg" fs
+        if test "$fs" == "$NULL"
+        then
+            return 0
+        fi
+
+        dlcall -r string -n fs_opts mnt_fs_get_options "$fs"
+        local opts="${fs_opts#string:}"
+        local needs=""
+        if [[ "$opts" =~ -?X-?fluffy\.needs=\"([^\"]*)\" || "$opts" =~ -?X-?fluffy\.needs=([^, ]*) ]]
+        then
+            needs="${BASH_REMATCH[1]}"
+        fi
+
+        if test -n "$needs"
+        then
+            local old_ifs="$IFS"
+            IFS=,
+            local -a sub_needs=()
+            read -ra sub_needs <<< "$needs"
+            IFS="$old_ifs"
+
+            local dep
+            for dep in "${sub_needs[@]}"
+            do
+                local dep_name="${dep##*/}"
+                find_fs_by_pkg "$dep_name" dep_fs
+                if test "$dep_fs" != "$NULL"
+                then
+                    dlcall -r string -n dep_src_str mnt_fs_get_source "$dep_fs"
+                    local dep_src="${dep_src_str#string:}"
+                    local dep_fn="${dep_src##*/}"
+                    local dep_base="${dep_fn%.squashfs}"
+                    local dep_canon
+                    if [[ "$dep_base" =~ ^(.*)-[0-9] ]]
+                    then
+                        dep_canon="${BASH_REMATCH[1]}"
+                    else
+                        dep_canon="$dep_base"
+                    fi
+
+                    dlcall -r string -n dep_tgt_str mnt_fs_get_target "$dep_fs"
+                    local dep_tgt="${dep_tgt_str#string:}"
+                    local dep_tgt_name="${dep_tgt##*/}"
+                    local dep_base_name="${dep_canon%-pass*}"
+
+                    is_dep["$dep_canon"]=1
+                    is_dep["$dep_tgt_name"]=1
+                    is_dep["$dep_base_name"]=1
+
+                    if test "${visited[$dep_canon]:-0}" -eq 0
+                    then
+                        visited["$dep_canon"]=1
+                        collect_transitive "$dep_canon"
+                    fi
+                fi
+            done
+        fi
+    }
+
+    local arg
+    for arg in "${raw_args[@]}"
+    do
+        local name="${arg##*/}"
+        find_fs_by_pkg "$name" fs
+        if test "$fs" == "$NULL"
+        then
+            fatal "package $arg not found in $FSTAB"
+        fi
+
+        dlcall -r string -n src_str mnt_fs_get_source "$fs"
+        local src="${src_str#string:}"
+        local fn="${src##*/}"
+        local base="${fn%.squashfs}"
+        local canon
+        if [[ "$base" =~ ^(.*)-[0-9] ]]
+        then
+            canon="${BASH_REMATCH[1]}"
+        else
+            canon="$base"
+        fi
+
+        dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
+        local tgt="${tgt_str#string:}"
+        local tgt_name="${tgt##*/}"
+
+        input_canon["$arg"]="$canon"
+        input_tgt["$arg"]="$tgt_name"
+
+        visited=()
+        collect_transitive "$canon"
+    done
+
+    local -a roots=()
+    for arg in "${raw_args[@]}"
+    do
+        local canon="${input_canon[$arg]}"
+        local tgt_name="${input_tgt[$arg]}"
+        local canon_base="${canon%-pass*}"
+
+        if test "${seen_input[$arg]:-0}" -eq 1
+        then
+            continue
+        fi
+        seen_input["$arg"]=1
+
+        if test "${is_dep[$canon]:-0}" -eq 0 && test "${is_dep[$tgt_name]:-0}" -eq 0 && test "${is_dep[$canon_base]:-0}" -eq 0
+        then
+            roots+=("$arg")
+        fi
+    done
+
+    if test "$one_per_line" -eq 1
+    then
+        local r
+        for r in "${roots[@]}"
+        do
+            echo "$r"
+        done
+    else
+        echo "${roots[*]}"
+    fi
+}
+
+sign_and_save_fstab() {
+    ensure_keys
+
+    local tmp_content
+    local tmp_sig
     tmp_content="$(mktemp)"
     tmp_sig="$(mktemp)"
-    {
-        read -r _
-        while IFS= read -r line || test -n "$line"
-        do
-            echo "$line"
-        done
-    } < "$FSTAB" > "$tmp_content"
+
+    call mnt_table_set_intro_comment "$mnt_table" $NULL
+    call mnt_table_replace_file "$mnt_table" "string:$tmp_content"
 
     "$SIGNIFY" -S -s "$SEC_KEY" -m "$tmp_content" -x "$tmp_sig"
-    local fstab_sig
+    local fstab_sig=""
     {
         read -r _
         read -r fstab_sig
     } < "$tmp_sig"
     rm -f "$tmp_content" "$tmp_sig"
 
-    tmp_fstab="$(mktemp)"
-    {
-        read -r _
-        echo "# fluffy.signature=$fstab_sig"
-        while IFS= read -r line || test -n "$line"
-        do
-            echo "$line"
-        done
-    } < "$FSTAB" > "$tmp_fstab"
-    cat "$tmp_fstab" > "$FSTAB"
-    rm -f "$tmp_fstab"
+    call mnt_table_set_intro_comment "$mnt_table" "string:# fluffy.signature=$fstab_sig"$'\n'
+    mkdir -p "${FSTAB%/*}"
+    call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
     log "fstab signed: $FSTAB"
+}
+
+unregister_entry() {
+    if test $# -eq 0
+    then
+        fatal "no packages specified to unregister"
+    fi
+
+    while test $# -gt 0
+    do
+        local pkg="$1"
+        shift
+        local pkg_name="${pkg##*/}"
+
+        local mnt_fs="$NULL"
+        find_fs_by_pkg "$pkg_name" mnt_fs
+        if test "$mnt_fs" == "$NULL"
+        then
+            log "warning: package $pkg not found in $FSTAB"
+            continue
+        fi
+
+        dlcall -r string -n tgt_str mnt_fs_get_target "$mnt_fs"
+        local tgt="${tgt_str#string:}"
+        dlcall -r string -n src_str mnt_fs_get_source "$mnt_fs"
+        local src="${src_str#string:}"
+
+        dlcall -r int -n ret mnt_table_remove_fs "$mnt_table" "$mnt_fs"
+        if test "$ret" != "int:0"
+        then
+            fatal "failed to remove $pkg from table"
+        fi
+        log "unregistered $pkg ($src on $tgt)"
+    done
+}
+
+case "$1" in
+register)
+    shift
+    register_entry "$@"
+    sign_and_save_fstab
+    ;;
+unregister)
+    shift
+    unregister_entry "$@"
+    sign_and_save_fstab
     ;;
 mount)
     shift
     mount_targets "$@"
+    ;;
+trim|roots|reduce)
+    shift
+    trim_deps "$@"
     ;;
 *)
     fatal "unknown command: $1"

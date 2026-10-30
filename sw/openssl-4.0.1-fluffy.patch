@@ -1,15 +1,64 @@
 diff -Naur openssl-4.0.1.orig/config openssl-4.0.1/config
 --- openssl-4.0.1.orig/config	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/config	2026-10-28 01:24:36.712637171 -0400
++++ openssl-4.0.1/config	2026-10-29 21:52:42.884688033 -0400
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright 2020 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
+diff -Naur openssl-4.0.1.orig/crypto/x509/by_file.c openssl-4.0.1/crypto/x509/by_file.c
+--- openssl-4.0.1.orig/crypto/x509/by_file.c	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/crypto/x509/by_file.c	2026-10-29 21:52:54.571664126 -0400
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <glob.h>
+ #include <time.h>
+ #include <errno.h>
+ 
+@@ -60,11 +61,32 @@
+                 ok = (X509_load_cert_crl_file_ex(ctx, file, X509_FILETYPE_PEM,
+                           libctx, propq)
+                     != 0);
+-            else
+-                ok = (X509_load_cert_crl_file_ex(
+-                          ctx, X509_get_default_cert_file(),
+-                          X509_FILETYPE_PEM, libctx, propq)
+-                    != 0);
++            else {
++                glob_t gbuf;
++                size_t gi;
++
++                if (glob("/etc/*/certs/ca-certificates.crt", 0, NULL, &gbuf) == 0) {
++                    for (gi = 0; gi < gbuf.gl_pathc; gi++) {
++                        if (X509_load_cert_crl_file_ex(ctx, gbuf.gl_pathv[gi],
++                                  X509_FILETYPE_PEM, libctx, propq) != 0)
++                            ok = 1;
++                    }
++                    globfree(&gbuf);
++                }
++                if (glob("/etc/*/ssl/certs/ca-certificates.crt", 0, NULL, &gbuf) == 0) {
++                    for (gi = 0; gi < gbuf.gl_pathc; gi++) {
++                        if (X509_load_cert_crl_file_ex(ctx, gbuf.gl_pathv[gi],
++                                  X509_FILETYPE_PEM, libctx, propq) != 0)
++                            ok = 1;
++                    }
++                    globfree(&gbuf);
++                }
++                if (!ok)
++                    ok = (X509_load_cert_crl_file_ex(
++                              ctx, X509_get_default_cert_file(),
++                              X509_FILETYPE_PEM, libctx, propq)
++                        != 0);
++            }
+ 
+             if (!ok)
+                 ERR_raise(ERR_LIB_X509, X509_R_LOADING_DEFAULTS);
 diff -Naur openssl-4.0.1.orig/demos/certs/apps/mkacerts.sh openssl-4.0.1/demos/certs/apps/mkacerts.sh
 --- openssl-4.0.1.orig/demos/certs/apps/mkacerts.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/demos/certs/apps/mkacerts.sh	2026-10-28 01:24:37.021252695 -0400
++++ openssl-4.0.1/demos/certs/apps/mkacerts.sh	2026-10-29 21:52:42.884815365 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -18,7 +67,7 @@ diff -Naur openssl-4.0.1.orig/demos/certs/apps/mkacerts.sh openssl-4.0.1/demos/c
  
 diff -Naur openssl-4.0.1.orig/demos/certs/apps/mkxcerts.sh openssl-4.0.1/demos/certs/apps/mkxcerts.sh
 --- openssl-4.0.1.orig/demos/certs/apps/mkxcerts.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/demos/certs/apps/mkxcerts.sh	2026-10-28 01:24:37.021412166 -0400
++++ openssl-4.0.1/demos/certs/apps/mkxcerts.sh	2026-10-29 21:52:42.884905915 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -27,7 +76,7 @@ diff -Naur openssl-4.0.1.orig/demos/certs/apps/mkxcerts.sh openssl-4.0.1/demos/c
  # functionality.
 diff -Naur openssl-4.0.1.orig/demos/certs/mkcerts.sh openssl-4.0.1/demos/certs/mkcerts.sh
 --- openssl-4.0.1.orig/demos/certs/mkcerts.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/demos/certs/mkcerts.sh	2026-10-28 01:24:37.021052807 -0400
++++ openssl-4.0.1/demos/certs/mkcerts.sh	2026-10-29 21:52:42.884995492 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -36,7 +85,7 @@ diff -Naur openssl-4.0.1.orig/demos/certs/mkcerts.sh openssl-4.0.1/demos/certs/m
      LD_LIBRARY_PATH=../.. ../../apps/openssl "$@"
 diff -Naur openssl-4.0.1.orig/demos/certs/ocspquery.sh openssl-4.0.1/demos/certs/ocspquery.sh
 --- openssl-4.0.1.orig/demos/certs/ocspquery.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/demos/certs/ocspquery.sh	2026-10-28 01:24:37.020957443 -0400
++++ openssl-4.0.1/demos/certs/ocspquery.sh	2026-10-29 21:52:42.885091493 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -45,7 +94,7 @@ diff -Naur openssl-4.0.1.orig/demos/certs/ocspquery.sh openssl-4.0.1/demos/certs
  # called.
 diff -Naur openssl-4.0.1.orig/demos/certs/ocsprun.sh openssl-4.0.1/demos/certs/ocsprun.sh
 --- openssl-4.0.1.orig/demos/certs/ocsprun.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/demos/certs/ocsprun.sh	2026-10-28 01:24:37.021140011 -0400
++++ openssl-4.0.1/demos/certs/ocsprun.sh	2026-10-29 21:52:42.885179000 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -54,7 +103,7 @@ diff -Naur openssl-4.0.1.orig/demos/certs/ocsprun.sh openssl-4.0.1/demos/certs/o
      LD_LIBRARY_PATH=../.. ../../apps/openssl "$@"
 diff -Naur openssl-4.0.1.orig/test/ocsp-tests/mk-ocsp-cert-chain.sh openssl-4.0.1/test/ocsp-tests/mk-ocsp-cert-chain.sh
 --- openssl-4.0.1.orig/test/ocsp-tests/mk-ocsp-cert-chain.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/ocsp-tests/mk-ocsp-cert-chain.sh	2026-10-28 01:24:36.907078095 -0400
++++ openssl-4.0.1/test/ocsp-tests/mk-ocsp-cert-chain.sh	2026-10-29 21:52:42.885271748 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -63,7 +112,7 @@ diff -Naur openssl-4.0.1.orig/test/ocsp-tests/mk-ocsp-cert-chain.sh openssl-4.0.
      LD_LIBRARY_PATH=../.. ../../apps/openssl $@
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh	2026-10-28 01:24:36.898378533 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh	2026-10-29 21:52:42.885368392 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -72,7 +121,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quich
  #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh	2026-10-28 01:24:36.898302364 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh	2026-10-29 21:52:42.885474951 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -81,7 +130,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quich
  #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh	2026-10-28 01:24:36.900181866 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh	2026-10-29 21:52:42.885584201 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -90,7 +139,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bs
  # Copyright 2026 The OpenSSL Project Authors. All Rights Reserved.
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh	2026-10-28 01:24:36.900097395 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh	2026-10-29 21:52:42.885687324 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -99,7 +148,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bs
  # Copyright 2026 The OpenSSL Project Authors. All Rights Reserved.
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_krb5_data/krb5.sh openssl-4.0.1/test/recipes/95-test_external_krb5_data/krb5.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_krb5_data/krb5.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_krb5_data/krb5.sh	2026-10-28 01:24:36.886963629 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_krb5_data/krb5.sh	2026-10-29 21:52:42.885805749 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh -ex
 +#!/sw/bash/bin/bash -ex
@@ -108,7 +157,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_krb5_data/krb5.sh op
  #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh openssl-4.0.1/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh	2026-10-28 01:24:36.887922410 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh	2026-10-29 21:52:42.885920653 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -117,7 +166,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider_data/oqs
  #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh openssl-4.0.1/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh	2026-10-28 01:24:36.899808880 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh	2026-10-29 21:52:42.886020381 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -126,7 +175,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pkcs11_provider_data
  #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pyca_data/cryptography.sh openssl-4.0.1/test/recipes/95-test_external_pyca_data/cryptography.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_pyca_data/cryptography.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_pyca_data/cryptography.sh	2026-10-28 01:24:36.899684260 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_pyca_data/cryptography.sh	2026-10-29 21:52:42.886125262 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -135,7 +184,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pyca_data/cryptograp
  # Copyright (c) 2017, Oracle and/or its affiliates.  All rights reserved.
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh openssl-4.0.1/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh
 --- openssl-4.0.1.orig/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh	2026-10-28 01:24:36.892687444 -0400
++++ openssl-4.0.1/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh	2026-10-29 21:52:42.886237457 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh -ex
 +#!/sw/bash/bin/bash -ex
@@ -144,7 +193,7 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_rpki-client-portable
  #
 diff -Naur openssl-4.0.1.orig/test/smime-certs/mksmime-certs.sh openssl-4.0.1/test/smime-certs/mksmime-certs.sh
 --- openssl-4.0.1.orig/test/smime-certs/mksmime-certs.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/smime-certs/mksmime-certs.sh	2026-10-28 01:24:36.914597710 -0400
++++ openssl-4.0.1/test/smime-certs/mksmime-certs.sh	2026-10-29 21:52:42.886354640 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -153,7 +202,7 @@ diff -Naur openssl-4.0.1.orig/test/smime-certs/mksmime-certs.sh openssl-4.0.1/te
  # Licensed under the Apache License 2.0 (the "License").  You may not use
 diff -Naur openssl-4.0.1.orig/util/check-malloc-errs openssl-4.0.1/util/check-malloc-errs
 --- openssl-4.0.1.orig/util/check-malloc-errs	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/check-malloc-errs	2026-10-28 01:24:37.023504270 -0400
++++ openssl-4.0.1/util/check-malloc-errs	2026-10-29 21:52:42.886463852 -0400
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -162,7 +211,7 @@ diff -Naur openssl-4.0.1.orig/util/check-malloc-errs openssl-4.0.1/util/check-ma
  # Licensed under the Apache License 2.0 (the "License").  You may not use
 diff -Naur openssl-4.0.1.orig/util/ctags.sh openssl-4.0.1/util/ctags.sh
 --- openssl-4.0.1.orig/util/ctags.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/ctags.sh	2026-10-28 01:24:37.024990502 -0400
++++ openssl-4.0.1/util/ctags.sh	2026-10-29 21:52:42.886570740 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -171,7 +220,7 @@ diff -Naur openssl-4.0.1.orig/util/ctags.sh openssl-4.0.1/util/ctags.sh
  #
 diff -Naur openssl-4.0.1.orig/util/fips-checksums.sh openssl-4.0.1/util/fips-checksums.sh
 --- openssl-4.0.1.orig/util/fips-checksums.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/fips-checksums.sh	2026-10-28 01:24:37.024914608 -0400
++++ openssl-4.0.1/util/fips-checksums.sh	2026-10-29 21:52:42.886683277 -0400
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -180,7 +229,7 @@ diff -Naur openssl-4.0.1.orig/util/fips-checksums.sh openssl-4.0.1/util/fips-che
  
 diff -Naur openssl-4.0.1.orig/util/fix-includes openssl-4.0.1/util/fix-includes
 --- openssl-4.0.1.orig/util/fix-includes	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/fix-includes	2026-10-28 01:24:37.025928793 -0400
++++ openssl-4.0.1/util/fix-includes	2026-10-29 21:52:42.886794870 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -189,7 +238,7 @@ diff -Naur openssl-4.0.1.orig/util/fix-includes openssl-4.0.1/util/fix-includes
  #
 diff -Naur openssl-4.0.1.orig/util/opensslwrap.sh openssl-4.0.1/util/opensslwrap.sh
 --- openssl-4.0.1.orig/util/opensslwrap.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/opensslwrap.sh	2026-10-28 01:24:37.024430022 -0400
++++ openssl-4.0.1/util/opensslwrap.sh	2026-10-29 21:52:42.886922109 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -198,7 +247,7 @@ diff -Naur openssl-4.0.1.orig/util/opensslwrap.sh openssl-4.0.1/util/opensslwrap
  OPENSSL="${HERE}../apps/openssl"
 diff -Naur openssl-4.0.1.orig/util/reformat-patches.sh openssl-4.0.1/util/reformat-patches.sh
 --- openssl-4.0.1.orig/util/reformat-patches.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/reformat-patches.sh	2026-10-28 01:24:37.024704407 -0400
++++ openssl-4.0.1/util/reformat-patches.sh	2026-10-29 21:52:42.887059819 -0400
 @@ -1,4 +1,4 @@
 -#! /bin/sh -efu
 +#!/sw/bash/bin/bash -efu
@@ -207,7 +256,7 @@ diff -Naur openssl-4.0.1.orig/util/reformat-patches.sh openssl-4.0.1/util/reform
  #
 diff -Naur openssl-4.0.1.orig/util/shlib_wrap.sh.in openssl-4.0.1/util/shlib_wrap.sh.in
 --- openssl-4.0.1.orig/util/shlib_wrap.sh.in	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/shlib_wrap.sh.in	2026-10-28 01:24:37.024563703 -0400
++++ openssl-4.0.1/util/shlib_wrap.sh.in	2026-10-29 21:52:42.887203926 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -216,7 +265,7 @@ diff -Naur openssl-4.0.1.orig/util/shlib_wrap.sh.in openssl-4.0.1/util/shlib_wra
      use configdata;
 diff -Naur openssl-4.0.1.orig/util/update_abi_check.sh openssl-4.0.1/util/update_abi_check.sh
 --- openssl-4.0.1.orig/util/update_abi_check.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/update_abi_check.sh	2026-10-28 01:24:37.024291297 -0400
++++ openssl-4.0.1/util/update_abi_check.sh	2026-10-29 21:52:42.887328001 -0400
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash

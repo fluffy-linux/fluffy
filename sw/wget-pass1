@@ -1,0 +1,32 @@
+ON=host-build
+
+VERSION=1.25.0
+
+ARCHIVES=(
+    766e48423e79359ea31e41db9e5c289675947a7fcf2efdcedb726ac9d0da3784 https://ftpmirror.gnu.org/wget/wget-$VERSION.tar.gz
+)
+
+NEEDS=(ca-certificates openssl-pass1 zlib-pass1)
+MAKE_NEEDS=(gcc-pass1 linux-headers openssl-pass1 zlib-pass1 make-pass1 coreutils-pass1 sed-pass1)
+
+MAKE() {
+    sed -i 's/#ifndef OPENSSL_NO_SSL3_METHOD/#if !defined OPENSSL_NO_SSL3_METHOD \&\& OPENSSL_VERSION_NUMBER < 0x40000000L/' src/openssl.c
+    ./configure \
+        --prefix=/sw/wget \
+        --host=$FLUFFY_TGT \
+        --build=$(build-aux/config.guess) \
+        --with-ssl=openssl \
+        --with-libssl-prefix=/sw/openssl \
+        --disable-pcre \
+        --disable-pcre2 \
+        --disable-nls \
+        --without-libpsl \
+        --without-libuuid
+    make
+}
+
+INSTALL_NEEDS=(gcc-pass1 linux-headers openssl-pass1 zlib-pass1 make-pass1 coreutils-pass1)
+
+INSTALL() {
+    make install
+}
