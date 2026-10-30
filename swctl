@@ -440,12 +440,54 @@ mount_targets() {
         exit 1
     fi
 
+    # Check for target mount conflicts across dependencies
+    local -A target_owner=()
+    local -A target_conflicts=()
+    local pkg
+    for pkg in "${order[@]}"
+    do
+        find_fs_by_pkg "$pkg" fs
+        if test "$fs" == "$NULL"
+        then
+            continue
+        fi
+
+        dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
+        local tgt="${tgt_str#string:}"
+        local real_tgt
+        if test -n "$prefix"
+        then
+            real_tgt="$prefix$tgt"
+        else
+            real_tgt="$tgt"
+        fi
+
+        if test -n "${target_owner[$real_tgt]:-}" && test "${target_owner[$real_tgt]}" != "$pkg"
+        then
+            target_conflicts["$real_tgt"]="${target_owner[$real_tgt]} and $pkg"
+        else
+            target_owner["$real_tgt"]="$pkg"
+        fi
+    done
+
+    if (( ${#target_conflicts[@]} > 0 ))
+    then
+        local -a sorted_conflicts=()
+        readarray -t sorted_conflicts < <(printf "%s
+" "${!target_conflicts[@]}" | LC_ALL=C sort)
+        local c_tgt
+        for c_tgt in "${sorted_conflicts[@]}"
+        do
+            log "mount conflict on $c_tgt: ${target_conflicts[$c_tgt]}"
+        done
+        exit 1
+    fi
+
     # Read kernel mount table via libmount to avoid mounting already-mounted targets
     call_ptr mtab mnt_new_table
     call mnt_table_parse_mtab "$mtab" $NULL
 
     # Mount in topological post-order (dependencies mounted first)
-    local pkg
     for pkg in "${order[@]}"
     do
         find_fs_by_pkg "$pkg" fs
@@ -459,13 +501,6 @@ mount_targets() {
         dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
         local tgt="${tgt_str#string:}"
         local pkg_name="${tgt##*/}"
-        local is_shadow=0
-
-        if test -n "${FLUFFY_SHADOW_PKG:-}" && test "$tgt" == "/sw/$FLUFFY_SHADOW_PKG"
-        then
-            tgt="/sw/$pkg"
-            is_shadow=1
-        fi
 
         local real_src
         local real_tgt
@@ -522,7 +557,7 @@ mount_targets() {
             hook="$real_tgt/lib/fluffy-upsert"
         fi
 
-        if test -n "$hook" && test "$is_shadow" -eq 0
+        if test -n "$hook"
         then
             local etc_pkg="${prefix}/etc/$pkg_name"
             if test ! -d "$etc_pkg" || test "$real_src" -nt "$etc_pkg"

@@ -108,9 +108,15 @@ lockdown() {
 
         if (( ${#mount_targets[@]} > 0 ))
         then
-            export FLUFFY_SHADOW_PKG="$mount_pkg"
             "$root/swctl" mount "${mount_targets[@]}"
-            unset FLUFFY_SHADOW_PKG
+        fi
+
+        if test -z "${INSTALL_SUFFIX:-}"
+        then
+            if grep -qs "[[:space:]]/sw/$mount_pkg[[:space:]]" /proc/self/mounts
+            then
+                fatal "mount conflict: $pkg depends on a package that mounts to /sw/$mount_pkg; set INSTALL_SUFFIX (e.g. INSTALL_SUFFIX=new) in $pkg_file"
+            fi
         fi
 
         case "$1" in
@@ -122,8 +128,18 @@ lockdown() {
                 call mount overlay /work overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
                 ;;
             INSTALL)
-                mkdir -p "/sw/$mount_pkg"
-                call mount "$work_dir/installed" "/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
+                if test -n "${INSTALL_SUFFIX:-}"
+                then
+                    mkdir -p "/sw/$mount_pkg-$INSTALL_SUFFIX/sw/$mount_pkg"
+                    call mount "$work_dir/installed" "/sw/$mount_pkg-$INSTALL_SUFFIX/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
+                else
+                    if grep -qs "[[:space:]]/sw/$mount_pkg[[:space:]]" /proc/self/mounts
+                    then
+                        fatal "mount conflict: /sw/$mount_pkg is already mounted by dependencies; set INSTALL_SUFFIX (e.g. INSTALL_SUFFIX=new) in $pkg_file"
+                    fi
+                    mkdir -p "/sw/$mount_pkg"
+                    call mount "$work_dir/installed" "/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
+                fi
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             SQUASHFS)
@@ -210,7 +226,13 @@ lockdown() {
 
         if test "$1" == INSTALL
         then
-            export PATH="/sw/$mount_pkg/bin:$PATH"
+            if test -n "${INSTALL_SUFFIX:-}"
+            then
+                export DESTDIR="/sw/$mount_pkg-$INSTALL_SUFFIX"
+                export PATH="/sw/$mount_pkg-$INSTALL_SUFFIX/sw/$mount_pkg/bin:$PATH"
+            else
+                export PATH="/sw/$mount_pkg/bin:$PATH"
+            fi
         fi
 
         "$1"
@@ -267,6 +289,7 @@ declare -a MAKE_NEEDS=()
 declare -a CHECK_NEEDS=()
 declare -a INSTALL_NEEDS=()
 declare -a SQUASHFS_NEEDS=()
+INSTALL_SUFFIX=""
 
 SQUASHFS() {
     rm -f "$squashfs_file"
@@ -479,3 +502,7 @@ trap - ERR
 banner CLEANUP
 cd "$root"
 rm -rf "$work_dir"/{src,installed,test-results,test-work}
+if test -n "${INSTALL_SUFFIX:-}"
+then
+    rm -rf "/sw/$mount_pkg-$INSTALL_SUFFIX" 2>/dev/null || true
+fi
