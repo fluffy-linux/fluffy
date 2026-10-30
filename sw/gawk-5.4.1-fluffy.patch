@@ -1,0 +1,69 @@
+diff -Naur gawk-5.4.1.orig/builtin.c gawk-5.4.1/builtin.c
+--- gawk-5.4.1.orig/builtin.c	2026-07-09 16:47:00.000000000 +0000
++++ gawk-5.4.1/builtin.c	2026-10-30 04:21:11.168095017 +0000
+@@ -3421,7 +3421,7 @@
+ 		istat = signal(SIGINT, istat);
+ 		qstat = signal(SIGQUIT, qstat);
+ #endif
+-		execl("/bin/sh", "sh", "-c", command, NULL);
++		execl("/sw/bash/bin/bash", "bash", "-c", command, NULL);
+ 		_exit(errno == ENOENT ? 127 : 126);
+ 
+ 		return 0;	// silence compiler warnings
+diff -Naur gawk-5.4.1.orig/gawkbug.in gawk-5.4.1/gawkbug.in
+--- gawk-5.4.1.orig/gawkbug.in	2026-06-22 12:28:22.000000000 +0000
++++ gawk-5.4.1/gawkbug.in	2026-10-30 04:21:11.168556466 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -
++#!/sw/bash/bin/bash -
+ #
+ # gawkbug - create a bug report and mail it to the bug address
+ #
+diff -Naur gawk-5.4.1.orig/io.c gawk-5.4.1/io.c
+--- gawk-5.4.1.orig/io.c	2026-07-09 16:47:00.000000000 +0000
++++ gawk-5.4.1/io.c	2026-10-30 04:21:11.168452618 +0000
+@@ -2080,7 +2080,7 @@
+ 
+ 		set_sigpipe_to_default();
+ 
+-		execl("/bin/sh", "sh", "-c", command, NULL);
++		execl("/sw/bash/bin/bash", "bash", "-c", command, NULL);
+ 		_exit(errno == ENOENT ? 127 : 126);
+ 
+ 	case -1:
+@@ -2132,7 +2132,7 @@
+ 
+ 		signal(SIGPIPE, SIG_DFL);
+ 
+-		execl("/bin/sh", "sh", "-c", command, NULL);
++		execl("/sw/bash/bin/bash", "bash", "-c", command, NULL);
+ 		_exit(errno == ENOENT ? 127 : 126);
+ 
+ 	case -1:
+@@ -2471,7 +2471,7 @@
+ 			fatal(_("close of pipe failed: %s"), strerror(errno));
+ 		/* stderr does NOT get dup'ed onto child's stdout */
+ 		set_sigpipe_to_default();
+-		execl("/bin/sh", "sh", "-c", str, NULL);
++		execl("/sw/bash/bin/bash", "bash", "-c", str, NULL);
+ 		_exit(errno == ENOENT ? 127 : 126);
+ 	}
+ #endif /* NOT __MINGW32__ */
+@@ -2719,7 +2719,7 @@
+ 		if (close(p[0]) == -1 || close(p[1]) == -1)
+ 			fatal(_("close of pipe failed: %s"), strerror(errno));
+ 		set_sigpipe_to_default();
+-		execl("/bin/sh", "sh", "-c", cmd, NULL);
++		execl("/sw/bash/bin/bash", "bash", "-c", cmd, NULL);
+ 		_exit(errno == ENOENT ? 127 : 126);
+ 	}
+ #endif /* NOT __MINGW32__ */
+@@ -4731,7 +4731,7 @@
+ 			fatal(_("gawk_popen_write: failed to move pipe fd to standard input"));
+ 		(void) close(pipefds[0]);
+ 		set_sigpipe_to_default();
+-		execl("/bin/sh", "sh", "-c", cmd, NULL);
++		execl("/sw/bash/bin/bash", "bash", "-c", cmd, NULL);
+ 		_exit(errno == ENOENT ? 127 : 126);
+ 	} else if (childpid < 0) {
+ 		(void) close(pipefds[0]);

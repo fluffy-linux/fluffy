@@ -260,6 +260,18 @@ diff -Naur Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib Python-3.14.7/L
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  svn export --force http://svn.red-bean.com/bob/macholib/trunk/macholib/ .
+diff -Naur Python-3.14.7.orig/Lib/subprocess.py Python-3.14.7/Lib/subprocess.py
+--- Python-3.14.7.orig/Lib/subprocess.py	2026-08-05 06:29:49.000000000 -0400
++++ Python-3.14.7/Lib/subprocess.py	2026-10-28 01:52:52.860729651 -0400
+@@ -1847,7 +1847,7 @@
+             if shell:
+                 # On Android the default shell is at '/system/bin/sh'.
+                 unix_shell = ('/system/bin/sh' if
+-                          hasattr(sys, 'getandroidapilevel') else '/bin/sh')
++                          hasattr(sys, 'getandroidapilevel') else '/sw/bash/bin/bash')
+                 args = [unix_shell, "-c"] + args
+                 if executable:
+                     args[0] = executable
 diff -Naur Python-3.14.7.orig/Mac/BuildScript/resources/install_certificates.command Python-3.14.7/Mac/BuildScript/resources/install_certificates.command
 --- Python-3.14.7.orig/Mac/BuildScript/resources/install_certificates.command	2026-08-05 06:29:49.000000000 -0400
 +++ Python-3.14.7/Mac/BuildScript/resources/install_certificates.command	2026-10-28 01:52:52.771151319 -0400
