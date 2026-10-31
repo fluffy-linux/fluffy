@@ -1,16 +1,27 @@
+ON=cross-build
+
 VERSION=1.5.7
 
 ARCHIVES=(
     eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3 https://github.com/facebook/zstd/releases/download/v$VERSION/zstd-$VERSION.tar.gz
+    44b3018cf5b3bd1de66be3a8fb1368c65e7b722957ad047652c2eb4cb4fb4ed2 file://zstd-$VERSION-fluffy.patch
 )
 
+NEEDS=(glibc lz4 xz zlib)
+MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gcc-pass2 glibc grep-pass1 linux-headers lz4 make-pass1 patch-pass1 sed-pass1 tar-pass1 xz zlib)
+
 MAKE() {
+    patch -Z -Np1 -i zstd-$VERSION-fluffy.patch
     make prefix=/sw/zstd
 }
+
+CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 file gcc-pass2 glibc grep-pass1 lz4 make-pass1 sed-pass1 xz zlib)
 
 CHECK() {
     make check
 }
+
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1)
 
 INSTALL() {
     make prefix=/sw/zstd install

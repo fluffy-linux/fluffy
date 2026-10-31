@@ -1,17 +1,34 @@
+ON=cross-build
+
 VERSION=7.0.3
 
 ARCHIVES=(
     91eb74caed0ee6655b669711a4f350c25579778694df248e28363318e03c7fc4 https://github.com/gavinhoward/bc/releases/download/$VERSION/bc-$VERSION.tar.xz
+    fd79ef954b95c24cfc7021da06792f82d7d22d513e89bf7ee245921979d0c3b9 file://bc-$VERSION-fluffy.patch
 )
 
+NEEDS=(glibc readline)
+MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 linux-headers make-pass1 ncurses-pass1 patch-pass1 readline sed-pass1 tar-pass1 xz)
+
 MAKE() {
-    CC='gcc -std=c99' ./configure --prefix=/sw/bc -G -O3 -r
+    patch -Z -Np1 -i bc-$VERSION-fluffy.patch
+    CC='gcc -std=c99' \
+    LDFLAGS='-Wl,-rpath-link=/sw/ncurses/lib' \
+    ./configure \
+        --prefix=/sw/bc \
+        -G \
+        -O3 \
+        -r
     make
 }
+
+CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 make-pass1 ncurses-pass1 readline sed-pass1)
 
 CHECK() {
     make test
 }
+
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 gawk-pass1 glibc grep-pass1 make-pass1 readline sed-pass1)
 
 INSTALL() {
     make install

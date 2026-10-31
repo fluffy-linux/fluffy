@@ -1,16 +1,27 @@
+ON=cross-build
+
 VERSION=1.10.0
 
 ARCHIVES=(
     537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b https://github.com/lz4/lz4/releases/download/v$VERSION/lz4-$VERSION.tar.gz
+    1a91a2d12be052e12ed9a2923a3bd62410b640ed27ee519b663df0fef6e58b8f file://lz4-$VERSION-fluffy.patch
 )
 
+NEEDS=(glibc)
+MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gcc-pass2 glibc grep-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 gzip-pass1)
+
 MAKE() {
+    patch -Z -Np1 -i lz4-$VERSION-fluffy.patch
     make BUILD_STATIC=no PREFIX=/sw/lz4
 }
+
+CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1)
 
 CHECK() {
     make -j1 check
 }
+
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1)
 
 INSTALL() {
     make BUILD_STATIC=no PREFIX=/sw/lz4 install
