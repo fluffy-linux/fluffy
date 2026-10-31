@@ -27,8 +27,14 @@ then
     cat << "PW_EOF" > "$FLUFFY/etc/passwd"
 root:x:0:0:root:/root:/sw/bash/bin/bash
 bin:x:1:1:bin:/dev/null:/bin/false
+builder:x:1000:1000::/home/builder:/sw/bash/bin/bash
 nobody:x:65534:65534:Nobody:/:/bin/false
 PW_EOF
+fi
+
+if ! grep -q "^builder:" "$FLUFFY/etc/passwd"
+then
+    echo "builder:x:1000:1000::/home/builder:/sw/bash/bin/bash" >> "$FLUFFY/etc/passwd"
 fi
 
 if test ! -f "$FLUFFY/etc/group"
@@ -51,6 +57,12 @@ utmp:x:13:
 usb:x:14:
 cdrom:x:15:
 adm:x:16:
+builder:x:1000:
 nogroup:x:65534:
 GRP_EOF
+fi
+
+if ! grep -q "^builder:" "$FLUFFY/etc/group"
+then
+    echo "builder:x:1000:" >> "$FLUFFY/etc/group"
 fi

@@ -4,14 +4,16 @@ VERSION=3.14.7
 
 ARCHIVES=(
     3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz
-    d33dff8ed04c5d656f73730d1e19303cff28e3e08b48943f4b495f50db747de7 file://Python-$VERSION-fluffy.patch
+    9f4bd93197d639d7b970b8ecfe11f151f6a5732138d9f82bfe6b5808fbf46396 file://Python-$VERSION-fluffy-bash.patch
+    c67a6cd39e315fc44bb6e17b2fc637fbdb473ba82c87ae93e43cf702f1fe90e4 file://Python-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(mpdecimal-pass1 zlib-pass1)
 MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 gzip-pass1 linux-headers make-pass1 mpdecimal-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1 zlib-pass1)
 
 MAKE() {
-    patch -Np1 -i Python-$VERSION-fluffy.patch
+    patch -Z -Np1 -i Python-$VERSION-fluffy-bash.patch
+    patch -Z -Np1 -i Python-$VERSION-fluffy-source.patch
     CONFIG_SHELL=/sw/bash/bin/bash ./configure \
         --prefix=/sw/python \
         --enable-shared \
