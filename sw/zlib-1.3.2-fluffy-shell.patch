@@ -1,0 +1,9 @@
+diff -Naur zlib-1.3.2.orig/configure zlib-1.3.2/configure
+--- zlib-1.3.2.orig/configure	2026-02-17 04:13:25.000000000 -0500
++++ zlib-1.3.2/configure	2026-10-28 01:48:51.932845195 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # configure script for zlib.
+ #
+ # Normally configure builds both a static and a shared library.

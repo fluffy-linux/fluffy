@@ -4,20 +4,50 @@ VERSION=7.3
 
 ARCHIVES=(
     51f74eb0f51cfa9873b85264dfdd5d46e8957ec95b88f0fb762f63d9e164c72e https://ftpmirror.gnu.org/texinfo/texinfo-$VERSION.tar.xz
-    f3cf49337a8db9ff937171bb30f385f882e594066634c50f43e157724b0a1606 file://texinfo-$VERSION-fluffy.patch
+    c7ec72c350fce9dc15527c8397fcf1cfb29292d47d7c7326773f9f7d777cf8cd file://texinfo-$VERSION-fluffy-shell.patch
+    b385f43b509ceb6a506264794ff8670400ce2bade13aa67100996f20a6d37e7f file://texinfo-$VERSION-fluffy-test.patch
 )
 
-NEEDS=(ncurses-pass1 perl-pass1)
-MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 perl-pass1 sed-pass1 tar-pass1 xz-pass1)
+NEEDS=(
+    ncurses-pass1
+    perl-pass1
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    grep-pass1
+    gzip-pass1
+    linux-headers
+    make-pass1
+    patch-pass1
+    perl-pass1
+    sed-pass1
+    tar-pass1
+    xz-pass1
+)
 
 MAKE() {
-    patch -Z -Np1 -i texinfo-$VERSION-fluffy.patch
+    patch -Z -Np1 -i texinfo-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i texinfo-$VERSION-fluffy-test.patch
     CONFIG_SHELL=/sw/bash/bin/bash ./configure \
         --prefix=/sw/texinfo
     make
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 gcc-pass2 linux-headers make-pass1 perl-pass1 sed-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    gcc-pass2
+    linux-headers
+    make-pass1
+    perl-pass1
+    sed-pass1
+)
 
 INSTALL() {
     make install

@@ -1,0 +1,49 @@
+diff -Naur openssl-4.0.1.orig/crypto/x509/by_file.c openssl-4.0.1/crypto/x509/by_file.c
+--- openssl-4.0.1.orig/crypto/x509/by_file.c	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/crypto/x509/by_file.c	2026-10-29 21:52:54.571664126 -0400
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <glob.h>
+ #include <time.h>
+ #include <errno.h>
+ 
+@@ -60,11 +61,32 @@
+                 ok = (X509_load_cert_crl_file_ex(ctx, file, X509_FILETYPE_PEM,
+                           libctx, propq)
+                     != 0);
+-            else
+-                ok = (X509_load_cert_crl_file_ex(
+-                          ctx, X509_get_default_cert_file(),
+-                          X509_FILETYPE_PEM, libctx, propq)
+-                    != 0);
++            else {
++                glob_t gbuf;
++                size_t gi;
++
++                if (glob("/etc/*/certs/ca-certificates.crt", 0, NULL, &gbuf) == 0) {
++                    for (gi = 0; gi < gbuf.gl_pathc; gi++) {
++                        if (X509_load_cert_crl_file_ex(ctx, gbuf.gl_pathv[gi],
++                                  X509_FILETYPE_PEM, libctx, propq) != 0)
++                            ok = 1;
++                    }
++                    globfree(&gbuf);
++                }
++                if (glob("/etc/*/ssl/certs/ca-certificates.crt", 0, NULL, &gbuf) == 0) {
++                    for (gi = 0; gi < gbuf.gl_pathc; gi++) {
++                        if (X509_load_cert_crl_file_ex(ctx, gbuf.gl_pathv[gi],
++                                  X509_FILETYPE_PEM, libctx, propq) != 0)
++                            ok = 1;
++                    }
++                    globfree(&gbuf);
++                }
++                if (!ok)
++                    ok = (X509_load_cert_crl_file_ex(
++                              ctx, X509_get_default_cert_file(),
++                              X509_FILETYPE_PEM, libctx, propq)
++                        != 0);
++            }
+ 
+             if (!ok)
+                 ERR_raise(ERR_LIB_X509, X509_R_LOADING_DEFAULTS);

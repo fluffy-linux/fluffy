@@ -6,8 +6,15 @@ ARCHIVES=(
     bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd https://ftpmirror.gnu.org/findutils/findutils-$VERSION.tar.xz
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 MAKE() {
     ./configure \
@@ -18,7 +25,11 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+INSTALL_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 INSTALL() {
     make install localstatedir=/sw/findutils/var/locate

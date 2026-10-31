@@ -4,14 +4,37 @@ VERSION=2.6.4
 
 ARCHIVES=(
     e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995 https://github.com/westes/flex/releases/download/v$VERSION/flex-$VERSION.tar.gz
-    414c0304ab0856360534bc45735a2a0c0147ac50cf71e1a859e7a929a1412dce file://flex-$VERSION-fluffy.patch
+    5c3d400e6e1a755ce85a09a94a5f64dda59e3c570bcea65bba3237f479d0a023 file://flex-$VERSION-fluffy-shell.patch
+    4bf25fede39f74e9066aa7bc4d3c2d65ff6b21e91cd73906210c29726ce0f938 file://flex-$VERSION-fluffy-test.patch
 )
 
-NEEDS=(glibc m4)
-MAKE_NEEDS=(bash-pass1 bison-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 gzip-pass1 linux-headers m4 make-pass1 patch-pass1 sed-pass1 tar-pass1)
+NEEDS=(
+    glibc
+    m4
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    bison-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    gzip-pass1
+    linux-headers
+    m4
+    make-pass1
+    patch-pass1
+    sed-pass1
+    tar-pass1
+)
 
 MAKE() {
-    patch -Z -Np1 -i flex-$VERSION-fluffy.patch
+    patch -Z -Np1 -i flex-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i flex-$VERSION-fluffy-test.patch
     ./configure \
         --prefix=/sw/flex \
         --disable-static \
@@ -19,13 +42,33 @@ MAKE() {
     make
 }
 
-CHECK_NEEDS=(bash-pass1 bison-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 m4 make-pass1 sed-pass1)
+CHECK_NEEDS=(
+    bash-pass1
+    bison-pass1
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    m4
+    make-pass1
+    sed-pass1
+)
 
 CHECK() {
     make check
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 gawk-pass1 glibc grep-pass1 make-pass1 sed-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    gawk-pass1
+    glibc
+    grep-pass1
+    make-pass1
+    sed-pass1
+)
 
 INSTALL() {
     make install

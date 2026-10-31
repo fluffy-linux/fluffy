@@ -1,0 +1,65 @@
+diff -Naur pcre2-10.47.orig/perltest.sh pcre2-10.47/perltest.sh
+--- pcre2-10.47.orig/perltest.sh	2025-10-20 11:35:02.000000000 +0000
++++ pcre2-10.47/perltest.sh	2025-10-20 11:35:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+
+ # This is a script for testing regular expressions with Perl to check that
+ # it handles them the same way as PCRE2. For testing with different versions of
+diff -Naur pcre2-10.47.orig/RunGrepTest pcre2-10.47/RunGrepTest
+--- pcre2-10.47.orig/RunGrepTest	2025-10-20 11:35:02.000000000 +0000
++++ pcre2-10.47/RunGrepTest	2025-10-20 11:35:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+
+ # Run pcre2grep tests. The assumption is that the PCRE2 tests check the library
+ # itself. What we are checking here is the file handling and options that are
+@@ -1066,16 +1066,16 @@
+ if $valgrind $vjs $pcre2grep --help | $valgrind $vjs $pcre2grep -q 'callout scripts in patterns are supported'; then
+   echo "Testing pcre2grep script callouts"
+   echo "--- Test 1 ---" >testtrygrep
+-  $valgrind $vjs $pcre2grep '(T)(..(.))(?C"/bin/echo|Arg1: [$1] [$2] [$3]|Arg2: $|${1}$| ($4) ($14) ($0)")()' $srcdir/testdata/grepinputv >>testtrygrep
++  $valgrind $vjs $pcre2grep '(T)(..(.))(?C"/sw/coreutils/bin/echo|Arg1: [$1] [$2] [$3]|Arg2: $|${1}$| ($4) ($14) ($0)")()' $srcdir/testdata/grepinputv >>testtrygrep
+   echo "RC=$?" >>testtrygrep
+   echo "--- Test 2 ---" >>testtrygrep
+-  $valgrind $vjs $pcre2grep '(T)(..(.))()()()()()()()(..)(?C"/bin/echo|Arg1: [$11] [${11}]")' $srcdir/testdata/grepinputv >>testtrygrep
++  $valgrind $vjs $pcre2grep '(T)(..(.))()()()()()()()(..)(?C"/sw/coreutils/bin/echo|Arg1: [$11] [${11}]")' $srcdir/testdata/grepinputv >>testtrygrep
+   echo "RC=$?" >>testtrygrep
+   echo "--- Test 3 ---" >>testtrygrep
+   $valgrind $vjs $pcre2grep '(T)(?C"|$0:$1$n")' $srcdir/testdata/grepinputv >>testtrygrep
+   echo "RC=$?" >>testtrygrep
+   echo "--- Test 4 ---" >>testtrygrep
+-  $valgrind $vjs $pcre2grep '(T)(?C"/bin/echo|$0:$1$n")' $srcdir/testdata/grepinputv >>testtrygrep
++  $valgrind $vjs $pcre2grep '(T)(?C"/sw/coreutils/bin/echo|$0:$1$n")' $srcdir/testdata/grepinputv >>testtrygrep
+   echo "RC=$?" >>testtrygrep
+   echo "--- Test 5 ---" >>testtrygrep
+   $valgrind $vjs $pcre2grep '(T)(?C"|$1$n")(*F)' $srcdir/testdata/grepinputv >>testtrygrep
+@@ -1101,7 +1101,7 @@
+     $valgrind $vjs $pcre2grep -u '(T)(?C"|$0:$x{a6}$n")' $srcdir/testdata/grepinputv >>testtrygrep
+     echo "RC=$?" >>testtrygrep
+     echo "--- Test 2 ---" >>testtrygrep
+-    $valgrind $vjs $pcre2grep -u '(T)(?C"/bin/echo|$0:$x{a6}$n")' $srcdir/testdata/grepinputv >>testtrygrep
++    $valgrind $vjs $pcre2grep -u '(T)(?C"/sw/coreutils/bin/echo|$0:$x{a6}$n")' $srcdir/testdata/grepinputv >>testtrygrep
+     echo "RC=$?" >>testtrygrep
+
+     if [ $nonfork = 1 ] ; then
+diff -Naur pcre2-10.47.orig/RunTest pcre2-10.47/RunTest
+--- pcre2-10.47.orig/RunTest	2025-10-20 11:35:02.000000000 +0000
++++ pcre2-10.47/RunTest	2025-10-20 11:35:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+
+ ###############################################################################
+ # Run the PCRE2 tests using the pcre2test program. The appropriate tests are
+diff -Naur pcre2-10.47.orig/test-driver pcre2-10.47/test-driver
+--- pcre2-10.47.orig/test-driver	2025-10-20 11:35:08.000000000 +0000
++++ pcre2-10.47/test-driver	2025-10-20 11:35:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+
+ scriptversion=2018-03-07.03; # UTC

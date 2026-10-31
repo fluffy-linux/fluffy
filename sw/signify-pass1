@@ -6,14 +6,24 @@ ARCHIVES=(
     6dd1b97fd9273d268b70c1be3c2592cbbe1488bca5e45c12c58f8c74362758d5 https://github.com/aperezdc/signify/releases/download/v$VERSION/signify-$VERSION.tar.xz
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 linux-headers make-pass1 coreutils-pass1)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    coreutils-pass1
+    gcc-pass1
+    linux-headers
+    make-pass1
+)
 
 MAKE() {
     make CC="$FLUFFY_TGT-gcc" BUNDLED_LIBBSD=1 EXTRA_CFLAGS="-D_GNU_SOURCE" VERIFY_ONLY=0
 }
 
-INSTALL_NEEDS=(coreutils-pass1)
+INSTALL_NEEDS=(
+    coreutils-pass1
+)
 
 INSTALL() {
     mkdir -pv $DESTDIR/sw/signify/bin

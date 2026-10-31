@@ -4,14 +4,23 @@ VERSION=5.4.1
 
 ARCHIVES=(
     07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://ftpmirror.gnu.org/gawk/gawk-$VERSION.tar.xz
-    e1f1445d26226d77f6bf5d80c90884b095735b799f841c85107b0b673b7baccc file://gawk-$VERSION-fluffy.patch
+    dedef2b70a60868dd38498427795bddd8e8dfb05389fd6f5994b89e9e2cbcf68 file://gawk-$VERSION-fluffy-shell.patch
+    31789d7aac1ac8c5464300791437c781f662c83afd21a47b2a9124153378e94b file://gawk-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 MAKE() {
-    patch -Np1 -i gawk-$VERSION-fluffy.patch
+    patch -Z -Np1 -i gawk-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i gawk-$VERSION-fluffy-source.patch
     sed -i 's/extras//' Makefile.in
     ./configure \
         --prefix=/sw/gawk \
@@ -20,7 +29,11 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+INSTALL_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 INSTALL() {
     make install

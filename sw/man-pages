@@ -4,17 +4,29 @@ VERSION=6.18
 
 ARCHIVES=(
     c934fadc8b59748c68227a34f6581d2ddf8282b73cdcd52546c8cd88b74b24d1 https://www.kernel.org/pub/linux/docs/man-pages/man-pages-$VERSION.tar.xz
-    b193ebfa771d4fb4d1c97bc302f5fedabc95afcdf151a220c5e55dc96a13299d file://man-pages-$VERSION-fluffy.patch
+    716163999d231357e8a0539e34d2d6d0d66d89c9e57c8e03ea6efba507717c0a file://man-pages-$VERSION-fluffy-shell.patch
+    0d84d157288e440c1f6602472f57d27de6315be13d0c442e1bc3110664aec4a1 file://man-pages-$VERSION-fluffy-test.patch
 )
 
-MAKE_NEEDS=(coreutils-pass1 patch-pass1)
+MAKE_NEEDS=(
+    coreutils-pass1
+    patch-pass1
+)
 
 MAKE() {
-    patch -Z -Np1 -i man-pages-$VERSION-fluffy.patch
+    patch -Z -Np1 -i man-pages-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i man-pages-$VERSION-fluffy-test.patch
     rm -vf man/man3/crypt*
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 findutils-pass1 grep-pass1 make-pass1 sed-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    findutils-pass1
+    grep-pass1
+    make-pass1
+    sed-pass1
+)
 
 INSTALL() {
     make -R GIT=false SHELL=/sw/bash/bin/bash prefix=/sw/man-pages install

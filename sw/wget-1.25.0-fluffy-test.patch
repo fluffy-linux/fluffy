@@ -1,0 +1,27 @@
+diff -Naur wget-1.25.0.orig/build-aux/test-driver wget-1.25.0/build-aux/test-driver
+--- wget-1.25.0.orig/build-aux/test-driver	2024-11-10 16:27:46.000000000 -0500
++++ wget-1.25.0/build-aux/test-driver	2026-10-28 01:23:55.034191112 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur wget-1.25.0.orig/testenv/certs/make_ca.sh wget-1.25.0/testenv/certs/make_ca.sh
+--- wget-1.25.0.orig/testenv/certs/make_ca.sh	2024-03-11 18:59:02.000000000 -0400
++++ wget-1.25.0/testenv/certs/make_ca.sh	2026-10-28 01:23:54.999454545 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ 
+ # create a self signed CA certificate
+ certtool --generate-privkey --outfile ca-key.pem
+diff -Naur wget-1.25.0.orig/tests/certs/create-certs.sh wget-1.25.0/tests/certs/create-certs.sh
+--- wget-1.25.0.orig/tests/certs/create-certs.sh	2024-03-11 18:59:02.000000000 -0400
++++ wget-1.25.0/tests/certs/create-certs.sh	2026-10-28 01:23:54.996163183 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ #create key for CA self-signed certificate
+ certtool --generate-privkey --outfile test-ca-key.pem --rsa

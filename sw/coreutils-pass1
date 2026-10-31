@@ -6,8 +6,15 @@ ARCHIVES=(
     394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3 https://ftpmirror.gnu.org/coreutils/coreutils-$VERSION.tar.xz
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 MAKE() {
     ./configure \
@@ -18,7 +25,11 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+INSTALL_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 INSTALL() {
     make install

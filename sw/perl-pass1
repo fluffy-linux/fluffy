@@ -4,14 +4,34 @@ VERSION=5.44.0
 
 ARCHIVES=(
     505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://www.cpan.org/src/5.0/perl-$VERSION.tar.xz
-    aafa5804c4cfb4723a97b77ce11a5cf71a58579eb42ea070a8c11af16e4ff20c file://perl-$VERSION-fluffy.patch
+    88349b06fc44db99308859fe656f375e32788ff0ab877b5d862409541b0387a0 file://perl-$VERSION-fluffy-shell.patch
+    682a045cdb9360a10ea089bd8b75806ae763b4734151aa457a47c5115e2752a5 file://perl-$VERSION-fluffy-test.patch
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    grep-pass1
+    gzip-pass1
+    linux-headers
+    make-pass1
+    patch-pass1
+    sed-pass1
+    tar-pass1
+    xz-pass1
+)
 
 MAKE() {
-    patch -Np1 -i perl-$VERSION-fluffy.patch
+    patch -Z -Np1 -i perl-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i perl-$VERSION-fluffy-test.patch
     sh Configure -des \
         -D prefix=/sw/perl \
         -D vendorprefix=/sw/perl \
@@ -30,7 +50,17 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 linux-headers make-pass1 sed-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    grep-pass1
+    linux-headers
+    make-pass1
+    sed-pass1
+)
 
 INSTALL() {
     make install

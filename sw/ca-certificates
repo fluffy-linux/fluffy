@@ -5,8 +5,13 @@ ARCHIVES=(
     343660904b6b720165a6773e8fda8438e0a21372c01bbdb323869fa069c79ebf file://ca-certificates-fluffy-upsert
 )
 
-NEEDS=(coreutils)
-INSTALL_NEEDS=(coreutils)
+NEEDS=(
+    coreutils
+)
+
+INSTALL_NEEDS=(
+    coreutils
+)
 
 INSTALL() {
     install -vdm755 $DESTDIR/sw/ca-certificates/etc/ssl/certs

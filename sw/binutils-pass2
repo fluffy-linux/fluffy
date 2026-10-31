@@ -4,14 +4,23 @@ VERSION=2.47
 
 ARCHIVES=(
     fb2a0f2fb12b6e89a2ef4ef380c5530c5a4d91a59f7561734b1e8a5c7e90a015 https://ftpmirror.gnu.org/binutils/binutils-$VERSION.tar.xz
-    519994f4f77062ad66395a980b5e049df395dd1ea17dc7a4ca7788d7bf454554 file://binutils-$VERSION-fluffy.patch
+    17c3f59e8992c67263d803832b4fe5ac61e8d4c65b5727fb42b59f1f7ae17217 file://binutils-$VERSION-fluffy-shell.patch
+    6690a172945cba4e886738bb16a66acf115d88d044212a3ae9f4b42454f33d4d file://binutils-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 MAKE() {
-    patch -Np1 -i binutils-$VERSION-fluffy.patch
+    patch -Z -Np1 -i binutils-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i binutils-$VERSION-fluffy-source.patch
     sed '6031s/$add_dir//' -i ltmain.sh
 
     mkdir -v build
@@ -30,7 +39,11 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+INSTALL_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 INSTALL() {
     cd build

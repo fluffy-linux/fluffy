@@ -1,0 +1,9 @@
+diff -Naur gawk-5.4.1.orig/gawkbug.in gawk-5.4.1/gawkbug.in
+--- gawk-5.4.1.orig/gawkbug.in	2026-06-22 12:28:22.000000000 +0000
++++ gawk-5.4.1/gawkbug.in	2026-10-30 04:21:11.168556466 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -
++#!/sw/bash/bin/bash -
+ #
+ # gawkbug - create a bug report and mail it to the bug address
+ #

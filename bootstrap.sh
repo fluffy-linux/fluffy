@@ -26,34 +26,20 @@ if test ! -f "$FLUFFY/etc/passwd"
 then
     cat << "PW_EOF" > "$FLUFFY/etc/passwd"
 root:x:0:0:root:/root:/sw/bash/bin/bash
-bin:x:1:1:bin:/dev/null:/bin/false
 builder:x:1000:1000::/home/builder:/sw/bash/bin/bash
-nobody:x:65534:65534:Nobody:/:/bin/false
+nobody:x:65534:65534:Nobody:/:/sw/coreutils/bin/false
 PW_EOF
-fi
-
-if ! grep -q "^builder:" "$FLUFFY/etc/passwd"
-then
-    echo "builder:x:1000:1000::/home/builder:/sw/bash/bin/bash" >> "$FLUFFY/etc/passwd"
 fi
 
 if test ! -f "$FLUFFY/etc/group"
 then
     cat << "GRP_EOF" > "$FLUFFY/etc/group"
 root:x:0:
-bin:x:1:daemon
-sys:x:2:
-kmem:x:3:
-tape:x:4:
 tty:x:5:
-daemon:x:6:
-floppy:x:7:
 disk:x:8:
-lp:x:9:
 dialout:x:10:
 audio:x:11:
 video:x:12:
-utmp:x:13:
 usb:x:14:
 cdrom:x:15:
 adm:x:16:
@@ -62,7 +48,27 @@ nogroup:x:65534:
 GRP_EOF
 fi
 
-if ! grep -q "^builder:" "$FLUFFY/etc/group"
+if test ! -f "$FLUFFY/etc/hosts"
 then
-    echo "builder:x:1000:" >> "$FLUFFY/etc/group"
+    cat << "HOSTS_EOF" > "$FLUFFY/etc/hosts"
+127.0.0.1 localhost
+::1 localhost
+HOSTS_EOF
+fi
+
+if test ! -f "$FLUFFY/etc/nsswitch.conf"
+then
+    cat << "NSS_EOF" > "$FLUFFY/etc/nsswitch.conf"
+passwd: files
+group: files
+shadow: files
+
+hosts: files dns
+networks: files
+
+protocols: files
+services: files
+ethers: files
+rpc: files
+NSS_EOF
 fi

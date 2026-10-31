@@ -1,0 +1,81 @@
+diff -Naur libtasn1-4.21.0.orig/build-aux/test-driver libtasn1-4.21.0/build-aux/test-driver
+--- libtasn1-4.21.0.orig/build-aux/test-driver	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/build-aux/test-driver	2026-10-28 01:23:02.020593692 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur libtasn1-4.21.0.orig/tests/benchmark.sh libtasn1-4.21.0/tests/benchmark.sh
+--- libtasn1-4.21.0.orig/tests/benchmark.sh	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/tests/benchmark.sh	2026-10-28 01:23:02.002853458 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+ #
+diff -Naur libtasn1-4.21.0.orig/tests/coding.sh libtasn1-4.21.0/tests/coding.sh
+--- libtasn1-4.21.0.orig/tests/coding.sh	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/tests/coding.sh	2026-10-28 01:23:02.001815767 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2017-2026 Free Software Foundation, Inc.
+ #
+diff -Naur libtasn1-4.21.0.orig/tests/crlf.sh libtasn1-4.21.0/tests/crlf.sh
+--- libtasn1-4.21.0.orig/tests/crlf.sh	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/tests/crlf.sh	2026-10-28 01:23:02.001940230 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+ #
+diff -Naur libtasn1-4.21.0.orig/tests/decoding-invalid-pkcs7.sh libtasn1-4.21.0/tests/decoding-invalid-pkcs7.sh
+--- libtasn1-4.21.0.orig/tests/decoding-invalid-pkcs7.sh	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/tests/decoding-invalid-pkcs7.sh	2026-10-28 01:23:02.003031870 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2017-2026 Free Software Foundation, Inc.
+ #
+diff -Naur libtasn1-4.21.0.orig/tests/decoding-invalid-x509.sh libtasn1-4.21.0/tests/decoding-invalid-x509.sh
+--- libtasn1-4.21.0.orig/tests/decoding-invalid-x509.sh	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/tests/decoding-invalid-x509.sh	2026-10-28 01:23:02.002708540 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2016-2026 Free Software Foundation, Inc.
+ #
+diff -Naur libtasn1-4.21.0.orig/tests/decoding.sh libtasn1-4.21.0/tests/decoding.sh
+--- libtasn1-4.21.0.orig/tests/decoding.sh	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/tests/decoding.sh	2026-10-28 01:23:02.001640825 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+diff -Naur libtasn1-4.21.0.orig/tests/parser.sh libtasn1-4.21.0/tests/parser.sh
+--- libtasn1-4.21.0.orig/tests/parser.sh	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/tests/parser.sh	2026-10-28 01:23:02.000902624 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2021-2026 Free Software Foundation, Inc.
+ # Copyright (C) 2019 Red Hat, Inc.
+diff -Naur libtasn1-4.21.0.orig/tests/threadsafety.sh libtasn1-4.21.0/tests/threadsafety.sh
+--- libtasn1-4.21.0.orig/tests/threadsafety.sh	2026-01-08 07:19:22.000000000 -0500
++++ libtasn1-4.21.0/tests/threadsafety.sh	2026-10-28 01:23:02.001029831 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2004-2026 Free Software Foundation, Inc.
+ #

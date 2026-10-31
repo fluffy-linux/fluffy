@@ -116,6 +116,7 @@ fi
 find_fs_by_pkg() {
     local query="$1"
     local __var="$2"
+    local exact="${3:-0}"
     local query_name="${query##*/}"
     local query_base="${query_name%-pass*}"
 
@@ -159,7 +160,7 @@ find_fs_by_pkg() {
             break
         fi
 
-        if test "$fallback" == "$NULL"
+        if test "$exact" -eq 0 && test "$fallback" == "$NULL"
         then
             if test "$tgt_pkg" == "$query_name" || test "$cur_base" == "$query_name" || test "$cur_pkg" == "$query_base"
             then
@@ -298,7 +299,7 @@ register_entry() {
     rm -f "$tmp_sig"
 
     # does an entry for this package already exist?
-    find_fs_by_pkg "$pkg_name" mnt_fs
+        find_fs_by_pkg "$pkg_name" mnt_fs 1
     if test "$mnt_fs" == "$NULL"
     then
         log "doesn't exist - creating $mountpoint ($pkg_name)"
@@ -847,7 +848,7 @@ unregister_entry() {
         local pkg_name="${pkg##*/}"
 
         local mnt_fs="$NULL"
-        find_fs_by_pkg "$pkg_name" mnt_fs
+        find_fs_by_pkg "$pkg_name" mnt_fs 1
         if test "$mnt_fs" == "$NULL"
         then
             log "warning: package $pkg not found in $FSTAB"

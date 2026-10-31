@@ -1,0 +1,15 @@
+diff -Naur tcl8.6.18.orig/library/init.tcl tcl8.6.18/library/init.tcl
+--- tcl8.6.18.orig/library/init.tcl	2026-07-25 23:00:00.000000000 +0000
++++ tcl8.6.18/library/init.tcl	2026-07-25 23:00:00.000000000 +0000
+@@ -65,6 +65,11 @@
+ 	if {$Dir ni $::auto_path} {
+ 	    lappend ::auto_path $Dir
+ 	}
++	foreach Dir [glob -nocomplain -types d /sw/*/lib] {
++	    if {$Dir ni $::auto_path} {
++		lappend ::auto_path $Dir
++	    }
++	}
+ 	if {[info exists ::tcl_pkgPath]} { catch {
+ 	    foreach Dir $::tcl_pkgPath {
+ 		if {$Dir ni $::auto_path} {

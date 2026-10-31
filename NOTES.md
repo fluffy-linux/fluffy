@@ -6,6 +6,13 @@
    - Every package builds and installs into `/sw/<pkg>` (e.g. `/sw/man-pages`, `/sw/zlib`), which is packaged as `sw/<name>-<version>.squashfs` with `-all-root -comp zstd`.
    - At runtime and build time, the squashfs image is mounted at its unversioned mountpoint `/sw/<pkg>`.
    - Upgrading a package means mounting a newer `.squashfs` at `/sw/<pkg>` in the new mount namespace—no RPATH or path rewriting needed.
+   - **Why SquashFS? (The Architectural & Security Rationale)**:
+     - **Installation Almost *Isn't***: There is no file extraction, tar unpacking, or payload copying. Installing a package is literally a single kernel `mount` syscall ($O(1)$ time complexity).
+     - **Inherently Read-Only by Design**: The underlying filesystem format is immutable. Even the `root` user cannot accidentally clobber, mutate, trojan, or delete files inside `/sw/*`.
+     - **Cryptographically Verifiable Forever, Even After Installation**: Because the package is mounted directly from its signed `.squashfs` image rather than extracted into loose files, verifying the package's integrity across its entire lifecycle on the machine is as trivial as checking the image's hash or signature in `/sw/fstab`. There is zero file-level bit rot or stealth file tampering.
+     - **Clear Security Boundary**: Only `root` can mount anything into `/sw/`. The system attack surface is exceptionally easy to reason about and audit.
+     - **Self-Documenting File Ownership**: The pathname `/sw/<pkg>/...` directly and unambiguously identifies which package owns every binary, library, header, and asset on the system with zero database queries (`dpkg -S`, `rpm -qf`).
+     - **Transparent Deduplication & Compression**: Zstandard compression at rest with shared page cache entries across all processes, containers, and namespaces on the host.
 
 2. **Immutable Mount Namespaces (Zero Torn Installs, Zero-Logout Desktop UX)**
    - Running processes keep their existing mount namespace (`CLONE_NEWNS`) across package installs/upgrades.
@@ -125,8 +132,8 @@
      - When created, pseudopackages produce an empty squashfs and register their dependency closure in `/etc/fluffy/fstab`.
      - Builder profiles encapsulate the environment for each bootstrap phase:
        - `sw/host-build`: `NEEDS=()` (pure host compilation with no `/sw` mounts).
-       - `sw/cross-build`: `NEEDS=(ctypes-sh-pass1 gzip-pass1 signify-pass1 tar-pass1 util-linux-pass1 wget-pass1 xz-pass1)` (the trimmed top-level scaffold needed to run `create` and `PREPARE` inside chroot during Chapter 7; transitive dependencies like `bash-pass1`, `glibc-pass1`, `ncurses-pass1`, `openssl-pass1`, `ca-certificates-pass1`, and `coreutils-pass1` are resolved automatically).
-       - `sw/fluffy-build`: `NEEDS=(ctypes-sh gzip signify tar util-linux wget xz)` (the final native Fluffy self-hosting environment).
+       - `sw/cross-build`: `NEEDS=(bzip2-pass1 ctypes-sh-pass1 gzip-pass1 signify-pass1 tar-pass1 util-linux-pass1 wget-pass1 xz-pass1)` (the trimmed top-level scaffold needed to run `create` and `PREPARE` inside chroot during Chapter 7; transitive dependencies like `bash-pass1`, `glibc-pass1`, `ncurses-pass1`, `openssl-pass1`, `ca-certificates-pass1`, and `coreutils-pass1` are resolved automatically).
+       - `sw/fluffy-build`: `NEEDS=(bzip2 ctypes-sh gzip signify tar util-linux wget xz zstd)` (the final native Fluffy self-hosting environment).
      - Regular package definitions reference these profiles directly via `$ON`, which defaults to `fluffy-build`. `create` transitively resolves the builder profile's `NEEDS` to set up the build environment for each stage before mounting package-specific requirements.
    - **Builder Harness Isolation (`/builder`) & Rebuilt Build Dependencies**:
      - **TODO: Post-Boot Priority: Implement `/builder` Harness Isolation**:
@@ -266,6 +273,8 @@
   - 8.13 `flex` (2.6.4) verified and registered (`flex-2.6.4.squashfs`).
   - 8.14 `lz4` (1.10.0) verified and registered (`lz4-1.10.0.squashfs`).
   - 8.15 `zstd` (1.5.7) verified and registered (`zstd-1.5.7.squashfs`): built with multi-format compression support (lz4, xz, zlib).
+  - 8.16 `tcl` (8.6.18) verified and registered (`tcl-8.6.18.squashfs`): includes dynamic `auto_path` globbing over `/sw/*/lib` in `library/init.tcl`.
+  - 8.17 `expect` (5.45.4) verified and registered (`expect-5.45.4.squashfs`): TEA configured with late-bound `/sw/*/lib` and `/sw/*/include` discovery; `exec_prefix` isolated to `/sw/expect`.
 
 - **Chapter 7 Complete (In-Chroot Native Compilation & Network Stack)**:
   - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.

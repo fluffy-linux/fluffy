@@ -1,0 +1,9 @@
+diff -Naur man-pages-6.18.orig/scripts/markup_check.sh man-pages-6.18/scripts/markup_check.sh
+--- man-pages-6.18.orig/scripts/markup_check.sh	2026-04-22 19:22:47.000000000 +0000
++++ man-pages-6.18/scripts/markup_check.sh	2026-04-22 19:22:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LOG=/tmp/markup_check.$$
+ rm -f $LOG $LOG.full

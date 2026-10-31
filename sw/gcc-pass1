@@ -11,14 +11,21 @@ ARCHIVES=(
     b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$MPFR_VERSION.tar.xz
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$MPC_VERSION.tar.xz
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$GMP_VERSION.tar.xz
-    c3e782a8eee855a260988b7fe0ae01b1735bf93950d3f5e45820b73ae77c90d8 file://gcc-$VERSION-fluffy.patch
+    087dbe387be3cd799ceaf730e2f3ed68895fefa311333017e36e120bfe8ea137 file://gcc-$VERSION-fluffy-shell.patch
+    8f5ab2ac60c6ccce908b9ce6fd8f5f1f3b5385d69df0d05bf59c9273e9777c71 file://gcc-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(binutils-pass1)
-MAKE_NEEDS=(binutils-pass1)
+NEEDS=(
+    binutils-pass1
+)
+
+MAKE_NEEDS=(
+    binutils-pass1
+)
 
 MAKE() {
-    patch -Np1 -i gcc-$VERSION-fluffy.patch
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-source.patch
 
     mv -v mpfr-$MPFR_VERSION mpfr
     mv -v mpc-$MPC_VERSION mpc
@@ -49,7 +56,9 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(binutils-pass1)
+INSTALL_NEEDS=(
+    binutils-pass1
+)
 
 INSTALL() {
     cd build
