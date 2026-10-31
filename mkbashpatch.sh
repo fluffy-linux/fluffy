@@ -31,8 +31,10 @@ os.makedirs(sw_dir, exist_ok=True)
 archives = sys.argv[2:]
 
 doc_exts = {".po", ".pot", ".gmo", ".texi", ".info", ".md", ".rst", ".html",
-            ".1", ".2", ".3", ".4", ".5", ".6", ".7", ".8", ".9", ".man", ".doc", ".txt"}
+            ".1", ".2", ".3", ".4", ".5", ".6", ".7", ".8", ".9", ".man", ".doc", ".txt",
+            ".m4", ".ac", ".am", ".yml", ".yaml", ".json", ".toml"}
 doc_prefixes = ("changelog", "changes", "news", "readme", "copying", "license", "authors", "thanks", "todo")
+skip_files = {"aclocal.m4", "configure.ac", "makefile.am"}
 
 for archive in archives:
     archive_path = archive
@@ -74,13 +76,13 @@ for archive in archives:
 
         changed_files = 0
         for root, dirs, files in os.walk(work_dir):
-            dirs[:] = [d for d in dirs if d != ".git"]
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
             for f in files:
                 path = os.path.join(root, f)
                 if os.path.islink(path):
                     continue
                 fname = f.lower()
-                if any(fname.startswith(p) for p in doc_prefixes) or any(fname.endswith(ext) for ext in doc_exts):
+                if fname in skip_files or any(fname.startswith(p) for p in doc_prefixes) or any(fname.endswith(ext) for ext in doc_exts):
                     continue
                 try:
                     with open(path, "rb") as fp:

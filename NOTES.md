@@ -47,6 +47,7 @@
      - **Final Pass Toolchain Vision (Glibc & GCC Native Wildcard Inclusion)**:
        - **GCC Preprocessor (`cppdefault.cc`)**: In the final native pass, patch GCC's include directory search logic to natively understand `/sw/*/include` (and `/sw/*/include/c++/<ver>`) instead of hardcoding `/usr/include`. GCC's CPP will discover and include headers across all mounted packages without passing a single `-I` flag.
        - **Linker (`binutils` `ld`) & Specs**: Set default library search paths to `/sw/*/lib` instead of `/usr/lib` or `/lib`.
+         - **TODO: Dynamic Wildcard SEARCH_DIR in Binutils Linker Scripts**: In `binutils-pass2`, `genscripts.sh` assigned `LIB_PATH=/sw/*/lib` unquoted, expanding the glob at host build-time to only the packages present on the host (`/sw/binutils/lib /sw/gcc/lib /sw/glibc/lib`). Quoting `LIB_PATH='/sw/*/lib'` embeds literal `SEARCH_DIR("/sw/*/lib")` in the default ldscripts, allowing `ldfile.c` to dynamically `scandir("/sw", ...)` at runtime and register all `/sw/*/lib` with `cmdline=0`. This ensures `ldelf.c` automatically resolves indirect `DT_NEEDED` dependencies (e.g. `libncursesw.so.6` needed by `libreadline.so`) without requiring `-rpath-link` or explicit linker flags.
        - **Zero `-I`/`-L` Flags & Deprecation of `pkg-config`**: Because GCC, LD, and LD.SO dynamically iterate all `/sw/*/{include,lib}`, packages built for Fluffy never need `-I` or `-L` directory path flags or `pkg-config` path overrides. Upstream packages link against external libraries simply with `-l<name>`.
      - **Systemd Unit Files (`/sw/*/lib/systemd/system`)**: `systemd` (`lookup_paths_init` in `sd-path/path-lookup.c`) iterates `/sw/*/lib/systemd/system` (and `/sw/*/lib/systemd/user`) so services install their own `.service` / `.socket` files directly in `/sw/<pkg>/lib/systemd/system/` (via a heredoc or local file in `INSTALL()`), eliminating any need for external meta-packages like `blfs-systemd-units`.
      - **LMDB-Style Copy-on-Write `mmap` Index (`/run/fluffy/index.db`)**:
@@ -125,6 +126,9 @@
        - `sw/fluffy-build`: `NEEDS=(ctypes-sh gzip signify tar util-linux wget xz)` (the final native Fluffy self-hosting environment).
      - Regular package definitions reference these profiles directly via `$ON`, which defaults to `fluffy-build`. `create` transitively resolves the builder profile's `NEEDS` to set up the build environment for each stage before mounting package-specific requirements.
    - **Builder Harness Isolation (`/builder`) & Rebuilt Build Dependencies**:
+     - **TODO: Post-Boot Priority: Implement `/builder` Harness Isolation**:
+       - As observed during Chapter 8 (`zstd` discovering `zlib` and `xz` from `cross-build`), mounting builder tools directly in `/sw/*` allows configure checks to accidentally discover and link against build-harness libraries.
+       - Immediately once the system boots natively, rebuild the build harness under `/builder/*` and isolate compiler/linker include/lib search strictly to `/sw/*`.
      - **Problem with Accidental Linkage**: Packages being built can accidentally discover and link against libraries or headers provided by the builder harness (`$ON` profiles like `cross-build` or `fluffy-build`). Post-install closure verification is finicky and brittle; statically linking the entire build harness runs counter to LFS and Glibc design.
      - **Isolation via Dedicated `/builder` Prefix**:
        - Packages belonging to the build toolkit are rebuilt specifically under the assumption of a `/builder/<pkg>` path rather than `/sw/<pkg>`, and packed into squashfs images kept strictly out of `/sw/*`.
@@ -233,11 +237,32 @@
     - **TODO: Universal Timestamp Preservation Across All Patches**:
       - All patches across all recipes must strictly preserve upstream file modification timestamps.
       - Applying patches must never shift file `mtime` values forward, ensuring that timestamp-sensitive dependencies (e.g. Makefile vs configure vs aclocal.m4) do not falsely trigger autotools regeneration or `help2man` rebuilds during compilation.
+    - **TODO: Split Shebang / Path Patches from Logic / Bugfix Patches**:
+      - Separate `/sw/bash/bin/bash` shebang and interpreter path rewrites from functional logic and bugfix patches.
+      - Both types can use the `-fluffy` naming convention, e.g.:
+        - `<pkg>-<version>-fluffy-bash.patch`: bulk script shebang and interpreter path adjustments.
+        - `<pkg>-<version>-fluffy-<issue>.patch` (e.g. `m4-1.4.21-fluffy-posix-spawn.patch`): surgical upstream logic fixes, glibc compatibility, or testsuite adaptations.
+      - Decoupling shebang updates ensures automated path updates can be regenerated cleanly with `mkbashpatch.sh` without clobbering or conflating hand-crafted code fixes.
     - **Timestamp Preservation Across Fluffy Patches**:
       - `mkbashpatch.sh` records `os.stat` timestamps and restores exact nanosecond mtimes/atimes using `os.utime()` after rewriting paths to `/sw/bash/bin/bash`.
       - Diffs are generated in UTC (`TZ=UTC0 LC_ALL=C diff -Naur`) and applied with `patch -Z` (`--set-utc`), perfectly preserving original upstream release file ordering and preventing autotools (`aclocal`, `autoheader`, `automake`) or `help2man` from falsely triggering during compilation.
 
 ## Bootstrap Milestones
+
+- **Chapter 8 Progress (Installing Basic System Software)**:
+  - 8.3 `man-pages` (6.18) verified and registered (`man-pages-6.18.squashfs`).
+  - 8.4 `iana-etc` (20260805) verified and registered (`iana-etc-20260805.squashfs`).
+  - 8.5 `glibc` (2.44) verified and registered (`glibc-2.44.squashfs`).
+  - 8.6 `zlib` (1.3.2) verified and registered (`zlib-1.3.2.squashfs`).
+  - 8.7 `bzip2` (1.0.8) verified and registered (`bzip2-1.0.8.squashfs`).
+  - 8.8 `xz` (5.8.3) verified and registered (`xz-5.8.3.squashfs`).
+  - 8.9 `file` (5.48) verified and registered (`file-5.48.squashfs`).
+  - 8.10 `readline` (8.3) verified and registered (`readline-8.3.squashfs`).
+  - 8.11 `m4` (1.4.21) verified and registered (`m4-1.4.21.squashfs`): gnulib `posix_spawn` redirect recursion guarded and test BOURNE_SHELL paths adapted to `/sw/bash/bin/bash`; all tests passing.
+  - 8.12 `bc` (7.0.3) verified and registered (`bc-7.0.3.squashfs`).
+  - 8.13 `flex` (2.6.4) verified and registered (`flex-2.6.4.squashfs`).
+  - 8.14 `lz4` (1.10.0) verified and registered (`lz4-1.10.0.squashfs`).
+  - 8.15 `zstd` (1.5.7) verified and registered (`zstd-1.5.7.squashfs`): built with multi-format compression support (lz4, xz, zlib).
 
 - **Chapter 7 Complete (In-Chroot Native Compilation & Network Stack)**:
   - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.
