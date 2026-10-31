@@ -104,7 +104,7 @@ for archive in archives:
                     os.utime(path, ns=(st.st_atime_ns, st.st_mtime_ns))
                     changed_files += 1
 
-        patch_filename = f"{dir_name}-fluffy.patch"
+        patch_filename = f"{dir_name}-fluffy-shell.patch"
         patch_path = os.path.join(sw_dir, patch_filename)
 
         diff_env = dict(os.environ, TZ="UTC0", LC_ALL="C")
