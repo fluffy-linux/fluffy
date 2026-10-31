@@ -6,8 +6,15 @@ ARCHIVES=(
     547b7b7f4d2e44bf91b6fc554664850c69563701deab9fd9cd7e21f694c88ea6 https://github.com/plougher/squashfs-tools/releases/download/$VERSION/squashfs-tools-$VERSION.tar.gz
 )
 
-NEEDS=(zstd-pass1)
-MAKE_NEEDS=(gcc-pass1 linux-headers zstd-pass1)
+NEEDS=(
+    zstd-pass1
+)
+
+MAKE_NEEDS=(
+    gcc-pass1
+    linux-headers
+    zstd-pass1
+)
 
 MAKE() {
     make -C squashfs-tools \
@@ -22,7 +29,10 @@ MAKE() {
         EXTRA_LDFLAGS="-L/sw/zstd/lib"
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1)
+INSTALL_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+)
 
 INSTALL() {
     mkdir -pv $DESTDIR/sw/squashfs-tools/bin

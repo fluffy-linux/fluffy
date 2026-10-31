@@ -6,8 +6,15 @@ ARCHIVES=(
     7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd https://ftpmirror.gnu.org/diffutils/diffutils-$VERSION.tar.xz
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 MAKE() {
     ./configure \
@@ -18,7 +25,11 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+INSTALL_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 INSTALL() {
     make install

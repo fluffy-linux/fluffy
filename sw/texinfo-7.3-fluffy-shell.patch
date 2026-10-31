@@ -1,0 +1,1797 @@
+diff -Naur texinfo-7.3.orig/INSTALL.generic texinfo-7.3/INSTALL.generic
+--- texinfo-7.3.orig/INSTALL.generic	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/INSTALL.generic	2026-03-01 17:03:26.000000000 +0000
+@@ -299,7 +299,7 @@
+ Autoconf limitation.  Until the limitation is lifted, you can use this
+ workaround:
+ 
+-     CONFIG_SHELL=/bin/bash ./configure CONFIG_SHELL=/bin/bash
++     CONFIG_SHELL=/sw/bash/bin/bash ./configure CONFIG_SHELL=/sw/bash/bin/bash
+ 
+ 'configure' Invocation
+ ======================
+diff -Naur texinfo-7.3.orig/Pod-Simple-Texinfo/prove.sh texinfo-7.3/Pod-Simple-Texinfo/prove.sh
+--- texinfo-7.3.orig/Pod-Simple-Texinfo/prove.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/Pod-Simple-Texinfo/prove.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright 2012-2026 Free Software Foundation.
+ #
+ # Copying and distribution of this file, with or without modification,
+diff -Naur texinfo-7.3.orig/aclocal.m4 texinfo-7.3/aclocal.m4
+--- texinfo-7.3.orig/aclocal.m4	2026-03-02 17:05:24.000000000 +0000
++++ texinfo-7.3/aclocal.m4	2026-03-02 17:05:24.000000000 +0000
+@@ -264,7 +264,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff -Naur texinfo-7.3.orig/build-aux/compile texinfo-7.3/build-aux/compile
+--- texinfo-7.3.orig/build-aux/compile	2025-12-13 01:11:54.000000000 +0000
++++ texinfo-7.3/build-aux/compile	2025-12-13 01:11:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/build-aux/config.guess texinfo-7.3/build-aux/config.guess
+--- texinfo-7.3.orig/build-aux/config.guess	2025-12-13 01:11:54.000000000 +0000
++++ texinfo-7.3/build-aux/config.guess	2025-12-13 01:11:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1020,7 +1020,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff -Naur texinfo-7.3.orig/build-aux/config.rpath texinfo-7.3/build-aux/config.rpath
+--- texinfo-7.3.orig/build-aux/config.rpath	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/build-aux/config.rpath	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff -Naur texinfo-7.3.orig/build-aux/config.sub texinfo-7.3/build-aux/config.sub
+--- texinfo-7.3.orig/build-aux/config.sub	2025-12-13 01:11:54.000000000 +0000
++++ texinfo-7.3/build-aux/config.sub	2025-12-13 01:11:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff -Naur texinfo-7.3.orig/build-aux/depcomp texinfo-7.3/build-aux/depcomp
+--- texinfo-7.3.orig/build-aux/depcomp	2025-12-13 01:11:56.000000000 +0000
++++ texinfo-7.3/build-aux/depcomp	2025-12-13 01:11:56.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/build-aux/install-sh texinfo-7.3/build-aux/install-sh
+--- texinfo-7.3.orig/build-aux/install-sh	2025-12-13 01:11:54.000000000 +0000
++++ texinfo-7.3/build-aux/install-sh	2025-12-13 01:11:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/build-aux/mdate-sh texinfo-7.3/build-aux/mdate-sh
+--- texinfo-7.3.orig/build-aux/mdate-sh	2025-12-13 01:11:55.000000000 +0000
++++ texinfo-7.3/build-aux/mdate-sh	2025-12-13 01:11:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory, or value of
+ # $SOURCE_DATE_EPOCH, and pretty-print it, formatted like 1 January 2000.
+ 
+@@ -138,7 +138,7 @@
+ # the extended ls output of the root directory to decide how many
+ # words should be skipped to get the date.
+ 
+-# On HPUX /bin/sh, "set" interprets "-rw-r--r--" as options, so the "x" below.
++# On HPUX /sw/bash/bin/bash, "set" interprets "-rw-r--r--" as options, so the "x" below.
+ set x`$ls_command /`
+ 
+ # Find which argument is the month.
+diff -Naur texinfo-7.3.orig/build-aux/missing texinfo-7.3/build-aux/missing
+--- texinfo-7.3.orig/build-aux/missing	2025-12-13 01:11:54.000000000 +0000
++++ texinfo-7.3/build-aux/missing	2025-12-13 01:11:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/build-aux/pre-inst-env.in texinfo-7.3/build-aux/pre-inst-env.in
+--- texinfo-7.3.orig/build-aux/pre-inst-env.in	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/build-aux/pre-inst-env.in	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright 2017-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/build-aux/tap-driver.sh texinfo-7.3/build-aux/tap-driver.sh
+--- texinfo-7.3.orig/build-aux/tap-driver.sh	2026-01-01 18:44:41.000000000 +0000
++++ texinfo-7.3/build-aux/tap-driver.sh	2026-01-01 18:44:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/configure texinfo-7.3/configure
+--- texinfo-7.3.orig/configure	2026-03-02 17:05:28.000000000 +0000
++++ texinfo-7.3/configure	2026-03-02 17:05:28.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for GNU Texinfo 7.3.
+ #
+@@ -281,7 +281,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -5384,7 +5384,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -7208,7 +7208,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -13347,7 +13347,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -13531,7 +13531,7 @@
+ else case e in #(
+   e)
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+@@ -40005,7 +40005,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -40614,7 +40614,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -40627,7 +40627,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -40739,7 +40739,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -40752,7 +40752,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -40818,7 +40818,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -40831,7 +40831,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+diff -Naur texinfo-7.3.orig/gnulib/m4/lib-ld.m4 texinfo-7.3/gnulib/m4/lib-ld.m4
+--- texinfo-7.3.orig/gnulib/m4/lib-ld.m4	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/gnulib/m4/lib-ld.m4	2026-03-01 17:03:26.000000000 +0000
+@@ -39,7 +39,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+diff -Naur texinfo-7.3.orig/gnulib/m4/lib-link.m4 texinfo-7.3/gnulib/m4/lib-link.m4
+--- texinfo-7.3.orig/gnulib/m4/lib-link.m4	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/gnulib/m4/lib-link.m4	2026-03-01 17:03:26.000000000 +0000
+@@ -134,7 +134,7 @@
+   AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT]) dnl we use $ac_aux_dir
+   AC_CACHE_CHECK([for shared library run path origin], [acl_cv_rpath], [
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff -Naur texinfo-7.3.orig/info/info-hooks-default/manual-not-found.in texinfo-7.3/info/info-hooks-default/manual-not-found.in
+--- texinfo-7.3.orig/info/info-hooks-default/manual-not-found.in	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/info-hooks-default/manual-not-found.in	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # manual-not-found.in
+ #
+diff -Naur texinfo-7.3.orig/info/t/adjust-anchors.sh texinfo-7.3/info/t/adjust-anchors.sh
+--- texinfo-7.3.orig/info/t/adjust-anchors.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/adjust-anchors.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/all-only.sh texinfo-7.3/info/t/all-only.sh
+--- texinfo-7.3.orig/info/t/all-only.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/all-only.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/anchor-positions.sh texinfo-7.3/info/t/anchor-positions.sh
+--- texinfo-7.3.orig/info/t/anchor-positions.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/anchor-positions.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/body-start.sh texinfo-7.3/info/t/body-start.sh
+--- texinfo-7.3.orig/info/t/body-start.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/body-start.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/c-u-m-x-scroll-forward.sh texinfo-7.3/info/t/c-u-m-x-scroll-forward.sh
+--- texinfo-7.3.orig/info/t/c-u-m-x-scroll-forward.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/c-u-m-x-scroll-forward.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/close-window-after-search.sh texinfo-7.3/info/t/close-window-after-search.sh
+--- texinfo-7.3.orig/info/t/close-window-after-search.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/close-window-after-search.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2017-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/config/texinfo/info-hooks/manual-not-found texinfo-7.3/info/t/config/texinfo/info-hooks/manual-not-found
+--- texinfo-7.3.orig/info/t/config/texinfo/info-hooks/manual-not-found	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/config/texinfo/info-hooks/manual-not-found	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # We need to include this dummy hook to stop the test suite trying to
+ # run an installed hook.
+diff -Naur texinfo-7.3.orig/info/t/dir-3-menus.sh texinfo-7.3/info/t/dir-3-menus.sh
+--- texinfo-7.3.orig/info/t/dir-3-menus.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-3-menus.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-dangling-entry.sh texinfo-7.3/info/t/dir-dangling-entry.sh
+--- texinfo-7.3.orig/info/t/dir-dangling-entry.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-dangling-entry.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-entry-to-subdir.sh texinfo-7.3/info/t/dir-entry-to-subdir.sh
+--- texinfo-7.3.orig/info/t/dir-entry-to-subdir.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-entry-to-subdir.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-file-index.sh texinfo-7.3/info/t/dir-file-index.sh
+--- texinfo-7.3.orig/info/t/dir-file-index.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-file-index.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-file-menu.sh texinfo-7.3/info/t/dir-file-menu.sh
+--- texinfo-7.3.orig/info/t/dir-file-menu.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-file-menu.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-file-no-menu.sh texinfo-7.3/info/t/dir-file-no-menu.sh
+--- texinfo-7.3.orig/info/t/dir-file-no-menu.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-file-no-menu.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-file-node.sh texinfo-7.3/info/t/dir-file-node.sh
+--- texinfo-7.3.orig/info/t/dir-file-node.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-file-node.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-file-sloppily.sh texinfo-7.3/info/t/dir-file-sloppily.sh
+--- texinfo-7.3.orig/info/t/dir-file-sloppily.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-file-sloppily.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-file.sh texinfo-7.3/info/t/dir-file.sh
+--- texinfo-7.3.orig/info/t/dir-file.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-file.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-menus-sloppily.sh texinfo-7.3/info/t/dir-menus-sloppily.sh
+--- texinfo-7.3.orig/info/t/dir-menus-sloppily.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-menus-sloppily.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-merge.sh texinfo-7.3/info/t/dir-merge.sh
+--- texinfo-7.3.orig/info/t/dir-merge.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-merge.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-no-file.sh texinfo-7.3/info/t/dir-no-file.sh
+--- texinfo-7.3.orig/info/t/dir-no-file.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-no-file.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir-nondir.sh texinfo-7.3/info/t/dir-nondir.sh
+--- texinfo-7.3.orig/info/t/dir-nondir.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir-nondir.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/dir.sh texinfo-7.3/info/t/dir.sh
+--- texinfo-7.3.orig/info/t/dir.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/dir.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/echo-area-no-completions.sh texinfo-7.3/info/t/echo-area-no-completions.sh
+--- texinfo-7.3.orig/info/t/echo-area-no-completions.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/echo-area-no-completions.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2019-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/empty-infopath.sh texinfo-7.3/info/t/empty-infopath.sh
+--- texinfo-7.3.orig/info/t/empty-infopath.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/empty-infopath.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/empty.sh texinfo-7.3/info/t/empty.sh
+--- texinfo-7.3.orig/info/t/empty.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/empty.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/end-of-line.sh texinfo-7.3/info/t/end-of-line.sh
+--- texinfo-7.3.orig/info/t/end-of-line.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/end-of-line.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/file-file-with-dot.sh texinfo-7.3/info/t/file-file-with-dot.sh
+--- texinfo-7.3.orig/info/t/file-file-with-dot.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/file-file-with-dot.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/file-index-colons.sh texinfo-7.3/info/t/file-index-colons.sh
+--- texinfo-7.3.orig/info/t/file-index-colons.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/file-index-colons.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2017-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/file-index.sh texinfo-7.3/info/t/file-index.sh
+--- texinfo-7.3.orig/info/t/file-index.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/file-index.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/file-node-with-dot.sh texinfo-7.3/info/t/file-node-with-dot.sh
+--- texinfo-7.3.orig/info/t/file-node-with-dot.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/file-node-with-dot.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/file-node.sh texinfo-7.3/info/t/file-node.sh
+--- texinfo-7.3.orig/info/t/file-node.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/file-node.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/file-nodes.sh texinfo-7.3/info/t/file-nodes.sh
+--- texinfo-7.3.orig/info/t/file-nodes.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/file-nodes.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/file-relative-path.sh texinfo-7.3/info/t/file-relative-path.sh
+--- texinfo-7.3.orig/info/t/file-relative-path.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/file-relative-path.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/file.sh texinfo-7.3/info/t/file.sh
+--- texinfo-7.3.orig/info/t/file.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/file.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/follow-path.sh texinfo-7.3/info/t/follow-path.sh
+--- texinfo-7.3.orig/info/t/follow-path.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/follow-path.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/follow-remain-other-dir.sh texinfo-7.3/info/t/follow-remain-other-dir.sh
+--- texinfo-7.3.orig/info/t/follow-remain-other-dir.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/follow-remain-other-dir.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/follow-remain.sh texinfo-7.3/info/t/follow-remain.sh
+--- texinfo-7.3.orig/info/t/follow-remain.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/follow-remain.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/gc-split.sh texinfo-7.3/info/t/gc-split.sh
+--- texinfo-7.3.orig/info/t/gc-split.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/gc-split.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/goal-column.sh texinfo-7.3/info/t/goal-column.sh
+--- texinfo-7.3.orig/info/t/goal-column.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/goal-column.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/goto-quoted.sh texinfo-7.3/info/t/goto-quoted.sh
+--- texinfo-7.3.orig/info/t/goto-quoted.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/goto-quoted.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/help.sh texinfo-7.3/info/t/help.sh
+--- texinfo-7.3.orig/info/t/help.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/help.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/inc-sea-bs.sh texinfo-7.3/info/t/inc-sea-bs.sh
+--- texinfo-7.3.orig/info/t/inc-sea-bs.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/inc-sea-bs.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2017-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/inc-sea-forward-nonregex.sh texinfo-7.3/info/t/inc-sea-forward-nonregex.sh
+--- texinfo-7.3.orig/info/t/inc-sea-forward-nonregex.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/inc-sea-forward-nonregex.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/inc-sea-forward.sh texinfo-7.3/info/t/inc-sea-forward.sh
+--- texinfo-7.3.orig/info/t/inc-sea-forward.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/inc-sea-forward.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/inc-sea-history.sh texinfo-7.3/info/t/inc-sea-history.sh
+--- texinfo-7.3.orig/info/t/inc-sea-history.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/inc-sea-history.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/inc-sea-insensitive.sh texinfo-7.3/info/t/inc-sea-insensitive.sh
+--- texinfo-7.3.orig/info/t/inc-sea-insensitive.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/inc-sea-insensitive.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/index-apropos.sh texinfo-7.3/info/t/index-apropos.sh
+--- texinfo-7.3.orig/info/t/index-apropos.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/index-apropos.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/index-completing.sh texinfo-7.3/info/t/index-completing.sh
+--- texinfo-7.3.orig/info/t/index-completing.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/index-completing.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/index-long-nodeline.sh texinfo-7.3/info/t/index-long-nodeline.sh
+--- texinfo-7.3.orig/info/t/index-long-nodeline.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/index-long-nodeline.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/index-paren.sh texinfo-7.3/info/t/index-paren.sh
+--- texinfo-7.3.orig/info/t/index-paren.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/index-paren.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2022-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/index-search.sh texinfo-7.3/info/t/index-search.sh
+--- texinfo-7.3.orig/info/t/index-search.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/index-search.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/index.sh texinfo-7.3/info/t/index.sh
+--- texinfo-7.3.orig/info/t/index.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/index.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/last-no-history.sh texinfo-7.3/info/t/last-no-history.sh
+--- texinfo-7.3.orig/info/t/last-no-history.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/last-no-history.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/last-node-not-top-level.sh texinfo-7.3/info/t/last-node-not-top-level.sh
+--- texinfo-7.3.orig/info/t/last-node-not-top-level.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/last-node-not-top-level.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/malformed-split.sh texinfo-7.3/info/t/malformed-split.sh
+--- texinfo-7.3.orig/info/t/malformed-split.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/malformed-split.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2017-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/menu-sequence.sh texinfo-7.3/info/t/menu-sequence.sh
+--- texinfo-7.3.orig/info/t/menu-sequence.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/menu-sequence.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/multiple-completions.sh texinfo-7.3/info/t/multiple-completions.sh
+--- texinfo-7.3.orig/info/t/multiple-completions.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/multiple-completions.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2019-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/next-quoted.sh texinfo-7.3/info/t/next-quoted.sh
+--- texinfo-7.3.orig/info/t/next-quoted.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/next-quoted.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/no-file.sh texinfo-7.3/info/t/no-file.sh
+--- texinfo-7.3.orig/info/t/no-file.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/no-file.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/no-index.sh texinfo-7.3/info/t/no-index.sh
+--- texinfo-7.3.orig/info/t/no-index.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/no-index.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/node-no-file.sh texinfo-7.3/info/t/node-no-file.sh
+--- texinfo-7.3.orig/info/t/node-no-file.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/node-no-file.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/quoted-label-and-target.sh texinfo-7.3/info/t/quoted-label-and-target.sh
+--- texinfo-7.3.orig/info/t/quoted-label-and-target.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/quoted-label-and-target.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/quoted-label-as-target.sh texinfo-7.3/info/t/quoted-label-as-target.sh
+--- texinfo-7.3.orig/info/t/quoted-label-as-target.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/quoted-label-as-target.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/quoted-manual-in-label.sh texinfo-7.3/info/t/quoted-manual-in-label.sh
+--- texinfo-7.3.orig/info/t/quoted-manual-in-label.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/quoted-manual-in-label.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/quoted-manual-in-target.sh texinfo-7.3/info/t/quoted-manual-in-target.sh
+--- texinfo-7.3.orig/info/t/quoted-manual-in-target.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/quoted-manual-in-target.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/quoted-target.sh texinfo-7.3/info/t/quoted-target.sh
+--- texinfo-7.3.orig/info/t/quoted-target.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/quoted-target.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/recode-C-locale.sh texinfo-7.3/info/t/recode-C-locale.sh
+--- texinfo-7.3.orig/info/t/recode-C-locale.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/recode-C-locale.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2022-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/relative-path.sh texinfo-7.3/info/t/relative-path.sh
+--- texinfo-7.3.orig/info/t/relative-path.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/relative-path.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/relative-reference.sh texinfo-7.3/info/t/relative-reference.sh
+--- texinfo-7.3.orig/info/t/relative-reference.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/relative-reference.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/replace-viewed.sh texinfo-7.3/info/t/replace-viewed.sh
+--- texinfo-7.3.orig/info/t/replace-viewed.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/replace-viewed.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/resize-in-completions.sh texinfo-7.3/info/t/resize-in-completions.sh
+--- texinfo-7.3.orig/info/t/resize-in-completions.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/resize-in-completions.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/search-after-tag.sh texinfo-7.3/info/t/search-after-tag.sh
+--- texinfo-7.3.orig/info/t/search-after-tag.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/search-after-tag.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/search-empty.sh texinfo-7.3/info/t/search-empty.sh
+--- texinfo-7.3.orig/info/t/search-empty.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/search-empty.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/search-skip-screen.sh texinfo-7.3/info/t/search-skip-screen.sh
+--- texinfo-7.3.orig/info/t/search-skip-screen.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/search-skip-screen.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/search-split-after-index.sh texinfo-7.3/info/t/search-split-after-index.sh
+--- texinfo-7.3.orig/info/t/search-split-after-index.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/search-split-after-index.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2016-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/spec-file-node.sh texinfo-7.3/info/t/spec-file-node.sh
+--- texinfo-7.3.orig/info/t/spec-file-node.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/spec-file-node.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/spec-menu.sh texinfo-7.3/info/t/spec-menu.sh
+--- texinfo-7.3.orig/info/t/spec-menu.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/spec-menu.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/spec-no-node.sh texinfo-7.3/info/t/spec-no-node.sh
+--- texinfo-7.3.orig/info/t/spec-no-node.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/spec-no-node.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/split-file-menu.sh texinfo-7.3/info/t/split-file-menu.sh
+--- texinfo-7.3.orig/info/t/split-file-menu.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/split-file-menu.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/split-footnotes.sh texinfo-7.3/info/t/split-footnotes.sh
+--- texinfo-7.3.orig/info/t/split-footnotes.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/split-footnotes.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/split-index.sh texinfo-7.3/info/t/split-index.sh
+--- texinfo-7.3.orig/info/t/split-index.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/split-index.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/split.sh texinfo-7.3/info/t/split.sh
+--- texinfo-7.3.orig/info/t/split.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/split.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/star-note-non-whitespace.sh texinfo-7.3/info/t/star-note-non-whitespace.sh
+--- texinfo-7.3.orig/info/t/star-note-non-whitespace.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/star-note-non-whitespace.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/tab-argument.sh texinfo-7.3/info/t/tab-argument.sh
+--- texinfo-7.3.orig/info/t/tab-argument.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/tab-argument.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/tab-no-xref.sh texinfo-7.3/info/t/tab-no-xref.sh
+--- texinfo-7.3.orig/info/t/tab-no-xref.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/tab-no-xref.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/tab-skip-node.sh texinfo-7.3/info/t/tab-skip-node.sh
+--- texinfo-7.3.orig/info/t/tab-skip-node.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/tab-skip-node.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/tab.sh texinfo-7.3/info/t/tab.sh
+--- texinfo-7.3.orig/info/t/tab.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/tab.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/where-dir-file.sh texinfo-7.3/info/t/where-dir-file.sh
+--- texinfo-7.3.orig/info/t/where-dir-file.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/where-dir-file.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/window-split-dir.sh texinfo-7.3/info/t/window-split-dir.sh
+--- texinfo-7.3.orig/info/t/window-split-dir.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/window-split-dir.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/xref-across-lines-2.sh texinfo-7.3/info/t/xref-across-lines-2.sh
+--- texinfo-7.3.orig/info/t/xref-across-lines-2.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/xref-across-lines-2.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2017-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/xref-across-lines.sh texinfo-7.3/info/t/xref-across-lines.sh
+--- texinfo-7.3.orig/info/t/xref-across-lines.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/xref-across-lines.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/info/t/xref-to-anchor.sh texinfo-7.3/info/t/xref-to-anchor.sh
+--- texinfo-7.3.orig/info/t/xref-to-anchor.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/info/t/xref-to-anchor.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/po/Makefile.in.in texinfo-7.3/po/Makefile.in.in
+--- texinfo-7.3.orig/po/Makefile.in.in	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/po/Makefile.in.in	2026-03-01 17:03:26.000000000 +0000
+@@ -27,7 +27,7 @@
+ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
+ 
+ SED = @SED@
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ @SET_MAKE@
+ 
+ srcdir = @srcdir@
+@@ -562,7 +562,7 @@
+ # Recreate Makefile by invoking config.status. Explicitly invoke the shell,
+ # because execution permission bits may not work on the current file system.
+ # Use @SHELL@, which is the shell determined by autoconf for the use by its
+-# scripts, not $(SHELL) which is hardwired to /bin/sh and may be deficient.
++# scripts, not $(SHELL) which is hardwired to /sw/bash/bin/bash and may be deficient.
+ Makefile: Makefile.in.in Makevars $(top_builddir)/config.status
+ 	cd $(top_builddir) \
+ 	  && @SHELL@ ./config.status $(subdir)/$@.in po-directories
+diff -Naur texinfo-7.3.orig/po_document/Makefile.in.in texinfo-7.3/po_document/Makefile.in.in
+--- texinfo-7.3.orig/po_document/Makefile.in.in	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/po_document/Makefile.in.in	2026-03-01 17:03:26.000000000 +0000
+@@ -27,7 +27,7 @@
+ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
+ 
+ SED = @SED@
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ @SET_MAKE@
+ 
+ srcdir = @srcdir@
+@@ -562,7 +562,7 @@
+ # Recreate Makefile by invoking config.status. Explicitly invoke the shell,
+ # because execution permission bits may not work on the current file system.
+ # Use @SHELL@, which is the shell determined by autoconf for the use by its
+-# scripts, not $(SHELL) which is hardwired to /bin/sh and may be deficient.
++# scripts, not $(SHELL) which is hardwired to /sw/bash/bin/bash and may be deficient.
+ Makefile: Makefile.in.in Makevars $(top_builddir)/config.status
+ 	cd $(top_builddir) \
+ 	  && @SHELL@ ./config.status $(subdir)/$@.in po-directories
+diff -Naur texinfo-7.3.orig/texindex/texindex.in texinfo-7.3/texindex/texindex.in
+--- texinfo-7.3.orig/texindex/texindex.in	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/texindex/texindex.in	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2015-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/aclocal.m4 texinfo-7.3/tta/aclocal.m4
+--- texinfo-7.3.orig/tta/aclocal.m4	2026-03-02 17:08:50.000000000 +0000
++++ texinfo-7.3/tta/aclocal.m4	2026-03-02 17:08:50.000000000 +0000
+@@ -264,7 +264,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff -Naur texinfo-7.3.orig/tta/build-aux/compile texinfo-7.3/tta/build-aux/compile
+--- texinfo-7.3.orig/tta/build-aux/compile	2025-12-13 01:11:46.000000000 +0000
++++ texinfo-7.3/tta/build-aux/compile	2025-12-13 01:11:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/tta/build-aux/config.guess texinfo-7.3/tta/build-aux/config.guess
+--- texinfo-7.3.orig/tta/build-aux/config.guess	2025-12-13 01:11:46.000000000 +0000
++++ texinfo-7.3/tta/build-aux/config.guess	2025-12-13 01:11:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1020,7 +1020,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff -Naur texinfo-7.3.orig/tta/build-aux/config.rpath texinfo-7.3/tta/build-aux/config.rpath
+--- texinfo-7.3.orig/tta/build-aux/config.rpath	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/tta/build-aux/config.rpath	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff -Naur texinfo-7.3.orig/tta/build-aux/config.sub texinfo-7.3/tta/build-aux/config.sub
+--- texinfo-7.3.orig/tta/build-aux/config.sub	2025-12-13 01:11:46.000000000 +0000
++++ texinfo-7.3/tta/build-aux/config.sub	2025-12-13 01:11:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff -Naur texinfo-7.3.orig/tta/build-aux/depcomp texinfo-7.3/tta/build-aux/depcomp
+--- texinfo-7.3.orig/tta/build-aux/depcomp	2025-12-13 01:11:49.000000000 +0000
++++ texinfo-7.3/tta/build-aux/depcomp	2025-12-13 01:11:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/tta/build-aux/install-sh texinfo-7.3/tta/build-aux/install-sh
+--- texinfo-7.3.orig/tta/build-aux/install-sh	2025-12-13 01:11:46.000000000 +0000
++++ texinfo-7.3/tta/build-aux/install-sh	2025-12-13 01:11:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/tta/build-aux/ltmain.sh texinfo-7.3/tta/build-aux/ltmain.sh
+--- texinfo-7.3.orig/tta/build-aux/ltmain.sh	2026-01-01 18:44:41.000000000 +0000
++++ texinfo-7.3/tta/build-aux/ltmain.sh	2026-01-01 18:44:41.000000000 +0000
+@@ -332,7 +332,7 @@
+ : ${MKDIR="mkdir"}
+ : ${MV="mv -f"}
+ : ${RM="rm -f"}
+-: ${SHELL="${CONFIG_SHELL-/bin/sh}"}
++: ${SHELL="${CONFIG_SHELL-/sw/bash/bin/bash}"}
+ 
+ 
+ ## -------------------- ##
+@@ -1528,7 +1528,7 @@
+ # time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
+ # time-stamp-time-zone: "UTC"
+ # End:
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
+@@ -1562,7 +1562,7 @@
+ #
+ # For the simplest scripts you might need only:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . relative/path/to/funclib.sh
+ #   . relative/path/to/options-parser
+ #   scriptversion=1.0
+@@ -4480,7 +4480,7 @@
+ 
+     # There may be an optional sh(1) argument at the beginning of
+     # install_prog (especially on Windows NT).
+-    if test "$SHELL" = "$nonopt" || test /bin/sh = "$nonopt" ||
++    if test "$SHELL" = "$nonopt" || test /sw/bash/bin/bash = "$nonopt" ||
+        # Allow the use of GNU shtool's install command.
+        case $nonopt in *shtool*) :;; *) false;; esac
+     then
+diff -Naur texinfo-7.3.orig/tta/build-aux/m4/libtool.m4 texinfo-7.3/tta/build-aux/m4/libtool.m4
+--- texinfo-7.3.orig/tta/build-aux/m4/libtool.m4	2025-12-13 01:11:35.000000000 +0000
++++ texinfo-7.3/tta/build-aux/m4/libtool.m4	2025-12-13 01:11:35.000000000 +0000
+@@ -78,7 +78,7 @@
+ AC_REQUIRE([LTOBSOLETE_VERSION])dnl
+ m4_require([_LT_PROG_LTMAIN])dnl
+ 
+-_LT_SHELL_INIT([SHELL=${CONFIG_SHELL-/bin/sh}])
++_LT_SHELL_INIT([SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}])
+ 
+ dnl Parse OPTIONS
+ _LT_SET_OPTIONS([$0], [$1])
+@@ -1814,7 +1814,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+diff -Naur texinfo-7.3.orig/tta/build-aux/missing texinfo-7.3/tta/build-aux/missing
+--- texinfo-7.3.orig/tta/build-aux/missing	2025-12-13 01:11:46.000000000 +0000
++++ texinfo-7.3/tta/build-aux/missing	2025-12-13 01:11:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/tta/build-aux/py-compile texinfo-7.3/tta/build-aux/py-compile
+--- texinfo-7.3.orig/tta/build-aux/py-compile	2025-12-13 01:11:49.000000000 +0000
++++ texinfo-7.3/tta/build-aux/py-compile	2025-12-13 01:11:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # py-compile - Compile a Python program
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/tta/build-aux/tap-driver.sh texinfo-7.3/tta/build-aux/tap-driver.sh
+--- texinfo-7.3.orig/tta/build-aux/tap-driver.sh	2026-01-01 18:44:41.000000000 +0000
++++ texinfo-7.3/tta/build-aux/tap-driver.sh	2026-01-01 18:44:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff -Naur texinfo-7.3.orig/tta/configure texinfo-7.3/tta/configure
+--- texinfo-7.3.orig/tta/configure	2026-03-02 17:08:58.000000000 +0000
++++ texinfo-7.3/tta/configure	2026-03-02 17:08:58.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for GNU Texinfo 7.3.
+ #
+@@ -286,7 +286,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -585,7 +585,7 @@
+ as_sed_sh="y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
+ as_tr_sh="eval sed '$as_sed_sh'" # deprecated
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ 
+ test -n "$DJDIR" || exec 7<&0 </dev/null
+@@ -5145,7 +5145,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -5592,7 +5592,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -7703,7 +7703,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -14969,7 +14969,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -15153,7 +15153,7 @@
+ else case e in #(
+   e)
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+@@ -35415,7 +35415,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -35428,7 +35428,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -35540,7 +35540,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -35553,7 +35553,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -35619,7 +35619,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -35632,7 +35632,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -37845,7 +37845,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+diff -Naur texinfo-7.3.orig/tta/gnulib/m4/lib-ld.m4 texinfo-7.3/tta/gnulib/m4/lib-ld.m4
+--- texinfo-7.3.orig/tta/gnulib/m4/lib-ld.m4	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/tta/gnulib/m4/lib-ld.m4	2026-03-01 17:03:26.000000000 +0000
+@@ -39,7 +39,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+diff -Naur texinfo-7.3.orig/tta/gnulib/m4/lib-link.m4 texinfo-7.3/tta/gnulib/m4/lib-link.m4
+--- texinfo-7.3.orig/tta/gnulib/m4/lib-link.m4	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/tta/gnulib/m4/lib-link.m4	2026-03-01 17:03:26.000000000 +0000
+@@ -134,7 +134,7 @@
+   AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT]) dnl we use $ac_aux_dir
+   AC_CACHE_CHECK([for shared library run path origin], [acl_cv_rpath], [
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff -Naur texinfo-7.3.orig/tta/maintain/change_perl_modules_version.sh texinfo-7.3/tta/maintain/change_perl_modules_version.sh
+--- texinfo-7.3.orig/tta/maintain/change_perl_modules_version.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/tta/maintain/change_perl_modules_version.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ if test z"$1" = "z" ; then
+   echo "usage: $0 auto"
+diff -Naur texinfo-7.3.orig/tta/maintain/regenerate_converters_documentation.sh texinfo-7.3/tta/maintain/regenerate_converters_documentation.sh
+--- texinfo-7.3.orig/tta/maintain/regenerate_converters_documentation.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/maintain/regenerate_converters_documentation.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This little script pastes the content of maintain/template.pod at the
+ # end of converter modules, with the output format name suitably defined.
+ # This file should be run when maintain/template.pod is modified.
+diff -Naur texinfo-7.3.orig/tta/maintain/regenerate_docstr.sh texinfo-7.3/tta/maintain/regenerate_docstr.sh
+--- texinfo-7.3.orig/tta/maintain/regenerate_docstr.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/maintain/regenerate_docstr.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright 2011-2026 Free Software Foundation, Inc.
+ #
+ # This file is free software; as a special exception the author gives
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/aclocal.m4 texinfo-7.3/tta/perl/CheckXS/aclocal.m4
+--- texinfo-7.3.orig/tta/perl/CheckXS/aclocal.m4	2026-03-02 17:09:00.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/aclocal.m4	2026-03-02 17:09:00.000000000 +0000
+@@ -227,7 +227,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/build-aux/compile texinfo-7.3/tta/perl/CheckXS/build-aux/compile
+--- texinfo-7.3.orig/tta/perl/CheckXS/build-aux/compile	2025-02-04 20:01:08.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/build-aux/compile	2025-02-04 20:01:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/build-aux/config.guess texinfo-7.3/tta/perl/CheckXS/build-aux/config.guess
+--- texinfo-7.3.orig/tta/perl/CheckXS/build-aux/config.guess	2025-02-04 20:01:08.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/build-aux/config.guess	2025-02-04 20:01:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1018,7 +1018,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/build-aux/config.sub texinfo-7.3/tta/perl/CheckXS/build-aux/config.sub
+--- texinfo-7.3.orig/tta/perl/CheckXS/build-aux/config.sub	2025-02-04 20:01:08.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/build-aux/config.sub	2025-02-04 20:01:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/build-aux/depcomp texinfo-7.3/tta/perl/CheckXS/build-aux/depcomp
+--- texinfo-7.3.orig/tta/perl/CheckXS/build-aux/depcomp	2025-02-04 20:01:08.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/build-aux/depcomp	2025-02-04 20:01:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/build-aux/install-sh texinfo-7.3/tta/perl/CheckXS/build-aux/install-sh
+--- texinfo-7.3.orig/tta/perl/CheckXS/build-aux/install-sh	2025-02-04 20:01:08.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/build-aux/install-sh	2025-02-04 20:01:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/build-aux/ltmain.sh texinfo-7.3/tta/perl/CheckXS/build-aux/ltmain.sh
+--- texinfo-7.3.orig/tta/perl/CheckXS/build-aux/ltmain.sh	2025-12-13 01:02:40.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/build-aux/ltmain.sh	2025-12-13 01:02:40.000000000 +0000
+@@ -332,7 +332,7 @@
+ : ${MKDIR="mkdir"}
+ : ${MV="mv -f"}
+ : ${RM="rm -f"}
+-: ${SHELL="${CONFIG_SHELL-/bin/sh}"}
++: ${SHELL="${CONFIG_SHELL-/sw/bash/bin/bash}"}
+ 
+ 
+ ## -------------------- ##
+@@ -1528,7 +1528,7 @@
+ # time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
+ # time-stamp-time-zone: "UTC"
+ # End:
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
+@@ -1562,7 +1562,7 @@
+ #
+ # For the simplest scripts you might need only:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . relative/path/to/funclib.sh
+ #   . relative/path/to/options-parser
+ #   scriptversion=1.0
+@@ -4480,7 +4480,7 @@
+ 
+     # There may be an optional sh(1) argument at the beginning of
+     # install_prog (especially on Windows NT).
+-    if test "$SHELL" = "$nonopt" || test /bin/sh = "$nonopt" ||
++    if test "$SHELL" = "$nonopt" || test /sw/bash/bin/bash = "$nonopt" ||
+        # Allow the use of GNU shtool's install command.
+        case $nonopt in *shtool*) :;; *) false;; esac
+     then
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/build-aux/m4/libtool.m4 texinfo-7.3/tta/perl/CheckXS/build-aux/m4/libtool.m4
+--- texinfo-7.3.orig/tta/perl/CheckXS/build-aux/m4/libtool.m4	2025-12-13 01:02:40.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/build-aux/m4/libtool.m4	2025-12-13 01:02:40.000000000 +0000
+@@ -78,7 +78,7 @@
+ AC_REQUIRE([LTOBSOLETE_VERSION])dnl
+ m4_require([_LT_PROG_LTMAIN])dnl
+ 
+-_LT_SHELL_INIT([SHELL=${CONFIG_SHELL-/bin/sh}])
++_LT_SHELL_INIT([SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}])
+ 
+ dnl Parse OPTIONS
+ _LT_SET_OPTIONS([$0], [$1])
+@@ -1814,7 +1814,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/build-aux/missing texinfo-7.3/tta/perl/CheckXS/build-aux/missing
+--- texinfo-7.3.orig/tta/perl/CheckXS/build-aux/missing	2025-02-04 20:01:08.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/build-aux/missing	2025-02-04 20:01:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2024-06-07.14; # UTC
+diff -Naur texinfo-7.3.orig/tta/perl/CheckXS/configure texinfo-7.3/tta/perl/CheckXS/configure
+--- texinfo-7.3.orig/tta/perl/CheckXS/configure	2026-03-02 17:09:01.000000000 +0000
++++ texinfo-7.3/tta/perl/CheckXS/configure	2026-03-02 17:09:01.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for GNU Texinfo 7.3.
+ #
+@@ -286,7 +286,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -585,7 +585,7 @@
+ as_sed_sh="y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
+ as_tr_sh="eval sed '$as_sed_sh'" # deprecated
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ 
+ test -n "$DJDIR" || exec 7<&0 </dev/null
+@@ -3134,7 +3134,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -5009,7 +5009,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -5978,7 +5978,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+diff -Naur texinfo-7.3.orig/tta/perl/prove.sh texinfo-7.3/tta/perl/prove.sh
+--- texinfo-7.3.orig/tta/perl/prove.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/perl/prove.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright 2012-2026 Free Software Foundation.
+ #
+ # Copying and distribution of this file, with or without modification,
+diff -Naur texinfo-7.3.orig/util/detexinfo texinfo-7.3/util/detexinfo
+--- texinfo-7.3.orig/util/detexinfo	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/util/detexinfo	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright 2011-2026 Free Software Foundation, Inc.
+ #
+ # This file is free software; as a special exception the author gives
+diff -Naur texinfo-7.3.orig/util/pdftexi2dvi texinfo-7.3/util/pdftexi2dvi
+--- texinfo-7.3.orig/util/pdftexi2dvi	2026-03-02 17:28:25.000000000 +0000
++++ texinfo-7.3/util/pdftexi2dvi	2026-03-02 17:28:25.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Written by Thomas Esser.  Public domain.
+ # Execute texi2dvi --pdf.
+ 
+diff -Naur texinfo-7.3.orig/util/texi2dvi texinfo-7.3/util/texi2dvi
+--- texinfo-7.3.orig/util/texi2dvi	2026-03-02 17:08:43.000000000 +0000
++++ texinfo-7.3/util/texi2dvi	2026-03-02 17:08:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # texi2dvi --- produce DVI (or PDF) files from Texinfo (or (La)TeX) sources.
+ #
+ # Copyright 1992-2026 Free Software Foundation, Inc.
+diff -Naur texinfo-7.3.orig/util/texi2pdf texinfo-7.3/util/texi2pdf
+--- texinfo-7.3.orig/util/texi2pdf	2026-03-02 17:08:43.000000000 +0000
++++ texinfo-7.3/util/texi2pdf	2026-03-02 17:08:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Written by Thomas Esser.  Public domain.
+ # Execute texi2dvi --pdf.
+ 

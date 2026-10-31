@@ -1,0 +1,72 @@
+diff -Naur xz-5.8.3.orig/build-aux/test-driver xz-5.8.3/build-aux/test-driver
+--- xz-5.8.3.orig/build-aux/test-driver	2026-03-31 15:27:10.000000000 +0000
++++ xz-5.8.3/build-aux/test-driver	2026-03-31 15:27:10.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur xz-5.8.3.orig/tests/test_compress.sh xz-5.8.3/tests/test_compress.sh
+--- xz-5.8.3.orig/tests/test_compress.sh	2026-03-31 15:27:00.000000000 +0000
++++ xz-5.8.3/tests/test_compress.sh	2026-03-31 15:27:00.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: 0BSD
+ 
+ ###############################################################################
+diff -Naur xz-5.8.3.orig/tests/test_compress_generated_abc xz-5.8.3/tests/test_compress_generated_abc
+--- xz-5.8.3.orig/tests/test_compress_generated_abc	2026-03-31 15:27:00.000000000 +0000
++++ xz-5.8.3/tests/test_compress_generated_abc	2026-03-31 15:27:00.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: 0BSD
+ 
+ exec "$srcdir/test_compress.sh" compress_generated_abc
+diff -Naur xz-5.8.3.orig/tests/test_compress_generated_random xz-5.8.3/tests/test_compress_generated_random
+--- xz-5.8.3.orig/tests/test_compress_generated_random	2026-03-31 15:27:00.000000000 +0000
++++ xz-5.8.3/tests/test_compress_generated_random	2026-03-31 15:27:00.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: 0BSD
+ 
+ exec "$srcdir/test_compress.sh" compress_generated_random
+diff -Naur xz-5.8.3.orig/tests/test_compress_generated_text xz-5.8.3/tests/test_compress_generated_text
+--- xz-5.8.3.orig/tests/test_compress_generated_text	2026-03-31 15:27:00.000000000 +0000
++++ xz-5.8.3/tests/test_compress_generated_text	2026-03-31 15:27:00.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: 0BSD
+ 
+ exec "$srcdir/test_compress.sh" compress_generated_text
+diff -Naur xz-5.8.3.orig/tests/test_files.sh xz-5.8.3/tests/test_files.sh
+--- xz-5.8.3.orig/tests/test_files.sh	2026-03-31 15:27:00.000000000 +0000
++++ xz-5.8.3/tests/test_files.sh	2026-03-31 15:27:00.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: 0BSD
+ 
+ ###############################################################################
+diff -Naur xz-5.8.3.orig/tests/test_scripts.sh xz-5.8.3/tests/test_scripts.sh
+--- xz-5.8.3.orig/tests/test_scripts.sh	2026-03-31 15:27:00.000000000 +0000
++++ xz-5.8.3/tests/test_scripts.sh	2026-03-31 15:27:00.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: 0BSD
+ 
+ ###############################################################################
+diff -Naur xz-5.8.3.orig/tests/test_suffix.sh xz-5.8.3/tests/test_suffix.sh
+--- xz-5.8.3.orig/tests/test_suffix.sh	2026-03-31 15:27:00.000000000 +0000
++++ xz-5.8.3/tests/test_suffix.sh	2026-03-31 15:27:00.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: 0BSD
+ 
+ ###############################################################################

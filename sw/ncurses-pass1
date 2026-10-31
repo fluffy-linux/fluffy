@@ -6,8 +6,15 @@ ARCHIVES=(
     355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://invisible-mirror.net/archives/ncurses/ncurses-$VERSION.tar.gz
 )
 
-NEEDS=(libstdcpp-pass1)
-MAKE_NEEDS=(gcc-pass1 libstdcpp-pass1 linux-headers)
+NEEDS=(
+    libstdcpp-pass1
+)
+
+MAKE_NEEDS=(
+    gcc-pass1
+    libstdcpp-pass1
+    linux-headers
+)
 
 MAKE() {
     mkdir -pv build
@@ -35,7 +42,11 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 libstdcpp-pass1 linux-headers)
+INSTALL_NEEDS=(
+    gcc-pass1
+    libstdcpp-pass1
+    linux-headers
+)
 
 INSTALL() {
     PATH="$PWD/build/progs:$PATH" make install

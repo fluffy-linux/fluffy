@@ -1,0 +1,33 @@
+diff -uNr gcc-16.2.0.orig/gcc/config.gcc gcc-16.2.0/gcc/config.gcc
+--- gcc-16.2.0.orig/gcc/config.gcc	2026-08-07 03:46:05.845684962 -0400
++++ gcc-16.2.0/gcc/config.gcc	2026-10-27 18:34:00.000000000 -0400
+@@ -260,7 +260,7 @@
+ default_gnu_indirect_function=no
+ target_gtfiles=
+ need_64bit_isa=
+-native_system_header_dir=/usr/include
++native_system_header_dir=/sw/glibc/include
+ target_type_format_char='@'
+ 
+ # Don't carry these over build->host->target.  Please.
+diff -uNr gcc-16.2.0.orig/gcc/configure gcc-16.2.0/gcc/configure
+--- gcc-16.2.0.orig/gcc/configure	2026-08-07 03:46:06.059688285 -0400
++++ gcc-16.2.0/gcc/configure	2026-10-27 18:34:00.000000000 -0400
+@@ -15286,7 +15286,7 @@
+ 
+ if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x ||
+    test x$build != x$host || test "x$with_build_sysroot" != x; then
+-  if test "x$with_build_sysroot" != x; then
++  if test "x$with_build_sysroot" != x || test x$host = x$target; then
+     BUILD_SYSTEM_HEADER_DIR=$with_build_sysroot'$${sysroot_headers_suffix}$(NATIVE_SYSTEM_HEADER_DIR)'
+   else
+     BUILD_SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
+@@ -15299,7 +15299,7 @@
+     SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
+   fi
+ 
+-  if test "x$with_build_sysroot" != "x"; then
++  if test "x$with_build_sysroot" != "x" || test x$host = x$target; then
+     target_header_dir="${with_build_sysroot}${native_system_header_dir}"
+   elif test "x$with_sysroot" = x; then
+     target_header_dir="${test_exec_prefix}/${target_noncanonical}/sys-include"

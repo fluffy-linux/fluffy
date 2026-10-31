@@ -1,0 +1,28 @@
+diff -Naur m4-1.4.21.orig/lib/spawn_faction_addchdir.c m4-1.4.21/lib/spawn_faction_addchdir.c
+--- m4-1.4.21.orig/lib/spawn_faction_addchdir.c	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/lib/spawn_faction_addchdir.c	2026-02-03 19:04:18.000000000 +0000
+@@ -26,6 +26,7 @@
+ # include "spawn_int.h"
+ #endif
+ 
++#if REPLACE_POSIX_SPAWN
+ /* Add an action to FILE-ACTIONS which tells the implementation to call
+    'chdir' to the given directory during the 'spawn' call.  */
+ int
+@@ -33,9 +34,6 @@
+                                    const char *path)
+ #undef posix_spawn_file_actions_addchdir
+ {
+-#if !REPLACE_POSIX_SPAWN
+-  return posix_spawn_file_actions_addchdir_np (file_actions, path);
+-#else
+   {
+     /* Copy PATH, because the caller may free it before calling posix_spawn()
+        or posix_spawnp().  */
+@@ -66,5 +64,5 @@
+       return 0;
+     }
+   }
+-#endif
+ }
++#endif

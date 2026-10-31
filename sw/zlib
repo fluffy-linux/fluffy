@@ -4,25 +4,59 @@ VERSION=1.3.2
 
 ARCHIVES=(
     bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16 https://zlib.net/fossils/zlib-$VERSION.tar.gz
-    c7b7b2db319caaa64c785a2eb1bd500aa963647f77f7d6c2100119c7ca95381b file://zlib-$VERSION-fluffy.patch
+    521833b4e36d84b9dc80e1bd393277861282ac1d72323b55270d3e47f91bc45c file://zlib-$VERSION-fluffy-shell.patch
+    488dd373e46ae3fee312810f37cba3a27f3f93d4434c821d09e726a00d3b87da file://zlib-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(glibc)
-MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1 glibc)
+NEEDS=(
+    glibc
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    gzip-pass1
+    linux-headers
+    make-pass1
+    patch-pass1
+    sed-pass1
+    tar-pass1
+    xz-pass1
+)
 
 MAKE() {
-    patch -Np1 -i zlib-$VERSION-fluffy.patch
+    patch -Z -Np1 -i zlib-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i zlib-$VERSION-fluffy-source.patch
     ./configure --prefix=/sw/zlib
     make
 }
 
-CHECK_NEEDS=(bash-pass1 binutils-pass2 coreutils-pass1 diffutils-pass1 make-pass1 glibc)
+CHECK_NEEDS=(
+    bash-pass1
+    binutils-pass2
+    coreutils-pass1
+    diffutils-pass1
+    glibc
+    make-pass1
+)
 
 CHECK() {
     make check
 }
 
-INSTALL_NEEDS=(bash-pass1 binutils-pass2 coreutils-pass1 make-pass1 glibc)
+INSTALL_NEEDS=(
+    bash-pass1
+    binutils-pass2
+    coreutils-pass1
+    glibc
+    make-pass1
+)
 
 INSTALL() {
     make install

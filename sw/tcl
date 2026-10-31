@@ -4,14 +4,36 @@ VERSION=8.6.18
 
 ARCHIVES=(
     14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://downloads.sourceforge.net/tcl/tcl$VERSION-src.tar.gz
-    8ce630ced6ce4f4f75135563179a3be7ae3df67b1257a663c5121299385f50df file://tcl$VERSION-fluffy.patch
+    9832123f0ff7fe7280e7419eab14079a6b65665a89976513a5d3323f114a769d file://tcl$VERSION-fluffy-shell.patch
+    cf6d671134286b15b9dc5a596ae473df01172e41739f208f299ce2eac379eec3 file://tcl$VERSION-fluffy-source.patch
 )
 
-NEEDS=(glibc zlib)
-MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 zlib)
+NEEDS=(
+    glibc
+    zlib
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    gzip-pass1
+    linux-headers
+    make-pass1
+    patch-pass1
+    sed-pass1
+    tar-pass1
+    zlib
+)
 
 MAKE() {
-    patch -Z -Np1 -i tcl$VERSION-fluffy.patch
+    patch -Z -Np1 -i tcl$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i tcl$VERSION-fluffy-source.patch
 
     SRCDIR=$(pwd)
     cd unix
@@ -40,14 +62,32 @@ MAKE() {
     unset SRCDIR
 }
 
-CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1 zlib)
+CHECK_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    make-pass1
+    sed-pass1
+    zlib
+)
 
 CHECK() {
     cd unix
-    LC_ALL=C.UTF-8 make test
+    make test
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 glibc make-pass1 sed-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    gcc-pass2
+    glibc
+    make-pass1
+    sed-pass1
+)
 
 INSTALL() {
     cd unix

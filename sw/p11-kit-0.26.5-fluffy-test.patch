@@ -1,0 +1,135 @@
+diff -Naur p11-kit-0.26.5.orig/build/litter/test-driver p11-kit-0.26.5/build/litter/test-driver
+--- p11-kit-0.26.5.orig/build/litter/test-driver	2026-08-06 06:06:55.000000000 -0400
++++ p11-kit-0.26.5/build/litter/test-driver	2026-10-28 01:23:19.877507438 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur p11-kit-0.26.5.orig/common/test-init.sh.in p11-kit-0.26.5/common/test-init.sh.in
+--- p11-kit-0.26.5.orig/common/test-init.sh.in	2023-10-26 05:56:44.000000000 -0400
++++ p11-kit-0.26.5/common/test-init.sh.in	2026-10-28 01:23:19.887532751 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ set -euf
+ 
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-export-public.sh p11-kit-0.26.5/p11-kit/test-export-public.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-export-public.sh	2023-10-26 05:56:44.000000000 -0400
++++ p11-kit-0.26.5/p11-kit/test-export-public.sh	2026-10-28 01:23:19.881977025 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test public key export from mock-twelve.so (mock-module-ep10.c).
+ 
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-generate-keypair.sh p11-kit-0.26.5/p11-kit/test-generate-keypair.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-generate-keypair.sh	2024-01-11 03:44:17.000000000 -0500
++++ p11-kit-0.26.5/p11-kit/test-generate-keypair.sh	2026-10-28 01:23:19.880556591 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-import-public.sh p11-kit-0.26.5/p11-kit/test-import-public.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-import-public.sh	2024-01-10 05:11:18.000000000 -0500
++++ p11-kit-0.26.5/p11-kit/test-import-public.sh	2026-10-28 01:23:19.885029401 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-list-mechanisms.sh p11-kit-0.26.5/p11-kit/test-list-mechanisms.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-list-mechanisms.sh	2023-10-26 05:56:44.000000000 -0400
++++ p11-kit-0.26.5/p11-kit/test-list-mechanisms.sh	2026-10-28 01:23:19.883942247 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-lists.sh p11-kit-0.26.5/p11-kit/test-lists.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-lists.sh	2023-10-31 04:47:26.000000000 -0400
++++ p11-kit-0.26.5/p11-kit/test-lists.sh	2026-10-28 01:23:19.879012691 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-list-tokens.sh p11-kit-0.26.5/p11-kit/test-list-tokens.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-list-tokens.sh	2024-01-03 07:31:03.000000000 -0500
++++ p11-kit-0.26.5/p11-kit/test-list-tokens.sh	2026-10-28 01:23:19.882134652 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test public key export from mock-twelve.so (mock-module-ep10.c).
+ 
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-messages.sh p11-kit-0.26.5/p11-kit/test-messages.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-messages.sh	2023-10-26 05:56:44.000000000 -0400
++++ p11-kit-0.26.5/p11-kit/test-messages.sh	2026-10-28 01:23:19.884895966 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-objects.sh p11-kit-0.26.5/p11-kit/test-objects.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-objects.sh	2026-07-07 10:38:34.000000000 -0400
++++ p11-kit-0.26.5/p11-kit/test-objects.sh	2026-10-28 01:23:19.883518460 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-profiles.sh p11-kit-0.26.5/p11-kit/test-profiles.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-profiles.sh	2023-10-26 05:56:44.000000000 -0400
++++ p11-kit-0.26.5/p11-kit/test-profiles.sh	2026-10-28 01:23:19.884779219 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-server.sh p11-kit-0.26.5/p11-kit/test-server.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-server.sh	2023-10-26 05:56:44.000000000 -0400
++++ p11-kit-0.26.5/p11-kit/test-server.sh	2026-10-28 01:23:19.879789488 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/p11-kit/test-softhsm2.sh p11-kit-0.26.5/p11-kit/test-softhsm2.sh
+--- p11-kit-0.26.5.orig/p11-kit/test-softhsm2.sh	2023-10-31 04:47:26.000000000 -0400
++++ p11-kit-0.26.5/p11-kit/test-softhsm2.sh	2026-10-28 01:23:19.879701136 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/trust/test-extract.sh p11-kit-0.26.5/trust/test-extract.sh
+--- p11-kit-0.26.5.orig/trust/test-extract.sh	2023-10-31 04:47:26.000000000 -0400
++++ p11-kit-0.26.5/trust/test-extract.sh	2026-10-28 01:23:19.901905724 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2
+diff -Naur p11-kit-0.26.5.orig/trust/test-trust.sh p11-kit-0.26.5/trust/test-trust.sh
+--- p11-kit-0.26.5.orig/trust/test-trust.sh	2023-10-31 04:47:26.000000000 -0400
++++ p11-kit-0.26.5/trust/test-trust.sh	2026-10-28 01:23:19.901766378 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ test "${abs_top_builddir+set}" = set || {
+ 	echo "set abs_top_builddir" 1>&2

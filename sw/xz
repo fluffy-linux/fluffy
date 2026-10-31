@@ -4,14 +4,34 @@ VERSION=5.8.3
 
 ARCHIVES=(
     fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6 https://github.com/tukaani-project/xz/releases/download/v$VERSION/xz-$VERSION.tar.xz
-    ea471da25eebebc704994f4d48faf67df11e1c5f329b5fdc48effe7dfc91b78c file://xz-$VERSION-fluffy.patch
+    e3b881e891a9611614dd4a4f40eb2aeac91d35d443006ac4637b7a4c6e690717 file://xz-$VERSION-fluffy-shell.patch
+    526f289fe73f03d3e96f92709b0859e989738e4d9974968fb94c7375d0fa3092 file://xz-$VERSION-fluffy-test.patch
 )
 
-NEEDS=(glibc)
-MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1)
+NEEDS=(
+    glibc
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    linux-headers
+    make-pass1
+    patch-pass1
+    sed-pass1
+    tar-pass1
+    xz-pass1
+)
 
 MAKE() {
-    patch -Z -Np1 -i xz-$VERSION-fluffy.patch
+    patch -Z -Np1 -i xz-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i xz-$VERSION-fluffy-test.patch
     ./configure \
         --prefix=/sw/xz \
         --disable-static \
@@ -19,13 +39,31 @@ MAKE() {
     make
 }
 
-CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1)
+CHECK_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    make-pass1
+    sed-pass1
+)
 
 CHECK() {
     make check
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 gawk-pass1 glibc grep-pass1 make-pass1 sed-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    gawk-pass1
+    glibc
+    grep-pass1
+    make-pass1
+    sed-pass1
+)
 
 INSTALL() {
     make install

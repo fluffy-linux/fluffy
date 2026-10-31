@@ -2,11 +2,13 @@ VERSION=0.26.5
 
 ARCHIVES=(
     f2cc09111e44bf3fea58f023180b33acea90aa82d042d6fbb623fbc5ba033bb7 https://github.com/p11-glue/p11-kit/releases/download/$VERSION/p11-kit-$VERSION.tar.xz
-    d260b3758fbbb3bf8ab7b6c2a8608a217b9385474da0ecb78a97af4e98e3fd68 file://p11-kit-$VERSION-fluffy.patch
+    52d81b7ce5ec2f703131ed36a03d0a7eb097f6a98b500dba3736853716fdd96e file://p11-kit-$VERSION-fluffy-shell.patch
+    d5a8f80223afccb9c38b21e8a45ced672e205abfa1e1fb9dea296c26e5104d8b file://p11-kit-$VERSION-fluffy-test.patch
 )
 
 MAKE() {
-    patch -Np1 -i p11-kit-$VERSION-fluffy.patch
+    patch -Z -Np1 -i p11-kit-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i p11-kit-$VERSION-fluffy-test.patch
     ./configure \
         --prefix=/sw/p11-kit \
         --sysconfdir=/etc \

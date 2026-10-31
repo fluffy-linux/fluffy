@@ -1,0 +1,69 @@
+diff -Naur binutils-2.47.orig/ld/ldfile.c binutils-2.47/ld/ldfile.c
+--- binutils-2.47.orig/ld/ldfile.c	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/ldfile.c	2026-07-25 23:00:00.000000000 +0000
+@@ -312,20 +312,45 @@
+   if (!cmdline && config.only_cmd_line_lib_dirs)
+     return;
+ 
++  if (name[0] == '=')
++    {
++      char *real_name = concat (ld_sysroot, name + 1, (const char *) NULL);
++      ldfile_add_library_path (real_name, cmdline);
++      free (real_name);
++      return;
++    }
++  if (startswith (name, "$SYSROOT"))
++    {
++      char *real_name = concat (ld_sysroot, name + strlen ("$SYSROOT"), (const char *) NULL);
++      ldfile_add_library_path (real_name, cmdline);
++      free (real_name);
++      return;
++    }
++
++  if (strpbrk (name, "*?["))
++    {
++      glob_t globbuf;
++      memset (&globbuf, 0, sizeof (globbuf));
++      if (glob (name, 0, NULL, &globbuf) == 0)
++	{
++	  size_t i;
++	  for (i = 0; i < globbuf.gl_pathc; i++)
++	    {
++	      struct stat st;
++	      if (stat (globbuf.gl_pathv[i], &st) == 0 && S_ISDIR (st.st_mode))
++		ldfile_add_library_path (globbuf.gl_pathv[i], cmdline);
++	    }
++	  globfree (&globbuf);
++	}
++      return;
++    }
++
+   new_dirs = (search_dirs_type *) xmalloc (sizeof (search_dirs_type));
+   new_dirs->next = NULL;
+   new_dirs->cmdline = cmdline;
+   *search_tail_ptr = new_dirs;
+   search_tail_ptr = &new_dirs->next;
+-
+-  /* If a directory is marked as honoring sysroot, prepend the sysroot path
+-     now.  */
+-  if (name[0] == '=')
+-    new_dirs->name = concat (ld_sysroot, name + 1, (const char *) NULL);
+-  else if (startswith (name, "$SYSROOT"))
+-    new_dirs->name = concat (ld_sysroot, name + strlen ("$SYSROOT"), (const char *) NULL);
+-  else
+-    new_dirs->name = xstrdup (name);
++  new_dirs->name = xstrdup (name);
+ }
+ 
+ static void
+diff -Naur binutils-2.47.orig/ld/sysdep.h binutils-2.47/ld/sysdep.h
+--- binutils-2.47.orig/ld/sysdep.h	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/sysdep.h	2026-07-25 23:00:00.000000000 +0000
+@@ -37,6 +37,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <stdarg.h>
++#include <glob.h>
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+ #endif

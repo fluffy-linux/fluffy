@@ -1,0 +1,50 @@
+ON=host-build
+
+VERSION=1.0.8
+
+ARCHIVES=(
+    ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269 https://www.sourceware.org/pub/bzip2/bzip2-$VERSION.tar.gz
+    3106aa94add5284967203214bd3d6f39adab552ebbe9171fc73cd74ba1e5f602 file://bzip2-$VERSION-fluffy-shell.patch
+    63d77923fbbe5e2a4419639b5774bc98a9eace5ca6d37886a8ca339604a4f1cd file://bzip2-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    binutils-pass1
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+    patch-pass1
+)
+
+MAKE() {
+    patch -Z -Np1 -i bzip2-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i bzip2-$VERSION-fluffy-source.patch
+    make \
+        CC=$FLUFFY_TGT-gcc \
+        AR=$FLUFFY_TGT-ar \
+        RANLIB=$FLUFFY_TGT-ranlib \
+        bzip2 bzip2recover
+}
+
+INSTALL_NEEDS=(
+    binutils-pass1
+    gcc-pass1
+    glibc-pass1
+)
+
+INSTALL() {
+    make \
+        PREFIX=$DESTDIR/sw/bzip2 \
+        CC=$FLUFFY_TGT-gcc \
+        AR=$FLUFFY_TGT-ar \
+        RANLIB=$FLUFFY_TGT-ranlib \
+        install
+    for i in $DESTDIR/sw/bzip2/bin/{bzcat,bunzip2}
+    do
+        ln -sfv bzip2 "$i"
+    done
+}

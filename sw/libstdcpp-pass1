@@ -6,8 +6,15 @@ ARCHIVES=(
     e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 MAKE() {
     mkdir -v build
@@ -23,7 +30,11 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
+INSTALL_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
 
 INSTALL() {
     cd build

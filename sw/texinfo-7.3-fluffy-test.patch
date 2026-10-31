@@ -1,0 +1,1995 @@
+diff -Naur texinfo-7.3.orig/Pod-Simple-Texinfo/test_scripts/manual_sectioning_gap_test.sh texinfo-7.3/Pod-Simple-Texinfo/test_scripts/manual_sectioning_gap_test.sh
+--- texinfo-7.3.orig/Pod-Simple-Texinfo/test_scripts/manual_sectioning_gap_test.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/Pod-Simple-Texinfo/test_scripts/manual_sectioning_gap_test.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/Pod-Simple-Texinfo/test_scripts/test_empty_head2.sh texinfo-7.3/Pod-Simple-Texinfo/test_scripts/test_empty_head2.sh
+--- texinfo-7.3.orig/Pod-Simple-Texinfo/test_scripts/test_empty_head2.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/Pod-Simple-Texinfo/test_scripts/test_empty_head2.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/Pod-Simple-Texinfo/test_scripts/test_ref_to_unknown.sh texinfo-7.3/Pod-Simple-Texinfo/test_scripts/test_ref_to_unknown.sh
+--- texinfo-7.3.orig/Pod-Simple-Texinfo/test_scripts/test_ref_to_unknown.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/Pod-Simple-Texinfo/test_scripts/test_ref_to_unknown.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/build-aux/m4/progtest.m4 texinfo-7.3/build-aux/m4/progtest.m4
+--- texinfo-7.3.orig/build-aux/m4/progtest.m4	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/build-aux/m4/progtest.m4	2026-03-01 17:03:26.000000000 +0000
+@@ -29,7 +29,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -42,7 +42,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+diff -Naur texinfo-7.3.orig/build-aux/test-driver texinfo-7.3/build-aux/test-driver
+--- texinfo-7.3.orig/build-aux/test-driver	2025-12-13 01:11:57.000000000 +0000
++++ texinfo-7.3/build-aux/test-driver	2025-12-13 01:11:57.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0001-test texinfo-7.3/install-info/tests/ii-0001-test
+--- texinfo-7.3.orig/install-info/tests/ii-0001-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0001-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0002-test texinfo-7.3/install-info/tests/ii-0002-test
+--- texinfo-7.3.orig/install-info/tests/ii-0002-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0002-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0003-test texinfo-7.3/install-info/tests/ii-0003-test
+--- texinfo-7.3.orig/install-info/tests/ii-0003-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0003-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0004-test texinfo-7.3/install-info/tests/ii-0004-test
+--- texinfo-7.3.orig/install-info/tests/ii-0004-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0004-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0005-test texinfo-7.3/install-info/tests/ii-0005-test
+--- texinfo-7.3.orig/install-info/tests/ii-0005-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0005-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0006-test texinfo-7.3/install-info/tests/ii-0006-test
+--- texinfo-7.3.orig/install-info/tests/ii-0006-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0006-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0007-test texinfo-7.3/install-info/tests/ii-0007-test
+--- texinfo-7.3.orig/install-info/tests/ii-0007-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0007-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0008-test texinfo-7.3/install-info/tests/ii-0008-test
+--- texinfo-7.3.orig/install-info/tests/ii-0008-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0008-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0009-test texinfo-7.3/install-info/tests/ii-0009-test
+--- texinfo-7.3.orig/install-info/tests/ii-0009-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0009-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0010-test texinfo-7.3/install-info/tests/ii-0010-test
+--- texinfo-7.3.orig/install-info/tests/ii-0010-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0010-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0011-test texinfo-7.3/install-info/tests/ii-0011-test
+--- texinfo-7.3.orig/install-info/tests/ii-0011-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0011-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0012-test texinfo-7.3/install-info/tests/ii-0012-test
+--- texinfo-7.3.orig/install-info/tests/ii-0012-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0012-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0013-test texinfo-7.3/install-info/tests/ii-0013-test
+--- texinfo-7.3.orig/install-info/tests/ii-0013-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0013-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0014-test texinfo-7.3/install-info/tests/ii-0014-test
+--- texinfo-7.3.orig/install-info/tests/ii-0014-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0014-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0015-test texinfo-7.3/install-info/tests/ii-0015-test
+--- texinfo-7.3.orig/install-info/tests/ii-0015-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0015-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0016-test texinfo-7.3/install-info/tests/ii-0016-test
+--- texinfo-7.3.orig/install-info/tests/ii-0016-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0016-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0017-test texinfo-7.3/install-info/tests/ii-0017-test
+--- texinfo-7.3.orig/install-info/tests/ii-0017-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0017-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0018-test texinfo-7.3/install-info/tests/ii-0018-test
+--- texinfo-7.3.orig/install-info/tests/ii-0018-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0018-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0019-test texinfo-7.3/install-info/tests/ii-0019-test
+--- texinfo-7.3.orig/install-info/tests/ii-0019-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0019-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0020-test texinfo-7.3/install-info/tests/ii-0020-test
+--- texinfo-7.3.orig/install-info/tests/ii-0020-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0020-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0021-test texinfo-7.3/install-info/tests/ii-0021-test
+--- texinfo-7.3.orig/install-info/tests/ii-0021-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0021-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0022-test texinfo-7.3/install-info/tests/ii-0022-test
+--- texinfo-7.3.orig/install-info/tests/ii-0022-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0022-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0023-test texinfo-7.3/install-info/tests/ii-0023-test
+--- texinfo-7.3.orig/install-info/tests/ii-0023-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0023-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0024-test texinfo-7.3/install-info/tests/ii-0024-test
+--- texinfo-7.3.orig/install-info/tests/ii-0024-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0024-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0025-test texinfo-7.3/install-info/tests/ii-0025-test
+--- texinfo-7.3.orig/install-info/tests/ii-0025-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0025-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0026-test texinfo-7.3/install-info/tests/ii-0026-test
+--- texinfo-7.3.orig/install-info/tests/ii-0026-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0026-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0027-test texinfo-7.3/install-info/tests/ii-0027-test
+--- texinfo-7.3.orig/install-info/tests/ii-0027-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0027-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0028-test texinfo-7.3/install-info/tests/ii-0028-test
+--- texinfo-7.3.orig/install-info/tests/ii-0028-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0028-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0029-test texinfo-7.3/install-info/tests/ii-0029-test
+--- texinfo-7.3.orig/install-info/tests/ii-0029-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0029-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0030-test texinfo-7.3/install-info/tests/ii-0030-test
+--- texinfo-7.3.orig/install-info/tests/ii-0030-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0030-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0031-test texinfo-7.3/install-info/tests/ii-0031-test
+--- texinfo-7.3.orig/install-info/tests/ii-0031-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0031-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0032-test texinfo-7.3/install-info/tests/ii-0032-test
+--- texinfo-7.3.orig/install-info/tests/ii-0032-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0032-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0033-test texinfo-7.3/install-info/tests/ii-0033-test
+--- texinfo-7.3.orig/install-info/tests/ii-0033-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0033-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0034-test texinfo-7.3/install-info/tests/ii-0034-test
+--- texinfo-7.3.orig/install-info/tests/ii-0034-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0034-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0035-test texinfo-7.3/install-info/tests/ii-0035-test
+--- texinfo-7.3.orig/install-info/tests/ii-0035-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0035-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0036-test texinfo-7.3/install-info/tests/ii-0036-test
+--- texinfo-7.3.orig/install-info/tests/ii-0036-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0036-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0037-test texinfo-7.3/install-info/tests/ii-0037-test
+--- texinfo-7.3.orig/install-info/tests/ii-0037-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0037-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0038-test texinfo-7.3/install-info/tests/ii-0038-test
+--- texinfo-7.3.orig/install-info/tests/ii-0038-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0038-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0039-test texinfo-7.3/install-info/tests/ii-0039-test
+--- texinfo-7.3.orig/install-info/tests/ii-0039-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0039-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0040-test texinfo-7.3/install-info/tests/ii-0040-test
+--- texinfo-7.3.orig/install-info/tests/ii-0040-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0040-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0041-test texinfo-7.3/install-info/tests/ii-0041-test
+--- texinfo-7.3.orig/install-info/tests/ii-0041-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0041-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0042-test texinfo-7.3/install-info/tests/ii-0042-test
+--- texinfo-7.3.orig/install-info/tests/ii-0042-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0042-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0043-test texinfo-7.3/install-info/tests/ii-0043-test
+--- texinfo-7.3.orig/install-info/tests/ii-0043-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0043-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0044-test texinfo-7.3/install-info/tests/ii-0044-test
+--- texinfo-7.3.orig/install-info/tests/ii-0044-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0044-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0045-test texinfo-7.3/install-info/tests/ii-0045-test
+--- texinfo-7.3.orig/install-info/tests/ii-0045-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0045-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0046-test texinfo-7.3/install-info/tests/ii-0046-test
+--- texinfo-7.3.orig/install-info/tests/ii-0046-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0046-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0047-test texinfo-7.3/install-info/tests/ii-0047-test
+--- texinfo-7.3.orig/install-info/tests/ii-0047-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0047-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0048-test texinfo-7.3/install-info/tests/ii-0048-test
+--- texinfo-7.3.orig/install-info/tests/ii-0048-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0048-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0049-test texinfo-7.3/install-info/tests/ii-0049-test
+--- texinfo-7.3.orig/install-info/tests/ii-0049-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0049-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0050-test texinfo-7.3/install-info/tests/ii-0050-test
+--- texinfo-7.3.orig/install-info/tests/ii-0050-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0050-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0051-test texinfo-7.3/install-info/tests/ii-0051-test
+--- texinfo-7.3.orig/install-info/tests/ii-0051-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0051-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0052-test texinfo-7.3/install-info/tests/ii-0052-test
+--- texinfo-7.3.orig/install-info/tests/ii-0052-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0052-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0053-test texinfo-7.3/install-info/tests/ii-0053-test
+--- texinfo-7.3.orig/install-info/tests/ii-0053-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0053-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0054-test texinfo-7.3/install-info/tests/ii-0054-test
+--- texinfo-7.3.orig/install-info/tests/ii-0054-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0054-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0055-test texinfo-7.3/install-info/tests/ii-0055-test
+--- texinfo-7.3.orig/install-info/tests/ii-0055-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0055-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0056-test texinfo-7.3/install-info/tests/ii-0056-test
+--- texinfo-7.3.orig/install-info/tests/ii-0056-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0056-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0057-test texinfo-7.3/install-info/tests/ii-0057-test
+--- texinfo-7.3.orig/install-info/tests/ii-0057-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0057-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0058-test texinfo-7.3/install-info/tests/ii-0058-test
+--- texinfo-7.3.orig/install-info/tests/ii-0058-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0058-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0059-test texinfo-7.3/install-info/tests/ii-0059-test
+--- texinfo-7.3.orig/install-info/tests/ii-0059-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0059-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/install-info/tests/ii-0060-test texinfo-7.3/install-info/tests/ii-0060-test
+--- texinfo-7.3.orig/install-info/tests/ii-0060-test	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/install-info/tests/ii-0060-test	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # This file is free software; as a special exception the author gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+diff -Naur texinfo-7.3.orig/texindex/tests/ti-helpversion.sh texinfo-7.3/texindex/tests/ti-helpversion.sh
+--- texinfo-7.3.orig/texindex/tests/ti-helpversion.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/texindex/tests/ti-helpversion.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This file is public domain.
+ 
+ # check texindex --help and --version.  We'll just ensure that stdout is
+@@ -9,7 +9,7 @@
+ ####
+ set -x
+ # Make sure we override the user shell.
+-SHELL='/bin/sh'; export SHELL
++SHELL='/sw/bash/bin/bash'; export SHELL
+ 
+ # unsetting an already-unset variable fails with BSD sh.
+ CDPATH=; unset CDPATH
+diff -Naur texinfo-7.3.orig/tta/build-aux/m4/progtest.m4 texinfo-7.3/tta/build-aux/m4/progtest.m4
+--- texinfo-7.3.orig/tta/build-aux/m4/progtest.m4	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/tta/build-aux/m4/progtest.m4	2026-03-01 17:03:26.000000000 +0000
+@@ -29,7 +29,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -42,7 +42,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+diff -Naur texinfo-7.3.orig/tta/build-aux/test-driver texinfo-7.3/tta/build-aux/test-driver
+--- texinfo-7.3.orig/tta/build-aux/test-driver	2025-12-13 01:11:50.000000000 +0000
++++ texinfo-7.3/tta/build-aux/test-driver	2025-12-13 01:11:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur texinfo-7.3.orig/tta/maintain/all_tests.sh texinfo-7.3/tta/maintain/all_tests.sh
+--- texinfo-7.3.orig/tta/maintain/all_tests.sh	2026-03-01 17:03:26.000000000 +0000
++++ texinfo-7.3/tta/maintain/all_tests.sh	2026-03-01 17:03:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Helper script for tests.
+ #
+ # Copyright 2011-2026 Free Software Foundation, Inc.
+diff -Naur texinfo-7.3.orig/tta/maintain/regenerate_cmd_tests.sh texinfo-7.3/tta/maintain/regenerate_cmd_tests.sh
+--- texinfo-7.3.orig/tta/maintain/regenerate_cmd_tests.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/maintain/regenerate_cmd_tests.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Use information from test driving files to regenerate test scripts
+ # that run only one test, and file lists to be used in Makefiles.
+ #
+@@ -90,7 +90,7 @@
+     one_test_file="$test_scripts_dir/${name_prepended}$name.sh"
+     type_test_files="$type_test_files \\
+     $one_test_file"
+-    echo '#! /bin/sh
++    echo '#! /sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/swig/perl/test_refold.sh texinfo-7.3/tta/swig/perl/test_refold.sh
+--- texinfo-7.3.orig/tta/swig/perl/test_refold.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/swig/perl/test_refold.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test_refold.sh: compare the output of parse_refold.pl and the original
+ # file for all the Texinfo manuals generated based on tta/perl/t/*.t tests
+ 
+diff -Naur texinfo-7.3.orig/tta/swig/perl/test_scripts/test_expansion_lines_block.sh texinfo-7.3/tta/swig/perl/test_scripts/test_expansion_lines_block.sh
+--- texinfo-7.3.orig/tta/swig/perl/test_scripts/test_expansion_lines_block.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/swig/perl/test_scripts/test_expansion_lines_block.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/swig/perl/test_scripts/test_includes.sh texinfo-7.3/tta/swig/perl/test_scripts/test_includes.sh
+--- texinfo-7.3.orig/tta/swig/perl/test_scripts/test_includes.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/swig/perl/test_scripts/test_includes.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/swig/perl/test_scripts/test_macro_expand.sh texinfo-7.3/tta/swig/perl/test_scripts/test_macro_expand.sh
+--- texinfo-7.3.orig/tta/swig/perl/test_scripts/test_macro_expand.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/swig/perl/test_scripts/test_macro_expand.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/swig/perl/test_scripts/test_non_ascii_in_macro.sh texinfo-7.3/tta/swig/perl/test_scripts/test_non_ascii_in_macro.sh
+--- texinfo-7.3.orig/tta/swig/perl/test_scripts/test_non_ascii_in_macro.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/swig/perl/test_scripts/test_non_ascii_in_macro.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/swig/perl/test_scripts/test_texinfo_manual.sh texinfo-7.3/tta/swig/perl/test_scripts/test_texinfo_manual.sh
+--- texinfo-7.3.orig/tta/swig/perl/test_scripts/test_texinfo_manual.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/swig/perl/test_scripts/test_texinfo_manual.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/different_encodings.sh texinfo-7.3/tta/tests/many_input_files/different_encodings.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/different_encodings.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/different_encodings.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/different_languages_gen_master_menu.sh texinfo-7.3/tta/tests/many_input_files/different_languages_gen_master_menu.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/different_languages_gen_master_menu.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/different_languages_gen_master_menu.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/first_file_not_found.sh texinfo-7.3/tta/tests/many_input_files/first_file_not_found.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/first_file_not_found.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/first_file_not_found.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/for_nbspaces_different_encodings.sh texinfo-7.3/tta/tests/many_input_files/for_nbspaces_different_encodings.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/for_nbspaces_different_encodings.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/for_nbspaces_different_encodings.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/input_dir_non_ascii.sh texinfo-7.3/tta/tests/many_input_files/input_dir_non_ascii.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/input_dir_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/input_dir_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/output_dir_file_non_ascii.sh texinfo-7.3/tta/tests/many_input_files/output_dir_file_non_ascii.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/output_dir_file_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/output_dir_file_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/output_dir_non_ascii.sh texinfo-7.3/tta/tests/many_input_files/output_dir_non_ascii.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/output_dir_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/output_dir_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/tex_l2h.sh texinfo-7.3/tta/tests/many_input_files/tex_l2h.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/tex_l2h.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/tex_l2h.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2012-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/tex_l2h_output_dir_non_ascii.sh texinfo-7.3/tta/tests/many_input_files/tex_l2h_output_dir_non_ascii.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/tex_l2h_output_dir_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/tex_l2h_output_dir_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2012-2026 Free Software Foundation, Inc.
+ #
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/tex_t4ht.sh texinfo-7.3/tta/tests/many_input_files/tex_t4ht.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/tex_t4ht.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/tex_t4ht.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ LC_ALL=C; export LC_ALL
+ 
+diff -Naur texinfo-7.3.orig/tta/tests/many_input_files/tex_t4ht_output_dir_non_ascii.sh texinfo-7.3/tta/tests/many_input_files/tex_t4ht_output_dir_non_ascii.sh
+--- texinfo-7.3.orig/tta/tests/many_input_files/tex_t4ht_output_dir_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/many_input_files/tex_t4ht_output_dir_non_ascii.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ LC_ALL=C; export LC_ALL
+ LANGUAGE=en; export LANGUAGE
+diff -Naur texinfo-7.3.orig/tta/tests/parser_tests.sh texinfo-7.3/tta/tests/parser_tests.sh
+--- texinfo-7.3.orig/tta/tests/parser_tests.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/parser_tests.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Run individual tests.
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+diff -Naur texinfo-7.3.orig/tta/tests/run_parser_all.sh texinfo-7.3/tta/tests/run_parser_all.sh
+--- texinfo-7.3.orig/tta/tests/run_parser_all.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/tta/tests/run_parser_all.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Run all Texinfo tests.
+ #
+ # Copyright 2010-2026 Free Software Foundation, Inc.
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_chm.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_chm.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_chm.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_chm.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_docbook.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_docbook.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_docbook.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_docbook.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_epub.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_epub.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_epub.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_epub.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_html32.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_html32.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_html32.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_html32.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_html_no_split.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_html_no_split.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_html_no_split.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_html_no_split.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_info.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_info.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_info.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_info.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_latex.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_latex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_latex.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_latex.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_macro_expand.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_macro_expand.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_macro_expand.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_macro_expand.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_plaintext.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_plaintext.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_plaintext.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_plaintext.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_rawtext.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_rawtext.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_rawtext.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_rawtext.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_regions.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_regions.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_regions.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_regions.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_textcontent.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_textcontent.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_textcontent.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_textcontent.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_xhtml.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_xhtml.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_xhtml.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_xhtml.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_xml.sh texinfo-7.3/tta/tests/test_scripts/coverage_formatting_xml.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/coverage_formatting_xml.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/coverage_formatting_xml.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_double_contents_after_title_book.sh texinfo-7.3/tta/tests/test_scripts/customization_double_contents_after_title_book.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_double_contents_after_title_book.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_double_contents_after_title_book.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_double_contents_after_title_book_chapter.sh texinfo-7.3/tta/tests/test_scripts/customization_double_contents_after_title_book_chapter.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_double_contents_after_title_book_chapter.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_double_contents_after_title_book_chapter.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_double_contents_book.sh texinfo-7.3/tta/tests/test_scripts/customization_double_contents_book.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_double_contents_book.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_double_contents_book.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_ignore_and_comments_output.sh texinfo-7.3/tta/tests/test_scripts/customization_ignore_and_comments_output.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_ignore_and_comments_output.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_ignore_and_comments_output.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_sectioning_directions.sh texinfo-7.3/tta/tests/test_scripts/customization_sectioning_directions.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_sectioning_directions.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_sectioning_directions.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_sectioning_directions_split_chapter.sh texinfo-7.3/tta/tests/test_scripts/customization_sectioning_directions_split_chapter.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_sectioning_directions_split_chapter.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_sectioning_directions_split_chapter.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_sectioning_without_anchors.sh texinfo-7.3/tta/tests/test_scripts/customization_sectioning_without_anchors.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_sectioning_without_anchors.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_sectioning_without_anchors.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_simplest_stage_handler_bad_return.sh texinfo-7.3/tta/tests/test_scripts/customization_simplest_stage_handler_bad_return.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_simplest_stage_handler_bad_return.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_simplest_stage_handler_bad_return.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_simplest_stage_handler_undef_return.sh texinfo-7.3/tta/tests/test_scripts/customization_simplest_stage_handler_undef_return.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_simplest_stage_handler_undef_return.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_simplest_stage_handler_undef_return.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_test_redefine_need.sh texinfo-7.3/tta/tests/test_scripts/customization_test_redefine_need.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_test_redefine_need.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_test_redefine_need.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/customization_texi_ignore_and_comments.sh texinfo-7.3/tta/tests/test_scripts/customization_texi_ignore_and_comments.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/customization_texi_ignore_and_comments.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/customization_texi_ignore_and_comments.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1.sh texinfo-7.3/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1_explicit_encoding.sh texinfo-7.3/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1_explicit_encoding.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1_explicit_encoding.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1_explicit_encoding.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1_use_locale_encoding.sh texinfo-7.3/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1_use_locale_encoding.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1_use_locale_encoding.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_manual_include_accented_file_name_latin1_use_locale_encoding.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_command_line.sh texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_command_line.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_command_line.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_command_line.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_no_setfilename_test_rawtext.sh texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_no_setfilename_test_rawtext.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_no_setfilename_test_rawtext.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_no_setfilename_test_rawtext.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_test_epub.sh texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_test_epub.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_test_epub.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_test_epub.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_test_info.sh texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_test_info.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_test_info.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_test_info.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_test_latex.sh texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_test_latex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_test_latex.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_test_latex.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_test_rawtext.sh texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_test_rawtext.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_non_ascii_test_rawtext.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_non_ascii_test_rawtext.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_explicit_encoding_rawtext.sh texinfo-7.3/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_explicit_encoding_rawtext.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_explicit_encoding_rawtext.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_explicit_encoding_rawtext.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_html.sh texinfo-7.3/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_html.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_html.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_html.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_html_explicit_encoding.sh texinfo-7.3/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_html_explicit_encoding.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_html_explicit_encoding.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_html_explicit_encoding.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_rawtext.sh texinfo-7.3/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_rawtext.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_rawtext.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/encoded_verbatiminclude_names_latin1_rawtext.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_cpp_lines.sh texinfo-7.3/tta/tests/test_scripts/formatting_cpp_lines.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_cpp_lines.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_cpp_lines.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_defcondx_Dbar.sh texinfo-7.3/tta/tests/test_scripts/formatting_defcondx_Dbar.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_defcondx_Dbar.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_defcondx_Dbar.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_defcondx_Ubar.sh texinfo-7.3/tta/tests/test_scripts/formatting_defcondx_Ubar.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_defcondx_Ubar.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_defcondx_Ubar.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_documentlanguage_cmdline.sh texinfo-7.3/tta/tests/test_scripts/formatting_documentlanguage_cmdline.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_documentlanguage_cmdline.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_documentlanguage_cmdline.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_formatting_customizations_input_raw_text.sh texinfo-7.3/tta/tests/test_scripts/formatting_formatting_customizations_input_raw_text.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_formatting_customizations_input_raw_text.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_formatting_customizations_input_raw_text.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_index_entries_relate_to_item.sh texinfo-7.3/tta/tests/test_scripts/formatting_index_entries_relate_to_item.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_index_entries_relate_to_item.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_index_entries_relate_to_item.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_indices_in_begin_tables_lists.sh texinfo-7.3/tta/tests/test_scripts/formatting_indices_in_begin_tables_lists.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_indices_in_begin_tables_lists.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_indices_in_begin_tables_lists.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_indices_in_begin_tables_lists_latex.sh texinfo-7.3/tta/tests/test_scripts/formatting_indices_in_begin_tables_lists_latex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_indices_in_begin_tables_lists_latex.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_indices_in_begin_tables_lists_latex.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_info_extension_warning.sh texinfo-7.3/tta/tests/test_scripts/formatting_info_extension_warning.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_info_extension_warning.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_info_extension_warning.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_js_license_reuse_output_file.sh texinfo-7.3/tta/tests/test_scripts/formatting_js_license_reuse_output_file.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_js_license_reuse_output_file.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_js_license_reuse_output_file.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content.sh texinfo-7.3/tta/tests/test_scripts/formatting_no_content.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_no_content.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_do_contents.sh texinfo-7.3/tta/tests/test_scripts/formatting_no_content_do_contents.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_do_contents.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_no_content_do_contents.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_do_contents_inline.sh texinfo-7.3/tta/tests/test_scripts/formatting_no_content_do_contents_inline.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_do_contents_inline.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_no_content_do_contents_inline.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_do_contents_separate.sh texinfo-7.3/tta/tests/test_scripts/formatting_no_content_do_contents_separate.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_do_contents_separate.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_no_content_do_contents_separate.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_inline.sh texinfo-7.3/tta/tests/test_scripts/formatting_no_content_inline.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_inline.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_no_content_inline.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_separate.sh texinfo-7.3/tta/tests/test_scripts/formatting_no_content_separate.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_no_content_separate.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_no_content_separate.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_reuse_macro_expand_file.sh texinfo-7.3/tta/tests/test_scripts/formatting_reuse_macro_expand_file.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_reuse_macro_expand_file.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_reuse_macro_expand_file.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_simplest_test_css.sh texinfo-7.3/tta/tests/test_scripts/formatting_simplest_test_css.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_simplest_test_css.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_simplest_test_css.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/formatting_split_nocopying_split_dev_null.sh texinfo-7.3/tta/tests/test_scripts/formatting_split_nocopying_split_dev_null.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/formatting_split_nocopying_split_dev_null.sh	2026-03-02 17:05:13.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/formatting_split_nocopying_split_dev_null.sh	2026-03-02 17:05:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/info_tex_tex_math_info_math_images.sh texinfo-7.3/tta/tests/test_scripts/info_tex_tex_math_info_math_images.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/info_tex_tex_math_info_math_images.sh	2026-03-02 17:05:16.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/info_tex_tex_math_info_math_images.sh	2026-03-02 17:05:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_enable_encoding.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_enable_encoding.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_enable_encoding.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_enable_encoding.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_epub_nodes.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_epub_nodes.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_epub_nodes.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_epub_nodes.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_exotic.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_exotic.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_exotic.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_exotic.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_fr.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_fr.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_fr.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_fr.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_fr_icons.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_fr_icons.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_fr_icons.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_fr_icons.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_fr_info.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_fr_info.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_fr_info.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_fr_info.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_info_ascii_punctuation.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_info_ascii_punctuation.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_info_ascii_punctuation.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_info_ascii_punctuation.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_info_disable_encoding.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_info_disable_encoding.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_info_disable_encoding.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_info_disable_encoding.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_inline_css.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_inline_css.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_inline_css.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_inline_css.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_mathjax.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_mathjax.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_mathjax.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_mathjax.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_numerical_entities.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_numerical_entities.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_numerical_entities.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_numerical_entities.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_plaintext_ascii_punctuation.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_plaintext_ascii_punctuation.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_plaintext_ascii_punctuation.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_plaintext_ascii_punctuation.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_sort_element_counts.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_sort_element_counts.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_sort_element_counts.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_sort_element_counts.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_texi2html.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_texi2html.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_texi2html.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_texi2html.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_texi2html_nodes.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_texi2html_nodes.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_texi2html_nodes.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_texi2html_nodes.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_weird_quotes.sh texinfo-7.3/tta/tests/test_scripts/layout_formatting_weird_quotes.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/layout_formatting_weird_quotes.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/layout_formatting_weird_quotes.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_cartouche.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_cartouche.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_cartouche.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_cartouche.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_deffn.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_deffn.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_deffn.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_deffn.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_enumerate.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_enumerate.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_enumerate.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_enumerate.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_example.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_example.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_example.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_example.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_flushright.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_flushright.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_flushright.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_flushright.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_group.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_group.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_group.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_group.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_itemize.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_itemize.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_itemize.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_itemize.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_menu.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_menu.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_menu.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_menu.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_multitable.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_multitable.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_multitable.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_multitable.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_quotation.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_quotation.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_quotation.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_quotation.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_table.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_table.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_nested_table.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_nested_table.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_texi_nested_formats.sh texinfo-7.3/tta/tests/test_scripts/nested_formats_texi_nested_formats.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/nested_formats_texi_nested_formats.sh	2026-03-02 17:05:14.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/nested_formats_texi_nested_formats.sh	2026-03-02 17:05:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_accented_lang_index_collation_documentlanguage_collation.sh texinfo-7.3/tta/tests/test_scripts/other_accented_lang_index_collation_documentlanguage_collation.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_accented_lang_index_collation_documentlanguage_collation.sh	2026-03-02 17:05:16.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_accented_lang_index_collation_documentlanguage_collation.sh	2026-03-02 17:05:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example.sh texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example_default_language.sh texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example_default_language.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example_default_language.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example_default_language.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example_highlight.sh texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example_highlight.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example_highlight.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example_highlight.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example_latin9.sh texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example_latin9.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example_latin9.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example_latin9.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example_pygments.sh texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example_pygments.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_highlight_syntax_example_pygments.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_highlight_syntax_example_pygments.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_collation_language.sh texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_collation_language.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_collation_language.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_collation_language.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_collation_locale_en.sh texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_collation_locale_en.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_collation_locale_en.sh	2026-03-02 17:05:16.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_collation_locale_en.sh	2026-03-02 17:05:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_collation_locale_en_US.sh texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_collation_locale_en_US.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_collation_locale_en_US.sh	2026-03-02 17:05:16.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_collation_locale_en_US.sh	2026-03-02 17:05:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_collation_locale_sv.sh texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_collation_locale_sv.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_collation_locale_sv.sh	2026-03-02 17:05:16.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_collation_locale_sv.sh	2026-03-02 17:05:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_documentlanguage_collation.sh texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_documentlanguage_collation.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_documentlanguage_collation.sh	2026-03-02 17:05:16.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_documentlanguage_collation.sh	2026-03-02 17:05:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_plaintext.sh texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_plaintext.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/other_index_collation_test_plaintext.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/other_index_collation_test_plaintext.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_block_EOL_tex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_block_EOL_tex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_block_EOL_tex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_block_EOL_tex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_formatting_singular.sh texinfo-7.3/tta/tests/test_scripts/tex_html_formatting_singular.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_formatting_singular.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_formatting_singular.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_math_not_closed.sh texinfo-7.3/tta/tests/test_scripts/tex_html_math_not_closed.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_math_not_closed.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_math_not_closed.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_simplest_httex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_simplest_httex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_simplest_httex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_simplest_httex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_accents_httex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_accents_httex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_accents_httex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_accents_httex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_accents_l2h.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_accents_l2h.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_accents_l2h.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_accents_l2h.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_complex_httex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_complex_httex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_complex_httex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_complex_httex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_complex_l2h.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_complex_l2h.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_complex_l2h.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_complex_l2h.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_encoded_latin1_httex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_encoded_latin1_httex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_encoded_latin1_httex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_encoded_latin1_httex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_encoded_latin1_l2h.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_encoded_latin1_l2h.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_encoded_latin1_l2h.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_encoded_latin1_l2h.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_encoded_utf8_httex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_encoded_utf8_httex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_encoded_utf8_httex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_encoded_utf8_httex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_encoded_utf8_l2h.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_encoded_utf8_l2h.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_encoded_utf8_l2h.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_encoded_utf8_l2h.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_eqalign_httex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_eqalign_httex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_eqalign_httex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_eqalign_httex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_eqalign_l2h.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_eqalign_l2h.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_eqalign_l2h.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_eqalign_l2h.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_gdef_httex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_gdef_httex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_gdef_httex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_gdef_httex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_gdef_l2h.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_gdef_l2h.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_gdef_l2h.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_gdef_l2h.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_gdef_mathjax.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_gdef_mathjax.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_gdef_mathjax.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_gdef_mathjax.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex_latex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex_latex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex_latex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex_latex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex_latex_math.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex_latex_math.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex_latex_math.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex_latex_math.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex_tex_latex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex_tex_latex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex_tex_latex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex_tex_latex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex_tex_latex_math.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex_tex_latex_math.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_httex_tex_latex_math.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_httex_tex_latex_math.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_in_copying.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_in_copying.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_in_copying.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_in_copying.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_l2h_latex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_l2h_latex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_l2h_latex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_l2h_latex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_l2h_tex_latex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_l2h_tex_latex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_l2h_tex_latex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_l2h_tex_latex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_mathjax.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_mathjax.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_mathjax.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_mathjax.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_not_closed.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_not_closed.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_not_closed.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_not_closed.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_notex.sh texinfo-7.3/tta/tests/test_scripts/tex_html_tex_notex.sh
+--- texinfo-7.3.orig/tta/tests/test_scripts/tex_html_tex_notex.sh	2026-03-02 17:05:15.000000000 +0000
++++ texinfo-7.3/tta/tests/test_scripts/tex_html_tex_notex.sh	2026-03-02 17:05:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # This file generated by maintain/regenerate_cmd_tests.sh
+ 
+ if test z"$srcdir" = "z"; then
+diff -Naur texinfo-7.3.orig/util/tests/texi2dvi_helpversion.sh texinfo-7.3/util/tests/texi2dvi_helpversion.sh
+--- texinfo-7.3.orig/util/tests/texi2dvi_helpversion.sh	2026-03-01 17:03:27.000000000 +0000
++++ texinfo-7.3/util/tests/texi2dvi_helpversion.sh	2026-03-01 17:03:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ set -x
+ 

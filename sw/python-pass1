@@ -8,8 +8,29 @@ ARCHIVES=(
     c67a6cd39e315fc44bb6e17b2fc637fbdb473ba82c87ae93e43cf702f1fe90e4 file://Python-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(mpdecimal-pass1 zlib-pass1)
-MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 gzip-pass1 linux-headers make-pass1 mpdecimal-pass1 patch-pass1 sed-pass1 tar-pass1 xz-pass1 zlib-pass1)
+NEEDS=(
+    mpdecimal-pass1
+    zlib-pass1
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    grep-pass1
+    gzip-pass1
+    linux-headers
+    make-pass1
+    mpdecimal-pass1
+    patch-pass1
+    sed-pass1
+    tar-pass1
+    xz-pass1
+    zlib-pass1
+)
 
 MAKE() {
     patch -Z -Np1 -i Python-$VERSION-fluffy-shell.patch
@@ -22,7 +43,19 @@ MAKE() {
     make SHELL=/sw/bash/bin/bash
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 linux-headers make-pass1 mpdecimal-pass1 sed-pass1 zlib-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    grep-pass1
+    linux-headers
+    make-pass1
+    mpdecimal-pass1
+    sed-pass1
+    zlib-pass1
+)
 
 INSTALL() {
     make SHELL=/sw/bash/bin/bash install

@@ -4,14 +4,27 @@ VERSION=4.0.1
 
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/openssl/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
-    ed031ab4f9936f86bd353e36c0d5381788f12f192587a25a5ac9e2af614b9fd9 file://openssl-$VERSION-fluffy.patch
+    5b26ab2d703d911005c3edc9e8ed71f66b0fe46c399703dc75871a5296c11c21 file://openssl-$VERSION-fluffy-shell.patch
+    e41b6190c05262569b4a3f8b71dc1d24680f1c4933e5a228be1870218956df72 file://openssl-$VERSION-fluffy-source.patch
+    ea528a091f500129a418ad31db3bd75ca8fe3c351425b66c51d4c2a5bf9dcfc2 file://openssl-$VERSION-fluffy-test.patch
 )
 
-NEEDS=(glibc-pass1)
-MAKE_NEEDS=(gcc-pass1 linux-headers make-pass1 coreutils-pass1 patch-pass1)
+NEEDS=(
+    glibc-pass1
+)
+
+MAKE_NEEDS=(
+    coreutils-pass1
+    gcc-pass1
+    linux-headers
+    make-pass1
+    patch-pass1
+)
 
 MAKE() {
-    patch -Np1 -i openssl-$VERSION-fluffy.patch
+    patch -Z -Np1 -i openssl-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i openssl-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i openssl-$VERSION-fluffy-test.patch
     ./Configure linux-x86_64 \
         --prefix=/sw/openssl \
         --openssldir=/etc/ssl \
@@ -23,7 +36,10 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(make-pass1 coreutils-pass1)
+INSTALL_NEEDS=(
+    coreutils-pass1
+    make-pass1
+)
 
 INSTALL() {
     make install_sw

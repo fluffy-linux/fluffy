@@ -2,11 +2,15 @@ VERSION=1.25.0
 
 ARCHIVES=(
     766e48423e79359ea31e41db9e5c289675947a7fcf2efdcedb726ac9d0da3784 https://ftpmirror.gnu.org/wget/wget-$VERSION.tar.gz
-    256d47554899d2c8bbf0947fa9de192c99eaa8bb69e0a396d80c947eab37bc2b file://wget-$VERSION-fluffy.patch
+    56b9453430e5b3d6c6eca55cc5a2d1e46d18aad4f11e903165c7bc8d587047b1 file://wget-$VERSION-fluffy-shell.patch
+    46b447adc379fc3bcf1d26a7f4c7f3bc6755c6d788b4121a318d69bef3878ce9 file://wget-$VERSION-fluffy-source.patch
+    679e9b8783478f1972777e965bf3e1507aaa44fb0693b9dbd311f06697855b06 file://wget-$VERSION-fluffy-test.patch
 )
 
 MAKE() {
-    patch -Z -Np1 -i wget-$VERSION-fluffy.patch
+    patch -Z -Np1 -i wget-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i wget-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i wget-$VERSION-fluffy-test.patch
     ./configure \
         --prefix=/sw/wget \
         --sysconfdir=/etc \

@@ -4,14 +4,36 @@ VERSION=8.3
 
 ARCHIVES=(
     fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc https://ftpmirror.gnu.org/readline/readline-$VERSION.tar.gz
-    18b2654f8b5150b6cec85bccb96b3979f0a7644a388be15df75d3c9729c7a2eb file://readline-$VERSION-fluffy.patch
+    90cc647d032e2b0a5e1656fefa02c58e50c445f976949beef15ad76b3d6d0e96 file://readline-$VERSION-fluffy-shell.patch
+    687c2f6e8e5077e1738bf20a81693e811492b141f632158c1d2c462c85b2ebae file://readline-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(glibc ncurses-pass1)
-MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 linux-headers make-pass1 ncurses-pass1 patch-pass1 sed-pass1 tar-pass1)
+NEEDS=(
+    glibc
+    ncurses-pass1
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    binutils-pass2
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    linux-headers
+    make-pass1
+    ncurses-pass1
+    patch-pass1
+    sed-pass1
+    tar-pass1
+)
 
 MAKE() {
-    patch -Z -Np1 -i readline-$VERSION-fluffy.patch
+    patch -Z -Np1 -i readline-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i readline-$VERSION-fluffy-source.patch
     ./configure \
         --prefix=/sw/readline \
         --disable-static \
@@ -20,7 +42,13 @@ MAKE() {
     make SHLIB_LIBS="-lncursesw"
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 glibc make-pass1 sed-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    glibc
+    make-pass1
+    sed-pass1
+)
 
 INSTALL() {
     make install

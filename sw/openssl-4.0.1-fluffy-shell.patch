@@ -1,0 +1,99 @@
+diff -Naur openssl-4.0.1.orig/config openssl-4.0.1/config
+--- openssl-4.0.1.orig/config	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/config	2026-10-29 21:52:42.884688033 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright 2020 The OpenSSL Project Authors. All Rights Reserved.
+ #
+ # Licensed under the Apache License 2.0 (the "License").  You may not use
+diff -Naur openssl-4.0.1.orig/demos/certs/apps/mkacerts.sh openssl-4.0.1/demos/certs/apps/mkacerts.sh
+--- openssl-4.0.1.orig/demos/certs/apps/mkacerts.sh	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/demos/certs/apps/mkacerts.sh	2026-10-29 21:52:42.884815365 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Recreate the demo certificates in the apps directory.
+ 
+diff -Naur openssl-4.0.1.orig/demos/certs/apps/mkxcerts.sh openssl-4.0.1/demos/certs/apps/mkxcerts.sh
+--- openssl-4.0.1.orig/demos/certs/apps/mkxcerts.sh	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/demos/certs/apps/mkxcerts.sh	2026-10-29 21:52:42.884905915 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Create certificates using various algorithms to test multi-certificate
+ # functionality.
+diff -Naur openssl-4.0.1.orig/demos/certs/mkcerts.sh openssl-4.0.1/demos/certs/mkcerts.sh
+--- openssl-4.0.1.orig/demos/certs/mkcerts.sh	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/demos/certs/mkcerts.sh	2026-10-29 21:52:42.884995492 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ opensslcmd() {
+     LD_LIBRARY_PATH=../.. ../../apps/openssl "$@"
+diff -Naur openssl-4.0.1.orig/demos/certs/ocspquery.sh openssl-4.0.1/demos/certs/ocspquery.sh
+--- openssl-4.0.1.orig/demos/certs/ocspquery.sh	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/demos/certs/ocspquery.sh	2026-10-29 21:52:42.885091493 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Example querying OpenSSL test responder. Assumes ocsprun.sh has been
+ # called.
+diff -Naur openssl-4.0.1.orig/demos/certs/ocsprun.sh openssl-4.0.1/demos/certs/ocsprun.sh
+--- openssl-4.0.1.orig/demos/certs/ocsprun.sh	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/demos/certs/ocsprun.sh	2026-10-29 21:52:42.885179000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ opensslcmd() {
+     LD_LIBRARY_PATH=../.. ../../apps/openssl "$@"
+diff -Naur openssl-4.0.1.orig/util/ctags.sh openssl-4.0.1/util/ctags.sh
+--- openssl-4.0.1.orig/util/ctags.sh	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/util/ctags.sh	2026-10-29 21:52:42.886570740 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2023-2025 The OpenSSL Project Authors. All Rights Reserved.
+ #
+diff -Naur openssl-4.0.1.orig/util/fix-includes openssl-4.0.1/util/fix-includes
+--- openssl-4.0.1.orig/util/fix-includes	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/util/fix-includes	2026-10-29 21:52:42.886794870 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
+ #
+diff -Naur openssl-4.0.1.orig/util/opensslwrap.sh openssl-4.0.1/util/opensslwrap.sh
+--- openssl-4.0.1.orig/util/opensslwrap.sh	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/util/opensslwrap.sh	2026-10-29 21:52:42.886922109 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ HERE="`echo $0 | sed -e 's|[^/]*$||'`"
+ OPENSSL="${HERE}../apps/openssl"
+diff -Naur openssl-4.0.1.orig/util/reformat-patches.sh openssl-4.0.1/util/reformat-patches.sh
+--- openssl-4.0.1.orig/util/reformat-patches.sh	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/util/reformat-patches.sh	2026-10-29 21:52:42.887059819 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh -efu
++#!/sw/bash/bin/bash -efu
+ 
+ # Copyright 2025 The OpenSSL Project Authors. All Rights Reserved.
+ #
+diff -Naur openssl-4.0.1.orig/util/shlib_wrap.sh.in openssl-4.0.1/util/shlib_wrap.sh.in
+--- openssl-4.0.1.orig/util/shlib_wrap.sh.in	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/util/shlib_wrap.sh.in	2026-10-29 21:52:42.887203926 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ {-
+     use lib '.';
+     use configdata;

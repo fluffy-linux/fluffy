@@ -4,29 +4,53 @@ VERSION=1.0.8
 
 ARCHIVES=(
     ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269 https://www.sourceware.org/pub/bzip2/bzip2-$VERSION.tar.gz
-    35e3bbd9642af51fef2a8a83afba040d272da42d7e3a251d8e43255a7b496702 https://www.linuxfromscratch.org/patches/lfs/13.1/bzip2-$VERSION-install_docs-1.patch
+    3106aa94add5284967203214bd3d6f39adab552ebbe9171fc73cd74ba1e5f602 file://bzip2-$VERSION-fluffy-shell.patch
+    63d77923fbbe5e2a4419639b5774bc98a9eace5ca6d37886a8ca339604a4f1cd file://bzip2-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(glibc)
-MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gcc-pass2 glibc linux-headers make-pass1 patch-pass1 sed-pass1)
+NEEDS=(
+    glibc
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    binutils-pass2
+    coreutils-pass1
+    diffutils-pass1
+    gcc-pass2
+    glibc
+    linux-headers
+    make-pass1
+    patch-pass1
+)
 
 MAKE() {
-    patch -Z -Np1 -i bzip2-$VERSION-install_docs-1.patch
-    sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
-    sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
-    sed -i 's@#!/bin/sh@#!/sw/bash/bin/bash@' bzgrep bzmore bzdiff
+    patch -Z -Np1 -i bzip2-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i bzip2-$VERSION-fluffy-source.patch
     make -f Makefile-libbz2_so
     make clean
     make bzip2 bzip2recover
 }
 
-CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gcc-pass2 glibc make-pass1)
+CHECK_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    gcc-pass2
+    glibc
+    make-pass1
+)
 
 CHECK() {
     make test
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 glibc make-pass1)
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    glibc
+    make-pass1
+)
 
 INSTALL() {
     make PREFIX=$DESTDIR/sw/bzip2 install
