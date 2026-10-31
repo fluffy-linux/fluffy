@@ -15,5 +15,5 @@ CHECK() {
 
 INSTALL() {
     make install
-    rm -fv /sw/zlib/lib/libz.a
+    rm -fv $DESTDIR/sw/zlib/lib/libz.a
 }

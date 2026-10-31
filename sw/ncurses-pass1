@@ -39,6 +39,6 @@ INSTALL_NEEDS=(gcc-pass1 libstdcpp-pass1 linux-headers)
 
 INSTALL() {
     PATH="$PWD/build/progs:$PATH" make install
-    ln -sv libncursesw.so /sw/ncurses/lib/libncurses.so
-    sed -e 's/^#if.*XOPEN.*$/#if 1/' -i /sw/ncurses/include/curses.h
+    ln -sv libncursesw.so $DESTDIR/sw/ncurses/lib/libncurses.so
+    sed -e 's/^#if.*XOPEN.*$/#if 1/' -i $DESTDIR/sw/ncurses/include/curses.h
 }

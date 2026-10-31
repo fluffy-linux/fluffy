@@ -25,8 +25,8 @@ MAKE() {
 INSTALL_NEEDS=(gcc-pass1 glibc-pass1)
 
 INSTALL() {
-    mkdir -pv /sw/squashfs-tools/bin
-    cp -v squashfs-tools/{mksquashfs,unsquashfs} /sw/squashfs-tools/bin
-    ln -sv unsquashfs /sw/squashfs-tools/bin/sqfscat
-    ln -sv mksquashfs /sw/squashfs-tools/bin/sqfstar
+    mkdir -pv $DESTDIR/sw/squashfs-tools/bin
+    cp -v squashfs-tools/{mksquashfs,unsquashfs} $DESTDIR/sw/squashfs-tools/bin
+    ln -sv unsquashfs $DESTDIR/sw/squashfs-tools/bin/sqfscat
+    ln -sv mksquashfs $DESTDIR/sw/squashfs-tools/bin/sqfstar
 }

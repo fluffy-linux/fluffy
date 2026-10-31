@@ -13,17 +13,18 @@ ARCHIVES=(
     c3e782a8eee855a260988b7fe0ae01b1735bf93950d3f5e45820b73ae77c90d8 file://gcc-$VERSION-fluffy.patch
 )
 
-NEEDS=(binutils-pass2)
+NEEDS=(binutils-pass2 glibc-pass1 linux-headers libstdcpp-pass1)
 MAKE_NEEDS=(gcc-pass1 libstdcpp-pass1 linux-headers)
 
 MAKE() {
     patch -Np1 -i gcc-$VERSION-fluffy.patch
-    sed '/thread_header =/s/@.*@/gthr-posix.h/' \
-        -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
 
     mv -v mpfr-$MPFR_VERSION mpfr
     mv -v mpc-$MPC_VERSION mpc
     mv -v gmp-$GMP_VERSION gmp
+
+    sed '/thread_header =/s/@.*@/gthr-posix.h/' \
+        -i libgcc/Makefile.in libgcc/configure
 
     mkdir -v build
     cd build
@@ -55,5 +56,5 @@ INSTALL_NEEDS=(gcc-pass1 libstdcpp-pass1 linux-headers)
 INSTALL() {
     cd build
     make install
-    ln -sv gcc /sw/gcc/bin/cc
+    ln -sv gcc $DESTDIR/sw/gcc/bin/cc
 }

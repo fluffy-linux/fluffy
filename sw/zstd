@@ -14,5 +14,5 @@ CHECK() {
 
 INSTALL() {
     make prefix=/sw/zstd install
-    rm -v /sw/zstd/lib/libzstd.a
+    rm -v $DESTDIR/sw/zstd/lib/libzstd.a
 }

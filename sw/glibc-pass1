@@ -5,7 +5,7 @@ VERSION=2.44
 ARCHIVES=(
     37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667 https://ftpmirror.gnu.org/glibc/glibc-$VERSION.tar.xz
     643552db030e2f2d7ffde4f558e0f5f83d3fabf34a2e0e56ebdb49750ac27b0d https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-fhs-1.patch
-    5c7eb0fd26a7f0023392db32efd6ece62109ae063df893177807cc02e25a70ae file://glibc-$VERSION-fluffy.patch
+    4b63488e050692d873aa99ceda2c36e902f2feebff0cbea4d9ab938ffcdc9d6e file://glibc-$VERSION-fluffy.patch
 )
 
 MAKE_NEEDS=(gcc-pass1 linux-headers)
@@ -16,7 +16,7 @@ MAKE() {
 
     mkdir -v build
     cd build
-    echo "rootsbindir=/sw/glibc/sbin" > configparms
+    echo "rootsbindir=/sw/glibc/bin" > configparms
 
     ../configure \
         --prefix=/sw/glibc \
@@ -33,4 +33,5 @@ INSTALL_NEEDS=(gcc-pass1 linux-headers)
 INSTALL() {
     cd build
     make install
+    sed '/RTLDLIST/s@/usr@@g' -i $DESTDIR/sw/glibc/bin/ldd
 }

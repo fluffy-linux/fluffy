@@ -19,6 +19,6 @@ MAKE() {
 INSTALL_NEEDS=(bash-pass1 coreutils-pass1)
 
 INSTALL() {
-    mkdir -pv /sw/gettext/bin
-    cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /sw/gettext/bin
+    mkdir -pv $DESTDIR/sw/gettext/bin
+    cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} $DESTDIR/sw/gettext/bin
 }

@@ -61,6 +61,13 @@ fi
 
 trap cleanup EXIT
 
+script_dir="${BASH_SOURCE[0]%/*}"
+if test "$script_dir" == "${BASH_SOURCE[0]}"
+then
+    script_dir="."
+fi
+repo_dir="$(realpath "$script_dir")"
+
 if test -d /mnt/fluffy
 then
     FSTAB=${FSTAB:-/mnt/fluffy/etc/fluffy/fstab}
@@ -170,15 +177,51 @@ find_fs_by_pkg() {
     fi
 }
 
-register_entry() {
-    local mountpoint="$1"
-    local squashfs="$2"
-    shift 2
+get_from() {
+    local pkg="$1"
+    local mnt_fs="$NULL"
+    find_fs_by_pkg "$pkg" mnt_fs
+    if test "$mnt_fs" == "$NULL"
+    then
+        return 1
+    fi
 
-    local old_ifs="$IFS"
-    IFS=,
-    local needs="$*"
-    IFS="$old_ifs"
+    dlcall -r string -n src_str mnt_fs_get_source "$mnt_fs"
+    local src="${src_str#string:}"
+    local real_src="$src"
+    if test -d /mnt/fluffy && test -f "/mnt/fluffy$src"
+    then
+        real_src="/mnt/fluffy$src"
+    fi
+    if test ! -f "$real_src"
+    then
+        return 1
+    fi
+
+    dlcall -r string -n opt_str mnt_fs_get_options "$mnt_fs"
+    local opts="${opt_str#string:}"
+    if [[ "$opts" =~ X-fluffy\.from=([^,]+) ]]
+    then
+        echo "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    return 1
+}
+
+register_entry() {
+    if test $# -lt 1
+    then
+        fatal "usage: swctl register <squashfs> [mountpoint]"
+    fi
+
+    local squashfs="$1"
+    local explicit_mountpoint="${2:-}"
+
+    if [[ "$1" == /sw/* ]] && [[ "${2:-}" == *.squashfs ]]
+    then
+        explicit_mountpoint="$1"
+        squashfs="$2"
+    fi
 
     local real_squashfs="$squashfs"
     if test -d /mnt/fluffy && test -f "/mnt/fluffy$squashfs"
@@ -189,6 +232,52 @@ register_entry() {
     if test ! -f "$real_squashfs"
     then
         fatal "squashfs file not found: $real_squashfs"
+    fi
+
+    local pkg_filename="${squashfs##*/}"
+    local pkg_base="${pkg_filename%.squashfs}"
+    local pkg_name
+    if [[ "$pkg_base" =~ ^(.*)-[0-9] ]]
+    then
+        pkg_name="${BASH_REMATCH[1]}"
+    else
+        pkg_name="$pkg_base"
+    fi
+
+    local mount_pkg="${pkg_name%-pass*}"
+    local mountpoint="${explicit_mountpoint:-/sw/$mount_pkg}"
+
+    local recipe_file=""
+    if test -f "$repo_dir/sw/$pkg_name"
+    then
+        recipe_file="$repo_dir/sw/$pkg_name"
+    elif test -f "sw/$pkg_name"
+    then
+        recipe_file="sw/$pkg_name"
+    elif test -f "$pkg_name"
+    then
+        recipe_file="$pkg_name"
+    fi
+
+    if test -z "$recipe_file"
+    then
+        fatal "recipe file not found for $pkg_name"
+    fi
+
+    local from
+    from="$(sha256sum "$recipe_file" | cut -d' ' -f1)"
+
+    local -a NEEDS=()
+    # shellcheck disable=SC1090
+    source "$recipe_file"
+
+    local needs=""
+    if (( ${#NEEDS[@]} > 0 ))
+    then
+        local old_ifs="$IFS"
+        IFS=,
+        needs="${NEEDS[*]}"
+        IFS="$old_ifs"
     fi
 
     ensure_keys
@@ -207,16 +296,6 @@ register_entry() {
         read -r pkg_sig
     } < "$tmp_sig"
     rm -f "$tmp_sig"
-
-    local pkg_filename="${squashfs##*/}"
-    local pkg_base="${pkg_filename%.squashfs}"
-    local pkg_name
-    if [[ "$pkg_base" =~ ^(.*)-[0-9] ]]
-    then
-        pkg_name="${BASH_REMATCH[1]}"
-    else
-        pkg_name="$pkg_base"
-    fi
 
     # does an entry for this package already exist?
     find_fs_by_pkg "$pkg_name" mnt_fs
@@ -287,8 +366,12 @@ register_entry() {
     then
         options="$options,X-fluffy.needs=\"$needs\""
     fi
+    if test -n "$from"
+    then
+        options="$options,X-fluffy.from=$from"
+    fi
 
-    call mnt_fs_set_source "$mnt_fs" "string:$squashfs"
+    call mnt_fs_set_source "$mnt_fs" "string:/sw/$pkg_filename"
     call mnt_fs_set_target "$mnt_fs" "string:$mountpoint"
     call mnt_fs_set_fstype "$mnt_fs" "string:squashfs"
     call mnt_fs_set_options "$mnt_fs" "string:$options"
@@ -436,49 +519,6 @@ mount_targets() {
         for file in "${sorted_missing_files[@]}"
         do
             log "squashfs file not found: $file"
-        done
-        exit 1
-    fi
-
-    # Check for target mount conflicts across dependencies
-    local -A target_owner=()
-    local -A target_conflicts=()
-    local pkg
-    for pkg in "${order[@]}"
-    do
-        find_fs_by_pkg "$pkg" fs
-        if test "$fs" == "$NULL"
-        then
-            continue
-        fi
-
-        dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
-        local tgt="${tgt_str#string:}"
-        local real_tgt
-        if test -n "$prefix"
-        then
-            real_tgt="$prefix$tgt"
-        else
-            real_tgt="$tgt"
-        fi
-
-        if test -n "${target_owner[$real_tgt]:-}" && test "${target_owner[$real_tgt]}" != "$pkg"
-        then
-            target_conflicts["$real_tgt"]="${target_owner[$real_tgt]} and $pkg"
-        else
-            target_owner["$real_tgt"]="$pkg"
-        fi
-    done
-
-    if (( ${#target_conflicts[@]} > 0 ))
-    then
-        local -a sorted_conflicts=()
-        readarray -t sorted_conflicts < <(printf "%s
-" "${!target_conflicts[@]}" | LC_ALL=C sort)
-        local c_tgt
-        for c_tgt in "${sorted_conflicts[@]}"
-        do
-            log "mount conflict on $c_tgt: ${target_conflicts[$c_tgt]}"
         done
         exit 1
     fi
@@ -838,6 +878,17 @@ unregister)
     shift
     unregister_entry "$@"
     sign_and_save_fstab
+    ;;
+sign)
+    sign_and_save_fstab
+    ;;
+from)
+    shift
+    if test $# -lt 1
+    then
+        fatal "usage: swctl from <pkg>"
+    fi
+    get_from "$1"
     ;;
 mount)
     shift

@@ -25,5 +25,5 @@ INSTALL_NEEDS=(gcc-pass1 ncurses-pass1 linux-headers)
 
 INSTALL() {
     make install
-    ln -sv bash /sw/bash/bin/sh
+    ln -sv bash $DESTDIR/sw/bash/bin/sh
 }

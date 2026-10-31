@@ -13,5 +13,5 @@ MAKE() {
 }
 
 INSTALL() {
-    cp -rv usr/include /sw/linux-headers
+    cp -rv usr/include $DESTDIR/sw/linux-headers
 }

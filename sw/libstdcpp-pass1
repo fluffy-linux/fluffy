@@ -28,5 +28,5 @@ INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
 INSTALL() {
     cd build
     make install
-    rm -v /sw/libstdcpp/lib/lib{stdc++{,exp,fs},supc++}.la
+    rm -v $DESTDIR/sw/libstdcpp/lib/lib{stdc++{,exp,fs},supc++}.la
 }
