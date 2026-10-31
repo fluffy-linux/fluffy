@@ -243,7 +243,7 @@
     - **TODO: Split Shebang / Path Patches from Logic / Bugfix Patches**:
       - Separate `/sw/bash/bin/bash` shebang and interpreter path rewrites from functional logic and bugfix patches.
       - Both types can use the `-fluffy` naming convention, e.g.:
-        - `<pkg>-<version>-fluffy-bash.patch`: bulk script shebang and interpreter path adjustments.
+        - `<pkg>-<version>-fluffy-shell.patch`: bulk script shebang and interpreter path adjustments.
         - `<pkg>-<version>-fluffy-<issue>.patch` (e.g. `m4-1.4.21-fluffy-posix-spawn.patch`): surgical upstream logic fixes, glibc compatibility, or testsuite adaptations.
       - Decoupling shebang updates ensures automated path updates can be regenerated cleanly with `mkbashpatch.sh` without clobbering or conflating hand-crafted code fixes.
     - **Timestamp Preservation Across Fluffy Patches**:
