@@ -53,6 +53,31 @@ verify_sha256() {
     fi
 }
 
+bring_up_lo() {
+    local ptr
+    local ptr16
+    local sock
+    local fd
+    local -a arr=(short)
+
+    dlcall -r pointer -n ptr malloc 40
+    dlcall memset "$ptr" int:0 ulong:40
+    dlcall strcpy "$ptr" string:lo
+    dlcall -r int -n sock socket int:2 int:2 int:0
+    fd="${sock#*:}"
+    if (( fd != -1 ))
+    then
+        call ioctl int:$fd ulong:35091 "$ptr"
+        printf -v ptr16 "pointer:0x%x" $(( ${ptr#*:} + 16 ))
+        unpack "$ptr16" arr
+        arr=(short:$(( ${arr[0]#*:} | 1 )))
+        pack "$ptr16" arr
+        call ioctl int:$fd ulong:35092 "$ptr"
+        call close int:$fd
+    fi
+    dlcall free "$ptr"
+}
+
 lockdown() {
     if test "$(type -t "$1")" != function
     then
@@ -79,6 +104,7 @@ lockdown() {
 
         # no network access for builds, ro / and rw /work
         call unshare $(( CLONE_NEWNET | CLONE_NEWNS ))
+        bring_up_lo
 
         # stop mount propagation back to the parent/host namespace
         call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
@@ -427,7 +453,11 @@ do
 done
 
 log -n "cleaning work area... "
-rm -rf "$work_dir"/{src,installed,test-results,test-work}
+(
+    call setresuid 0 0 0
+    call setresgid 0 0 0
+    rm -rf "$work_dir"/{src,installed,test-results,test-work}
+)
 mkdir -p "$work_dir/src" "$work_dir/installed"
 log "done"
 
@@ -486,5 +516,9 @@ trap - ERR
 
 banner CLEANUP
 cd "$root"
-rm -rf "$work_dir"/{src,installed,test-results,test-work}
+(
+    call setresuid 0 0 0
+    call setresgid 0 0 0
+    rm -rf "$work_dir"/{src,installed,test-results,test-work}
+)
 rm -rf /sw/.destdir 2>/dev/null || true

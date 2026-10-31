@@ -65,6 +65,9 @@
      - Host-to-chroot logic is completely extracted out of the build engine into a standalone `./chroot.sh` script.
      - `./chroot.sh` handles entering the `/mnt/fluffy` target (mounting `/dev`, `/dev/pts`, `/proc`, `/sys`, `/run`, `/tmp`, resolv.conf, binding the source repo, and mounting the base builder profile).
      - Build commands for `cross-build` and `fluffy-build` execute directly and natively inside the chroot environment. The build engine remains completely agnostic to whether it is running on a host or in a chroot, eliminating nested re-exec hacks.
+   - **TODO: Eliminate `create` Self-Re-exec (Use In-Process Subshell)**:
+     - `create` currently calls itself (`/sw/bash/bin/bash "$root/create" "$@"`) after entering the `/mnt/fluffy` chroot.
+     - Fix this to use an in-process subshell `(...)` rather than calling `create` again, keeping the build lifecycle (`PREPARE`, `MAKE`, `CHECK`, `INSTALL`, `SQUASHFS`) execution in-process.
    - **Unprivileged Builder Lifecycle**:
      - Immediately upon launch via `sudo`, the build engine drops real/effective UID and GID to `$SUDO_UID:$SUDO_GID` (`setresgid`/`setresuid` keeping saved UID/GID `0` only for mount setup), so all downloaded archives and extracted files under `work/` (`work/archives`, `work/src`, `work/installed`, `work/test-results`, `work/test-work`) are naturally owned by the calling user.
    - **Dependency DAG & Resolution**:
