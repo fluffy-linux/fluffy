@@ -1,0 +1,352 @@
+diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/dl-load.c
+--- glibc-2.44.orig/elf/dl-load.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.source/elf/dl-load.c	2026-10-30 04:01:45.512275109 +0000
+@@ -19,6 +19,7 @@
+ 
+ #include <elf.h>
+ #include <errno.h>
++#include <dirent.h>
+ #include <fcntl.h>
+ #include <libintl.h>
+ #include <stdbool.h>
+@@ -150,6 +151,13 @@
+       trun += system_dirs_len[idx] + 1;
+     }
+ 
++  if (!result && wnp - npath > 5 && memcmp (npath, "/sw/", 4) == 0)
++    {
++      const char *slash = memchr (npath + 4, '/', (wnp - npath) - 4);
++      if (slash != NULL && wnp - slash >= 5 && memcmp (slash, "/lib/", 5) == 0)
++	result = true;
++    }
++
+   dl_scratch_buffer_free (&scratch);
+   return result;
+ }
+@@ -691,8 +699,68 @@
+ #endif
+ 
+   /* First set up the rest of the default search directory entries.  */
++  size_t sw_count = 0;
++  size_t sw_cap = 0;
++  char **sw_dirs = NULL;
++  int sw_fd = __open64_nocancel ("/sw", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++  if (sw_fd >= 0)
++    {
++      char dent_buf[4096];
++      ssize_t nread;
++      while ((nread = __getdents64 (sw_fd, dent_buf, sizeof (dent_buf))) > 0)
++	{
++	  for (ssize_t bpos = 0; bpos < nread; )
++	    {
++	      struct dirent64 *d = (struct dirent64 *) (dent_buf + bpos);
++	      bpos += d->d_reclen;
++	      if (d->d_name[0] == '.')
++		continue;
++	      size_t namelen = strlen (d->d_name);
++	      char *p = malloc (4 + namelen + 5 + 1);
++	      if (p == NULL)
++		continue;
++	      memcpy (p, "/sw/", 4);
++	      memcpy (p + 4, d->d_name, namelen);
++	      memcpy (p + 4 + namelen, "/lib/", 6);
++	      struct __stat64_t64 st;
++	      if (__stat64_time64 (p, &st) == 0 && S_ISDIR (st.st_mode))
++		{
++		  if (sw_count == sw_cap)
++		    {
++		      size_t new_cap = sw_cap == 0 ? 32 : sw_cap * 2;
++		      char **new_dirs = malloc (new_cap * sizeof (char *));
++		      if (new_dirs == NULL)
++			{
++			  free (p);
++			  continue;
++			}
++		      if (sw_dirs != NULL)
++			{
++			  memcpy (new_dirs, sw_dirs, sw_count * sizeof (char *));
++			  free (sw_dirs);
++			}
++		      sw_dirs = new_dirs;
++		      sw_cap = new_cap;
++		    }
++		  size_t pos = sw_count;
++		  while (pos > 0 && strcmp (sw_dirs[pos - 1], p) > 0)
++		    {
++		      sw_dirs[pos] = sw_dirs[pos - 1];
++		      --pos;
++		    }
++		  sw_dirs[pos] = p;
++		  ++sw_count;
++		}
++	      else
++		free (p);
++	    }
++	}
++      __close_nocancel_nostatus (sw_fd);
++    }
++
++  size_t total_dirs = sw_count > 0 ? sw_count : nsystem_dirs_len;
+   aelem = __rtld_search_dirs.dirs = (struct r_search_path_elem **)
+-    malloc ((nsystem_dirs_len + 1) * sizeof (struct r_search_path_elem *));
++    malloc ((total_dirs + 1) * sizeof (struct r_search_path_elem *));
+   if (__rtld_search_dirs.dirs == NULL)
+     {
+       errstring = N_("cannot create search path array");
+@@ -705,7 +773,7 @@
+ 		/ sizeof (struct r_search_path_elem));
+ 
+   __rtld_search_dirs.dirs[0]
+-    = malloc (nsystem_dirs_len * round_size
++    = malloc (total_dirs * round_size
+ 	      * sizeof (*__rtld_search_dirs.dirs[0]));
+   if (__rtld_search_dirs.dirs[0] == NULL)
+     {
+@@ -715,6 +783,7 @@
+ 
+   __rtld_search_dirs.malloced = 0;
+   pelem = GL(dl_all_dirs) = __rtld_search_dirs.dirs[0];
++  max_dirnamelen = SYSTEM_DIRS_MAX_LEN;
+   strp = system_dirs;
+   idx = 0;
+ 
+@@ -727,22 +796,32 @@
+       pelem->what = "system search path";
+       pelem->where = NULL;
+ 
+-      pelem->dirname = strp;
+-      pelem->dirnamelen = system_dirs_len[idx];
+-      strp += system_dirs_len[idx] + 1;
++      if (sw_count > 0)
++	{
++	  pelem->dirname = sw_dirs[idx];
++	  pelem->dirnamelen = strlen (sw_dirs[idx]);
++	  if (pelem->dirnamelen > max_dirnamelen)
++	    max_dirnamelen = pelem->dirnamelen;
++	}
++      else
++	{
++	  pelem->dirname = strp;
++	  pelem->dirnamelen = system_dirs_len[idx];
++	  strp += system_dirs_len[idx] + 1;
++	}
+ 
+       /* System paths must be absolute.  */
+       assert (pelem->dirname[0] == '/');
+       for (cnt = 0; cnt < ncapstr; ++cnt)
+-	pelem->status[cnt] = unknown;
++	pelem->status[cnt] = (sw_count > 0 && cnt == ncapstr - 1) ? existing : unknown;
+ 
+-      pelem->next = (++idx == nsystem_dirs_len ? NULL : (pelem + round_size));
++      pelem->next = (++idx == total_dirs ? NULL : (pelem + round_size));
+ 
+       pelem += round_size;
+     }
+-  while (idx < nsystem_dirs_len);
++  while (idx < total_dirs);
+ 
+-  max_dirnamelen = SYSTEM_DIRS_MAX_LEN;
++  free (sw_dirs);
+   *aelem = NULL;
+ 
+   /* This points to the map of the main object.  If there is no main
+diff -Naur --no-dereference glibc-2.44.orig/posix/execvpe.c glibc-2.44.source/posix/execvpe.c
+--- glibc-2.44.orig/posix/execvpe.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.source/posix/execvpe.c	2026-10-30 04:01:45.513050900 +0000
+@@ -20,6 +20,9 @@
+ #include <stdbool.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <dirent.h>
++#include <fcntl.h>
++#include <not-cancel.h>
+ #include <errno.h>
+ #include <paths.h>
+ #include <confstr.h>
+@@ -128,6 +131,120 @@
+ 	  continue;
+ 	}
+ 
++      const char *star = memchr (p, '*', subp - p);
++      if (star != NULL)
++	{
++	  const char *last_slash = star;
++	  while (last_slash > p && *last_slash != '/')
++	    last_slash--;
++
++	  char prefix_buf[PATH_MAX];
++	  size_t prefix_len;
++	  if (last_slash == p && *last_slash != '/')
++	    {
++	      prefix_buf[0] = '.';
++	      prefix_buf[1] = '\0';
++	      prefix_len = 1;
++	    }
++	  else
++	    {
++	      prefix_len = (last_slash == p) ? 1 : (last_slash - p);
++	      if (prefix_len >= sizeof (prefix_buf))
++		goto next_elem;
++	      memcpy (prefix_buf, p, prefix_len);
++	      prefix_buf[prefix_len] = '\0';
++	    }
++
++	  const char *next_slash = memchr (star, '/', subp - star);
++	  const char *suffix = next_slash ? next_slash : "";
++	  size_t suffix_len = next_slash ? (subp - next_slash) : 0;
++
++	  int dir_fd = __open64_nocancel (prefix_buf, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++	  if (dir_fd >= 0)
++	    {
++	      char dent_buf[4096];
++	      char name_buf[4096];
++	      const char *entries[128];
++	      size_t nentries = 0;
++	      size_t name_buf_pos = 0;
++	      ssize_t nread;
++
++	      while ((nread = __getdents64 (dir_fd, dent_buf, sizeof (dent_buf))) > 0)
++		{
++		  for (ssize_t bpos = 0; bpos < nread; )
++		    {
++		      struct dirent64 *d = (struct dirent64 *) (dent_buf + bpos);
++		      bpos += d->d_reclen;
++		      if (d->d_name[0] == '.' || d->d_type == DT_REG)
++			continue;
++		      size_t dlen = strlen (d->d_name);
++		      if (name_buf_pos + dlen + 1 > sizeof (name_buf) || nentries >= 128)
++			break;
++		      char *stored_name = name_buf + name_buf_pos;
++		      memcpy (stored_name, d->d_name, dlen + 1);
++		      name_buf_pos += dlen + 1;
++
++		      size_t pos = nentries;
++		      while (pos > 0 && strcmp (entries[pos - 1], stored_name) > 0)
++			{
++			  entries[pos] = entries[pos - 1];
++			  --pos;
++			}
++		      entries[pos] = stored_name;
++		      ++nentries;
++		    }
++		}
++	      __close_nocancel_nostatus (dir_fd);
++
++	      char exec_buf[PATH_MAX];
++	      for (size_t i = 0; i < nentries; ++i)
++		{
++		  size_t elen = strlen (entries[i]);
++		  if (prefix_len + 1 + elen + suffix_len + 1 + file_len > sizeof (exec_buf))
++		    continue;
++
++		  char *eb = exec_buf;
++		  memcpy (eb, prefix_buf, prefix_len);
++		  eb += prefix_len;
++		  if (eb > exec_buf && *(eb - 1) != '/')
++		    *eb++ = '/';
++		  memcpy (eb, entries[i], elen);
++		  eb += elen;
++		  if (suffix_len > 0)
++		    {
++		      memcpy (eb, suffix, suffix_len);
++		      eb += suffix_len;
++		    }
++		  if (eb > exec_buf && *(eb - 1) != '/')
++		    *eb++ = '/';
++		  memcpy (eb, file, file_len);
++
++		  __execve (exec_buf, argv, envp);
++
++		  if (errno == ENOEXEC && exec_script)
++		    maybe_script_execute (exec_buf, argv, envp);
++
++		  switch (errno)
++		    {
++		      case EACCES:
++			got_eacces = true;
++			[[fallthrough]];
++		      case ENOENT:
++		      case ESTALE:
++		      case ENOTDIR:
++		      case ENAMETOOLONG:
++		      case ENODEV:
++		      case ETIMEDOUT:
++			break;
++
++		      default:
++			return -1;
++		    }
++		}
++	    }
++	  goto next_elem;
++	}
++
+       /* Use the current path entry, plus a '/' if nonempty, plus the file to
+          execute.  */
+       char *pend = mempcpy (buffer, p, subp - p);
+@@ -174,6 +291,7 @@
+ 	    return -1;
+ 	}
+ 
++next_elem:
+       if (*subp++ == '\0')
+ 	break;
+     }
+diff -Naur --no-dereference glibc-2.44.orig/sysdeps/posix/system.c glibc-2.44.source/sysdeps/posix/system.c
+--- glibc-2.44.orig/sysdeps/posix/system.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.source/sysdeps/posix/system.c	2026-10-30 04:01:45.514145351 +0000
+@@ -25,14 +25,15 @@
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <stdio.h>
++#include <paths.h>
+ 
+ #include <libc-lock.h>
+ #include <not-errno.h>
+ #include <not-cancel.h>
+ #include <internal-signals.h>
+ 
+-#define	SHELL_PATH	"/bin/sh"	/* Path of the shell.  */
+-#define	SHELL_NAME	"sh"		/* Name to give it.  */
++#define	SHELL_PATH	_PATH_BSHELL	/* Path of the shell.  */
++#define	SHELL_NAME	"bash"		/* Name to give it.  */
+ 
+ 
+ /* This system implementation aims to be thread-safe, which requires to
+diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h glibc-2.44.source/sysdeps/unix/sysv/linux/paths.h
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h	2026-10-31 15:30:51.032176834 +0000
++++ glibc-2.44.source/sysdeps/unix/sysv/linux/paths.h	2026-10-31 15:30:53.590764256 +0000
+@@ -33,12 +33,11 @@
+ #define	_PATHS_H_
+ 
+ /* Default search path. */
+-#define	_PATH_DEFPATH	"/usr/bin:/bin"
++#define	_PATH_DEFPATH	"/sw/*/bin"
+ /* All standard utilities path. */
+-#define	_PATH_STDPATH \
+-	"/usr/bin:/bin:/usr/sbin:/sbin"
++#define	_PATH_STDPATH	"/sw/*/bin"
+ 
+-#define	_PATH_BSHELL	"/bin/sh"
++#define	_PATH_BSHELL	"/sw/bash/bin/bash"
+ #define	_PATH_CONSOLE	"/dev/console"
+ #define	_PATH_CSHELL	"/bin/csh"
+ #define	_PATH_DEVDB	"/var/run/dev.db"
+diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist glibc-2.44.source/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.source/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-07-24 13:16:45.000000000 +0000
+@@ -540,7 +540,7 @@
+ GLIBC_2.2.5 _longjmp F
+ GLIBC_2.2.5 _mcleanup F
+ GLIBC_2.2.5 _mcount F
+-GLIBC_2.2.5 _nl_default_dirname D 0x12
++GLIBC_2.2.5 _nl_default_dirname D 0x17
+ GLIBC_2.2.5 _nl_domain_bindings D 0x8
+ GLIBC_2.2.5 _nl_msg_cat_cntr D 0x4
+ GLIBC_2.2.5 _null_auth D 0x18
+diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed glibc-2.44.source/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.source/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-10-30 04:01:45.514409221 +0000
+@@ -1 +1 @@
+-s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\264\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_
++s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\2\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_

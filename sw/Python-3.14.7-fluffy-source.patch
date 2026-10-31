@@ -1,0 +1,76 @@
+diff -Naur Python-3.14.7.bash/Lib/os.py Python-3.14.7.source/Lib/os.py
+--- Python-3.14.7.bash/Lib/os.py	2026-10-31 16:08:53.535031056 +0000
++++ Python-3.14.7.source/Lib/os.py	2026-10-31 16:08:53.703893776 +0000
+@@ -687,6 +687,15 @@
+ 
+     if path_list is None:
+         path_list = defpath
++    if '*' in path_list or '?' in path_list:
++        import glob
++        expanded = []
++        for d in path_list.split(pathsep):
++            if '*' in d or '?' in d:
++                expanded.extend(sorted(glob.glob(d)))
++            else:
++                expanded.append(d)
++        return expanded
+     return path_list.split(pathsep)
+ 
+ 
+diff -Naur Python-3.14.7.bash/Lib/shutil.py Python-3.14.7.source/Lib/shutil.py
+--- Python-3.14.7.bash/Lib/shutil.py	2026-10-31 16:08:53.536589886 +0000
++++ Python-3.14.7.source/Lib/shutil.py	2026-10-31 16:08:53.705476944 +0000
+@@ -1594,12 +1594,29 @@
+             return None
+ 
+         if use_bytes:
++            has_wildcard = b'*' in path or b'?' in path
+             path = os.fsencode(path)
+             path = path.split(os.fsencode(os.pathsep))
+         else:
++            has_wildcard = '*' in path or '?' in path
+             path = os.fsdecode(path)
+             path = path.split(os.pathsep)
+ 
++        if has_wildcard:
++            import glob
++            expanded = []
++            for d in path:
++                d_str = os.fsdecode(d) if use_bytes else d
++                if '*' in d_str or '?' in d_str:
++                    matches = sorted(glob.glob(d_str))
++                    if use_bytes:
++                        expanded.extend(os.fsencode(m) for m in matches)
++                    else:
++                        expanded.extend(matches)
++                else:
++                    expanded.append(d)
++            path = expanded
++
+         if sys.platform == "win32" and _win_path_needs_curdir(cmd, mode):
+             curdir = os.curdir
+             if use_bytes:
+diff -Naur Python-3.14.7.bash/Lib/subprocess.py Python-3.14.7.source/Lib/subprocess.py
+--- Python-3.14.7.bash/Lib/subprocess.py	2026-10-31 16:08:53.537359651 +0000
++++ Python-3.14.7.source/Lib/subprocess.py	2026-10-31 16:08:53.706222343 +0000
+@@ -1847,7 +1847,7 @@
+             if shell:
+                 # On Android the default shell is at '/system/bin/sh'.
+                 unix_shell = ('/system/bin/sh' if
+-                          hasattr(sys, 'getandroidapilevel') else '/bin/sh')
++                          hasattr(sys, 'getandroidapilevel') else '/sw/bash/bin/bash')
+                 args = [unix_shell, "-c"] + args
+                 if executable:
+                     args[0] = executable
+diff -Naur Python-3.14.7.bash/Makefile.pre.in Python-3.14.7.source/Makefile.pre.in
+--- Python-3.14.7.bash/Makefile.pre.in	2026-10-31 16:08:53.599360273 +0000
++++ Python-3.14.7.source/Makefile.pre.in	2026-10-31 16:08:53.766577744 +0000
+@@ -62,7 +62,7 @@
+ GNULD=		@GNULD@
+ 
+ # Shell used by make (some versions default to the login shell, which is bad)
+-SHELL=		/bin/sh -e
++SHELL=		/sw/bash/bin/bash -e
+ 
+ # Use this to make a link between python$(VERSION) and python in $(BINDIR)
+ LN=		@LN@
