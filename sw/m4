@@ -1,17 +1,29 @@
+ON=cross-build
+
 VERSION=1.4.21
 
 ARCHIVES=(
     f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66 https://ftpmirror.gnu.org/m4/m4-$VERSION.tar.xz
+    80a8650a6c84a016ff157c9b94c524eafd638b94fe124802996a8f9dfdbaed95 file://m4-$VERSION-fluffy.patch
 )
 
+NEEDS=(glibc)
+MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz)
+
 MAKE() {
-    ./configure --prefix=/sw/m4
+    patch -Z -Np1 -i m4-$VERSION-fluffy.patch
+    ./configure \
+        --prefix=/sw/m4
     make
 }
+
+CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1)
 
 CHECK() {
     make check
 }
+
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 gawk-pass1 glibc grep-pass1 make-pass1 sed-pass1)
 
 INSTALL() {
     make install

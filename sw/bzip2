@@ -1,3 +1,5 @@
+ON=cross-build
+
 VERSION=1.0.8
 
 ARCHIVES=(
@@ -5,23 +7,30 @@ ARCHIVES=(
     35e3bbd9642af51fef2a8a83afba040d272da42d7e3a251d8e43255a7b496702 https://www.linuxfromscratch.org/patches/lfs/13.1/bzip2-$VERSION-install_docs-1.patch
 )
 
+NEEDS=(glibc)
+MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gcc-pass2 glibc linux-headers make-pass1 patch-pass1 sed-pass1)
+
 MAKE() {
     patch -Np1 -i bzip2-$VERSION-install_docs-1.patch
     sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
     sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
+    sed -i 's@#!/bin/sh@#!/sw/bash/bin/bash@' bzgrep bzmore bzdiff
     make -f Makefile-libbz2_so
     make clean
     make
 }
 
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 make-pass1)
+
 INSTALL() {
-    make PREFIX=/sw/bzip2 install
-    cp -av libbz2.so.* /sw/bzip2/lib
-    ln -sfv libbz2.so.$VERSION /sw/bzip2/lib/libbz2.so
-    ln -sfv libbz2.so.$VERSION /sw/bzip2/lib/libbz2.so.1
-    cp -v bzip2-shared /sw/bzip2/bin/bzip2
-    for i in /sw/bzip2/bin/{bzcat,bunzip2}; do
+    make PREFIX=$DESTDIR/sw/bzip2 install
+    cp -av libbz2.so.* $DESTDIR/sw/bzip2/lib
+    ln -sfv libbz2.so.$VERSION $DESTDIR/sw/bzip2/lib/libbz2.so
+    ln -sfv libbz2.so.$VERSION $DESTDIR/sw/bzip2/lib/libbz2.so.1
+    cp -v bzip2-shared $DESTDIR/sw/bzip2/bin/bzip2
+    for i in $DESTDIR/sw/bzip2/bin/{bzcat,bunzip2}
+    do
         ln -sfv bzip2 "$i"
     done
-    rm -fv /sw/bzip2/lib/libbz2.a
+    rm -fv $DESTDIR/sw/bzip2/lib/libbz2.a
 }

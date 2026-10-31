@@ -4,7 +4,7 @@ VERSION=5.44.0
 
 ARCHIVES=(
     505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://www.cpan.org/src/5.0/perl-$VERSION.tar.xz
-    b524c656efdbf2e4ef50972523c2ccf9a82472228c438d70f01d2c2acf1a93e3 file://perl-$VERSION-fluffy.patch
+    aafa5804c4cfb4723a97b77ce11a5cf71a58579eb42ea070a8c11af16e4ff20c file://perl-$VERSION-fluffy.patch
 )
 
 NEEDS=(glibc-pass1)
@@ -22,6 +22,8 @@ MAKE() {
         -D sitearch=/sw/perl/lib/perl5/5.44/site_perl \
         -D vendorlib=/sw/perl/lib/perl5/5.44/vendor_perl \
         -D vendorarch=/sw/perl/lib/perl5/5.44/vendor_perl \
+        -D man1dir=none \
+        -D man3dir=none \
         -D targetsh=/sw/bash/bin/bash \
         -D locincpth="" \
         -D loclibpth=""

@@ -16,6 +16,6 @@ MAKE() {
 INSTALL_NEEDS=(coreutils-pass1)
 
 INSTALL() {
-    mkdir -pv /sw/signify/bin
-    cp -v signify /sw/signify/bin/signify
+    mkdir -pv $DESTDIR/sw/signify/bin
+    cp -v signify $DESTDIR/sw/signify/bin/signify
 }

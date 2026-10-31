@@ -1,26 +1,28 @@
+ON=cross-build
+
 VERSION=8.3
 
 ARCHIVES=(
     fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc https://ftpmirror.gnu.org/readline/readline-$VERSION.tar.gz
+    18b2654f8b5150b6cec85bccb96b3979f0a7644a388be15df75d3c9729c7a2eb file://readline-$VERSION-fluffy.patch
 )
 
+NEEDS=(glibc ncurses-pass1)
+MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 linux-headers make-pass1 ncurses-pass1 patch-pass1 sed-pass1 tar-pass1)
+
 MAKE() {
-    sed -i '/MV.*old/d' Makefile.in
-    sed -i '/{OLDSUFF}/c:' support/shlib-install
-    sed -i 's/-Wl,-rpath,[^ ]*//' support/shobj-conf
-    sed -e '270a\
-     else\
-       chars_avail = 1;' \
-        -e '288i\   result = -1;' \
-        -i.orig input.c
-    ./configure --prefix=/sw/readline \
+    patch -Z -Np1 -i readline-$VERSION-fluffy.patch
+    ./configure \
+        --prefix=/sw/readline \
         --disable-static \
         --with-curses \
         --docdir=/sw/readline/share/doc/readline-$VERSION
     make SHLIB_LIBS="-lncursesw"
 }
 
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 glibc make-pass1 sed-pass1)
+
 INSTALL() {
     make install
-    install -v -m644 doc/*.{ps,pdf,html,dvi} /sw/readline/share/doc/readline-$VERSION
+    install -v -m644 doc/*.{ps,pdf,html,dvi} $DESTDIR/sw/readline/share/doc/readline-$VERSION
 }
