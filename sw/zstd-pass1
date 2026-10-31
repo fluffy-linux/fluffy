@@ -17,5 +17,5 @@ INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
 
 INSTALL() {
     make CC=$FLUFFY_TGT-gcc prefix=/sw/zstd install
-    rm -v /sw/zstd/lib/libzstd.a
+    rm -v $DESTDIR/sw/zstd/lib/libzstd.a
 }

@@ -40,5 +40,5 @@ INSTALL_NEEDS=(gcc-pass1 linux-headers ncurses-pass1)
 
 INSTALL() {
     make install
-    rm -v /sw/util-linux/lib/lib*.la
+    rm -v $DESTDIR/sw/util-linux/lib/lib*.la
 }

@@ -22,5 +22,5 @@ INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
 
 INSTALL() {
     make install localstatedir=/sw/findutils/var/locate
-    rm -rf /sw/findutils/var
+    rm -rf $DESTDIR/sw/findutils/var
 }

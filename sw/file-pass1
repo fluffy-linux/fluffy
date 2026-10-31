@@ -30,5 +30,5 @@ INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
 
 INSTALL() {
     make install
-    rm -v /sw/file/lib/libmagic.la
+    rm -v $DESTDIR/sw/file/lib/libmagic.la
 }

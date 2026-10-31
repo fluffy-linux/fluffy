@@ -23,5 +23,5 @@ INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
 
 INSTALL() {
     make install
-    rm -v /sw/xz/lib/liblzma.la
+    rm -v $DESTDIR/sw/xz/lib/liblzma.la
 }

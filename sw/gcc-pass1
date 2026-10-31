@@ -54,6 +54,6 @@ INSTALL_NEEDS=(binutils-pass1)
 INSTALL() {
     cd build
     make install
-    cat ../gcc/{limitx,glimits,limity}.h > \
-        $($FLUFFY_TGT-gcc -print-file-name=include)/limits.h
+    local inc_dir="$($FLUFFY_TGT-gcc -print-file-name=include)"
+    cat ../gcc/{limitx,glimits,limity}.h > "${DESTDIR}${inc_dir#$DESTDIR}/limits.h"
 }

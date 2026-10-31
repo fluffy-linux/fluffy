@@ -111,14 +111,6 @@ lockdown() {
             "$root/swctl" mount "${mount_targets[@]}"
         fi
 
-        if test -z "${INSTALL_SUFFIX:-}"
-        then
-            if grep -qs "[[:space:]]/sw/$mount_pkg[[:space:]]" /proc/self/mounts
-            then
-                fatal "mount conflict: $pkg depends on a package that mounts to /sw/$mount_pkg; set INSTALL_SUFFIX (e.g. INSTALL_SUFFIX=new) in $pkg_file"
-            fi
-        fi
-
         case "$1" in
             MAKE)
                 # mount pwd read-write at /work
@@ -128,18 +120,8 @@ lockdown() {
                 call mount overlay /work overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
                 ;;
             INSTALL)
-                if test -n "${INSTALL_SUFFIX:-}"
-                then
-                    mkdir -p "/sw/$mount_pkg-$INSTALL_SUFFIX/sw/$mount_pkg"
-                    call mount "$work_dir/installed" "/sw/$mount_pkg-$INSTALL_SUFFIX/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
-                else
-                    if grep -qs "[[:space:]]/sw/$mount_pkg[[:space:]]" /proc/self/mounts
-                    then
-                        fatal "mount conflict: /sw/$mount_pkg is already mounted by dependencies; set INSTALL_SUFFIX (e.g. INSTALL_SUFFIX=new) in $pkg_file"
-                    fi
-                    mkdir -p "/sw/$mount_pkg"
-                    call mount "$work_dir/installed" "/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
-                fi
+                mkdir -p "/sw/.destdir/sw/$mount_pkg"
+                call mount "$work_dir/installed" "/sw/.destdir/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             SQUASHFS)
@@ -226,13 +208,9 @@ lockdown() {
 
         if test "$1" == INSTALL
         then
-            if test -n "${INSTALL_SUFFIX:-}"
-            then
-                export DESTDIR="/sw/$mount_pkg-$INSTALL_SUFFIX"
-                export PATH="/sw/$mount_pkg-$INSTALL_SUFFIX/sw/$mount_pkg/bin:$PATH"
-            else
-                export PATH="/sw/$mount_pkg/bin:$PATH"
-            fi
+            export DESTDIR=/sw/.destdir
+            export MAKEFLAGS="$MAKEFLAGS DESTDIR=/sw/.destdir"
+            export PATH="/sw/.destdir/sw/$mount_pkg/bin:$PATH"
         fi
 
         "$1"
@@ -282,6 +260,14 @@ fi
 pkg="${pkg_file##*/}"
 mount_pkg="${pkg%-pass*}"
 
+pkg_sha="$(sha256sum "$pkg_file" | cut -d' ' -f1)"
+recorded_sha="$("$root/swctl" from "$pkg" 2>/dev/null || true)"
+if test -n "$recorded_sha" && test "$recorded_sha" == "$pkg_sha"
+then
+    log "$pkg is up to date ($pkg_sha)"
+    exit 0
+fi
+
 declare -a ARCHIVES=()
 declare -a archives=()
 declare -a NEEDS=()
@@ -289,7 +275,6 @@ declare -a MAKE_NEEDS=()
 declare -a CHECK_NEEDS=()
 declare -a INSTALL_NEEDS=()
 declare -a SQUASHFS_NEEDS=()
-INSTALL_SUFFIX=""
 
 SQUASHFS() {
     rm -f "$squashfs_file"
@@ -495,14 +480,11 @@ trap 'fatal "registration failed with exit code $?"' ERR
 (
     call setresuid 0 0 0
     call setresgid 0 0 0
-    "$root/swctl" register "/sw/$mount_pkg" "/sw/$pkg-$VERSION.squashfs" "${NEEDS[@]}"
+    "$root/swctl" register "$squashfs_file"
 )
 trap - ERR
 
 banner CLEANUP
 cd "$root"
 rm -rf "$work_dir"/{src,installed,test-results,test-work}
-if test -n "${INSTALL_SUFFIX:-}"
-then
-    rm -rf "/sw/$mount_pkg-$INSTALL_SUFFIX" 2>/dev/null || true
-fi
+rm -rf /sw/.destdir 2>/dev/null || true

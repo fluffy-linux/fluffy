@@ -35,5 +35,5 @@ INSTALL_NEEDS=(gcc-pass1 glibc-pass1 linux-headers)
 INSTALL() {
     cd build
     make install
-    rm -v /sw/binutils/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+    rm -v $DESTDIR/sw/binutils/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
 }
