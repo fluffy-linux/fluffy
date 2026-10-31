@@ -11,16 +11,22 @@ NEEDS=(glibc)
 MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gcc-pass2 glibc linux-headers make-pass1 patch-pass1 sed-pass1)
 
 MAKE() {
-    patch -Np1 -i bzip2-$VERSION-install_docs-1.patch
+    patch -Z -Np1 -i bzip2-$VERSION-install_docs-1.patch
     sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
     sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
     sed -i 's@#!/bin/sh@#!/sw/bash/bin/bash@' bzgrep bzmore bzdiff
     make -f Makefile-libbz2_so
     make clean
-    make
+    make bzip2 bzip2recover
 }
 
-INSTALL_NEEDS=(bash-pass1 coreutils-pass1 make-pass1)
+CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gcc-pass2 glibc make-pass1)
+
+CHECK() {
+    make test
+}
+
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 glibc make-pass1)
 
 INSTALL() {
     make PREFIX=$DESTDIR/sw/bzip2 install

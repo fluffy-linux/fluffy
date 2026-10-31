@@ -1,0 +1,144 @@
+diff -Naur lz4-1.10.0.orig/contrib/gen_manual/gen-lz4-manual.sh lz4-1.10.0/contrib/gen_manual/gen-lz4-manual.sh
+--- lz4-1.10.0.orig/contrib/gen_manual/gen-lz4-manual.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/contrib/gen_manual/gen-lz4-manual.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LIBVER_MAJOR_SCRIPT=`sed -n '/define[[:blank:]][[:blank:]]*LZ4_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ../../lib/lz4.h`
+ LIBVER_MINOR_SCRIPT=`sed -n '/define[[:blank:]][[:blank:]]*LZ4_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ../../lib/lz4.h`
+diff -Naur lz4-1.10.0.orig/ossfuzz/ossfuzz.sh lz4-1.10.0/ossfuzz/ossfuzz.sh
+--- lz4-1.10.0.orig/ossfuzz/ossfuzz.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/ossfuzz/ossfuzz.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash -eu
++#!/sw/bash/bin/bash -eu
+ 
+ # This script is called by the oss-fuzz main project when compiling the fuzz
+ # targets. This script is regression tested by travisoss.sh.
+diff -Naur lz4-1.10.0.orig/ossfuzz/travisoss.sh lz4-1.10.0/ossfuzz/travisoss.sh
+--- lz4-1.10.0.orig/ossfuzz/travisoss.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/ossfuzz/travisoss.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ set -ex
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-basic.sh lz4-1.10.0/tests/test-lz4-basic.sh
+--- lz4-1.10.0.orig/tests/test-lz4-basic.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-basic.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-tlb"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-contentSize.sh lz4-1.10.0/tests/test-lz4-contentSize.sh
+--- lz4-1.10.0.orig/tests/test-lz4-contentSize.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-contentSize.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-lzc"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-dict.sh lz4-1.10.0/tests/test-lz4-dict.sh
+--- lz4-1.10.0.orig/tests/test-lz4-dict.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-dict.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-dict"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-fast-hugefile.sh lz4-1.10.0/tests/test-lz4-fast-hugefile.sh
+--- lz4-1.10.0.orig/tests/test-lz4-fast-hugefile.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-fast-hugefile.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-lfh"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-frame-concatenation.sh lz4-1.10.0/tests/test-lz4-frame-concatenation.sh
+--- lz4-1.10.0.orig/tests/test-lz4-frame-concatenation.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-frame-concatenation.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-lfc"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-multiple-legacy.sh lz4-1.10.0/tests/test-lz4-multiple-legacy.sh
+--- lz4-1.10.0.orig/tests/test-lz4-multiple-legacy.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-multiple-legacy.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-lml"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-multiple.sh lz4-1.10.0/tests/test-lz4-multiple.sh
+--- lz4-1.10.0.orig/tests/test-lz4-multiple.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-multiple.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-tml"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-opt-parser.sh lz4-1.10.0/tests/test-lz4-opt-parser.sh
+--- lz4-1.10.0.orig/tests/test-lz4-opt-parser.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-opt-parser.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ set -e
+ set -x
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-skippable.sh lz4-1.10.0/tests/test-lz4-skippable.sh
+--- lz4-1.10.0.orig/tests/test-lz4-skippable.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-skippable.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ SKIPFILE="goldenSamples/skip.bin"
+ FPREFIX="tmp-lsk"
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-sparse.sh lz4-1.10.0/tests/test-lz4-sparse.sh
+--- lz4-1.10.0.orig/tests/test-lz4-sparse.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-sparse.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-tls"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4-testmode.sh lz4-1.10.0/tests/test-lz4-testmode.sh
+--- lz4-1.10.0.orig/tests/test-lz4-testmode.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4-testmode.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ FPREFIX="tmp-ltm"
+ 
+diff -Naur lz4-1.10.0.orig/tests/test-lz4hc-hugefile.sh lz4-1.10.0/tests/test-lz4hc-hugefile.sh
+--- lz4-1.10.0.orig/tests/test-lz4hc-hugefile.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/test-lz4hc-hugefile.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ set -e
+ set -x
+diff -Naur lz4-1.10.0.orig/tests/unicode_lint.sh lz4-1.10.0/tests/unicode_lint.sh
+--- lz4-1.10.0.orig/tests/unicode_lint.sh	2024-07-21 17:29:49.000000000 +0000
++++ lz4-1.10.0/tests/unicode_lint.sh	2024-07-21 17:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ # `unicode_lint.sh' determines whether source files under the ./lib/, ./tests/ and ./programs/ directories
+ # contain Unicode characters, and fails if any do.
