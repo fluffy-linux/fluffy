@@ -6,12 +6,16 @@ ARCHIVES=(
 )
 
 MAKE() {
-    patch -Np1 -i wget-$VERSION-fluffy.patch
+    patch -Z -Np1 -i wget-$VERSION-fluffy.patch
     ./configure \
         --prefix=/sw/wget \
         --sysconfdir=/etc \
         --with-ssl=openssl
     make
+}
+
+CHECK() {
+    make check
 }
 
 INSTALL() {

@@ -8,11 +8,11 @@ ARCHIVES=(
     4b63488e050692d873aa99ceda2c36e902f2feebff0cbea4d9ab938ffcdc9d6e file://glibc-$VERSION-fluffy.patch
 )
 
-MAKE_NEEDS=(gcc-pass2 linux-headers patch-pass1 make-pass1 coreutils-pass1 sed-pass1 gawk-pass1 grep-pass1 diffutils-pass1 perl-pass1 python-pass1 bison-pass1)
+MAKE_NEEDS=(bash-pass1 bison-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 linux-headers make-pass1 patch-pass1 perl-pass1 python-pass1 sed-pass1)
 
 MAKE() {
-    patch -Np1 -i glibc-fhs-1.patch
-    patch -Np1 -i glibc-$VERSION-fluffy.patch
+    patch -Z -Np1 -i glibc-fhs-1.patch
+    patch -Z -Np1 -i glibc-$VERSION-fluffy.patch
 
     mkdir -v build
     cd build
@@ -29,7 +29,14 @@ MAKE() {
     make
 }
 
-INSTALL_NEEDS=(gcc-pass2 linux-headers make-pass1 coreutils-pass1 sed-pass1 gawk-pass1 perl-pass1 python-pass1)
+CHECK_NEEDS=(bash-pass1 bison-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 grep-pass1 linux-headers make-pass1 perl-pass1 python-pass1 sed-pass1)
+
+CHECK() {
+    cd build
+    make check
+}
+
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 gawk-pass1 gcc-pass2 linux-headers make-pass1 perl-pass1 python-pass1 sed-pass1)
 
 INSTALL() {
     cd build

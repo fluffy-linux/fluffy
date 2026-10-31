@@ -1,0 +1,62 @@
+ON=cross-build
+
+VERSION=8.6.18
+
+ARCHIVES=(
+    14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://downloads.sourceforge.net/tcl/tcl$VERSION-src.tar.gz
+    8ce630ced6ce4f4f75135563179a3be7ae3df67b1257a663c5121299385f50df file://tcl$VERSION-fluffy.patch
+)
+
+NEEDS=(glibc zlib)
+MAKE_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 gzip-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 zlib)
+
+MAKE() {
+    patch -Z -Np1 -i tcl$VERSION-fluffy.patch
+
+    SRCDIR=$(pwd)
+    cd unix
+    ./configure \
+        --prefix=/sw/tcl \
+        --mandir=/sw/tcl/share/man \
+        --disable-rpath
+    make
+
+    sed -e "s|$SRCDIR/unix|/sw/tcl/lib|" \
+        -e "s|$SRCDIR|/sw/tcl/include|"  \
+        -i tclConfig.sh
+
+    sed -e "s|$SRCDIR/unix/pkgs/tdbc1.1.13|/sw/tcl/lib/tdbc1.1.13|" \
+        -e "s|$SRCDIR/pkgs/tdbc1.1.13/generic|/sw/tcl/include|"    \
+        -e "s|$SRCDIR/pkgs/tdbc1.1.13/library|/sw/tcl/lib/tcl8.6|" \
+        -e "s|$SRCDIR/pkgs/tdbc1.1.13|/sw/tcl/include|"            \
+        -i pkgs/tdbc1.1.13/tdbcConfig.sh
+
+    sed -e "s|$SRCDIR/unix/pkgs/itcl4.3.7|/sw/tcl/lib/itcl4.3.7|" \
+        -e "s|$SRCDIR/pkgs/itcl4.3.7/generic|/sw/tcl/include|"    \
+        -e "s|$SRCDIR/pkgs/itcl4.3.7/library|/sw/tcl/lib/tcl8.6|" \
+        -e "s|$SRCDIR/pkgs/itcl4.3.7|/sw/tcl/include|"            \
+        -i pkgs/itcl4.3.7/itclConfig.sh
+
+    unset SRCDIR
+}
+
+CHECK_NEEDS=(bash-pass1 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1 zlib)
+
+CHECK() {
+    cd unix
+    LC_ALL=C.UTF-8 make test
+}
+
+INSTALL_NEEDS=(bash-pass1 coreutils-pass1 glibc make-pass1 sed-pass1)
+
+INSTALL() {
+    cd unix
+    make install
+    chmod -v u+w $DESTDIR/sw/tcl/lib/libtcl8.6.so
+    make install-private-headers
+    ln -sfv tclsh8.6 $DESTDIR/sw/tcl/bin/tclsh
+    if test -f $DESTDIR/sw/tcl/share/man/man3/Thread.3
+    then
+        mv -v $DESTDIR/sw/tcl/share/man/man3/{Thread,Tcl_Thread}.3
+    fi
+}

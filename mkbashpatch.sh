@@ -32,9 +32,9 @@ archives = sys.argv[2:]
 
 doc_exts = {".po", ".pot", ".gmo", ".texi", ".info", ".md", ".rst", ".html",
             ".1", ".2", ".3", ".4", ".5", ".6", ".7", ".8", ".9", ".man", ".doc", ".txt",
-            ".m4", ".ac", ".am", ".yml", ".yaml", ".json", ".toml"}
+            ".m4", ".ac", ".am", ".yml", ".yaml", ".json", ".toml", ".pbxproj"}
 doc_prefixes = ("changelog", "changes", "news", "readme", "copying", "license", "authors", "thanks", "todo")
-skip_files = {"aclocal.m4", "configure.ac", "makefile.am"}
+skip_files = {"aclocal.m4", "configure.ac", "configure.in", "makefile.am"}
 
 for archive in archives:
     archive_path = archive
