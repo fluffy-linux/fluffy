@@ -9,10 +9,10 @@ NEEDS=(coreutils)
 INSTALL_NEEDS=(coreutils)
 
 INSTALL() {
-    install -vdm755 /sw/ca-certificates/etc/ssl/certs
-    install -vm644 cacert.pem /sw/ca-certificates/etc/ssl/certs/ca-certificates.crt
-    ln -sfv certs/ca-certificates.crt /sw/ca-certificates/etc/ssl/cert.pem
+    install -vdm755 $DESTDIR/sw/ca-certificates/etc/ssl/certs
+    install -vm644 cacert.pem $DESTDIR/sw/ca-certificates/etc/ssl/certs/ca-certificates.crt
+    ln -sfv certs/ca-certificates.crt $DESTDIR/sw/ca-certificates/etc/ssl/cert.pem
 
-    install -vdm755 /sw/ca-certificates/bin
-    install -vm755 ca-certificates-fluffy-upsert /sw/ca-certificates/bin/fluffy-upsert
+    install -vdm755 $DESTDIR/sw/ca-certificates/bin
+    install -vm755 ca-certificates-fluffy-upsert $DESTDIR/sw/ca-certificates/bin/fluffy-upsert
 }

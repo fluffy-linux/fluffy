@@ -27,5 +27,5 @@ INSTALL_NEEDS=(make-pass1 coreutils-pass1)
 
 INSTALL() {
     make install_sw
-    rm -v /sw/openssl/lib/lib*.a 2>/dev/null || true
+    rm -v $DESTDIR/sw/openssl/lib/lib*.a 2>/dev/null || true
 }

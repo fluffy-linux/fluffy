@@ -1,12 +1,14 @@
+ON=cross-build
+
 VERSION=20260805
 
 ARCHIVES=(
     29270860664e324107537f32ea476a333ca52d71b59c74bc06ecc3b0fa9cf490 https://github.com/Mic92/iana-etc/releases/download/$VERSION/iana-etc-$VERSION.tar.gz
 )
 
-INSTALL_NEEDS=(coreutils)
+INSTALL_NEEDS=(coreutils-pass1)
 
 INSTALL() {
-    install -d /sw/iana-etc/etc
-    cp -v services protocols /sw/iana-etc/etc
+    install -d $DESTDIR/sw/iana-etc/etc
+    cp -v services protocols $DESTDIR/sw/iana-etc/etc
 }

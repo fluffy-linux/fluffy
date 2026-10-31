@@ -1,18 +1,31 @@
+ON=cross-build
+
 VERSION=5.48
 
 ARCHIVES=(
     ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283 https://astron.com/pub/file/file-$VERSION.tar.gz
+    7973df10da80fffb459395d2c11e5a4f7699ad6001b82ab7c446af737a6dfc1d file://file-$VERSION-fluffy.patch
 )
 
+NEEDS=(bzip2 glibc xz zlib)
+MAKE_NEEDS=(bash-pass1 bzip2 coreutils-pass1 diffutils-pass1 findutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 linux-headers make-pass1 patch-pass1 sed-pass1 tar-pass1 xz zlib)
+
 MAKE() {
-    ./configure --prefix=/sw/file
+    patch -Z -Np1 -i file-$VERSION-fluffy.patch
+    ./configure \
+        --prefix=/sw/file
     make
 }
+
+CHECK_NEEDS=(bash-pass1 bzip2 coreutils-pass1 diffutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1 xz zlib)
 
 CHECK() {
     make check
 }
 
+INSTALL_NEEDS=(bash-pass1 binutils-pass2 bzip2 coreutils-pass1 gawk-pass1 gcc-pass2 glibc grep-pass1 make-pass1 sed-pass1 xz zlib)
+
 INSTALL() {
     make install
+    rm -fv $DESTDIR/sw/file/lib/libmagic.la
 }

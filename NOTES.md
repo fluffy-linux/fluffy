@@ -230,6 +230,9 @@
       - On initial mount (or squashfs upgrade where `.squashfs` mtime > `/etc/<pkg>` mtime), `swctl` executes `/sw/<pkg>/bin/fluffy-upsert` inside an isolated namespace (`CLONE_NEWNS` + `CLONE_NEWNET`, root `/` read-only, only `/etc/<pkg>` read-write).
       - After upsert completion, `swctl` updates the mtime of `/etc/<pkg>`, avoiding separate timestamp state files.
       - OpenSSL and Wget are configured with wildcard CA discovery (`/etc/*/certs/ca-certificates.crt`), allowing decentralized certificates with zero `/etc` contamination.
+    - **TODO: Universal Timestamp Preservation Across All Patches**:
+      - All patches across all recipes must strictly preserve upstream file modification timestamps.
+      - Applying patches must never shift file `mtime` values forward, ensuring that timestamp-sensitive dependencies (e.g. Makefile vs configure vs aclocal.m4) do not falsely trigger autotools regeneration or `help2man` rebuilds during compilation.
     - **Timestamp Preservation Across Fluffy Patches**:
       - `mkbashpatch.sh` records `os.stat` timestamps and restores exact nanosecond mtimes/atimes using `os.utime()` after rewriting paths to `/sw/bash/bin/bash`.
       - Diffs are generated in UTC (`TZ=UTC0 LC_ALL=C diff -Naur`) and applied with `patch -Z` (`--set-utc`), perfectly preserving original upstream release file ordering and preventing autotools (`aclocal`, `autoheader`, `automake`) or `help2man` from falsely triggering during compilation.

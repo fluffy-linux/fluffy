@@ -1,0 +1,1439 @@
+diff -Naur m4-1.4.21.orig/bootstrap m4-1.4.21/bootstrap
+--- m4-1.4.21.orig/bootstrap	2026-01-11 19:39:38.000000000 +0000
++++ m4-1.4.21/bootstrap	2026-01-11 19:39:38.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ ## DO NOT EDIT - This file generated from build-aux/bootstrap.in
+ ##               by inline-source v2019-02-19.15
+ 
+diff -Naur m4-1.4.21.orig/build-aux/announce-gen m4-1.4.21/build-aux/announce-gen
+--- m4-1.4.21.orig/build-aux/announce-gen	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/announce-gen	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Generate a release announcement message.
+diff -Naur m4-1.4.21.orig/build-aux/bootstrap.in m4-1.4.21/build-aux/bootstrap.in
+--- m4-1.4.21.orig/build-aux/bootstrap.in	2025-05-10 12:42:18.000000000 +0000
++++ m4-1.4.21/build-aux/bootstrap.in	2025-05-10 12:42:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Bootstrap an Autotooled package from checked-out sources.
+ # Written by Gary V. Vaughan, 2010
+diff -Naur m4-1.4.21.orig/build-aux/compile m4-1.4.21/build-aux/compile
+--- m4-1.4.21.orig/build-aux/compile	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/compile	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur m4-1.4.21.orig/build-aux/config.guess m4-1.4.21/build-aux/config.guess
+--- m4-1.4.21.orig/build-aux/config.guess	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/config.guess	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+diff -Naur m4-1.4.21.orig/build-aux/config.rpath m4-1.4.21/build-aux/config.rpath
+--- m4-1.4.21.orig/build-aux/config.rpath	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/config.rpath	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff -Naur m4-1.4.21.orig/build-aux/config.sub m4-1.4.21/build-aux/config.sub
+--- m4-1.4.21.orig/build-aux/config.sub	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/config.sub	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+diff -Naur m4-1.4.21.orig/build-aux/depcomp m4-1.4.21/build-aux/depcomp
+--- m4-1.4.21.orig/build-aux/depcomp	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/depcomp	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur m4-1.4.21.orig/build-aux/do-release-commit-and-tag m4-1.4.21/build-aux/do-release-commit-and-tag
+--- m4-1.4.21.orig/build-aux/do-release-commit-and-tag	2026-02-06 19:44:37.000000000 +0000
++++ m4-1.4.21/build-aux/do-release-commit-and-tag	2026-02-06 19:44:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # In a git/autoconf/automake-enabled project with a NEWS file and a version-
+ # controlled .prev-version file, automate the procedure by which we record
+ # the date, release-type and version string in the NEWS file.  That commit
+diff -Naur m4-1.4.21.orig/build-aux/extract-trace m4-1.4.21/build-aux/extract-trace
+--- m4-1.4.21.orig/build-aux/extract-trace	2025-04-17 15:45:06.000000000 +0000
++++ m4-1.4.21/build-aux/extract-trace	2025-04-17 15:45:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Extract macro arguments from autotools input with GNU M4.
+ # Written by Gary V. Vaughan, 2010
+diff -Naur m4-1.4.21.orig/build-aux/gendocs.sh m4-1.4.21/build-aux/gendocs.sh
+--- m4-1.4.21.orig/build-aux/gendocs.sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/gendocs.sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash
+ # gendocs.sh -- generate a GNU manual in many formats.  This script is
+ #   mentioned in maintain.texi.  See the help message below for usage details.
+ 
+diff -Naur m4-1.4.21.orig/build-aux/git-version-gen m4-1.4.21/build-aux/git-version-gen
+--- m4-1.4.21.orig/build-aux/git-version-gen	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/git-version-gen	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2025-06-10.02; # UTC
+ 
+diff -Naur m4-1.4.21.orig/build-aux/gitlog-to-changelog m4-1.4.21/build-aux/gitlog-to-changelog
+--- m4-1.4.21.orig/build-aux/gitlog-to-changelog	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/gitlog-to-changelog	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Convert git log output to ChangeLog format.
+diff -Naur m4-1.4.21.orig/build-aux/gnu-web-doc-update m4-1.4.21/build-aux/gnu-web-doc-update
+--- m4-1.4.21.orig/build-aux/gnu-web-doc-update	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/gnu-web-doc-update	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Run this after each non-alpha release, to update the web documentation at
+ # https://www.gnu.org/software/$pkg/manual/
+ 
+diff -Naur m4-1.4.21.orig/build-aux/gnupload m4-1.4.21/build-aux/gnupload
+--- m4-1.4.21.orig/build-aux/gnupload	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/gnupload	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2025-06-28.18; # UTC
+diff -Naur m4-1.4.21.orig/build-aux/inline-source m4-1.4.21/build-aux/inline-source
+--- m4-1.4.21.orig/build-aux/inline-source	2025-04-17 15:45:06.000000000 +0000
++++ m4-1.4.21/build-aux/inline-source	2025-04-17 15:45:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Output the contents of a shell script with sourced files inlined.
+ # Written by Gary V. Vaughan, 2012
+diff -Naur m4-1.4.21.orig/build-aux/install-sh m4-1.4.21/build-aux/install-sh
+--- m4-1.4.21.orig/build-aux/install-sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/install-sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur m4-1.4.21.orig/build-aux/mdate-sh m4-1.4.21/build-aux/mdate-sh
+--- m4-1.4.21.orig/build-aux/mdate-sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/mdate-sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it,
+ # formatted like 1 January 2000.
+ 
+diff -Naur m4-1.4.21.orig/build-aux/missing m4-1.4.21/build-aux/missing
+--- m4-1.4.21.orig/build-aux/missing	2025-04-07 13:53:52.000000000 +0000
++++ m4-1.4.21/build-aux/missing	2025-04-07 13:53:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff -Naur m4-1.4.21.orig/build-aux/options-parser m4-1.4.21/build-aux/options-parser
+--- m4-1.4.21.orig/build-aux/options-parser	2025-04-17 15:45:06.000000000 +0000
++++ m4-1.4.21/build-aux/options-parser	2025-04-17 15:45:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
+diff -Naur m4-1.4.21.orig/build-aux/test-driver m4-1.4.21/build-aux/test-driver
+--- m4-1.4.21.orig/build-aux/test-driver	2025-04-07 13:53:52.000000000 +0000
++++ m4-1.4.21/build-aux/test-driver	2025-04-07 13:53:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff -Naur m4-1.4.21.orig/build-aux/update-copyright m4-1.4.21/build-aux/update-copyright
+--- m4-1.4.21.orig/build-aux/update-copyright	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/update-copyright	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Update an FSF copyright year list to include the current year.
+diff -Naur m4-1.4.21.orig/build-aux/useless-if-before-free m4-1.4.21/build-aux/useless-if-before-free
+--- m4-1.4.21.orig/build-aux/useless-if-before-free	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/useless-if-before-free	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Detect instances of "if (p) free (p);".
+diff -Naur m4-1.4.21.orig/build-aux/vc-list-files m4-1.4.21/build-aux/vc-list-files
+--- m4-1.4.21.orig/build-aux/vc-list-files	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/build-aux/vc-list-files	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # List version-controlled file names.
+ 
+ # Print a version string.
+diff -Naur m4-1.4.21.orig/checks/check-them m4-1.4.21/checks/check-them
+--- m4-1.4.21.orig/checks/check-them	2026-01-11 19:39:38.000000000 +0000
++++ m4-1.4.21/checks/check-them	2026-01-11 19:39:38.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Check GNU m4 against examples from the manual source.
+ # Copyright (C) 1992, 2006-2014, 2016-2017, 2020-2026 Free Software
+ # Foundation, Inc.
+diff -Naur m4-1.4.21.orig/checks/get-them m4-1.4.21/checks/get-them
+--- m4-1.4.21.orig/checks/get-them	2026-01-11 19:46:02.000000000 +0000
++++ m4-1.4.21/checks/get-them	2026-01-11 19:46:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # -*- AWK -*-
+ # Extract all examples from the manual source.
+ # Copyright (C) 1992, 2005-2014, 2016-2017, 2020-2026 Free Software
+diff -Naur m4-1.4.21.orig/checks/stackovf.test m4-1.4.21/checks/stackovf.test
+--- m4-1.4.21.orig/checks/stackovf.test	2026-01-11 19:39:38.000000000 +0000
++++ m4-1.4.21/checks/stackovf.test	2026-01-11 19:39:38.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This file is part of the GNU m4 testsuite
+ # Copyright (C) 2000, 2003, 2007-2014, 2016-2017, 2020-2026 Free
+ # Software Foundation, Inc.
+diff -Naur m4-1.4.21.orig/configure m4-1.4.21/configure
+--- m4-1.4.21.orig/configure	2026-02-06 19:48:17.000000000 +0000
++++ m4-1.4.21/configure	2026-02-06 19:48:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72.90 for GNU M4 1.4.21.
+ #
+diff -Naur m4-1.4.21.orig/lib/spawn_faction_addchdir.c m4-1.4.21/lib/spawn_faction_addchdir.c
+--- m4-1.4.21.orig/lib/spawn_faction_addchdir.c	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/lib/spawn_faction_addchdir.c	2026-02-03 19:04:18.000000000 +0000
+@@ -26,6 +26,7 @@
+ # include "spawn_int.h"
+ #endif
+ 
++#if REPLACE_POSIX_SPAWN
+ /* Add an action to FILE-ACTIONS which tells the implementation to call
+    'chdir' to the given directory during the 'spawn' call.  */
+ int
+@@ -33,9 +34,6 @@
+                                    const char *path)
+ #undef posix_spawn_file_actions_addchdir
+ {
+-#if !REPLACE_POSIX_SPAWN
+-  return posix_spawn_file_actions_addchdir_np (file_actions, path);
+-#else
+   {
+     /* Copy PATH, because the caller may free it before calling posix_spawn()
+        or posix_spawnp().  */
+@@ -66,5 +64,5 @@
+       return 0;
+     }
+   }
+-#endif
+ }
++#endif
+diff -Naur m4-1.4.21.orig/tests/executable-shell-script m4-1.4.21/tests/executable-shell-script
+--- m4-1.4.21.orig/tests/executable-shell-script	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/executable-shell-script	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This script is a proper shell script.
+ printf 'Halle '
+ printf "Potta"
+diff -Naur m4-1.4.21.orig/tests/test-all-shells.sh m4-1.4.21/tests/test-all-shells.sh
+--- m4-1.4.21.orig/tests/test-all-shells.sh	2025-04-17 15:45:07.000000000 +0000
++++ m4-1.4.21/tests/test-all-shells.sh	2025-04-17 15:45:07.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Unit test helper.
+ 
+diff -Naur m4-1.4.21.orig/tests/test-binary-io.sh m4-1.4.21/tests/test-binary-io.sh
+--- m4-1.4.21.orig/tests/test-binary-io.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-binary-io.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff -Naur m4-1.4.21.orig/tests/test-btoc32-1.sh m4-1.4.21/tests/test-btoc32-1.sh
+--- m4-1.4.21.orig/tests/test-btoc32-1.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-btoc32-1.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur m4-1.4.21.orig/tests/test-btoc32-2.sh m4-1.4.21/tests/test-btoc32-2.sh
+--- m4-1.4.21.orig/tests/test-btoc32-2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-btoc32-2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur m4-1.4.21.orig/tests/test-btoc32-3.sh m4-1.4.21/tests/test-btoc32-3.sh
+--- m4-1.4.21.orig/tests/test-btoc32-3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-btoc32-3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-btowc-1.sh m4-1.4.21/tests/test-btowc-1.sh
+--- m4-1.4.21.orig/tests/test-btowc-1.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-btowc-1.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur m4-1.4.21.orig/tests/test-btowc-2.sh m4-1.4.21/tests/test-btowc-2.sh
+--- m4-1.4.21.orig/tests/test-btowc-2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-btowc-2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur m4-1.4.21.orig/tests/test-btowc-3.sh m4-1.4.21/tests/test-btowc-3.sh
+--- m4-1.4.21.orig/tests/test-btowc-3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-btowc-3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-c-stack.sh m4-1.4.21/tests/test-c-stack.sh
+--- m4-1.4.21.orig/tests/test-c-stack.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-c-stack.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff -Naur m4-1.4.21.orig/tests/test-c-stack2.sh m4-1.4.21/tests/test-c-stack2.sh
+--- m4-1.4.21.orig/tests/test-c-stack2.sh	2025-04-17 15:43:21.000000000 +0000
++++ m4-1.4.21/tests/test-c-stack2.sh	2025-04-17 15:43:21.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff -Naur m4-1.4.21.orig/tests/test-c-strcasecmp.sh m4-1.4.21/tests/test-c-strcasecmp.sh
+--- m4-1.4.21.orig/tests/test-c-strcasecmp.sh	2025-04-05 12:09:41.000000000 +0000
++++ m4-1.4.21/tests/test-c-strcasecmp.sh	2025-04-05 12:09:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the C locale.
+ ${CHECKER} ./test-c-strcasecmp${EXEEXT} || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c-strncasecmp.sh m4-1.4.21/tests/test-c-strncasecmp.sh
+--- m4-1.4.21.orig/tests/test-c-strncasecmp.sh	2025-04-05 12:09:41.000000000 +0000
++++ m4-1.4.21/tests/test-c-strncasecmp.sh	2025-04-05 12:09:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the C locale.
+ ${CHECKER} ./test-c-strncasecmp${EXEEXT} || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isalnum.sh m4-1.4.21/tests/test-c32isalnum.sh
+--- m4-1.4.21.orig/tests/test-c32isalnum.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isalnum.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isalnum${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isalpha.sh m4-1.4.21/tests/test-c32isalpha.sh
+--- m4-1.4.21.orig/tests/test-c32isalpha.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isalpha.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isalpha${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isblank.sh m4-1.4.21/tests/test-c32isblank.sh
+--- m4-1.4.21.orig/tests/test-c32isblank.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isblank.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isblank${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32iscntrl.sh m4-1.4.21/tests/test-c32iscntrl.sh
+--- m4-1.4.21.orig/tests/test-c32iscntrl.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32iscntrl.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32iscntrl${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isdigit.sh m4-1.4.21/tests/test-c32isdigit.sh
+--- m4-1.4.21.orig/tests/test-c32isdigit.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isdigit.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isdigit${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isgraph.sh m4-1.4.21/tests/test-c32isgraph.sh
+--- m4-1.4.21.orig/tests/test-c32isgraph.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isgraph.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isgraph${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32islower.sh m4-1.4.21/tests/test-c32islower.sh
+--- m4-1.4.21.orig/tests/test-c32islower.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32islower.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32islower${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isprint.sh m4-1.4.21/tests/test-c32isprint.sh
+--- m4-1.4.21.orig/tests/test-c32isprint.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isprint.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isprint${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32ispunct.sh m4-1.4.21/tests/test-c32ispunct.sh
+--- m4-1.4.21.orig/tests/test-c32ispunct.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32ispunct.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32ispunct${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isspace.sh m4-1.4.21/tests/test-c32isspace.sh
+--- m4-1.4.21.orig/tests/test-c32isspace.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isspace.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isspace${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isupper.sh m4-1.4.21/tests/test-c32isupper.sh
+--- m4-1.4.21.orig/tests/test-c32isupper.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isupper.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isupper${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32isxdigit.sh m4-1.4.21/tests/test-c32isxdigit.sh
+--- m4-1.4.21.orig/tests/test-c32isxdigit.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32isxdigit.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isxdigit${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32rtomb-w32-2.sh m4-1.4.21/tests/test-c32rtomb-w32-2.sh
+--- m4-1.4.21.orig/tests/test-c32rtomb-w32-2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32rtomb-w32-2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} French_France 1252
+diff -Naur m4-1.4.21.orig/tests/test-c32rtomb-w32-3.sh m4-1.4.21/tests/test-c32rtomb-w32-3.sh
+--- m4-1.4.21.orig/tests/test-c32rtomb-w32-3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32rtomb-w32-3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur m4-1.4.21.orig/tests/test-c32rtomb-w32-4.sh m4-1.4.21/tests/test-c32rtomb-w32-4.sh
+--- m4-1.4.21.orig/tests/test-c32rtomb-w32-4.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32rtomb-w32-4.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur m4-1.4.21.orig/tests/test-c32rtomb-w32-5.sh m4-1.4.21/tests/test-c32rtomb-w32-5.sh
+--- m4-1.4.21.orig/tests/test-c32rtomb-w32-5.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32rtomb-w32-5.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Japanese_Japan 932
+diff -Naur m4-1.4.21.orig/tests/test-c32rtomb-w32-6.sh m4-1.4.21/tests/test-c32rtomb-w32-6.sh
+--- m4-1.4.21.orig/tests/test-c32rtomb-w32-6.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32rtomb-w32-6.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur m4-1.4.21.orig/tests/test-c32rtomb-w32-7.sh m4-1.4.21/tests/test-c32rtomb-w32-7.sh
+--- m4-1.4.21.orig/tests/test-c32rtomb-w32-7.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32rtomb-w32-7.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_China 936
+diff -Naur m4-1.4.21.orig/tests/test-c32rtomb-w32-8.sh m4-1.4.21/tests/test-c32rtomb-w32-8.sh
+--- m4-1.4.21.orig/tests/test-c32rtomb-w32-8.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32rtomb-w32-8.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_China 54936
+diff -Naur m4-1.4.21.orig/tests/test-c32rtomb.sh m4-1.4.21/tests/test-c32rtomb.sh
+--- m4-1.4.21.orig/tests/test-c32rtomb.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32rtomb.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32rtomb${EXEEXT} 1 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-c32tolower.sh m4-1.4.21/tests/test-c32tolower.sh
+--- m4-1.4.21.orig/tests/test-c32tolower.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-c32tolower.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Allow distinguishing the various invocations in the .log file.
+ set -x
+diff -Naur m4-1.4.21.orig/tests/test-closein.sh m4-1.4.21/tests/test-closein.sh
+--- m4-1.4.21.orig/tests/test-closein.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-closein.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff -Naur m4-1.4.21.orig/tests/test-error.sh m4-1.4.21/tests/test-error.sh
+--- m4-1.4.21.orig/tests/test-error.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-error.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test of the 'error' module.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+diff -Naur m4-1.4.21.orig/tests/test-execute.sh m4-1.4.21/tests/test-execute.sh
+--- m4-1.4.21.orig/tests/test-execute.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-execute.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ st=0
+ for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 ; do
+diff -Naur m4-1.4.21.orig/tests/test-fflush2.sh m4-1.4.21/tests/test-fflush2.sh
+--- m4-1.4.21.orig/tests/test-fflush2.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-fflush2.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Execute the test only with seekable input stream.
+ # The behaviour of fflush() on a non-seekable input stream is undefined.
+diff -Naur m4-1.4.21.orig/tests/test-fpending.sh m4-1.4.21/tests/test-fpending.sh
+--- m4-1.4.21.orig/tests/test-fpending.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-fpending.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfile=
+ trap 'rm -fr $tmpfile' HUP INT QUIT TERM
+diff -Naur m4-1.4.21.orig/tests/test-freadahead.sh m4-1.4.21/tests/test-freadahead.sh
+--- m4-1.4.21.orig/tests/test-freadahead.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-freadahead.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-freadahead${EXEEXT} 0 < "$srcdir/test-freadahead.sh" || exit 1
+ ${CHECKER} ./test-freadahead${EXEEXT} 5 < "$srcdir/test-freadahead.sh" || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-fseek.sh m4-1.4.21/tests/test-fseek.sh
+--- m4-1.4.21.orig/tests/test-fseek.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-fseek.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseek${EXEEXT} 1 < "$srcdir/test-fseek.sh" || exit 1
+ echo hi | ${CHECKER} ./test-fseek${EXEEXT} || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-fseek2.sh m4-1.4.21/tests/test-fseek2.sh
+--- m4-1.4.21.orig/tests/test-fseek2.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-fseek2.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-fseek${EXEEXT} 1 2 < "$srcdir/test-fseek2.sh"
+diff -Naur m4-1.4.21.orig/tests/test-fseeko.sh m4-1.4.21/tests/test-fseeko.sh
+--- m4-1.4.21.orig/tests/test-fseeko.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-fseeko.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko${EXEEXT} 1 < "$srcdir/test-fseeko.sh" || exit 1
+ echo hi | ${CHECKER} ./test-fseeko${EXEEXT} || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-fseeko2.sh m4-1.4.21/tests/test-fseeko2.sh
+--- m4-1.4.21.orig/tests/test-fseeko2.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-fseeko2.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-fseeko${EXEEXT} 1 2 < "$srcdir/test-fseeko2.sh"
+diff -Naur m4-1.4.21.orig/tests/test-fseeko3.sh m4-1.4.21/tests/test-fseeko3.sh
+--- m4-1.4.21.orig/tests/test-fseeko3.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-fseeko3.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko3${EXEEXT} 0 "$srcdir/test-fseeko3.sh" || exit 1
+ 
+diff -Naur m4-1.4.21.orig/tests/test-fseeko4.sh m4-1.4.21/tests/test-fseeko4.sh
+--- m4-1.4.21.orig/tests/test-fseeko4.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-fseeko4.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko4${EXEEXT} "$srcdir/test-fseeko4.sh" || exit 1
+ 
+diff -Naur m4-1.4.21.orig/tests/test-ftell.sh m4-1.4.21/tests/test-ftell.sh
+--- m4-1.4.21.orig/tests/test-ftell.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-ftell.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftell${EXEEXT} 1 < "$srcdir/test-ftell.sh" || exit 1
+ echo hi | ${CHECKER} ./test-ftell${EXEEXT} || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-ftell2.sh m4-1.4.21/tests/test-ftell2.sh
+--- m4-1.4.21.orig/tests/test-ftell2.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-ftell2.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftell${EXEEXT} 1 2 < "$srcdir/test-ftell2.sh"
+diff -Naur m4-1.4.21.orig/tests/test-ftello.sh m4-1.4.21/tests/test-ftello.sh
+--- m4-1.4.21.orig/tests/test-ftello.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-ftello.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftello${EXEEXT} 1 < "$srcdir/test-ftello.sh" || exit 1
+ echo hi | ${CHECKER} ./test-ftello${EXEEXT} || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-ftello2.sh m4-1.4.21/tests/test-ftello2.sh
+--- m4-1.4.21.orig/tests/test-ftello2.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-ftello2.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftello${EXEEXT} 1 2 < "$srcdir/test-ftello2.sh"
+diff -Naur m4-1.4.21.orig/tests/test-ftello4.sh m4-1.4.21/tests/test-ftello4.sh
+--- m4-1.4.21.orig/tests/test-ftello4.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-ftello4.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftello4${EXEEXT} "$srcdir/test-ftello4.sh" || exit 1
+ 
+diff -Naur m4-1.4.21.orig/tests/test-ftruncate.sh m4-1.4.21/tests/test-ftruncate.sh
+--- m4-1.4.21.orig/tests/test-ftruncate.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-ftruncate.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftruncate${EXEEXT} "$srcdir/test-ftruncate.sh"
+diff -Naur m4-1.4.21.orig/tests/test-funclib-quote.sh m4-1.4.21/tests/test-funclib-quote.sh
+--- m4-1.4.21.orig/tests/test-funclib-quote.sh	2025-04-17 15:45:07.000000000 +0000
++++ m4-1.4.21/tests/test-funclib-quote.sh	2025-04-17 15:45:07.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Unit tests for funclib.sh
+ 
+diff -Naur m4-1.4.21.orig/tests/test-getcwd.sh m4-1.4.21/tests/test-getcwd.sh
+--- m4-1.4.21.orig/tests/test-getcwd.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-getcwd.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+ 
+diff -Naur m4-1.4.21.orig/tests/test-init.sh m4-1.4.21/tests/test-init.sh
+--- m4-1.4.21.orig/tests/test-init.sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/test-init.sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for init.sh
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur m4-1.4.21.orig/tests/test-iswdigit.sh m4-1.4.21/tests/test-iswdigit.sh
+--- m4-1.4.21.orig/tests/test-iswdigit.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-iswdigit.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswdigit${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-iswpunct.sh m4-1.4.21/tests/test-iswpunct.sh
+--- m4-1.4.21.orig/tests/test-iswpunct.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-iswpunct.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswpunct${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-iswxdigit.sh m4-1.4.21/tests/test-iswxdigit.sh
+--- m4-1.4.21.orig/tests/test-iswxdigit.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-iswxdigit.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswxdigit${EXEEXT} 0 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-localcharset-w32utf8.sh m4-1.4.21/tests/test-localcharset-w32utf8.sh
+--- m4-1.4.21.orig/tests/test-localcharset-w32utf8.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-localcharset-w32utf8.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff -Naur m4-1.4.21.orig/tests/test-localename-w32utf8.sh m4-1.4.21/tests/test-localename-w32utf8.sh
+--- m4-1.4.21.orig/tests/test-localename-w32utf8.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-localename-w32utf8.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff -Naur m4-1.4.21.orig/tests/test-lseek.sh m4-1.4.21/tests/test-lseek.sh
+--- m4-1.4.21.orig/tests/test-lseek.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-lseek.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-1.sh m4-1.4.21/tests/test-mbrtoc32-1.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-1.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-1.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-2.sh m4-1.4.21/tests/test-mbrtoc32-2.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-3.sh m4-1.4.21/tests/test-mbrtoc32-3.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-4.sh m4-1.4.21/tests/test-mbrtoc32-4.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-4.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-4.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-5.sh m4-1.4.21/tests/test-mbrtoc32-5.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-5.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-5.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-w32-2.sh m4-1.4.21/tests/test-mbrtoc32-w32-2.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-w32-2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-w32-2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} French_France 1252
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-w32-3.sh m4-1.4.21/tests/test-mbrtoc32-w32-3.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-w32-3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-w32-3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-w32-4.sh m4-1.4.21/tests/test-mbrtoc32-w32-4.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-w32-4.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-w32-4.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-w32-5.sh m4-1.4.21/tests/test-mbrtoc32-w32-5.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-w32-5.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-w32-5.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Japanese_Japan 932
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-w32-6.sh m4-1.4.21/tests/test-mbrtoc32-w32-6.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-w32-6.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-w32-6.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-w32-7.sh m4-1.4.21/tests/test-mbrtoc32-w32-7.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-w32-7.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-w32-7.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_China 936
+diff -Naur m4-1.4.21.orig/tests/test-mbrtoc32-w32-8.sh m4-1.4.21/tests/test-mbrtoc32-w32-8.sh
+--- m4-1.4.21.orig/tests/test-mbrtoc32-w32-8.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtoc32-w32-8.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_China 54936
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-1.sh m4-1.4.21/tests/test-mbrtowc-1.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-1.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-1.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-2.sh m4-1.4.21/tests/test-mbrtowc-2.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-3.sh m4-1.4.21/tests/test-mbrtowc-3.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-4.sh m4-1.4.21/tests/test-mbrtowc-4.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-4.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-4.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-5.sh m4-1.4.21/tests/test-mbrtowc-5.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-5.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-5.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-w32-2.sh m4-1.4.21/tests/test-mbrtowc-w32-2.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-w32-2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-w32-2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France 1252
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-w32-3.sh m4-1.4.21/tests/test-mbrtowc-w32-3.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-w32-3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-w32-3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-w32-4.sh m4-1.4.21/tests/test-mbrtowc-w32-4.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-w32-4.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-w32-4.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-w32-5.sh m4-1.4.21/tests/test-mbrtowc-w32-5.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-w32-5.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-w32-5.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Japanese_Japan 932
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-w32-6.sh m4-1.4.21/tests/test-mbrtowc-w32-6.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-w32-6.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-w32-6.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-w32-7.sh m4-1.4.21/tests/test-mbrtowc-w32-7.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-w32-7.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-w32-7.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_China 936
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-w32-8.sh m4-1.4.21/tests/test-mbrtowc-w32-8.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-w32-8.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-w32-8.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_China 54936
+diff -Naur m4-1.4.21.orig/tests/test-mbrtowc-w32utf8.sh m4-1.4.21/tests/test-mbrtowc-w32utf8.sh
+--- m4-1.4.21.orig/tests/test-mbrtowc-w32utf8.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbrtowc-w32utf8.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff -Naur m4-1.4.21.orig/tests/test-mbsinit.sh m4-1.4.21/tests/test-mbsinit.sh
+--- m4-1.4.21.orig/tests/test-mbsinit.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbsinit.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-mbslen.sh m4-1.4.21/tests/test-mbslen.sh
+--- m4-1.4.21.orig/tests/test-mbslen.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbslen.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-mbsnlen.sh m4-1.4.21/tests/test-mbsnlen.sh
+--- m4-1.4.21.orig/tests/test-mbsnlen.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbsnlen.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-mbsstr2.sh m4-1.4.21/tests/test-mbsstr2.sh
+--- m4-1.4.21.orig/tests/test-mbsstr2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-mbsstr2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-mbsstr3.sh m4-1.4.21/tests/test-mbsstr3.sh
+--- m4-1.4.21.orig/tests/test-mbsstr3.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-mbsstr3.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur m4-1.4.21.orig/tests/test-nl_langinfo1.sh m4-1.4.21/tests/test-nl_langinfo1.sh
+--- m4-1.4.21.orig/tests/test-nl_langinfo1.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-nl_langinfo1.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LC_ALL=C ${CHECKER} ./test-nl_langinfo1${EXEEXT} 0 || exit 1
+ 
+diff -Naur m4-1.4.21.orig/tests/test-nl_langinfo2.sh m4-1.4.21/tests/test-nl_langinfo2.sh
+--- m4-1.4.21.orig/tests/test-nl_langinfo2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-nl_langinfo2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # The name of a specific traditional locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur m4-1.4.21.orig/tests/test-option-parser-helper m4-1.4.21/tests/test-option-parser-helper
+--- m4-1.4.21.orig/tests/test-option-parser-helper	2025-04-17 15:45:07.000000000 +0000
++++ m4-1.4.21/tests/test-option-parser-helper	2025-04-17 15:45:07.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Unit tests for funclib.sh
+ 
+diff -Naur m4-1.4.21.orig/tests/test-option-parser.sh m4-1.4.21/tests/test-option-parser.sh
+--- m4-1.4.21.orig/tests/test-option-parser.sh	2025-04-17 15:45:07.000000000 +0000
++++ m4-1.4.21/tests/test-option-parser.sh	2025-04-17 15:45:07.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Unit tests for option-parser
+ 
+diff -Naur m4-1.4.21.orig/tests/test-perror.sh m4-1.4.21/tests/test-perror.sh
+--- m4-1.4.21.orig/tests/test-perror.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-perror.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff -Naur m4-1.4.21.orig/tests/test-posix_spawn-dup2-stdin.c m4-1.4.21/tests/test-posix_spawn-dup2-stdin.c
+--- m4-1.4.21.orig/tests/test-posix_spawn-dup2-stdin.c	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/test-posix_spawn-dup2-stdin.c	2026-02-03 19:04:18.000000000 +0000
+@@ -50,7 +50,7 @@
+ int
+ main ()
+ {
+-  char argv0[] = BOURNE_SHELL;
++  char argv0[] = "/sw/bash/bin/bash";
+   char argv1[] = CHILD_PROGRAM_FILENAME;
+   char *argv[] = { argv0, argv1, NULL };
+   int ofd[2];
+@@ -100,7 +100,7 @@
+               || (err = posix_spawnattr_setflags (&attrs, POSIX_SPAWN_SETSIGMASK)) != 0
+               #endif
+              )
+-          || (err = posix_spawnp (&child, BOURNE_SHELL, &actions, &attrs, argv, environ)) != 0))
++          || (err = posix_spawnp (&child, "/sw/bash/bin/bash", &actions, &attrs, argv, environ)) != 0))
+     {
+       if (actions_allocated)
+         posix_spawn_file_actions_destroy (&actions);
+diff -Naur m4-1.4.21.orig/tests/test-posix_spawn-dup2-stdin.in.sh m4-1.4.21/tests/test-posix_spawn-dup2-stdin.in.sh
+--- m4-1.4.21.orig/tests/test-posix_spawn-dup2-stdin.in.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-posix_spawn-dup2-stdin.in.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ read line
+ test "$line" = "Halle Potta"
+diff -Naur m4-1.4.21.orig/tests/test-posix_spawn-dup2-stdout.c m4-1.4.21/tests/test-posix_spawn-dup2-stdout.c
+--- m4-1.4.21.orig/tests/test-posix_spawn-dup2-stdout.c	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/test-posix_spawn-dup2-stdout.c	2026-02-03 19:04:18.000000000 +0000
+@@ -72,7 +72,7 @@
+ int
+ main ()
+ {
+-  char argv0[] = BOURNE_SHELL;
++  char argv0[] = "/sw/bash/bin/bash";
+   char argv1[] = CHILD_PROGRAM_FILENAME;
+   char *argv[] = { argv0, argv1, NULL };
+   int ifd[2];
+@@ -123,7 +123,7 @@
+               || (err = posix_spawnattr_setflags (&attrs, POSIX_SPAWN_SETSIGMASK)) != 0
+               #endif
+              )
+-          || (err = posix_spawnp (&child, BOURNE_SHELL, &actions, &attrs, argv, environ)) != 0))
++          || (err = posix_spawnp (&child, "/sw/bash/bin/bash", &actions, &attrs, argv, environ)) != 0))
+     {
+       if (actions_allocated)
+         posix_spawn_file_actions_destroy (&actions);
+diff -Naur m4-1.4.21.orig/tests/test-posix_spawn-dup2-stdout.in.sh m4-1.4.21/tests/test-posix_spawn-dup2-stdout.in.sh
+--- m4-1.4.21.orig/tests/test-posix_spawn-dup2-stdout.in.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-posix_spawn-dup2-stdout.in.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ echo "Halle Potta"
+diff -Naur m4-1.4.21.orig/tests/test-select-in.sh m4-1.4.21/tests/test-select-in.sh
+--- m4-1.4.21.orig/tests/test-select-in.sh	2025-04-17 15:43:21.000000000 +0000
++++ m4-1.4.21/tests/test-select-in.sh	2025-04-17 15:43:21.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test select() on file descriptors opened for reading.
+ 
+ # This test is known to fail on Solaris 2.6 and older, due to its handling
+diff -Naur m4-1.4.21.orig/tests/test-select-out.sh m4-1.4.21/tests/test-select-out.sh
+--- m4-1.4.21.orig/tests/test-select-out.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-select-out.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test select() on file descriptors opened for writing.
+ 
+ tmpfiles=""
+diff -Naur m4-1.4.21.orig/tests/test-setlocale-w32utf8.sh m4-1.4.21/tests/test-setlocale-w32utf8.sh
+--- m4-1.4.21.orig/tests/test-setlocale-w32utf8.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-setlocale-w32utf8.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff -Naur m4-1.4.21.orig/tests/test-setlocale1.sh m4-1.4.21/tests/test-setlocale1.sh
+--- m4-1.4.21.orig/tests/test-setlocale1.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-setlocale1.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ : "${LOCALE_FR=fr_FR}"
+ : "${LOCALE_FR_UTF8=fr_FR.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-setlocale2.sh m4-1.4.21/tests/test-setlocale2.sh
+--- m4-1.4.21.orig/tests/test-setlocale2.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-setlocale2.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test locale names with likely unsupported encoding in Unix syntax.
+ for name in ar_SA.ISO-8859-1 fr_FR.CP1251 zh_TW.GB18030 zh_CN.BIG5; do
+diff -Naur m4-1.4.21.orig/tests/test-sigpipe.sh m4-1.4.21/tests/test-sigpipe.sh
+--- m4-1.4.21.orig/tests/test-sigpipe.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-sigpipe.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff -Naur m4-1.4.21.orig/tests/test-spawn-pipe.sh m4-1.4.21/tests/test-spawn-pipe.sh
+--- m4-1.4.21.orig/tests/test-spawn-pipe.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-spawn-pipe.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ st=0
+ for i in 0 1 2 3 4 5 6 7 ; do
+diff -Naur m4-1.4.21.orig/tests/test-strtod1.sh m4-1.4.21/tests/test-strtod1.sh
+--- m4-1.4.21.orig/tests/test-strtod1.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-strtod1.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ : "${LOCALE_FR=fr_FR}"
+ : "${LOCALE_FR_UTF8=fr_FR.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-trim1.sh m4-1.4.21/tests/test-trim1.sh
+--- m4-1.4.21.orig/tests/test-trim1.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-trim1.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the "C" or "POSIX" locale.
+ LC_ALL=C \
+diff -Naur m4-1.4.21.orig/tests/test-trim2.sh m4-1.4.21/tests/test-trim2.sh
+--- m4-1.4.21.orig/tests/test-trim2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-trim2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur m4-1.4.21.orig/tests/test-trim3.sh m4-1.4.21/tests/test-trim3.sh
+--- m4-1.4.21.orig/tests/test-trim3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-trim3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur m4-1.4.21.orig/tests/test-update-copyright.sh m4-1.4.21/tests/test-update-copyright.sh
+--- m4-1.4.21.orig/tests/test-update-copyright.sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/test-update-copyright.sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for update-copyright.
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur m4-1.4.21.orig/tests/test-vc-list-files-cvs.sh m4-1.4.21/tests/test-vc-list-files-cvs.sh
+--- m4-1.4.21.orig/tests/test-vc-list-files-cvs.sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/test-vc-list-files-cvs.sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for vc-list-files
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur m4-1.4.21.orig/tests/test-vc-list-files-git.sh m4-1.4.21/tests/test-vc-list-files-git.sh
+--- m4-1.4.21.orig/tests/test-vc-list-files-git.sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/test-vc-list-files-git.sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for vc-list-files
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur m4-1.4.21.orig/tests/test-verify.sh m4-1.4.21/tests/test-verify.sh
+--- m4-1.4.21.orig/tests/test-verify.sh	2022-07-18 13:50:12.000000000 +0000
++++ m4-1.4.21/tests/test-verify.sh	2022-07-18 13:50:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ . "${srcdir=.}/init.sh"
+ 
+ # We are not interested in triggering bugs in the compilers and tools
+diff -Naur m4-1.4.21.orig/tests/test-verror.sh m4-1.4.21/tests/test-verror.sh
+--- m4-1.4.21.orig/tests/test-verror.sh	2023-01-13 21:09:43.000000000 +0000
++++ m4-1.4.21/tests/test-verror.sh	2023-01-13 21:09:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test of the 'verror' module.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+diff -Naur m4-1.4.21.orig/tests/test-version-etc.sh m4-1.4.21/tests/test-version-etc.sh
+--- m4-1.4.21.orig/tests/test-version-etc.sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/test-version-etc.sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for version-etc.
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur m4-1.4.21.orig/tests/test-wcrtomb-w32-2.sh m4-1.4.21/tests/test-wcrtomb-w32-2.sh
+--- m4-1.4.21.orig/tests/test-wcrtomb-w32-2.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-wcrtomb-w32-2.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} French_France 1252
+diff -Naur m4-1.4.21.orig/tests/test-wcrtomb-w32-3.sh m4-1.4.21/tests/test-wcrtomb-w32-3.sh
+--- m4-1.4.21.orig/tests/test-wcrtomb-w32-3.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-wcrtomb-w32-3.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur m4-1.4.21.orig/tests/test-wcrtomb-w32-4.sh m4-1.4.21/tests/test-wcrtomb-w32-4.sh
+--- m4-1.4.21.orig/tests/test-wcrtomb-w32-4.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-wcrtomb-w32-4.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur m4-1.4.21.orig/tests/test-wcrtomb-w32-5.sh m4-1.4.21/tests/test-wcrtomb-w32-5.sh
+--- m4-1.4.21.orig/tests/test-wcrtomb-w32-5.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-wcrtomb-w32-5.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Japanese_Japan 932
+diff -Naur m4-1.4.21.orig/tests/test-wcrtomb-w32-6.sh m4-1.4.21/tests/test-wcrtomb-w32-6.sh
+--- m4-1.4.21.orig/tests/test-wcrtomb-w32-6.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-wcrtomb-w32-6.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur m4-1.4.21.orig/tests/test-wcrtomb-w32-7.sh m4-1.4.21/tests/test-wcrtomb-w32-7.sh
+--- m4-1.4.21.orig/tests/test-wcrtomb-w32-7.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-wcrtomb-w32-7.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_China 936
+diff -Naur m4-1.4.21.orig/tests/test-wcrtomb-w32-8.sh m4-1.4.21/tests/test-wcrtomb-w32-8.sh
+--- m4-1.4.21.orig/tests/test-wcrtomb-w32-8.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-wcrtomb-w32-8.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_China 54936
+diff -Naur m4-1.4.21.orig/tests/test-wcrtomb.sh m4-1.4.21/tests/test-wcrtomb.sh
+--- m4-1.4.21.orig/tests/test-wcrtomb.sh	2025-04-01 23:14:24.000000000 +0000
++++ m4-1.4.21/tests/test-wcrtomb.sh	2025-04-01 23:14:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-wcrtomb${EXEEXT} 1 || exit 1
+diff -Naur m4-1.4.21.orig/tests/test-xalloc-die.sh m4-1.4.21/tests/test-xalloc-die.sh
+--- m4-1.4.21.orig/tests/test-xalloc-die.sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/test-xalloc-die.sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for xalloc_die.
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur m4-1.4.21.orig/tests/uniwidth/test-uc_width2.sh m4-1.4.21/tests/uniwidth/test-uc_width2.sh
+--- m4-1.4.21.orig/tests/uniwidth/test-uc_width2.sh	2026-02-03 19:04:18.000000000 +0000
++++ m4-1.4.21/tests/uniwidth/test-uc_width2.sh	2026-02-03 19:04:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
