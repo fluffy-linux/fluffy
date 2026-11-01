@@ -32,8 +32,10 @@ archives = sys.argv[2:]
 
 doc_exts = {".po", ".pot", ".gmo", ".texi", ".info", ".md", ".rst", ".html",
             ".1", ".2", ".3", ".4", ".5", ".6", ".7", ".8", ".9", ".man", ".doc", ".txt",
-            ".m4", ".ac", ".am", ".yml", ".yaml", ".json", ".toml", ".pbxproj"}
-doc_prefixes = ("changelog", "changes", "news", "readme", "copying", "license", "authors", "thanks", "todo")
+            ".m4", ".ac", ".am", ".yml", ".yaml", ".json", ".toml", ".pbxproj",
+            ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".go", ".d", ".rs",
+            ".def", ".ada", ".adb", ".ads", ".f", ".f90"}
+doc_prefixes = ("changelog", "changes", "news", "readme", "copying", "license", "authors", "thanks", "todo", "install")
 skip_files = {"aclocal.m4", "configure.ac", "configure.in", "makefile.am"}
 
 for archive in archives:
@@ -82,7 +84,7 @@ for archive in archives:
                 if os.path.islink(path):
                     continue
                 fname = f.lower()
-                if fname in skip_files or any(fname.startswith(p) for p in doc_prefixes) or any(fname.endswith(ext) for ext in doc_exts):
+                if "changelog" in fname or fname in skip_files or any(fname.startswith(p) for p in doc_prefixes) or any(fname.endswith(ext) for ext in doc_exts):
                     continue
                 try:
                     with open(path, "rb") as fp:
@@ -99,8 +101,10 @@ for archive in archives:
                 s2 = re.sub(r"(?<!/sw/bash)/bin/(ba)?sh\b", r"/sw/bash/bin/bash", s1)
                 if s2 != text:
                     st = os.stat(path)
+                    os.chmod(path, st.st_mode | 0o200)
                     with open(path, "wb") as fp:
                         fp.write(s2.encode("latin-1"))
+                    os.chmod(path, st.st_mode)
                     os.utime(path, ns=(st.st_atime_ns, st.st_mtime_ns))
                     changed_files += 1
 

@@ -1,0 +1,287 @@
+#!/sw/bash/bin/bash
+
+# shellcheck disable=SC2154
+# trim - transitive dependency reduction over /etc/fluffy/fstab
+
+set -euo pipefail
+
+source ctypes.sh
+
+MNT_ITER_FORWARD=0
+
+log() {
+    echo "$@" >&2
+}
+
+fatal() {
+    log "$@"
+    exit 1
+}
+
+call() {
+    local ret
+    dlcall -n ret -r int "$@"
+    if (( ${ret#*:} == -1 ))
+    then
+        fatal "call failed: $*"
+    fi
+}
+
+call_ptr() {
+    local var="$1"
+    shift
+    dlcall -n "$var" -r pointer "$@"
+    if test "${!var}" == "$NULL"
+    then
+        fatal "call failed: $*"
+    fi
+}
+
+cleanup() {
+    if test -n "${mnt_table:-}" && test "$mnt_table" != "$NULL"
+    then
+        dlcall mnt_free_table "$mnt_table"
+    fi
+}
+
+trap cleanup EXIT
+
+if test -d /mnt/fluffy
+then
+    FSTAB=${FSTAB:-/mnt/fluffy/etc/fluffy/fstab}
+else
+    FSTAB=${FSTAB:-/etc/fluffy/fstab}
+fi
+
+if test -f /sw/util-linux/lib/libmount.so.1
+then
+    dlopen /sw/util-linux/lib/libmount.so.1
+elif test -f /mnt/fluffy/sw/util-linux/lib/libmount.so.1
+then
+    dlopen /mnt/fluffy/sw/util-linux/lib/libmount.so.1
+else
+    dlopen libmount.so.1
+fi
+
+call_ptr mnt_table mnt_new_table
+call mnt_table_set_parser_errcb "$mnt_table" $NULL
+call mnt_table_enable_comments "$mnt_table" "int:1"
+
+if test -f "$FSTAB"
+then
+    call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
+fi
+
+find_fs_by_pkg() {
+    local query="$1"
+    local __var="$2"
+    local exact="${3:-0}"
+    local query_name="${query##*/}"
+    local query_base="${query_name%-pass*}"
+
+    eval "$__var=\$NULL"
+    local fallback="$NULL"
+
+    call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
+    call_ptr p_fs malloc "ulong:8"
+    local val=(pointer:0)
+    pack "$p_fs" val
+
+    while true
+    do
+        dlcall -r int -n ret mnt_table_next_fs "$mnt_table" "$itr" "$p_fs"
+        if test "$ret" != "int:0"
+        then
+            break
+        fi
+        unpack "$p_fs" val
+        local curr_fs="${val[0]}"
+        dlcall -r string -n src_str mnt_fs_get_source "$curr_fs"
+        local src="${src_str#string:}"
+        local filename="${src##*/}"
+        local base="${filename%.squashfs}"
+        local cur_pkg
+        if [[ "$base" =~ ^(.*)-[0-9] ]]
+        then
+            cur_pkg="${BASH_REMATCH[1]}"
+        else
+            cur_pkg="$base"
+        fi
+
+        dlcall -r string -n tgt_str mnt_fs_get_target "$curr_fs"
+        local tgt="${tgt_str#string:}"
+        local tgt_pkg="${tgt##*/}"
+        local cur_base="${cur_pkg%-pass*}"
+
+        if test "$cur_pkg" == "$query_name"
+        then
+            eval "$__var=\$curr_fs"
+            break
+        fi
+
+        if test "$exact" -eq 0 && test "$fallback" == "$NULL"
+        then
+            if test "$tgt_pkg" == "$query_name" || test "$cur_base" == "$query_name" || test "$cur_pkg" == "$query_base"
+            then
+                fallback="$curr_fs"
+            fi
+        fi
+    done
+
+    dlcall free "$p_fs"
+    dlcall mnt_free_iter "$itr"
+
+    if eval "test \"\$$__var\" == \"\$NULL\"" && test "$fallback" != "$NULL"
+    then
+        eval "$__var=\$fallback"
+    fi
+}
+
+one_per_line=0
+while test $# -gt 0
+do
+    case "$1" in
+        -1|--lines)
+            one_per_line=1
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if test $# -eq 0
+then
+    exit 0
+fi
+
+raw_args=("$@")
+declare -A is_dep=()
+declare -A input_canon=()
+declare -A input_tgt=()
+declare -A seen_input=()
+declare -A visited=()
+
+collect_transitive() {
+    local cur_pkg="$1"
+
+    find_fs_by_pkg "$cur_pkg" fs
+    if test "$fs" == "$NULL"
+    then
+        return 0
+    fi
+
+    dlcall -r string -n fs_opts mnt_fs_get_options "$fs"
+    local opts="${fs_opts#string:}"
+    local needs=""
+    if [[ "$opts" =~ -?X-?fluffy\.needs=\"([^\"]*)\" || "$opts" =~ -?X-?fluffy\.needs=([^, ]*) ]]
+    then
+        needs="${BASH_REMATCH[1]}"
+    fi
+
+    if test -n "$needs"
+    then
+        local old_ifs="$IFS"
+        IFS=,
+        local -a sub_needs=()
+        read -ra sub_needs <<< "$needs"
+        IFS="$old_ifs"
+
+        local dep
+        for dep in "${sub_needs[@]}"
+        do
+            local dep_name="${dep##*/}"
+            find_fs_by_pkg "$dep_name" dep_fs
+            if test "$dep_fs" != "$NULL"
+            then
+                dlcall -r string -n dep_src_str mnt_fs_get_source "$dep_fs"
+                local dep_src="${dep_src_str#string:}"
+                local dep_fn="${dep_src##*/}"
+                local dep_base="${dep_fn%.squashfs}"
+                local dep_canon
+                if [[ "$dep_base" =~ ^(.*)-[0-9] ]]
+                then
+                    dep_canon="${BASH_REMATCH[1]}"
+                else
+                    dep_canon="$dep_base"
+                fi
+
+                dlcall -r string -n dep_tgt_str mnt_fs_get_target "$dep_fs"
+                local dep_tgt="${dep_tgt_str#string:}"
+                local dep_tgt_name="${dep_tgt##*/}"
+                local dep_base_name="${dep_canon%-pass*}"
+
+                is_dep["$dep_canon"]=1
+                is_dep["$dep_tgt_name"]=1
+                is_dep["$dep_base_name"]=1
+
+                if test "${visited[$dep_canon]:-0}" -eq 0
+                then
+                    visited["$dep_canon"]=1
+                    collect_transitive "$dep_canon"
+                fi
+            fi
+        done
+    fi
+}
+
+for arg in "${raw_args[@]}"
+do
+    name="${arg##*/}"
+    find_fs_by_pkg "$name" fs
+    if test "$fs" == "$NULL"
+    then
+        fatal "package $arg not found in $FSTAB"
+    fi
+
+    dlcall -r string -n src_str mnt_fs_get_source "$fs"
+    src="${src_str#string:}"
+    fn="${src##*/}"
+    base="${fn%.squashfs}"
+    if [[ "$base" =~ ^(.*)-[0-9] ]]
+    then
+        canon="${BASH_REMATCH[1]}"
+    else
+        canon="$base"
+    fi
+
+    dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
+    tgt="${tgt_str#string:}"
+    tgt_name="${tgt##*/}"
+
+    input_canon["$arg"]="$canon"
+    input_tgt["$arg"]="$tgt_name"
+
+    visited=()
+    collect_transitive "$canon"
+done
+
+roots=()
+for arg in "${raw_args[@]}"
+do
+    canon="${input_canon[$arg]}"
+    tgt_name="${input_tgt[$arg]}"
+    canon_base="${canon%-pass*}"
+
+    if test "${seen_input[$arg]:-0}" -eq 1
+    then
+        continue
+    fi
+    seen_input["$arg"]=1
+
+    if test "${is_dep[$canon]:-0}" -eq 0 && test "${is_dep[$tgt_name]:-0}" -eq 0 && test "${is_dep[$canon_base]:-0}" -eq 0
+    then
+        roots+=("$arg")
+    fi
+done
+
+if test "$one_per_line" -eq 1
+then
+    for r in "${roots[@]}"
+    do
+        echo "$r"
+    done
+else
+    echo "${roots[*]}"
+fi

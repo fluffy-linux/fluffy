@@ -7,6 +7,7 @@ ARCHIVES=(
 )
 
 NEEDS=(
+    libgcc-pass1
     zstd-pass1
 )
 

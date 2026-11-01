@@ -1,0 +1,77 @@
+ON=cross-build
+
+VERSION=16.2.0
+MPFR_VERSION=4.2.2
+MPC_VERSION=1.4.1
+GMP_VERSION=6.3.0
+
+ARCHIVES=(
+    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
+    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$MPFR_VERSION.tar.xz
+    91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$MPC_VERSION.tar.xz
+    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$GMP_VERSION.tar.xz
+    14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
+    fe609085e63f315b9550b5c914674dfdbc460b8d06c5ef88b7573ba57e03e3de file://gcc-$VERSION-fluffy-source.patch
+    b3383fda757774c765974b00fda6c951bcff4d997e9f84501e78bf7cde7577f7 file://mpfr-$MPFR_VERSION-fluffy-shell.patch
+    59ea203e30d5a0030424a3caab9a8b10bd1d549356772abb751d82668d84bf9f file://mpc-$MPC_VERSION-fluffy-shell.patch
+    b6a109a718303b6add5a4d9e58d4a3d66bdc8e3e13fc807a4723466b65609ce1 file://gmp-$GMP_VERSION-fluffy-shell.patch
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    grep-pass1
+    linux-headers
+    m4-pass1
+    make-pass1
+    patch-pass1
+    sed-pass1
+)
+
+MAKE() {
+    mv -v mpfr-$MPFR_VERSION mpfr
+    mv -v mpc-$MPC_VERSION mpc
+    mv -v gmp-$GMP_VERSION gmp
+
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -d mpfr -i ../mpfr-$MPFR_VERSION-fluffy-shell.patch
+    patch -Z -Np1 -d mpc -i ../mpc-$MPC_VERSION-fluffy-shell.patch
+    patch -Z -Np1 -d gmp -i ../gmp-$GMP_VERSION-fluffy-shell.patch
+
+    mkdir -v build
+    cd build
+
+    ../configure \
+        --prefix=/sw/libgcc \
+        --enable-shared \
+        --disable-multilib \
+        --disable-bootstrap \
+        --disable-libatomic \
+        --disable-libgomp \
+        --disable-libquadmath \
+        --disable-libsanitizer \
+        --disable-libssp \
+        --disable-libvtv \
+        --enable-languages=c
+    make all-target-libgcc
+}
+
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    gcc-pass2
+    grep-pass1
+    linux-headers
+    make-pass1
+    sed-pass1
+)
+
+INSTALL() {
+    cd build
+    make install-target-libgcc
+}
