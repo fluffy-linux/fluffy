@@ -26,7 +26,7 @@
 
 3. **Versioned `/etc` via Btrfs Snapshots, Namespace Scoping & `fluffy-init`**
    - **Package Creation vs. Package Installation**:
-     - Package creation (`create`) builds hermetically and must **never** touch `/etc`. All files install strictly into `/sw/<pkg>`. If package creation wrote to `/etc`, those files would not be in the `.squashfs` image, leaving package installation on another system missing required configuration.
+     - Package creation (`swctl build`) builds hermetically and must **never** touch `/etc`. All files install strictly into `/sw/<pkg>`. If package creation wrote to `/etc`, those files would not be in the `.squashfs` image, leaving package installation on another system missing required configuration.
      - Static configuration that literally never changes within a version goes into `/sw/<pkg>/etc/` within the read-only squashfs image (zero copy, zero state).
    - **Conventional Mount Hook (`/sw/<pkg>/bin/fluffy-init`)**:
      - When a squashfs package is mounted, the system convention executes `/sw/<pkg>/bin/fluffy-init` (using shebang `#!/sw/bash/bin/bash`).
@@ -64,22 +64,32 @@
          - **Zero-Lock, Zero-Malloc Client Traversal**: Clients (glibc `execvpe`, bash `findcmd`, ld.so) map the index read-only (`PROT_READ | MAP_SHARED`). Lookups are simple pointer traversals in memory ($O(\log N)$ or $O(1)$) with **zero mutexes, zero syscalls, and zero heap allocations**, making it 100% `vfork`/`CLONE_VM`-safe.
          - **Live In-Place Updates for Fresh Installs**: When a new package is installed, `swctl` writes new CoW tree nodes and atomically flips a single 64-bit root pointer in the header. Active shells and processes see new commands instantly without re-opening files or bouncing namespaces.
 
-5. **Hermetic, Unprivileged Builds & Unified Tooling (`swctl build`, `./chroot.sh`)**
+5. **Hermetic, Unprivileged Builds & Unified Tooling (`swctl build`, `swctl install`)**
    - **Folding `create` into `swctl` (`swctl build`)**:
-     - All package building and recipe orchestration (`create`) is unified under `swctl` (e.g. `swctl build <package>`), eliminating separate utility scripts and consolidating all repository manifest and build lifecycle management.
-     - **Registration as a Build Byproduct**: With `swctl build`, registration ceases to exist as a separate manual step. Upon completing `SQUASHFS`, `swctl build` automatically signs the image, writes the `/etc/fluffy/fstab` entry (target `/sw/<pkg>`, `X-fluffy.needs`, `X-fluffy.from`, `X-fluffy.signature`), and re-signs the manifest in a single atomic transaction. Standalone registration is retained only for importing third-party or pre-built squashfs bundles.
+     - All package building and recipe orchestration is unified under `swctl` (`swctl build <pkg...>` and `swctl install <pkg...>`), auto-prefixing `sw/` so package names are first-class identifiers (`swctl build glibc`, `swctl install gcc`).
+     - **Registration as a Build Byproduct**: With `swctl build`, registration ceases to exist as a separate manual step. Upon completing `SQUASHFS`, `swctl build` automatically signs the image, writes the `/etc/fluffy/fstab` entry (target `/sw/<pkg>`, `X-fluffy.needs`, `X-fluffy.from`, `X-fluffy.signature`), and re-signs the manifest in a single atomic transaction.
+   - **Recursive Recipe DAG Resolution & Incremental Build Skipping**:
+     - `swctl build <pkg...>` recursively walks the recipe files in `sw/` across `ON`, `NEEDS`, `MAKE_NEEDS`, `CHECK_NEEDS`, and `INSTALL_NEEDS`, producing a strict topological build order and rejecting any circular dependencies.
+     - For each package in topological order, if `/etc/fluffy/fstab` already has an entry for that exact package whose `X-fluffy.from` matches `sha256sum sw/<pkg>` (and whose `.squashfs` file is present and non-empty), `swctl build` skips rebuilding it while still checking its upstream dependencies first.
+   - **Future CI, Remote Binary Bottle Cache, `world` & Local User Packages**:
+     - **Binary Bottles (GitHub Packages / GHCR)**:
+       - Before building a package from source, `swctl` can query a remote package registry for a prebuilt `.squashfs` matching the recipe's `X-fluffy.from` hash, verify its `signify` signature against `release.pub`, and register it directly into `fstab`.
+       - `ON=host-build` and `ON=cross-build` recipes (`*-pass1`, `*-pass2`) are host-dependent and stored as **private** GitHub Packages solely for CI reuse (avoiding cache eviction), whereas `ON=fluffy-build` packages are **public** portable bottles.
+     - **CI Pipeline via `sw/world` & Manifest Diffing**:
+       - A `sw/world` pseudopackage (`NEEDS=(...)` of all distro packages) lets CI run `swctl build world`.
+       - CI downloads the prior `fstab` manifest; where `X-fluffy.from` matches the current recipe `sha256`, `swctl` downloads the existing `.squashfs` from GitHub Packages and validates `X-fluffy.signature`. Where it differs, `swctl` rebuilds from source.
+       - Comparing the old `fstab` against the new `fstab` identifies the exact set of newly built `.squashfs` images to publish.
+       - **Dev (`SNAPSHOT`) vs. Release Channels**: Dev/main builds and tagged releases can be separated Maven-style (`SNAPSHOT` vs. release manifests/tags) so experimental rebuilds don't overwrite immutable release bottles.
+     - **Native OS Detection (`/etc/os-release`) & Local User Packages (`sw/local`)**:
+       - Using `/etc/os-release` (`ID=fluffy`) and `$ON`, `swctl` knows when it is running natively on Fluffy Linux vs. bootstrapping from a foreign host, ensuring users on Fluffy never re-trigger `pass1`/`pass2` cross-compilation because `ON=fluffy-build` packages are self-contained.
+       - Users can define local packages and even a `sw/local` pseudopackage (`NEEDS=(world userpkg1 userpkg2)`), where `world` resolves from signed upstream bottles while `userpkg1` and `userpkg2` build locally.
    - **External Chroot Orchestration (`./chroot.sh`)**:
-     - Host-to-chroot logic is completely extracted out of the build engine into a standalone `./chroot.sh` script.
-     - `./chroot.sh` handles entering the `/mnt/fluffy` target (mounting `/dev`, `/dev/pts`, `/proc`, `/sys`, `/run`, `/tmp`, resolv.conf, binding the source repo, and mounting the base builder profile).
-     - Build commands for `cross-build` and `fluffy-build` execute directly and natively inside the chroot environment. The build engine remains completely agnostic to whether it is running on a host or in a chroot, eliminating nested re-exec hacks.
-   - **TODO: Eliminate `create` Self-Re-exec (Use In-Process Subshell)**:
-     - `create` currently calls itself (`/sw/bash/bin/bash "$root/create" "$@"`) after entering the `/mnt/fluffy` chroot.
-     - Fix this to use an in-process subshell `(...)` rather than calling `create` again, keeping the build lifecycle (`PREPARE`, `MAKE`, `CHECK`, `INSTALL`, `SQUASHFS`) execution in-process.
+     - Host-to-chroot logic can be extracted into `./chroot.sh` or handled seamlessly when `ON != host-build` and `/mnt/fluffy/sw` is present.
    - **Unprivileged Builder Lifecycle**:
      - Immediately upon launch via `sudo`, the build engine drops real/effective UID and GID to `$SUDO_UID:$SUDO_GID` (`setresgid`/`setresuid` keeping saved UID/GID `0` only for mount setup), so all downloaded archives and extracted files under `work/` (`work/archives`, `work/src`, `work/installed`, `work/test-results`, `work/test-work`) are naturally owned by the calling user.
    - **Dependency DAG & Resolution**:
      - Package definitions in `sw/` declare runtime dependencies via `NEEDS=()` and phase-specific build dependencies via `MAKE_NEEDS=()`, `CHECK_NEEDS=()`, and `INSTALL_NEEDS=()`.
-     - For each phase, the build engine mounts strictly the topological dependency closure via `swctl mount`.
+     - For each phase, the build engine mounts strictly the topological dependency closure via `install_targets`.
    - **`PREPARE`**: Downloads and SHA-256 verifies tarballs and `file://` patches into `work/archives/`, extracts into `work/src/` as the calling user.
    - **`lockdown` (for `MAKE`, `CHECK`, `INSTALL`)**:
      - Even when running inside a chroot, `lockdown` enforces hermetic sandbox boundaries.
@@ -132,9 +142,9 @@
      - When created, pseudopackages produce an empty squashfs and register their dependency closure in `/etc/fluffy/fstab`.
      - Builder profiles encapsulate the environment for each bootstrap phase:
        - `sw/host-build`: `NEEDS=()` (pure host compilation with no `/sw` mounts).
-       - `sw/cross-build`: `NEEDS=(bzip2-pass1 ctypes-sh-pass1 gzip-pass1 signify-pass1 tar-pass1 util-linux-pass1 wget-pass1 xz-pass1)` (the trimmed top-level scaffold needed to run `create` and `PREPARE` inside chroot during Chapter 7; transitive dependencies like `bash-pass1`, `glibc-pass1`, `ncurses-pass1`, `openssl-pass1`, `ca-certificates-pass1`, and `coreutils-pass1` are resolved automatically).
-       - `sw/fluffy-build`: `NEEDS=(bzip2 ctypes-sh gzip signify tar util-linux wget xz zstd)` (the final native Fluffy self-hosting environment).
-     - Regular package definitions reference these profiles directly via `$ON`, which defaults to `fluffy-build`. `create` transitively resolves the builder profile's `NEEDS` to set up the build environment for each stage before mounting package-specific requirements.
+       - `sw/cross-build`: `NEEDS=(bzip2-pass1 ctypes-sh-pass1 gzip-pass1 signify-pass1 squashfs-tools-pass1 tar-pass1 util-linux-pass1 wget-pass1 xz-pass1)` (the trimmed top-level scaffold needed to run `swctl build` and `PREPARE` inside chroot during Chapter 7; transitive dependencies like `bash-pass1`, `glibc-pass1`, `ncurses-pass1`, `openssl-pass1`, `ca-certificates`, and `coreutils-pass1` are resolved automatically).
+       - `sw/fluffy-build`: `NEEDS=(bzip2 ctypes-sh gzip signify squashfs-tools tar util-linux wget xz zstd)` (the final native Fluffy self-hosting environment).
+     - Regular package definitions reference these profiles directly via `$ON`, which defaults to `fluffy-build`. `swctl` transitively resolves the builder profile's `NEEDS` to set up the build environment for each stage before mounting package-specific requirements.
    - **Builder Harness Isolation (`/builder`) & Rebuilt Build Dependencies**:
      - **TODO: Post-Boot Priority: Implement `/builder` Harness Isolation**:
        - As observed during Chapter 8 (`zstd` discovering `zlib` and `xz` from `cross-build`), mounting builder tools directly in `/sw/*` allows configure checks to accidentally discover and link against build-harness libraries.
@@ -152,28 +162,28 @@
          PATH='/builder/*/bin:/sw/*/bin'
          ```
        - Compilers, dynamic linkers, and include preprocessors only scan `/sw/*/{include,lib}` for dependencies. Because the builder harness lives entirely outside `/sw/*`, packages can invoke build tools from `/builder/*/bin` without ever accidentally resolving or linking against build-time harness libraries.
-   - **Transitive Dependency Reduction (`swctl trim`)**:
-     - `swctl trim <pkg...>` (or `swctl roots <pkg...>`) performs a transitive reduction over the dependency DAG recorded in `/etc/fluffy/fstab`.
+   - **Transitive Dependency Reduction (`./trim`)**:
+     - `./trim <pkg...>` performs a transitive reduction over the dependency DAG recorded in `/etc/fluffy/fstab`.
      - Removes any package from the argument list that is already a direct or transitive dependency of another package in the list.
      - Supports `-1` / `--lines` for newline output, or space-separated by default.
      - Enables concise recipe definitions (`NEEDS`, `MAKE_NEEDS`, `INSTALL_NEEDS`) where only root dependencies need to be specified (e.g. specifying `bash` automatically implies `ncurses` and `glibc`; `ctypes-sh` implies `libffi` and `bash`).
    - **Strict Circular Dependency Detection & Topological Mount Order**:
-     - Before performing any mount operations, `swctl mount` executes a recursive depth-first search (DFS) tracking node states (0 = unvisited, 1 = visiting/active in-stack, 2 = visited/completed).
+     - Before performing any mount operations, `swctl install` executes a recursive depth-first search (DFS) tracking node states (0 = unvisited, 1 = visiting/active in-stack, 2 = visited/completed).
      - Any circular dependency (direct or transitive) is rejected immediately with a fatal diagnostic displaying the exact dependency cycle path before touching mounts or namespaces.
      - Dependencies are gathered in DFS post-order, producing a strictly topological mount order where every dependency is mounted prior to the packages that depend on it.
    - **Manifest-Driven Resolution via `/etc/fluffy/fstab`**:
-     - `create` stops scanning filesystem glob patterns (`/sw/"$dep"-[0-9]*.squashfs`).
+     - `swctl` stops scanning filesystem glob patterns (`/sw/"$dep"-[0-9]*.squashfs`).
      - `/etc/fluffy/fstab` is the single source of truth for all built squashfs images, mount targets, package signatures, transitive requirements (`X-fluffy.needs="dep1,dep2"`), and build recipe hashes (`X-fluffy.from="<sha256>"`).
      - After `SQUASHFS` completes, the newly created image is recorded into `/etc/fluffy/fstab` via `libmount`:
        - Newly built packages append a line.
-       - Rebuilt packages or package upgrades (e.g. `pass1` -> final) perform an in-place upsert targeting the mountpoint `/sw/<pkg>`.
+       - Rebuilt packages report updates in-place for that exact package entry.
    - **Unified Package Manager & Build Tool (`swctl`)**:
      - All mount, unmount, loop device ioctl, namespace preparation, dependency resolution, build orchestration, and `fstab` manipulation logic is unified in `swctl`.
-     - `swctl` handles both build-time operations (`swctl build`) and runtime management (`swctl mount`, `swctl register`, `swctl trim`):
-       - Resolving dependency DAGs and detecting circular references.
+     - `swctl` exposes two primary commands (`swctl build <pkg...>` and `swctl install <pkg...>`):
+       - Resolving build and runtime dependency DAGs and detecting circular references.
        - Setting up the outer harness mounts for `$ON`.
        - Cleaning `/sw` inside `lockdown` and mounting strictly the phase dependency closure.
-       - Upserting entries into `/etc/fluffy/fstab` on packaging completion via `swctl register <squashfs>` (automatically calculating mount target `/sw/<pkg>`, sourcing recipe `sw/<pkg>` for `NEEDS`, hashing recipe for `X-fluffy.from`, and signing with release keys).
+       - Upserting entries into `/etc/fluffy/fstab` on packaging completion (automatically calculating mount target `/sw/<pkg>`, sourcing recipe `sw/<pkg>` for `NEEDS`, hashing recipe for `X-fluffy.from`, and signing with release keys).
      - **Runtime / System Package Operations**:
        - Mounting software for system boot and user sessions.
        - Orchestrating `fluffy-upsert` hooks during installs and upgrades.
@@ -219,7 +229,7 @@
       - GRUB mounts the Btrfs root filesystem, reads `/etc/fluffy/fstab` to locate the active kernel squashfs (`/sw/linux-*.squashfs`), and mounts/reads the squashfs image directly on the fly.
       - GRUB streams the kernel (`vmlinuz`) and `initramfs` directly into RAM from the `.squashfs` image without requiring any intermediate unpacking on disk.
     - **The `fluffy-initramfs` Package**:
-      - Built like any standard Fluffy package (`sw/fluffy-initramfs`) using `create`.
+      - Built like any standard Fluffy package (`sw/fluffy-initramfs`) using `swctl build`.
       - Contains a minimal boot environment (e.g. statically linked BusyBox and a lightweight shell script, or minimal Fluffy C runtime with `libmount`).
       - Extracted or bundled directly with the kernel squashfs image.
     - **Early Boot Sequence (Prior to PID 1)**:

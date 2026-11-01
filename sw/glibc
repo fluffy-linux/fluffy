@@ -10,6 +10,10 @@ ARCHIVES=(
     00c0f87b819b43ae62316ad847bbec8e437133a74e6c8f7730a327508c0af5ba file://glibc-$VERSION-fluffy-test.patch
 )
 
+NEEDS=(
+    libgcc
+)
+
 MAKE_NEEDS=(
     bash-pass1
     bison-pass1

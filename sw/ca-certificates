@@ -1,3 +1,5 @@
+ON=host-build
+
 VERSION=2026.10.20
 
 ARCHIVES=(
@@ -6,11 +8,11 @@ ARCHIVES=(
 )
 
 NEEDS=(
-    coreutils
+    coreutils-pass1
 )
 
 INSTALL_NEEDS=(
-    coreutils
+    coreutils-pass1
 )
 
 INSTALL() {
