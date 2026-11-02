@@ -15,12 +15,10 @@ fi
 
 mkdir -pv /sw
 mkdir -pv /work
-mkdir -pv "$FLUFFY/sw"
+mkdir -pv "$FLUFFY/sw/.build/keys"
+chmod 0700 "$FLUFFY/sw/.build/keys"
 mkdir -pv "$FLUFFY/work"
 mkdir -pv "$FLUFFY/etc"
-mkdir -pv "$FLUFFY/etc/fluffy"
-mkdir -pv "$FLUFFY/etc/fluffy/keys"
-chmod 0700 "$FLUFFY/etc/fluffy/keys"
 
 if test ! -f "$FLUFFY/etc/passwd"
 then

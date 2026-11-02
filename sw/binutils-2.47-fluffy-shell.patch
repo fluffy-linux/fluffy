@@ -1,18 +1,12 @@
 diff -Naur binutils-2.47.orig/ld/genscripts.sh binutils-2.47/ld/genscripts.sh
 --- binutils-2.47.orig/ld/genscripts.sh	2026-07-25 23:00:00.000000000 +0000
 +++ binutils-2.47/ld/genscripts.sh	2026-07-25 23:00:00.000000000 +0000
-@@ -281,12 +281,8 @@
-   append_to_lib_path ${libs}
- fi
+@@ -286,7 +286,7 @@
+   *) LIB_PATH=${lib_path1}:${lib_path2} ;;
+ esac
  
--case :${lib_path1}:${lib_path2}: in
--  *:: | ::*) LIB_PATH=${lib_path1}${lib_path2} ;;
--  *) LIB_PATH=${lib_path1}:${lib_path2} ;;
--esac
--
 -LIB_SEARCH_DIRS=`echo ${LIB_PATH} | sed -e 's/:/ /g' -e 's/\([^ ][^ ]*\)/SEARCH_DIR(\\"\1\\");/g'`
-+LIB_PATH='/sw/*/lib'
-+LIB_SEARCH_DIRS='SEARCH_DIR("/sw/*/lib");'
++LIB_SEARCH_DIRS=`echo "${LIB_PATH}" | sed -e 's/:/ /g' -e 's/\([^ ][^ ]*\)/SEARCH_DIR(\\"\1\\");/g'`
  
  # We need it for testsuite.
  set $EMULATION_LIBPATH

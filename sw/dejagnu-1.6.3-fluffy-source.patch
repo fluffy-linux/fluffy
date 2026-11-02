@@ -1,0 +1,35 @@
+diff -Naur dejagnu-1.6.3.orig/lib/utils.exp dejagnu-1.6.3/lib/utils.exp
+--- dejagnu-1.6.3.orig/lib/utils.exp	2020-07-01 01:24:33.000000000 +0000
++++ dejagnu-1.6.3/lib/utils.exp	2020-07-01 01:24:33.000000000 +0000
+@@ -174,15 +174,22 @@
+ 	return 0
+     }
+ 
+-    foreach dir $path {
+-	verbose "Checking $dir for $file" 3
+-	set filename [file normalize [file join $dir $file]]
+-	if {[file exists $filename]} {
+-	    if {[file executable $filename]} {
+-		verbose "Choosing $filename" 2
+-		return [file normalize $filename]
+-	    } else {
+-		warning "file $filename exists but is not executable"
++    foreach raw_dir $path {
++	if {[string match {*\**} $raw_dir] || [string match {*\?*} $raw_dir] || [string match {*\[*} $raw_dir]} {
++	    set dirs [lsort [glob -nocomplain -types d $raw_dir]]
++	} else {
++	    set dirs [list $raw_dir]
++	}
++	foreach dir $dirs {
++	    verbose "Checking $dir for $file" 3
++	    set filename [file normalize [file join $dir $file]]
++	    if {[file exists $filename]} {
++		if {[file executable $filename]} {
++		    verbose "Choosing $filename" 2
++		    return [file normalize $filename]
++		} else {
++		    warning "file $filename exists but is not executable"
++		}
+ 	    }
+ 	}
+     }

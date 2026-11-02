@@ -1,216 +1,180 @@
-diff -uNr gcc-16.2.0.orig/gcc/config.gcc gcc-16.2.0/gcc/config.gcc
---- gcc-16.2.0.orig/gcc/config.gcc	2026-08-07 03:46:05.845684962 -0400
-+++ gcc-16.2.0/gcc/config.gcc	2026-10-27 18:34:00.000000000 -0400
-@@ -260,7 +260,7 @@
- default_gnu_indirect_function=no
- target_gtfiles=
- need_64bit_isa=
--native_system_header_dir=/usr/include
-+native_system_header_dir=/sw/glibc/include
- target_type_format_char='@'
- 
- # Don't carry these over build->host->target.  Please.
-diff -uNr gcc-16.2.0.orig/gcc/config/i386/linux64.h gcc-16.2.0/gcc/config/i386/linux64.h
---- gcc-16.2.0.orig/gcc/config/i386/linux64.h	2026-08-07 03:46:05.906685908 -0400
-+++ gcc-16.2.0/gcc/config/i386/linux64.h	2026-10-27 17:38:27.515002692 -0400
-@@ -28,7 +28,7 @@
- #define GNU_USER_LINK_EMULATIONX32 "elf32_x86_64"
- 
- #define GLIBC_DYNAMIC_LINKER32 "/lib/ld-linux.so.2"
--#define GLIBC_DYNAMIC_LINKER64 "/lib64/ld-linux-x86-64.so.2"
-+#define GLIBC_DYNAMIC_LINKER64 "/sw/glibc/lib/ld-linux-x86-64.so.2"
- #define GLIBC_DYNAMIC_LINKERX32 "/libx32/ld-linux-x32.so.2"
- 
- #undef MUSL_DYNAMIC_LINKER32
-diff -uNr gcc-16.2.0.orig/gcc/config/i386/t-linux64 gcc-16.2.0/gcc/config/i386/t-linux64
---- gcc-16.2.0.orig/gcc/config/i386/t-linux64	2026-08-07 03:46:05.912686001 -0400
-+++ gcc-16.2.0/gcc/config/i386/t-linux64	2026-10-27 17:38:27.515002692 -0400
-@@ -33,6 +33,6 @@
- comma=,
- MULTILIB_OPTIONS    = $(subst $(comma),/,$(TM_MULTILIB_CONFIG))
- MULTILIB_DIRNAMES   = $(patsubst m%, %, $(subst /, ,$(MULTILIB_OPTIONS)))
--MULTILIB_OSDIRNAMES = m64=../lib64$(call if_multiarch,:x86_64-linux-gnu)
-+MULTILIB_OSDIRNAMES = m64=../lib$(call if_multiarch,:x86_64-linux-gnu)
- MULTILIB_OSDIRNAMES+= m32=$(if $(wildcard $(shell echo $(SYSTEM_HEADER_DIR))/../../usr/lib32),../lib32,../lib)$(call if_multiarch,:i386-linux-gnu)
- MULTILIB_OSDIRNAMES+= mx32=../libx32$(call if_multiarch,:x86_64-linux-gnux32)
 diff -uNr gcc-16.2.0.orig/gcc/configure gcc-16.2.0/gcc/configure
---- gcc-16.2.0.orig/gcc/configure	2026-08-07 03:46:06.059688285 -0400
-+++ gcc-16.2.0/gcc/configure	2026-10-27 18:34:00.000000000 -0400
-@@ -15286,7 +15286,7 @@
+--- gcc-16.2.0.orig/gcc/configure	2026-08-07 07:47:29.994988106 +0000
++++ gcc-16.2.0/gcc/configure	2026-08-07 07:47:29.994988106 +0000
+@@ -15282,7 +15282,7 @@
  
  if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x ||
     test x$build != x$host || test "x$with_build_sysroot" != x; then
 -  if test "x$with_build_sysroot" != x; then
-+  if test "x$with_build_sysroot" != x || test x$host = x$target; then
++  if test "x$with_build_sysroot" != x || test "x$configured_native_system_header_dir" != x; then
      BUILD_SYSTEM_HEADER_DIR=$with_build_sysroot'$${sysroot_headers_suffix}$(NATIVE_SYSTEM_HEADER_DIR)'
    else
      BUILD_SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
-@@ -15299,7 +15299,7 @@
+@@ -15297,7 +15297,7 @@
      SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
    fi
  
 -  if test "x$with_build_sysroot" != "x"; then
-+  if test "x$with_build_sysroot" != "x" || test x$host = x$target; then
++  if test "x$with_build_sysroot" != "x" || test "x$configured_native_system_header_dir" != x; then
      target_header_dir="${with_build_sysroot}${native_system_header_dir}"
    elif test "x$with_sysroot" = x; then
      target_header_dir="${test_exec_prefix}/${target_noncanonical}/sys-include"
-diff -uNr gcc-16.2.0.orig/gcc/cppdefault.cc gcc-16.2.0/gcc/cppdefault.cc
---- gcc-16.2.0.orig/gcc/cppdefault.cc	2026-08-07 03:46:06.072688487 -0400
-+++ gcc-16.2.0/gcc/cppdefault.cc	2026-10-27 17:38:27.516002711 -0400
-@@ -28,10 +28,9 @@
- #define NATIVE_SYSTEM_HEADER_COMPONENT 0
- #endif
+@@ -15319,9 +15319,16 @@
+ # This prevents libgcc2 from containing any code which requires libc
+ # support.
+ : ${inhibit_libc=false}
++inhibit_libc_found_stdio=no
++for f in $target_header_dir/stdio.h; do
++  if test -f "$f"; then
++    inhibit_libc_found_stdio=yes
++    break
++  fi
++done
+ if { { test x$host != x$target && test "x$with_sysroot" = x ; } ||
+        test x$with_newlib = xyes ; } &&
+-     { test "x$with_headers" = xno || test ! -f "$target_header_dir/stdio.h"; } ; then
++     { test "x$with_headers" = xno || test "$inhibit_libc_found_stdio" = no; } ; then
+        inhibit_libc=true
+ fi
  
--#if defined (CROSS_DIRECTORY_STRUCTURE) && !defined (TARGET_SYSTEM_ROOT)
--# undef LOCAL_INCLUDE_DIR
+diff -uNr gcc-16.2.0.orig/gcc/cppdefault.cc gcc-16.2.0/gcc/cppdefault.cc
+--- gcc-16.2.0.orig/gcc/cppdefault.cc	2026-08-07 07:46:06.072688487 +0000
++++ gcc-16.2.0/gcc/cppdefault.cc	2026-08-07 07:46:06.072688487 +0000
+@@ -30,7 +30,6 @@
+ 
+ #if defined (CROSS_DIRECTORY_STRUCTURE) && !defined (TARGET_SYSTEM_ROOT)
+ # undef LOCAL_INCLUDE_DIR
 -# undef NATIVE_SYSTEM_HEADER_DIR
--#else
-+#undef LOCAL_INCLUDE_DIR
-+#undef NATIVE_SYSTEM_HEADER_DIR
-+#if !defined (CROSS_DIRECTORY_STRUCTURE) || defined (TARGET_SYSTEM_ROOT)
+ #else
  # undef CROSS_INCLUDE_DIR
  #endif
- 
 diff -uNr gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
---- gcc-16.2.0.orig/gcc/gcc.cc	2026-08-07 03:46:06.189690306 -0400
-+++ gcc-16.2.0/gcc/gcc.cc	2026-10-27 17:38:27.516002711 -0400
-@@ -1641,12 +1641,10 @@
- 
- /* Default prefixes to attach to command names.  */
- 
--#ifndef STANDARD_STARTFILE_PREFIX_1
--#define STANDARD_STARTFILE_PREFIX_1 "/lib/"
--#endif
--#ifndef STANDARD_STARTFILE_PREFIX_2
--#define STANDARD_STARTFILE_PREFIX_2 "/usr/lib/"
--#endif
-+#undef STANDARD_STARTFILE_PREFIX_1
-+#define STANDARD_STARTFILE_PREFIX_1 ""
-+#undef STANDARD_STARTFILE_PREFIX_2
-+#define STANDARD_STARTFILE_PREFIX_2 ""
+--- gcc-16.2.0.orig/gcc/gcc.cc	2026-08-07 07:46:06.189690306 +0000
++++ gcc-16.2.0/gcc/gcc.cc	2026-08-07 07:46:06.189690306 +0000
+@@ -1649,7 +1649,6 @@
+ #endif
  
  #ifdef CROSS_DIRECTORY_STRUCTURE  /* Don't use these prefixes for a cross compiler.  */
- #undef MD_EXEC_PREFIX
-@@ -8658,6 +8656,47 @@
- 			      PREFIX_PRIORITY_LAST, 0, 1);
-     }
+-#undef MD_EXEC_PREFIX
+ #undef MD_STARTFILE_PREFIX
+ #undef MD_STARTFILE_PREFIX_1
+ #endif
+@@ -3165,6 +3164,32 @@
+   struct prefix_list *pl, **prev;
+   int len;
  
-+  {
-+    struct dirent **namelist;
-+    int n = scandir ("/sw", &namelist, NULL, alphasort);
-+    if (n >= 0)
-+      {
-+	for (int i = 0; i < n; i++)
-+	  {
-+	    if (namelist[i]->d_name[0] != '.')
-+	      {
-+		struct stat st;
-+		char *tbin = concat ("/sw/", namelist[i]->d_name,
-+				     dir_separator_str, spec_machine,
-+				     "/bin/", NULL);
-+		if (stat (tbin, &st) == 0 && S_ISDIR (st.st_mode))
-+		  add_prefix (&exec_prefixes, tbin, "BINUTILS",
-+			      PREFIX_PRIORITY_LAST, 0, 0);
-+		free (tbin);
-+
-+		if (*cross_compile == '0')
-+		  {
-+		    char *bin = concat ("/sw/", namelist[i]->d_name,
-+					"/bin/", NULL);
-+		    if (stat (bin, &st) == 0 && S_ISDIR (st.st_mode))
-+		      add_prefix (&exec_prefixes, bin, "BINUTILS",
-+				  PREFIX_PRIORITY_LAST, 0, 0);
-+		    free (bin);
-+		  }
-+
-+		char *lib = concat ("/sw/", namelist[i]->d_name,
-+				    "/lib/", NULL);
-+		if (stat (lib, &st) == 0 && S_ISDIR (st.st_mode))
-+		  add_prefix (&startfile_prefixes, lib, "BINUTILS",
-+			      PREFIX_PRIORITY_LAST, 0, 0);
-+		free (lib);
-+	      }
-+	    free (namelist[i]);
-+	  }
-+	free (namelist);
-+      }
-+  }
-+
-   /* Process any user specified specs in the order given on the command
-      line.  */
-   for (struct user_specs *uptr = user_specs_head; uptr; uptr = uptr->next)
-diff -uNr gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpath.cc
---- gcc-16.2.0.orig/gcc/incpath.cc	2026-08-07 03:46:06.226690881 -0400
-+++ gcc-16.2.0/gcc/incpath.cc	2026-10-27 17:38:56.400000000 -0400
-@@ -233,8 +233,60 @@
- 	    }
- 
- 	  add_path (str, INC_SYSTEM, p->cxx_aware, false);
-+
-+	  const char *cxx_suffix = (p->cplusplus
-+				    ? strstr (p->fname, "/include/c++/")
-+				    : NULL);
-+	  if (cxx_suffix != NULL)
++  if (strpbrk (prefix, "*?[") != NULL)
++    {
++      glob_t gbuf;
++      if (glob (prefix, 0, NULL, &gbuf) == 0)
++	{
++	  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
 +	    {
-+	      struct dirent **namelist;
-+	      int n = scandir ("/sw", &namelist, NULL, alphasort);
-+	      if (n >= 0)
++	      struct stat st;
++	      if (stat (gbuf.gl_pathv[gi], &st) == 0 && S_ISDIR (st.st_mode))
 +		{
-+		  for (int i = 0; i < n; i++)
-+		    {
-+		      if (namelist[i]->d_name[0] != '.')
-+			{
-+			  char *cstr = concat ("/sw/", namelist[i]->d_name,
-+					       cxx_suffix, NULL);
-+			  if (p->multilib == 1 && imultilib)
-+			    cstr = reconcat (cstr, cstr, dir_separator_str,
-+					     imultilib, NULL);
-+			  struct HOST_STAT_FOR_64BIT_INODES st;
-+			  if (HOST_STAT_FOR_64BIT_INODES (cstr, &st) == 0
-+			      && S_ISDIR (st.st_mode))
-+			    add_path (cstr, INC_SYSTEM, p->cxx_aware, false);
-+			  else
-+			    free (cstr);
-+			}
-+		      free (namelist[i]);
-+		    }
-+		  free (namelist);
++		  size_t glen = strlen (gbuf.gl_pathv[gi]);
++		  char *dir = (glen > 0
++			       && IS_DIR_SEPARATOR (gbuf.gl_pathv[gi][glen - 1]))
++			      ? xstrdup (gbuf.gl_pathv[gi])
++			      : concat (gbuf.gl_pathv[gi], dir_separator_str,
++					NULL);
++		  add_prefix (pprefix, dir, component, priority,
++			      require_machine_suffix, os_multilib);
++		  free (dir);
 +		}
 +	    }
- 	}
-     }
-+
-+  struct dirent **namelist;
-+  int n = scandir ("/sw", &namelist, NULL, alphasort);
-+  if (n >= 0)
-+    {
-+      for (int i = 0; i < n; i++)
-+	{
-+	  if (namelist[i]->d_name[0] != '.')
-+	    {
-+	      char *str = concat ("/sw/", namelist[i]->d_name, "/include", NULL);
-+	      struct HOST_STAT_FOR_64BIT_INODES st;
-+	      if (HOST_STAT_FOR_64BIT_INODES (str, &st) == 0
-+		  && S_ISDIR (st.st_mode))
-+		add_path (str, INC_SYSTEM, 0, false);
-+	      else
-+		free (str);
-+	    }
-+	  free (namelist[i]);
++	  globfree (&gbuf);
 +	}
-+      free (namelist);
++      return;
 +    }
- }
++
+   for (prev = &pprefix->plist;
+        (*prev) != NULL && (*prev)->priority <= priority;
+        prev = &(*prev)->next)
+@@ -8556,15 +8581,13 @@
+   for (i = 0; i < ARRAY_SIZE (driver_self_specs); i++)
+     do_self_spec (driver_self_specs[i]);
  
- /* For each duplicate path in chain HEAD, keep just the first one.
+-  /* If not cross-compiling, look for executables in the standard
+-     places.  */
+-  if (*cross_compile == '0')
+-    {
+-      if (*md_exec_prefix)
+-	{
+-	  add_prefix (&exec_prefixes, md_exec_prefix, "GCC",
+-		      PREFIX_PRIORITY_LAST, 0, 0);
+-	}
++  if (*md_exec_prefix != 0
++      && do_spec_2 (md_exec_prefix, NULL) == 0
++      && do_spec_1 (" ", 0, NULL) == 0)
++    {
++      for (const char *arg : argbuf)
++	add_prefix (&exec_prefixes, arg, "GCC",
++		    PREFIX_PRIORITY_LAST, 0, 0);
+     }
+ 
+   /* Process sysroot_suffix_spec.  */
+diff -uNr gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpath.cc
+--- gcc-16.2.0.orig/gcc/incpath.cc	2026-08-07 07:46:06.226690881 +0000
++++ gcc-16.2.0/gcc/incpath.cc	2026-08-07 07:46:06.226690881 +0000
+@@ -449,6 +449,25 @@
+ void
+ add_path (char *path, incpath_kind chain, int cxx_aware, bool user_supplied_p)
+ {
++  if (strpbrk (path, "*?[") != NULL)
++    {
++      glob_t gbuf;
++      if (glob (path, 0, NULL, &gbuf) == 0)
++	{
++	  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
++	    {
++	      struct HOST_STAT_FOR_64BIT_INODES st;
++	      if (HOST_STAT_FOR_64BIT_INODES (gbuf.gl_pathv[gi], &st) == 0
++		  && S_ISDIR (st.st_mode))
++		add_path (xstrdup (gbuf.gl_pathv[gi]), chain, cxx_aware,
++			  user_supplied_p);
++	    }
++	  globfree (&gbuf);
++	}
++      free (path);
++      return;
++    }
++
+   cpp_dir *p;
+   size_t pathlen = strlen (path);
+ 
+diff -uNr gcc-16.2.0.orig/gcc/Makefile.in gcc-16.2.0/gcc/Makefile.in
+--- gcc-16.2.0.orig/gcc/Makefile.in	2026-08-07 07:46:05.499679583 +0000
++++ gcc-16.2.0/gcc/Makefile.in	2026-08-07 07:46:05.499679583 +0000
+@@ -577,16 +577,16 @@
+ # The sed idiom for this is to repeat the search-and-replace until it doesn't match, using :a ... ta.
+ # Use single quotes here to avoid nested double- and backquotes, this
+ # macro is also used in a double-quoted context.
+-SYSTEM_HEADER_DIR = `echo @SYSTEM_HEADER_DIR@ | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
++SYSTEM_HEADER_DIR = `echo "@SYSTEM_HEADER_DIR@" | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
+ 
+ # Path to the system headers on the build machine.
+-BUILD_SYSTEM_HEADER_DIR = `echo @BUILD_SYSTEM_HEADER_DIR@ | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
++BUILD_SYSTEM_HEADER_DIR = `echo "@BUILD_SYSTEM_HEADER_DIR@" | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
+ 
+ # Control whether to run fixincludes.
+ STMP_FIXINC = @STMP_FIXINC@
+ 
+ # Test to see whether <limits.h> exists in the system header files.
+-LIMITS_H_TEST = [ -f $(BUILD_SYSTEM_HEADER_DIR)/limits.h ]
++LIMITS_H_TEST = for f in $(BUILD_SYSTEM_HEADER_DIR)/limits.h; do [ -f "$$f" ] && break; done && [ -f "$$f" ]
+ 
+ # Directory for prefix to system directories, for
+ # each of $(system_prefix)/usr/include, $(system_prefix)/usr/lib, etc.
 diff -uNr gcc-16.2.0.orig/gcc/system.h gcc-16.2.0/gcc/system.h
---- gcc-16.2.0.orig/gcc/system.h	2026-08-07 03:46:06.533695651 -0400
-+++ gcc-16.2.0/gcc/system.h	2026-10-27 17:38:27.518002749 -0400
+--- gcc-16.2.0.orig/gcc/system.h	2026-08-07 07:46:06.533695651 +0000
++++ gcc-16.2.0/gcc/system.h	2026-08-07 07:46:06.533695651 +0000
 @@ -617,6 +617,7 @@
  #if HAVE_SYS_STAT_H
  # include <sys/stat.h>
  #endif
-+#include <dirent.h>
++#include <glob.h>
  
  /* Test if something is a normal file.  */
  #ifndef S_ISREG

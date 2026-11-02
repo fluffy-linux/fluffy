@@ -23,6 +23,8 @@ MAKE_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i bzip2-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i bzip2-$VERSION-fluffy-source.patch
+    make -f Makefile-libbz2_so CC=$FLUFFY_TGT-gcc
+    make clean
     make \
         CC=$FLUFFY_TGT-gcc \
         AR=$FLUFFY_TGT-ar \
@@ -43,8 +45,13 @@ INSTALL() {
         AR=$FLUFFY_TGT-ar \
         RANLIB=$FLUFFY_TGT-ranlib \
         install
+    cp -av libbz2.so.* $DESTDIR/sw/bzip2/lib
+    ln -sfv libbz2.so.$VERSION $DESTDIR/sw/bzip2/lib/libbz2.so
+    ln -sfv libbz2.so.$VERSION $DESTDIR/sw/bzip2/lib/libbz2.so.1
+    cp -v bzip2-shared $DESTDIR/sw/bzip2/bin/bzip2
     for i in $DESTDIR/sw/bzip2/bin/{bzcat,bunzip2}
     do
         ln -sfv bzip2 "$i"
     done
+    rm -fv $DESTDIR/sw/bzip2/lib/libbz2.a
 }

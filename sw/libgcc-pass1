@@ -11,7 +11,7 @@ ARCHIVES=(
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$MPC_VERSION.tar.xz
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$GMP_VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    fe609085e63f315b9550b5c914674dfdbc460b8d06c5ef88b7573ba57e03e3de file://gcc-$VERSION-fluffy-source.patch
+    56d4923478beb3abdd92be03416c40eff9da6427995642cf77b2f20c9fa012cb file://gcc-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(

@@ -1,6 +1,40 @@
+diff -Naur openssl-4.0.1.orig/crypto/x509/by_dir.c openssl-4.0.1/crypto/x509/by_dir.c
+--- openssl-4.0.1.orig/crypto/x509/by_dir.c	2026-06-09 11:36:41.000000000 +0000
++++ openssl-4.0.1/crypto/x509/by_dir.c	2026-06-09 11:36:41.000000000 +0000
+@@ -19,6 +19,7 @@
+ #include "internal/e_os.h"
+ #include "internal/cryptlib.h"
+ #include <stdio.h>
++#include <glob.h>
+ #include <time.h>
+ #include <errno.h>
+ #include <sys/types.h>
+@@ -185,6 +186,22 @@
+             len = p - ss;
+             if (len == 0)
+                 continue;
++            if (memchr(ss, '*', len) != NULL
++                || memchr(ss, '?', len) != NULL
++                || memchr(ss, '[', len) != NULL) {
++                char *pat = OPENSSL_strndup(ss, len);
++                glob_t gbuf;
++                size_t gi;
++
++                if (pat != NULL && glob(pat, 0, NULL, &gbuf) == 0) {
++                    for (gi = 0; gi < gbuf.gl_pathc; gi++)
++                        add_cert_dir(ctx, gbuf.gl_pathv[gi], type);
++                    globfree(&gbuf);
++                    OPENSSL_free(pat);
++                    continue;
++                }
++                OPENSSL_free(pat);
++            }
+             for (j = 0; j < sk_BY_DIR_ENTRY_num(ctx->dirs); j++) {
+                 ent = sk_BY_DIR_ENTRY_value(ctx->dirs, j);
+                 if (strlen(ent->dir) == len && strncmp(ent->dir, ss, len) == 0)
 diff -Naur openssl-4.0.1.orig/crypto/x509/by_file.c openssl-4.0.1/crypto/x509/by_file.c
---- openssl-4.0.1.orig/crypto/x509/by_file.c	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/crypto/x509/by_file.c	2026-10-29 21:52:54.571664126 -0400
+--- openssl-4.0.1.orig/crypto/x509/by_file.c	2026-06-09 11:36:41.000000000 +0000
++++ openssl-4.0.1/crypto/x509/by_file.c	2026-06-09 11:36:41.000000000 +0000
 @@ -8,6 +8,7 @@
   */
  
@@ -9,7 +43,27 @@ diff -Naur openssl-4.0.1.orig/crypto/x509/by_file.c openssl-4.0.1/crypto/x509/by
  #include <time.h>
  #include <errno.h>
  
-@@ -60,11 +61,32 @@
+@@ -56,15 +57,25 @@
+     case X509_L_FILE_LOAD:
+         if (argl == X509_FILETYPE_DEFAULT) {
+             file = ossl_safe_getenv(X509_get_default_cert_file_env());
+-            if (file)
++            if (!file)
++                file = X509_get_default_cert_file();
++            if (file && strpbrk(file, "*?[") != NULL) {
++                glob_t gbuf;
++                size_t gi;
++
++                if (glob(file, 0, NULL, &gbuf) == 0) {
++                    for (gi = 0; gi < gbuf.gl_pathc; gi++) {
++                        if (X509_load_cert_crl_file_ex(ctx, gbuf.gl_pathv[gi],
++                                  X509_FILETYPE_PEM, libctx, propq) != 0)
++                            ok = 1;
++                    }
++                    globfree(&gbuf);
++                }
++            }
++            if (!ok && file)
                  ok = (X509_load_cert_crl_file_ex(ctx, file, X509_FILETYPE_PEM,
                            libctx, propq)
                      != 0);
@@ -18,32 +72,6 @@ diff -Naur openssl-4.0.1.orig/crypto/x509/by_file.c openssl-4.0.1/crypto/x509/by
 -                          ctx, X509_get_default_cert_file(),
 -                          X509_FILETYPE_PEM, libctx, propq)
 -                    != 0);
-+            else {
-+                glob_t gbuf;
-+                size_t gi;
-+
-+                if (glob("/etc/*/certs/ca-certificates.crt", 0, NULL, &gbuf) == 0) {
-+                    for (gi = 0; gi < gbuf.gl_pathc; gi++) {
-+                        if (X509_load_cert_crl_file_ex(ctx, gbuf.gl_pathv[gi],
-+                                  X509_FILETYPE_PEM, libctx, propq) != 0)
-+                            ok = 1;
-+                    }
-+                    globfree(&gbuf);
-+                }
-+                if (glob("/etc/*/ssl/certs/ca-certificates.crt", 0, NULL, &gbuf) == 0) {
-+                    for (gi = 0; gi < gbuf.gl_pathc; gi++) {
-+                        if (X509_load_cert_crl_file_ex(ctx, gbuf.gl_pathv[gi],
-+                                  X509_FILETYPE_PEM, libctx, propq) != 0)
-+                            ok = 1;
-+                    }
-+                    globfree(&gbuf);
-+                }
-+                if (!ok)
-+                    ok = (X509_load_cert_crl_file_ex(
-+                              ctx, X509_get_default_cert_file(),
-+                              X509_FILETYPE_PEM, libctx, propq)
-+                        != 0);
-+            }
  
              if (!ok)
                  ERR_raise(ERR_LIB_X509, X509_R_LOADING_DEFAULTS);

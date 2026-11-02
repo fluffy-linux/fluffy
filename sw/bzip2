@@ -38,6 +38,7 @@ CHECK_NEEDS=(
     diffutils-pass1
     gcc-pass2
     glibc
+    linux-headers
     make-pass1
 )
 

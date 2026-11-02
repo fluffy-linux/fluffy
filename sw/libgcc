@@ -11,7 +11,7 @@ ARCHIVES=(
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$MPC_VERSION.tar.xz
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$GMP_VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    fe609085e63f315b9550b5c914674dfdbc460b8d06c5ef88b7573ba57e03e3de file://gcc-$VERSION-fluffy-source.patch
+    56d4923478beb3abdd92be03416c40eff9da6427995642cf77b2f20c9fa012cb file://gcc-$VERSION-fluffy-source.patch
     b3383fda757774c765974b00fda6c951bcff4d997e9f84501e78bf7cde7577f7 file://mpfr-$MPFR_VERSION-fluffy-shell.patch
     59ea203e30d5a0030424a3caab9a8b10bd1d549356772abb751d82668d84bf9f file://mpc-$MPC_VERSION-fluffy-shell.patch
     b6a109a718303b6add5a4d9e58d4a3d66bdc8e3e13fc807a4723466b65609ce1 file://gmp-$GMP_VERSION-fluffy-shell.patch
@@ -43,11 +43,24 @@ MAKE() {
     patch -Z -Np1 -d mpc -i ../mpc-$MPC_VERSION-fluffy-shell.patch
     patch -Z -Np1 -d gmp -i ../gmp-$GMP_VERSION-fluffy-shell.patch
 
+    sed -e '/m64=/s/lib64/lib/' \
+        -i gcc/config/i386/t-linux64
+    cat >> gcc/config/i386/linux64.h << EOF
+#undef GLIBC_DYNAMIC_LINKER64
+#define GLIBC_DYNAMIC_LINKER64 "/sw/glibc/lib/ld-linux-x86-64.so.2"
+#undef STARTFILE_PREFIX_SPEC
+#define STARTFILE_PREFIX_SPEC "/sw/*/lib/"
+#undef MD_EXEC_PREFIX
+#define MD_EXEC_PREFIX "/sw/*/bin/"
+EOF
+
     mkdir -v build
     cd build
 
     ../configure \
         --prefix=/sw/libgcc \
+        --with-native-system-header-dir='/sw/*/include' \
+        --disable-fixincludes \
         --enable-shared \
         --disable-multilib \
         --disable-bootstrap \

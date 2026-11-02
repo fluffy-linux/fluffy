@@ -6,10 +6,13 @@ ARCHIVES=(
     49a7da83b0bdd9f46d04a04deec19c7767bb9a323e40c4781f89caf760b92c34 https://prdownloads.sourceforge.net/expect/expect$VERSION.tar.gz
     ab5fc0af9e2e0f80d7623c1a3a3dbeb1da3d8c9134276792199df401f9eb2cec https://www.linuxfromscratch.org/patches/lfs/13.1/expect-$VERSION-gcc15-1.patch
     fcb69570d4f0d7f82b33ed97e0066eb030274fac1b66a8cc73f2e8136b55d1df file://expect$VERSION-fluffy-shell.patch
+    43845c6e1bb18991800457ee630e44482ffb4c6375c5a5bfeff0043c1765d608 file://expect$VERSION-fluffy-source.patch
     65c24de18586bdd30578746aedf7f3f2a369f2f8354c19514de6697be21a4537 file://expect$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
+    bash-pass1
+    coreutils-pass1
     glibc
     tcl
 )
@@ -35,6 +38,7 @@ MAKE_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i expect-$VERSION-gcc15-1.patch
     patch -Z -Np1 -i expect$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i expect$VERSION-fluffy-source.patch
     patch -Z -Np1 -i expect$VERSION-fluffy-test.patch
 
     ./configure \

@@ -49,6 +49,7 @@ CHECK_NEEDS=(
     gcc-pass2
     glibc
     grep-pass1
+    linux-headers
     make-pass1
     sed-pass1
     xz
@@ -68,6 +69,7 @@ INSTALL_NEEDS=(
     gcc-pass2
     glibc
     grep-pass1
+    linux-headers
     make-pass1
     sed-pass1
     xz
