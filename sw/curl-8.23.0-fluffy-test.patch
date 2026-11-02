@@ -1,0 +1,51 @@
+diff -Naur curl-8.23.0.orig/tests/cmake/test.sh curl-8.23.0/tests/cmake/test.sh
+--- curl-8.23.0.orig/tests/cmake/test.sh	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/cmake/test.sh	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -x
++#!/sw/bash/bin/bash -x
+ # Copyright (C) Viktor Szakats
+ #
+ # SPDX-License-Identifier: curl
+diff -Naur curl-8.23.0.orig/tests/ech_tests.sh curl-8.23.0/tests/ech_tests.sh
+--- curl-8.23.0.orig/tests/ech_tests.sh	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/ech_tests.sh	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/runner.pm curl-8.23.0/tests/runner.pm
+--- curl-8.23.0.orig/tests/runner.pm	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/runner.pm	2026-10-14 05:54:05.000000000 +0000
+@@ -854,7 +854,7 @@
+     elsif($cmdtype eq "shell") {
+         # run the command line prepended with "/bin/sh"
+         $cmdargs = $cmd;
+-        $CMDLINE = "/bin/sh ";
++        $CMDLINE = "/sw/bash/bin/bash ";
+         $tool = $CMDLINE;
+         $disablevalgrind = 1;
+     }
+diff -Naur curl-8.23.0.orig/tests/servers.pm curl-8.23.0/tests/servers.pm
+--- curl-8.23.0.orig/tests/servers.pm	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/servers.pm	2026-10-14 05:54:05.000000000 +0000
+@@ -1892,7 +1892,7 @@
+ 
+     my $port = getfreeport($ipvnum, 1);
+     my $aflags = "--port $port $flags";
+-    my $cmd = "$srcdir/dictserver.py $aflags";
++    my $cmd = "python3 $srcdir/dictserver.py $aflags";
+     my ($dictpid, $pid2) = startnew($cmd, $pidfile, 15, 0);
+ 
+     if($dictpid <= 0 || !pidexists($dictpid)) {
+@@ -1952,7 +1952,7 @@
+ 
+     my $port = getfreeport($ipvnum, 1);
+     my $aflags = "--port $port $flags";
+-    my $cmd = "$srcdir/negtelnetserver.py $aflags";
++    my $cmd = "python3 $srcdir/negtelnetserver.py $aflags";
+     my ($ntelpid, $pid2) = startnew($cmd, $pidfile, 15, 0);
+ 
+     if($ntelpid <= 0 || !pidexists($ntelpid)) {

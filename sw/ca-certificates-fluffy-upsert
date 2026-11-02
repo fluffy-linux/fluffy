@@ -1,7 +1,0 @@
-#!/sw/bash/bin/bash
-set -euo pipefail
-
-mkdir -p /etc/ca-certificates/certs
-cp -a /sw/ca-certificates/etc/ssl/certs/ca-certificates.crt /etc/ca-certificates/certs/ca-certificates.crt
-ln -sfnv . /etc/ca-certificates/ssl
-ln -sfv certs/ca-certificates.crt /etc/ca-certificates/cert.pem

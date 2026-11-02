@@ -1,0 +1,222 @@
+diff -Naur acl-2.4.0.orig/build-aux/ar-lib acl-2.4.0/build-aux/ar-lib
+--- acl-2.4.0.orig/build-aux/ar-lib	2026-06-25 17:17:17.000000000 +0000
++++ acl-2.4.0/build-aux/ar-lib	2026-06-25 17:17:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for Microsoft lib.exe
+ 
+ me=ar-lib
+diff -Naur acl-2.4.0.orig/build-aux/compile acl-2.4.0/build-aux/compile
+--- acl-2.4.0.orig/build-aux/compile	2026-06-25 17:17:17.000000000 +0000
++++ acl-2.4.0/build-aux/compile	2026-06-25 17:17:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur acl-2.4.0.orig/build-aux/config.guess acl-2.4.0/build-aux/config.guess
+--- acl-2.4.0.orig/build-aux/config.guess	2026-06-25 17:17:17.000000000 +0000
++++ acl-2.4.0/build-aux/config.guess	2026-06-25 17:17:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -1020,7 +1020,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff -Naur acl-2.4.0.orig/build-aux/config.rpath acl-2.4.0/build-aux/config.rpath
+--- acl-2.4.0.orig/build-aux/config.rpath	2026-06-24 14:11:40.000000000 +0000
++++ acl-2.4.0/build-aux/config.rpath	2026-06-24 14:11:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff -Naur acl-2.4.0.orig/build-aux/config.sub acl-2.4.0/build-aux/config.sub
+--- acl-2.4.0.orig/build-aux/config.sub	2026-06-25 17:17:17.000000000 +0000
++++ acl-2.4.0/build-aux/config.sub	2026-06-25 17:17:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+diff -Naur acl-2.4.0.orig/build-aux/depcomp acl-2.4.0/build-aux/depcomp
+--- acl-2.4.0.orig/build-aux/depcomp	2026-06-25 17:17:17.000000000 +0000
++++ acl-2.4.0/build-aux/depcomp	2026-06-25 17:17:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur acl-2.4.0.orig/build-aux/install-sh acl-2.4.0/build-aux/install-sh
+--- acl-2.4.0.orig/build-aux/install-sh	2026-06-25 17:17:17.000000000 +0000
++++ acl-2.4.0/build-aux/install-sh	2026-06-25 17:17:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur acl-2.4.0.orig/build-aux/ltmain.sh acl-2.4.0/build-aux/ltmain.sh
+--- acl-2.4.0.orig/build-aux/ltmain.sh	2026-06-25 17:17:16.000000000 +0000
++++ acl-2.4.0/build-aux/ltmain.sh	2026-06-25 17:17:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env sh
++#!/sw/bash/bin/bash
+ ## DO NOT EDIT - This file generated from ./build-aux/ltmain.in
+ ##               by inline-source v2019-02-19.15
+ 
+@@ -332,7 +332,7 @@
+ : ${MKDIR="mkdir"}
+ : ${MV="mv -f"}
+ : ${RM="rm -f"}
+-: ${SHELL="${CONFIG_SHELL-/bin/sh}"}
++: ${SHELL="${CONFIG_SHELL-/sw/bash/bin/bash}"}
+ 
+ 
+ ## -------------------- ##
+@@ -4473,7 +4473,7 @@
+ 
+     # There may be an optional sh(1) argument at the beginning of
+     # install_prog (especially on Windows NT).
+-    if test "$SHELL" = "$nonopt" || test /bin/sh = "$nonopt" ||
++    if test "$SHELL" = "$nonopt" || test /sw/bash/bin/bash = "$nonopt" ||
+        # Allow the use of GNU shtool's install command.
+        case $nonopt in *shtool*) :;; *) false;; esac
+     then
+diff -Naur acl-2.4.0.orig/build-aux/missing acl-2.4.0/build-aux/missing
+--- acl-2.4.0.orig/build-aux/missing	2026-06-25 17:17:17.000000000 +0000
++++ acl-2.4.0/build-aux/missing	2026-06-25 17:17:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur acl-2.4.0.orig/build-aux/test-driver acl-2.4.0/build-aux/test-driver
+--- acl-2.4.0.orig/build-aux/test-driver	2026-06-25 17:17:17.000000000 +0000
++++ acl-2.4.0/build-aux/test-driver	2026-06-25 17:17:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur acl-2.4.0.orig/configure acl-2.4.0/configure
+--- acl-2.4.0.orig/configure	2026-06-29 09:03:54.000000000 +0000
++++ acl-2.4.0/configure	2026-06-29 09:03:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for acl 2.4.0.
+ #
+@@ -289,7 +289,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -588,7 +588,7 @@
+ as_sed_sh="y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
+ as_tr_sh="eval sed '$as_sed_sh'" # deprecated
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ 
+ test -n "$DJDIR" || exec 7<&0 </dev/null
+@@ -3306,7 +3306,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -6693,7 +6693,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+@@ -15346,7 +15346,7 @@
+ else case e in #(
+   e)
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff -Naur acl-2.4.0.orig/po/Makefile.in.in acl-2.4.0/po/Makefile.in.in
+--- acl-2.4.0.orig/po/Makefile.in.in	2026-06-24 14:11:40.000000000 +0000
++++ acl-2.4.0/po/Makefile.in.in	2026-06-24 14:11:40.000000000 +0000
+@@ -15,7 +15,7 @@
+ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
+ 
+ SED = @SED@
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ @SET_MAKE@
+ 
+ srcdir = @srcdir@
+diff -Naur acl-2.4.0.orig/test/make-tree acl-2.4.0/test/make-tree
+--- acl-2.4.0.orig/test/make-tree	2023-02-13 08:38:02.000000000 +0000
++++ acl-2.4.0/test/make-tree	2023-02-13 08:38:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LEVELS=3 ;		[ -z "$1" ] || LEVELS=$1
+ DIRS=10 ;		[ -z "$2" ] || DIRS=$2
+diff -Naur acl-2.4.0.orig/test/run acl-2.4.0/test/run
+--- acl-2.4.0.orig/test/run	2026-06-28 20:44:30.000000000 +0000
++++ acl-2.4.0/test/run	2026-06-28 20:44:30.000000000 +0000
+@@ -344,7 +344,7 @@
+       # remove libtool 'lt-' prefixes on prog name output
+       s#^lt-##g;
+       if ($needs_shell) {
+-	s#^/bin/sh: line \d+: ##;
++	s#^/sw/bash/bin/bash: line \d+: ##;
+       }
+       push @$result, $_;
+     }
+@@ -365,7 +365,7 @@
+       or die "Can't join STDOUT and STDERR: $!";
+ 
+     if ($needs_shell) {
+-      exec ('/bin/sh', '-c', join(" ", @$prog));
++      exec ('/sw/bash/bin/bash', '-c', join(" ", @$prog));
+     } else {
+       exec @$prog;
+     }
+diff -Naur acl-2.4.0.orig/test/runwrapper acl-2.4.0/test/runwrapper
+--- acl-2.4.0.orig/test/runwrapper	2026-06-28 20:44:30.000000000 +0000
++++ acl-2.4.0/test/runwrapper	2026-06-28 20:44:30.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ cleanup() {
+ 	# remove the temporary location

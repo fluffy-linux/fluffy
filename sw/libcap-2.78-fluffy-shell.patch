@@ -1,0 +1,160 @@
+diff -Naur libcap-2.78.orig/contrib/bug216610/c/build.sh libcap-2.78/contrib/bug216610/c/build.sh
+--- libcap-2.78.orig/contrib/bug216610/c/build.sh	2023-02-12 05:10:41.000000000 +0000
++++ libcap-2.78/contrib/bug216610/c/build.sh	2023-02-12 05:10:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # Builds the following .syso files to the directory containing this script:
+ #
+diff -Naur libcap-2.78.orig/contrib/bug216610/c/gcc.sh libcap-2.78/contrib/bug216610/c/gcc.sh
+--- libcap-2.78.orig/contrib/bug216610/c/gcc.sh	2023-05-10 01:57:20.000000000 +0000
++++ libcap-2.78/contrib/bug216610/c/gcc.sh	2023-05-10 01:57:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # The Go linker does not seem to know what to do with relative
+ # addressing of rodata.* offset from %rip. GCC likes to use this
+diff -Naur libcap-2.78.orig/contrib/bug216610/mkdocker.sh libcap-2.78/contrib/bug216610/mkdocker.sh
+--- libcap-2.78.orig/contrib/bug216610/mkdocker.sh	2023-05-10 01:57:20.000000000 +0000
++++ libcap-2.78/contrib/bug216610/mkdocker.sh	2023-05-10 01:57:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # This script generates a Dockerfile to be used for cross-compilation
+ cat <<EOF
+diff -Naur libcap-2.78.orig/contrib/bug216610/package_fns.sh libcap-2.78/contrib/bug216610/package_fns.sh
+--- libcap-2.78.orig/contrib/bug216610/package_fns.sh	2023-02-12 05:10:41.000000000 +0000
++++ libcap-2.78/contrib/bug216610/package_fns.sh	2023-02-12 05:10:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # Generate some Go code to make calling into the C code of the .syso
+ # file easier.
+diff -Naur libcap-2.78.orig/contrib/pcaps4convenience libcap-2.78/contrib/pcaps4convenience
+--- libcap-2.78.orig/contrib/pcaps4convenience	2021-09-18 03:56:21.000000000 +0000
++++ libcap-2.78/contrib/pcaps4convenience	2021-09-18 03:56:21.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # vim:expandtab:tabstop=4
+ #
+ # author:    chris friedhoff - chris@friedhoff.org
+diff -Naur libcap-2.78.orig/contrib/pcaps4server libcap-2.78/contrib/pcaps4server
+--- libcap-2.78.orig/contrib/pcaps4server	2021-09-18 03:56:21.000000000 +0000
++++ libcap-2.78/contrib/pcaps4server	2021-09-18 03:56:21.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # vim: tabstop=4
+ #
+ # author:    chris friedhoff - chris@friedhoff.org
+diff -Naur libcap-2.78.orig/contrib/pcaps4suid0 libcap-2.78/contrib/pcaps4suid0
+--- libcap-2.78.orig/contrib/pcaps4suid0	2021-09-18 03:56:21.000000000 +0000
++++ libcap-2.78/contrib/pcaps4suid0	2021-09-18 03:56:21.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # vim:expandtab:tabstop=4
+ #
+ # author:    chris friedhoff - chris@friedhoff.org
+diff -Naur libcap-2.78.orig/distcheck.sh libcap-2.78/distcheck.sh
+--- libcap-2.78.orig/distcheck.sh	2020-07-01 02:43:01.000000000 +0000
++++ libcap-2.78/distcheck.sh	2020-07-01 02:43:01.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ actual=$(wget -o/dev/null -O/dev/stdout https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/include/uapi/linux/capability.h | grep "#define.CAP_LAST_CAP"|awk '{print $3}')
+ working=$(grep "#define.CAP_LAST_CAP" libcap/include/uapi/linux/capability.h|awk '{print $3}')
+diff -Naur libcap-2.78.orig/doc/crosslink.sh libcap-2.78/doc/crosslink.sh
+--- libcap-2.78.orig/doc/crosslink.sh	2022-10-17 00:15:32.000000000 +0000
++++ libcap-2.78/doc/crosslink.sh	2022-10-17 00:15:32.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # So many cross links to maintain. Here is a script that I've used to
+ # validate things at least conform to some structure:
+diff -Naur libcap-2.78.orig/doc/mkmd.sh libcap-2.78/doc/mkmd.sh
+--- libcap-2.78.orig/doc/mkmd.sh	2025-04-18 05:03:36.000000000 +0000
++++ libcap-2.78/doc/mkmd.sh	2025-04-18 05:03:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # Handy script to rebuild the markdown version of the man pages.
+ # This uses pandoc if it is installed.
+diff -Naur libcap-2.78.orig/go/cgo-required.sh libcap-2.78/go/cgo-required.sh
+--- libcap-2.78.orig/go/cgo-required.sh	2021-02-05 06:06:25.000000000 +0000
++++ libcap-2.78/go/cgo-required.sh	2021-02-05 06:06:25.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # Runtime check for whether or not syscall.AllThreadsSyscall is
+ # available to the working go runtime or not. If it isn't we always
+diff -Naur libcap-2.78.orig/gomods.sh libcap-2.78/gomods.sh
+--- libcap-2.78.orig/gomods.sh	2021-06-27 00:30:46.000000000 +0000
++++ libcap-2.78/gomods.sh	2021-06-27 00:30:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ version="${1}"
+ if [[ -z "${version}" ]]; then
+diff -Naur libcap-2.78.orig/kdebug/test-bash.sh libcap-2.78/kdebug/test-bash.sh
+--- libcap-2.78.orig/kdebug/test-bash.sh	2020-07-01 02:43:01.000000000 +0000
++++ libcap-2.78/kdebug/test-bash.sh	2020-07-01 02:43:01.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # bash is used in various headers so we need a wrapper to invoke sh
+ # instead.
+ exec sh "$@"
+diff -Naur libcap-2.78.orig/kdebug/test-init.sh libcap-2.78/kdebug/test-init.sh
+--- libcap-2.78.orig/kdebug/test-init.sh	2021-04-14 03:01:41.000000000 +0000
++++ libcap-2.78/kdebug/test-init.sh	2021-04-14 03:01:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ PATH=/bin
+ 
+ echo -n "Mounting filesystems ... "
+diff -Naur libcap-2.78.orig/kdebug/test-kernel.sh libcap-2.78/kdebug/test-kernel.sh
+--- libcap-2.78.orig/kdebug/test-kernel.sh	2026-03-12 14:20:26.000000000 +0000
++++ libcap-2.78/kdebug/test-kernel.sh	2026-03-12 14:20:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # The following is a synthesis of info in:
+ #
+ #  http://vmsplice.net/~stefan/stefanha-kernel-recipes-2015.pdf
+diff -Naur libcap-2.78.orig/kdebug/test-prompt.sh libcap-2.78/kdebug/test-prompt.sh
+--- libcap-2.78.orig/kdebug/test-prompt.sh	2020-07-01 02:43:01.000000000 +0000
++++ libcap-2.78/kdebug/test-prompt.sh	2020-07-01 02:43:01.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ echo -n "$(pwd)# "
+diff -Naur libcap-2.78.orig/progs/mkcapshdoc.sh libcap-2.78/progs/mkcapshdoc.sh
+--- libcap-2.78.orig/progs/mkcapshdoc.sh	2022-10-09 23:21:46.000000000 +0000
++++ libcap-2.78/progs/mkcapshdoc.sh	2022-10-09 23:21:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # This script generates some C code for inclusion in the capsh binary.
+ # The Makefile generally only generates the .c code and compares it
+ # with the checked in code in the progs directory.
+diff -Naur libcap-2.78.orig/progs/quicktest.sh libcap-2.78/progs/quicktest.sh
+--- libcap-2.78.orig/progs/quicktest.sh	2026-03-29 14:43:44.000000000 +0000
++++ libcap-2.78/progs/quicktest.sh	2026-03-29 14:43:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # Run through a series of tests to try out the various capability
+ # manipulations possible through exec.

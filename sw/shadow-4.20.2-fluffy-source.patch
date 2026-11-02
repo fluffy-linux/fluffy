@@ -1,0 +1,158 @@
+diff -Naur shadow-4.20.2.orig/configure shadow-4.20.2/configure
+--- shadow-4.20.2.orig/configure	2026-08-08 12:18:11.743111722 +0000
++++ shadow-4.20.2/configure	2026-08-08 12:18:11.743111722 +0000
+@@ -17065,7 +17065,7 @@
+ 	fi
+ fi
+ if test -z "$PKG_CONFIG"; then
+-	as_fn_error $? "pkg-config not found" "$LINENO" 5
++	:
+ fi
+ 
+ pkg_failed=no
+diff -Naur shadow-4.20.2.orig/etc/login.defs shadow-4.20.2/etc/login.defs
+--- shadow-4.20.2.orig/etc/login.defs	2026-08-04 18:02:12.996395611 +0000
++++ shadow-4.20.2/etc/login.defs	2026-08-04 18:02:12.996395611 +0000
+@@ -127,7 +127,7 @@
+ #   Directory where mailboxes reside, _or_ name of file, relative to the
+ #   home directory.  If you _do_ define both, MAIL_DIR takes precedence.
+ #
+-MAIL_DIR	/var/spool/mail
++MAIL_DIR	/var/mail
+ #MAIL_FILE	.mail
+ 
+ #
+@@ -158,8 +158,8 @@
+ # *REQUIRED*  The default PATH settings, for superuser and normal users.
+ #
+ # (they are minimal, add the rest in the shell startup files)
+-ENV_SUPATH	PATH=/sbin:/bin:/usr/sbin:/usr/bin
+-ENV_PATH	PATH=/bin:/usr/bin
++ENV_SUPATH	PATH=/sw/*/bin
++ENV_PATH	PATH=/sw/*/bin
+ 
+ #
+ # Terminal permissions
+@@ -363,7 +363,7 @@
+ # Note: if you use PAM, it is recommended to use a value consistent with
+ # the PAM modules configuration.
+ #
+-#ENCRYPT_METHOD SHA512
++ENCRYPT_METHOD YESCRYPT
+ 
+ #
+ # Only works if ENCRYPT_METHOD is set to SHA256 or SHA512.
+diff -Naur shadow-4.20.2.orig/etc/shadow-maint/groupdel-pre.d/01-kill_group_procs.sh shadow-4.20.2/etc/shadow-maint/groupdel-pre.d/01-kill_group_procs.sh
+--- shadow-4.20.2.orig/etc/shadow-maint/groupdel-pre.d/01-kill_group_procs.sh	2025-03-24 12:05:09.857675713 +0000
++++ shadow-4.20.2/etc/shadow-maint/groupdel-pre.d/01-kill_group_procs.sh	2025-03-24 12:05:09.857675713 +0000
+@@ -1,6 +1,6 @@
+ #!/sw/bash/bin/bash
+ 
+-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
++PATH="/sw/*/bin"
+ GROUPID=`awk -F: '$1 == "'"${SUBJECT}"'" { print $3 }' /etc/group`
+ 
+ if [ "${GROUPID}" = "" ]; then
+diff -Naur shadow-4.20.2.orig/etc/shadow-maint/userdel-pre.d/01-kill_user_procs.sh shadow-4.20.2/etc/shadow-maint/userdel-pre.d/01-kill_user_procs.sh
+--- shadow-4.20.2.orig/etc/shadow-maint/userdel-pre.d/01-kill_user_procs.sh	2025-03-24 12:05:09.857675713 +0000
++++ shadow-4.20.2/etc/shadow-maint/userdel-pre.d/01-kill_user_procs.sh	2025-03-24 12:05:09.857675713 +0000
+@@ -1,6 +1,6 @@
+ #!/sw/bash/bin/bash
+ 
+-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
++PATH="/sw/*/bin"
+ 
+ # Check user exists, and if so, send sigkill to processes that the user owns
+ 
+diff -Naur shadow-4.20.2.orig/lib/age.c shadow-4.20.2/lib/age.c
+--- shadow-4.20.2.orig/lib/age.c	2026-08-04 18:02:12.996395611 +0000
++++ shadow-4.20.2/lib/age.c	2026-08-04 18:02:12.996395611 +0000
+@@ -26,7 +26,7 @@
+ #ident "$Id$"
+ 
+ #ifndef PASSWD_PROGRAM
+-#define PASSWD_PROGRAM "/bin/passwd"
++#define PASSWD_PROGRAM "/sw/shadow/bin/passwd"
+ #endif
+ /*
+  * expire - force password change if password expired
+diff -Naur shadow-4.20.2.orig/lib/btrfs.c shadow-4.20.2/lib/btrfs.c
+--- shadow-4.20.2.orig/lib/btrfs.c	2026-08-04 18:02:12.996395611 +0000
++++ shadow-4.20.2/lib/btrfs.c	2026-08-04 18:02:12.996395611 +0000
+@@ -10,7 +10,7 @@
+ #include "prototypes.h"
+ 
+ 
+-#define PATH_ENV  "/usr/bin/env"
++#define PATH_ENV  "/sw/coreutils/bin/env"
+ 
+ 
+ static int run_btrfs_subvolume_cmd(const char *subcmd, const char *arg1, const char *arg2)
+diff -Naur shadow-4.20.2.orig/lib/getdef.c shadow-4.20.2/lib/getdef.c
+--- shadow-4.20.2.orig/lib/getdef.c	2026-08-08 12:08:13.732326072 +0000
++++ shadow-4.20.2/lib/getdef.c	2026-08-08 12:08:13.732326072 +0000
+@@ -545,6 +545,9 @@
+ 	 * Open the configuration definitions file.
+ 	 */
+ 	fp = fopen (def_fname, "r");
++	if (NULL == fp && errno == ENOENT && strcmp (def_fname, LOGINDEFS) == 0) {
++		fp = fopen ("/sw/shadow/etc/login.defs", "r");
++	}
+ 	if (NULL == fp) {
+ 		if (errno == ENOENT)
+ 			return;
+diff -Naur shadow-4.20.2.orig/lib/setupenv.c shadow-4.20.2/lib/setupenv.c
+--- shadow-4.20.2.orig/lib/setupenv.c	2026-08-04 18:02:13.000285869 +0000
++++ shadow-4.20.2/lib/setupenv.c	2026-08-04 18:02:13.000285869 +0000
+@@ -157,7 +157,7 @@
+ 
+ 	if (NULL == cp) {
+ 		/* not specified, use a minimal default */
+-		addenv ((info->pw_uid == 0) ? "PATH=/sbin:/bin:/usr/sbin:/usr/bin" : "PATH=/bin:/usr/bin", NULL);
++		addenv ("PATH=/sw/*/bin", NULL);
+ 	} else if (strchr(cp, '=')) {
+ 		/* specified as name=value (PATH=...) */
+ 		addenv (cp, NULL);
+diff -Naur shadow-4.20.2.orig/src/Makefile.in shadow-4.20.2/src/Makefile.in
+--- shadow-4.20.2.orig/src/Makefile.in	2026-08-08 12:18:12.489441684 +0000
++++ shadow-4.20.2/src/Makefile.in	2026-08-08 12:18:12.489441684 +0000
+@@ -606,7 +606,7 @@
+ 	.indent.pro
+ 
+ ubindir = ${prefix}/bin
+-usbindir = ${prefix}/sbin
++usbindir = ${prefix}/bin
+ suidperms = 4755
+ sgidperms = 2755
+ AM_CPPFLAGS = \
+diff -Naur shadow-4.20.2.orig/src/useradd.c shadow-4.20.2/src/useradd.c
+--- shadow-4.20.2.orig/src/useradd.c	2026-08-08 12:07:10.932739516 +0000
++++ shadow-4.20.2/src/useradd.c	2026-08-08 12:07:10.932739516 +0000
+@@ -110,7 +110,7 @@
+ static const char *def_groups = "";
+ static const char *def_gname = "other";
+ static const char *def_home = "/home";
+-static const char *def_shell = "/bin/bash";
++static const char *def_shell = "/sw/bash/bin/bash";
+ static const char *def_template = SKEL_DIR;
+ static const char *def_usrtemplate = USRSKELDIR;
+ static const char *def_create_mail_spool = "yes";
+@@ -1378,6 +1378,7 @@
+ 				     && '*'  != optarg[0]
+ 				     && !streq(optarg, "/sbin/nologin")
+ 				     && !streq(optarg, "/usr/sbin/nologin")
++				     && !streq(optarg, "/sw/shadow/bin/nologin")
+ 				     && (   stat(optarg, &st) != 0
+ 				         || S_ISDIR(st.st_mode)
+ 				         || access(optarg, X_OK) != 0)) {
+diff -Naur shadow-4.20.2.orig/src/usermod.c shadow-4.20.2/src/usermod.c
+--- shadow-4.20.2.orig/src/usermod.c	2026-08-08 12:07:10.932739516 +0000
++++ shadow-4.20.2/src/usermod.c	2026-08-08 12:07:10.932739516 +0000
+@@ -1191,6 +1191,7 @@
+ 				     && '*'  != optarg[0]
+ 				     && !streq(optarg, "/sbin/nologin")
+ 				     && !streq(optarg, "/usr/sbin/nologin")
++				     && !streq(optarg, "/sw/shadow/bin/nologin")
+ 				     && (   stat(optarg, &st) != 0
+ 				         || S_ISDIR(st.st_mode)
+ 				         || access(optarg, X_OK) != 0)) {

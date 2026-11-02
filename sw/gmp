@@ -1,0 +1,92 @@
+ON=cross-build
+
+VERSION=6.3.0
+
+ARCHIVES=(
+    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$VERSION.tar.xz
+    f771fd5ba22d4f88f767694508ef19a99e649e3c60a0ebef7aa894055b9704b3 file://gmp-$VERSION-fluffy-shell.patch
+    75a7b0a73fb0f15620053673ad113ae39a75a978c60344c207df64afadbefa1d file://gmp-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc
+    libgcc
+    libstdcpp-pass1
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    libgcc
+    libstdcpp-pass1
+    linux-headers
+    m4
+    make-pass1
+    patch-pass1
+    perl-pass1
+    sed-pass1
+    texinfo-pass1
+)
+
+MAKE() {
+    patch -Z -Np1 -i gmp-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i gmp-$VERSION-fluffy-source.patch
+
+    ./configure \
+        --prefix=/sw/gmp \
+        --enable-cxx \
+        --disable-static \
+        --docdir=/sw/gmp/share/doc/gmp-$VERSION
+    make
+    make html
+}
+
+CHECK_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    libgcc
+    libstdcpp-pass1
+    linux-headers
+    make-pass1
+    sed-pass1
+)
+
+CHECK() {
+    make check 2>&1 | tee gmp-check-log
+    test "$(awk '/# PASS:/{total+=$3} ; END{print total}' gmp-check-log)" -ge 199
+}
+
+INSTALL_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    libgcc
+    libstdcpp-pass1
+    linux-headers
+    make-pass1
+    sed-pass1
+    texinfo-pass1
+)
+
+INSTALL() {
+    make install
+    make install-html
+    rm -fv $DESTDIR/sw/gmp/lib/libgmp*.la
+}

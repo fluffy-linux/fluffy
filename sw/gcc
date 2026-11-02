@@ -1,0 +1,158 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=16.2.0
+
+ARCHIVES=(
+    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
+    14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
+    56d4923478beb3abdd92be03416c40eff9da6427995642cf77b2f20c9fa012cb file://gcc-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    binutils
+    glibc
+    gmp
+    libgcc
+    libstdcpp
+    mpc
+    mpfr
+    zlib
+    zstd
+)
+
+if test -v CROSS
+then
+    MAKE_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        gettext-pass1
+        glibc
+        gmp
+        grep-pass1
+        libgcc
+        libstdcpp
+        linux-headers
+        make-pass1
+        mpc
+        mpfr
+        patch-pass1
+        perl-pass1
+        sed-pass1
+        tar-pass1
+        texinfo-pass1
+        zlib
+        zstd
+    )
+else
+    MAKE_NEEDS=(
+        bash
+        binutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        gmp
+        grep
+        libgcc
+        libstdcpp
+        linux-headers
+        make
+        mpc
+        mpfr
+        patch
+        perl
+        sed
+        texinfo
+        zlib
+        zstd
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-source.patch
+
+    sed -e '/m64=/s/lib64/lib/' \
+        -i gcc/config/i386/t-linux64
+    cat >> gcc/config/i386/linux64.h << EOF
+#undef GLIBC_DYNAMIC_LINKER64
+#define GLIBC_DYNAMIC_LINKER64 "/sw/glibc/lib/ld-linux-x86-64.so.2"
+#undef STARTFILE_PREFIX_SPEC
+#define STARTFILE_PREFIX_SPEC "/sw/*/lib/"
+#undef MD_EXEC_PREFIX
+#define MD_EXEC_PREFIX "/sw/*/bin/"
+EOF
+
+    sed '/thread_header =/s/@.*@/gthr-posix.h/' \
+        -i libgcc/Makefile.in libgcc/configure
+
+    mkdir -v build
+    cd build
+    ../configure \
+        --prefix=/sw/gcc \
+        LD=/sw/binutils/bin/ld \
+        --with-native-system-header-dir='/sw/*/include' \
+        --with-gxx-include-dir='/sw/*/include/c++/$VERSION' \
+        --enable-default-pie \
+        --enable-default-ssp \
+        --disable-fixincludes \
+        --disable-nls \
+        --disable-multilib \
+        --disable-bootstrap \
+        --disable-libstdcxx \
+        --with-system-zlib \
+        --with-zstd \
+        --enable-languages=c,c++
+    make
+}
+
+if test -v CROSS
+then
+    INSTALL_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        libgcc
+        libstdcpp
+        make-pass1
+        sed-pass1
+    )
+else
+    INSTALL_NEEDS=(
+        bash
+        binutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        libstdcpp
+        make
+        sed
+    )
+fi
+
+INSTALL() {
+    cd build
+    make install
+    ln -sv gcc $DESTDIR/sw/gcc/bin/cc
+    ln -sv g++ $DESTDIR/sw/gcc/bin/c++
+
+    rm -fv $DESTDIR/sw/gcc/lib/libgcc_s.so*
+}

@@ -1,0 +1,18 @@
+diff -Naur acl-2.4.0.orig/test/run acl-2.4.0/test/run
+--- acl-2.4.0.orig/test/run	2026-06-28 20:44:30.000000000 +0000
++++ acl-2.4.0/test/run	2026-06-28 20:44:30.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl -w -U
++#!/sw/perl/bin/perl -w -U
+ 
+ # Copyright (c) 2007, 2008 Andreas Gruenbacher.
+ # All rights reserved.
+diff -Naur acl-2.4.0.orig/test/sort-getfacl-output acl-2.4.0/test/sort-getfacl-output
+--- acl-2.4.0.orig/test/sort-getfacl-output	2023-02-13 08:38:02.000000000 +0000
++++ acl-2.4.0/test/sort-getfacl-output	2023-02-13 08:38:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /usr/bin/perl -w
++#!/sw/perl/bin/perl -w
+ 
+ undef $/;
+ print join("\n\n", sort split(/\n\n/, <>)), "\n\n";

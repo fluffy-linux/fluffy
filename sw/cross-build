@@ -4,12 +4,13 @@ VERSION=1.0
 
 NEEDS=(
     bzip2-pass1
+    coreutils-pass1
     ctypes-sh-pass1
+    curl-pass1
     gzip-pass1
     signify-pass1
     squashfs-tools-pass1
     tar-pass1
     util-linux-pass1
-    wget-pass1
     xz-pass1
 )

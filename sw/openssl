@@ -13,7 +13,7 @@ MAKE() {
     patch -Z -Np1 -i openssl-$VERSION-fluffy-test.patch
     ./config \
         --prefix=/sw/openssl \
-        --openssldir='/etc/*/ssl' \
+        --openssldir='/sw/*/etc/ssl' \
         --libdir=lib \
         shared \
         zlib-dynamic

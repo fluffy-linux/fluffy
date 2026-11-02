@@ -1,0 +1,142 @@
+ON=cross-build
+
+VERSION=2.47
+
+ARCHIVES=(
+    154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff https://sourcewaresourceware.org/pub/binutils/releases/binutils-$VERSION.tar.xz
+    4602feb91bec5a8053b8683a5032a835d35940f0d1e3aa17a28c6db42adfbd9a file://binutils-$VERSION-fluffy-shell.patch
+    6690a172945cba4e886738bb16a66acf115d88d044212a3ae9f4b42454f33d4d file://binutils-$VERSION-fluffy-source.patch
+    747151e30077244d42539e59b22b740dc19b2aae483848dae471444fa3d96de9 file://binutils-$VERSION-fluffy-test.patch
+)
+
+NEEDS=(
+    bash-pass1
+    flex
+    glibc
+    libgcc
+    libstdcpp-pass1
+    zlib
+    zstd
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    bison-pass1
+    coreutils-pass1
+    diffutils-pass1
+    file
+    findutils-pass1
+    flex
+    gawk-pass1
+    gcc-pass2
+    gettext-pass1
+    glibc
+    grep-pass1
+    gzip-pass1
+    libgcc
+    libstdcpp-pass1
+    linux-headers
+    m4
+    make-pass1
+    patch-pass1
+    perl-pass1
+    sed-pass1
+    tar-pass1
+    texinfo-pass1
+    xz
+    zlib
+    zstd
+)
+
+MAKE() {
+    patch -Z -Np1 -i binutils-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i binutils-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i binutils-$VERSION-fluffy-test.patch
+
+    mkdir -v build
+    cd build
+
+    export ZSTD_CFLAGS=" " ZSTD_LIBS="-lzstd"
+    ../configure \
+        --prefix=/sw/binutils \
+        --sysconfdir=/sw/binutils/etc \
+        --with-lib-path='/sw/*/lib' \
+        --enable-ld=default \
+        --enable-plugins \
+        --enable-shared \
+        --disable-werror \
+        --enable-64-bit-bfd \
+        --enable-new-dtags \
+        --with-system-zlib \
+        --with-zstd \
+        --enable-default-hash-style=gnu
+    make tooldir=/sw/binutils
+}
+
+CHECK_NEEDS=(
+    bash-pass1
+    bc
+    bison-pass1
+    coreutils-pass1
+    dejagnu
+    diffutils-pass1
+    expect
+    file
+    findutils-pass1
+    flex
+    gawk-pass1
+    gcc-pass2
+    gettext-pass1
+    glibc
+    grep-pass1
+    gzip-pass1
+    libgcc
+    libstdcpp-pass1
+    linux-headers
+    m4
+    make-pass1
+    perl-pass1
+    sed-pass1
+    tar-pass1
+    tcl
+    texinfo-pass1
+    util-linux-pass1
+    xz
+    zlib
+    zstd
+)
+
+CHECK() {
+    cd build
+    unset SOURCE_DATE_EPOCH
+    make -k check
+}
+
+INSTALL_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    flex
+    gawk-pass1
+    gcc-pass2
+    gettext-pass1
+    glibc
+    grep-pass1
+    libgcc
+    libstdcpp-pass1
+    linux-headers
+    make-pass1
+    perl-pass1
+    sed-pass1
+    texinfo-pass1
+    zlib
+    zstd
+)
+
+INSTALL() {
+    cd build
+    make tooldir=/sw/binutils install
+    rm -rfv $DESTDIR/sw/binutils/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.{a,la} \
+            $DESTDIR/sw/binutils/share/doc/gprofng/
+}

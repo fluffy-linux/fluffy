@@ -5,7 +5,7 @@ VERSION=1.6.3
 ARCHIVES=(
     87daefacd7958b4a69f88c6856dbd1634261963c414079d0c371f589cd66a2e3 https://ftpmirror.gnu.org/dejagnu/dejagnu-$VERSION.tar.gz
     36bb31081a9172482d34870e8e9abe9a39314385c3b6a8829848fede7872f0a1 file://dejagnu-$VERSION-fluffy-shell.patch
-    119dc3004712f8a9407a978fe9de829c3768deed04b95ebb6e58dfa0c3510252 file://dejagnu-$VERSION-fluffy-source.patch
+    84402dfb6becdb4535dc8d4f105685feacd09a0248e008a2bec5f5260cb1e2b7 file://dejagnu-$VERSION-fluffy-source.patch
     8150c0cfe6033cedd215c5f33b0f7880b0f44b0c163d23c8c73dc56a466bdf6a file://dejagnu-$VERSION-fluffy-test.patch
 )
 

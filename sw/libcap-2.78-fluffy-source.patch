@@ -1,0 +1,12 @@
+diff -Naur libcap-2.78.orig/progs/capsh.c libcap-2.78/progs/capsh.c
+--- libcap-2.78.orig/progs/capsh.c	2025-02-22 20:18:47.000000000 +0000
++++ libcap-2.78/progs/capsh.c	2025-02-22 20:18:47.000000000 +0000
+@@ -34,7 +34,7 @@
+ #include <unistd.h>
+ 
+ #ifndef SHELL
+-#define SHELL "/bin/bash"
++#define SHELL "/sw/bash/bin/bash"
+ #endif /* ndef SHELL */
+ 
+ #include "./capshdoc.h"

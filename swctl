@@ -63,11 +63,25 @@ then
     call mount "$FLUFFY/sw" /sw $NULL $(( MS_BIND | MS_REC )) $NULL
 fi
 
+if test -v CROSS
+then
+    if test "$CROSS" == "0"
+    then
+        unset CROSS
+    else
+        export CROSS
+    fi
+fi
+
 FSTAB=${FSTAB:-/sw/.build/fstab}
 SEC_KEY="${FLUFFY_SIGN_KEY:-/sw/.build/sign.sec}"
 
 sign_file() {
     signify -S -s "$SEC_KEY" -m "$1" -x - | tail -n 1
+}
+
+check_sha256() {
+    test -f "$1" && test "$(sha256sum "$1" | cut -d' ' -f1)" == "$2"
 }
 
 verify_sha256() {
@@ -123,6 +137,7 @@ reload_fstab() {
     then
         call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
     fi
+
 }
 
 reload_fstab
@@ -203,6 +218,7 @@ find_fs_by_pkg() {
         eval "$__var=\$fallback"
     fi
 }
+
 
 register_entry() {
     local squashfs="$1"
@@ -361,12 +377,20 @@ install_targets() {
 
     dfs install_step "$@"
 
-    local -A target_fs=() mounted_tgt=()
+    local -A target_fs=() target_is_final=() mounted_tgt=()
     local fs tgt src
     for fs in "${order[@]}"
     do
         fs_str "$fs" target tgt
-        target_fs["$tgt"]="$fs"
+        fs_str "$fs" source src
+        if [[ "$src" != *-pass*.squashfs ]]
+        then
+            target_fs["$tgt"]="$fs"
+            target_is_final["$tgt"]=1
+        elif test -z "${target_is_final[$tgt]:-}"
+        then
+            target_fs["$tgt"]="$fs"
+        fi
     done
 
     call_ptr mtab mnt_new_table
@@ -602,7 +626,12 @@ build_single_pkg() {
             mksquashfs "$work_dir/installed" "$squashfs_file.new" -all-root -comp zstd -quiet -no-progress
         }
 
-        ON=fluffy-build
+        if test -v CROSS
+        then
+            ON=cross-build
+        else
+            ON=fluffy-build
+        fi
         # shellcheck disable=SC1090
         source "$pkg_file"
 
@@ -695,32 +724,24 @@ build_single_pkg() {
                 sha256="${ARCHIVES[i]}"
                 url="${ARCHIVES[i+1]}"
                 filename="${url##*/}"
-                if [[ "$url" != *://* || "$url" == file://* ]]
+                cached_file="$work_dir/archives/$filename"
+
+                if ! check_sha256 "$cached_file" "$sha256"
                 then
-                    local_path="$root/sw/${url#file://}"
-                    if test ! -f "$local_path"
+                    rm -f "$cached_file"
+                    if [[ "$url" == file://* ]]
                     then
-                        fatal "local archive not found: $local_path"
+                        cp "$root/sw/${url#file://}" "$cached_file"
+                    elif test -f "$root/packages/$filename"
+                    then
+                        cp "$root/packages/$filename" "$cached_file"
+                    else
+                        log "downloading $filename..."
+                        curl --fail --silent --show-error --location --output "$cached_file" "$url"
                     fi
-                    verify_sha256 "$local_path" "$sha256" "$filename"
-                    cp "$local_path" "$work_dir/archives/$filename"
-                    continue
                 fi
-                if test -f "$work_dir/archives/$filename"
-                then
-                    continue
-                fi
-                if test -f "$root/packages/$filename"
-                then
-                    verify_sha256 "$root/packages/$filename" "$sha256" "$filename"
-                    cp "$root/packages/$filename" "$work_dir/archives/$filename"
-                    continue
-                fi
-                tmpfile="$(mktemp)"
-                log "downloading $filename..."
-                wget --quiet --output-document "$tmpfile" "$url"
-                verify_sha256 "$tmpfile" "$sha256" "$filename"
-                mv "$tmpfile" "$work_dir/archives/$filename"
+
+                verify_sha256 "$cached_file" "$sha256" "$filename"
             done
 
             (
@@ -818,7 +839,12 @@ build_pkgs() {
                 fatal "recipe file not found: $recipe_file"
             fi
 
-            ON=fluffy-build
+            if test -v CROSS
+            then
+                ON=cross-build
+            else
+                ON=fluffy-build
+            fi
             VERSION=""
             ARCHIVES=()
             NEEDS=()
