@@ -1,0 +1,112 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=6.6
+
+ARCHIVES=(
+    355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://invisible-mirror.net/archives/ncurses/ncurses-$VERSION.tar.gz
+    0c5cbf1c358a5cd922d0c741f0f029ffb2a7db66612968949532ae92da8672e8 file://ncurses-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    libgcc
+    libstdcpp
+)
+
+if test -v CROSS
+then
+    MAKE_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep-pass1
+        libgcc
+        libstdcpp
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed-pass1
+    )
+else
+    MAKE_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        libstdcpp
+        linux-headers
+        make
+        patch
+        sed
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i ncurses-$VERSION-fluffy-shell.patch
+
+    ./configure \
+        --prefix=/sw/ncurses \
+        --mandir=/sw/ncurses/share/man \
+        --with-manpage-format=normal \
+        --with-shared \
+        --without-debug \
+        --without-normal \
+        --with-cxx-shared \
+        --enable-widec \
+        AWK=gawk
+    make
+}
+
+if test -v CROSS
+then
+    INSTALL_NEEDS=(
+        bash-pass1
+        coreutils-pass1
+        glibc
+        libgcc
+        libstdcpp
+        make-pass1
+        sed-pass1
+    )
+else
+    INSTALL_NEEDS=(
+        bash
+        coreutils
+        glibc
+        libgcc
+        libstdcpp
+        make
+        sed
+    )
+fi
+
+INSTALL() {
+    make install
+
+    sed -e 's/^#if.*XOPEN.*$/#if 1/' \
+        -i $DESTDIR/sw/ncurses/include/curses.h
+
+    for lib in ncurses form panel menu ncurses++; do
+        ln -sfv lib${lib}w.so $DESTDIR/sw/ncurses/lib/lib${lib}.so
+    done
+    ln -sfv libncursesw.so $DESTDIR/sw/ncurses/lib/libcurses.so
+
+    mkdir -pv $DESTDIR/sw/ncurses/share/doc/ncurses-$VERSION
+    cp -v -R doc/* $DESTDIR/sw/ncurses/share/doc/ncurses-$VERSION
+}

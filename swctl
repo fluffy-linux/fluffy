@@ -245,7 +245,7 @@ register_entry() {
     local squashfs="$1"
     local pkg_filename="${squashfs##*/}"
     local mountpoint="/sw/$mount_pkg"
-    local from="${FLUFFY_FROM}"
+    local recipe_checksum="${FLUFFY_RECIPE_CHECKSUM}"
     local needs=""
 
     if (( ${#NEEDS[@]} > 0 ))
@@ -256,17 +256,17 @@ register_entry() {
         IFS="$old_ifs"
     fi
 
-    local mnt_fs="$NULL" old_src="" old_sig="" pkg_sig=""
+    local mnt_fs="$NULL" old_src="" old_img_chk="" img_chk=""
     find_fs_by_pkg "$pkg" mnt_fs 1
     if test "$mnt_fs" != "$NULL"
     then
         fs_str "$mnt_fs" source old_src
-        get_fs_opt "$mnt_fs" "X-fluffy.signature" old_sig || true
+        get_fs_opt "$mnt_fs" "X-fluffy.image-checksum" old_img_chk || true
     fi
 
-    if test -n "$old_src" && test -f "$old_src" && test -n "$old_sig" && cmp -s "$old_src" "$squashfs.new"
+    if test -n "$old_src" && test -f "$old_src" && test -n "$old_img_chk" && cmp -s "$old_src" "$squashfs.new"
     then
-        pkg_sig="$old_sig"
+        img_chk="$old_img_chk"
         if test "$old_src" == "$squashfs"
         then
             rm -f "$squashfs.new"
@@ -280,7 +280,7 @@ register_entry() {
         then
             rm -f "$old_src"
         fi
-        pkg_sig="$(sign_file "$squashfs")"
+        img_chk="$(sha256sum "$squashfs" | cut -d' ' -f1)"
     fi
 
     if test "$mnt_fs" == "$NULL"
@@ -290,12 +290,12 @@ register_entry() {
         dlcall mnt_unref_fs "$mnt_fs"
     fi
 
-    local options="X-fluffy.signature=$pkg_sig"
+    local options="X-fluffy.image-checksum=$img_chk"
     if test -n "$needs"
     then
         options="$options,X-fluffy.needs=\"$needs\""
     fi
-    options="$options,X-fluffy.from=$from"
+    options="$options,X-fluffy.recipe-checksum=$recipe_checksum"
 
     call mnt_fs_set_source "$mnt_fs" "string:/sw/$pkg_filename"
     call mnt_fs_set_target "$mnt_fs" "string:$mountpoint"
@@ -749,16 +749,8 @@ build_single_pkg() {
                 if ! check_sha256 "$cached_file" "$sha256"
                 then
                     rm -f "$cached_file"
-                    if [[ "$url" == file://* ]]
-                    then
-                        cp "$root/sw/${url#file://}" "$cached_file"
-                    elif test -f "$root/packages/$filename"
-                    then
-                        cp "$root/packages/$filename" "$cached_file"
-                    else
-                        log "downloading $filename..."
-                        curl --fail --silent --show-error --location --output "$cached_file" "$url"
-                    fi
+                    [[ "$url" == file://* && "$url" != file:///* ]] && url="file://$PWD/sw/${url#file://}"
+                    curl --fail --silent --show-error --location --output "$cached_file" "$url"
                 fi
 
                 verify_sha256 "$cached_file" "$sha256" "$filename"
@@ -919,7 +911,7 @@ build_pkgs() {
     ) > "$tmp_plan"
 
     local -a order=()
-    local -A pkg_ver=() pkg_closure=() pkg_sig=() pkg_includes=()
+    local -A pkg_ver=() pkg_closure=() pkg_img_chk=() pkg_includes=()
     local p v c inc
     while IFS=$'\t' read -r p v c inc
     do
@@ -941,17 +933,17 @@ build_pkgs() {
             find_fs_by_pkg "$pkg" fs 1
         fi
 
-        local sig="" recorded_from="" src=""
+        local img_chk="" recorded_recipe_chk="" src=""
         if test "$fs" != "$NULL"
         then
             fs_str "$fs" source src
-            get_fs_opt "$fs" "X-fluffy.signature" sig || true
-            get_fs_opt "$fs" "X-fluffy.from" recorded_from || true
-            pkg_sig["$pkg"]="$sig"
+            get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || true
+            get_fs_opt "$fs" "X-fluffy.recipe-checksum" recorded_recipe_chk || true
+            pkg_img_chk["$pkg"]="$img_chk"
         fi
 
-        local current_from
-        current_from="$( {
+        local current_recipe_chk
+        current_recipe_chk="$( {
             cat "sw/$pkg"
             if test -n "${pkg_includes[$pkg]:-}"
             then
@@ -967,19 +959,19 @@ build_pkgs() {
                 local dep
                 for dep in ${pkg_closure[$pkg]}
                 do
-                    printf '%s:%s\n' "$dep" "${pkg_sig[$dep]}"
+                    printf '%s:%s\n' "$dep" "${pkg_img_chk[$dep]}"
                 done | LC_ALL=C sort
             fi
         } | sha256sum )"
-        current_from="${current_from%% *}"
+        current_recipe_chk="${current_recipe_chk%% *}"
 
-        if test -n "$src" && test -s "$src" && test -n "$recorded_from" && test "$recorded_from" == "$current_from"
+        if test -n "$src" && test -s "$src" && test -n "$recorded_recipe_chk" && test "$recorded_recipe_chk" == "$current_recipe_chk"
         then
             log "$pkg [$idx/$total]: UP-TO-DATE"
             continue
         fi
 
-        export FLUFFY_PROGRESS="[$idx/$total]" FLUFFY_FROM="$current_from"
+        export FLUFFY_PROGRESS="[$idx/$total]" FLUFFY_RECIPE_CHECKSUM="$current_recipe_chk"
         build_single_pkg "$pkg"
         reload_fstab
 
@@ -987,8 +979,8 @@ build_pkgs() {
         dlcall -r pointer -n fs mnt_table_find_source "$mnt_table" "string:$sq" "int:$MNT_ITER_FORWARD"
         if test "$fs" != "$NULL"
         then
-            get_fs_opt "$fs" "X-fluffy.signature" sig || true
-            pkg_sig["$pkg"]="$sig"
+            get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || true
+            pkg_img_chk["$pkg"]="$img_chk"
         fi
     done
 }

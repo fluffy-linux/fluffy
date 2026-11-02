@@ -51,7 +51,7 @@ EOF
         --with-newlib \
         --without-headers \
         --with-native-system-header-dir='/sw/*/include' \
-        --with-gxx-include-dir="/sw/*/include/c++/$VERSION" \
+        --with-gxx-include-dir='/sw/*/include/c++' \
         --enable-default-pie \
         --enable-default-ssp \
         --disable-fixincludes \
