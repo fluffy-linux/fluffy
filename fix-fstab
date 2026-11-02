@@ -1,0 +1,403 @@
+#!/sw/bash/bin/bash
+
+# fix-fstab - one-shot fixer to update /sw/.build/fstab:
+# Replaces X-fluffy.signature with X-fluffy.image-checksum (SHA-256)
+# Replaces X-fluffy.from with X-fluffy.recipe-checksum (SHA-256)
+# Re-signs /sw/.build/fstab with signify using sign.sec
+
+set -euo pipefail
+shopt -s extglob
+
+source ctypes.sh
+if test -f /sw/util-linux/lib/libmount.so.1; then
+    dlopen /sw/util-linux/lib/libmount.so.1
+else
+    dlopen libmount.so.1
+fi
+
+MNT_ITER_FORWARD=0
+CLONE_NEWNS=0x00020000
+MS_REC=0x00004000
+MS_PRIVATE=0x00040000
+MS_BIND=0x0001000
+
+log() {
+    echo "$@" >&2
+}
+
+fatal() {
+    log "$@"
+    exit 1
+}
+
+source() {
+    local src="$1"
+    shift
+    if [[ "$src" != /* && "$src" != ./* ]] && test -f "sw/$src"
+    then
+        src="sw/$src"
+    fi
+    if test -n "${current_eval_pkg:-}" && test "$src" != "sw/$current_eval_pkg"
+    then
+        if [[ ! " ${pkg_includes["$current_eval_pkg"]:-} " =~ [[:space:]]"$src"[[:space:]] ]]
+        then
+            pkg_includes["$current_eval_pkg"]+="$src "
+        fi
+    fi
+    builtin source "$src" "$@"
+}
+
+.() {
+    source "$@"
+}
+
+call() {
+    local ret
+    dlcall -n ret -r int "$@"
+    if (( ${ret#*:} == -1 ))
+    then
+        fatal "call failed: $*"
+    fi
+}
+
+call_ptr() {
+    local var="$1"
+    shift
+    dlcall -n "$var" -r pointer "$@"
+    if test "${!var}" == "$NULL"
+    then
+        fatal "call failed: $*"
+    fi
+}
+
+fs_str() {
+    local __s
+    dlcall -r string -n __s "mnt_fs_get_$2" "$1"
+    eval "$3=\${__s#string:}"
+}
+
+get_fs_opt() {
+    local fs="$1" key="$2" __out="$3" opts
+    eval "$__out=\"\""
+    fs_str "$fs" options opts
+    opts=",$opts,"
+    if [[ "$opts" == *,"$key=\""* ]]
+    then
+        local val="${opts#*,"$key=\""}"
+        val="${val%%\"*}"
+        eval "$__out=\$val"
+        return 0
+    elif [[ "$opts" == *,"$key="* ]]
+    then
+        local val="${opts#*,"$key="}"
+        val="${val%%,*}"
+        eval "$__out=\$val"
+        return 0
+    fi
+    return 1
+}
+
+if test -n "${FLUFFY:-}"
+then
+    call unshare $CLONE_NEWNS
+    call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+    call mount "$FLUFFY/sw" /sw $NULL $(( MS_BIND | MS_REC )) $NULL
+fi
+
+if test -v CROSS
+then
+    if test "$CROSS" == "0"
+    then
+        unset CROSS
+    else
+        export CROSS
+    fi
+fi
+
+FSTAB=${FSTAB:-/sw/.build/fstab}
+SEC_KEY="${FLUFFY_SIGN_KEY:-/sw/.build/sign.sec}"
+
+if ! test -f "$FSTAB"
+then
+    fatal "fstab not found at $FSTAB"
+fi
+
+if ! test -f "$SEC_KEY"
+then
+    fatal "signing key not found at $SEC_KEY"
+fi
+
+sign_file() {
+    signify -S -s "$SEC_KEY" -m "$1" -x - | tail -n 1
+}
+
+sign_and_save_fstab() {
+    local tmp_content fstab_sig
+    tmp_content="$(mktemp)"
+
+    call mnt_table_set_intro_comment "$mnt_table" $NULL
+    call mnt_table_replace_file "$mnt_table" "string:$tmp_content"
+    fstab_sig="$(sign_file "$tmp_content")"
+    rm -f "$tmp_content"
+
+    call mnt_table_set_intro_comment "$mnt_table" "string:# fluffy.signature=$fstab_sig"$'\n'
+    mkdir -p "${FSTAB%/*}"
+    call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
+}
+
+log "Parsing $FSTAB..."
+call_ptr mnt_table mnt_new_table
+call mnt_table_set_parser_errcb "$mnt_table" $NULL
+call mnt_table_enable_comments "$mnt_table" "int:1"
+call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
+
+call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
+call_ptr p_fs malloc "ulong:8"
+val=(pointer:0)
+pack "$p_fs" val
+
+declare -A pkg_img_chk=()
+declare -A fs_to_pkg=()
+declare -A fallback_recipe_chk=()
+declare -A pkg_needs_opt=()
+declare -a fstab_pkgs=()
+
+while true
+do
+    dlcall -r int -n ret mnt_table_next_fs "$mnt_table" "$itr" "$p_fs"
+    if test "$ret" != "int:0"
+    then
+        break
+    fi
+    unpack "$p_fs" val
+    curr_fs="${val[0]}"
+    fs_str "$curr_fs" source src
+
+    if ! test -f "$src"
+    then
+        fatal "squashfs file not found: $src"
+    fi
+
+    chk="$(sha256sum "$src" | cut -d' ' -f1)"
+
+    base="${src##*/}"
+    pkg=""
+    for f in sw/*
+    do
+        p="${f##*/}"
+        [[ "$p" == *.common ]] && continue
+        if [[ "$base" =~ ^"$p"-[0-9] ]]
+        then
+            pkg="$p"
+            break
+        fi
+    done
+    if test -z "$pkg"
+    then
+        pkg="${base%%-[0-9]*}"
+    fi
+
+    pkg_img_chk["$pkg"]="$chk"
+    fs_to_pkg["$curr_fs"]="$pkg"
+    fstab_pkgs+=("$pkg")
+
+    old_from=""
+    get_fs_opt "$curr_fs" "X-fluffy.from" old_from || true
+    if test -z "$old_from"
+    then
+        get_fs_opt "$curr_fs" "X-fluffy.recipe-checksum" old_from || true
+    fi
+    fallback_recipe_chk["$pkg"]="$old_from"
+
+    needs=""
+    get_fs_opt "$curr_fs" "X-fluffy.needs" needs || true
+    pkg_needs_opt["$pkg"]="$needs"
+done
+
+dlcall free "$p_fs"
+dlcall mnt_free_iter "$itr"
+
+log "Hashed ${#fstab_pkgs[@]} squashfs images."
+
+valid_pkgs=()
+for p in "${fstab_pkgs[@]}"
+do
+    if test -f "sw/$p"
+    then
+        valid_pkgs+=("$p")
+    fi
+done
+
+dfs() {
+    local step_fn="$1"
+    shift
+    local -A state=()
+    local -a call_stack=()
+    order=()
+
+    dfs_visit() {
+        local raw_node="${1##*/}"
+        case "${state[$raw_node]:-0}" in
+            2) return 0 ;;
+            1) fatal "circular dependency detected: ${call_stack[*]} -> $raw_node" ;;
+        esac
+
+        local node_id="$raw_node"
+        local -a step_deps=()
+        "$step_fn" "$raw_node"
+
+        case "${state[$node_id]:-0}" in
+            2) state["$raw_node"]=2; return 0 ;;
+            1) fatal "circular dependency detected: ${call_stack[*]} -> $raw_node" ;;
+        esac
+
+        state["$raw_node"]=1
+        state["$node_id"]=1
+        call_stack+=("$raw_node")
+
+        local dep
+        for dep in "${step_deps[@]}"
+        do
+            dfs_visit "$dep"
+        done
+
+        call_stack=("${call_stack[@]:0:${#call_stack[@]}-1}")
+        state["$raw_node"]=2
+        state["$node_id"]=2
+        order+=("$node_id")
+    }
+
+    local root_node
+    for root_node in "$@"
+    do
+        dfs_visit "$root_node"
+    done
+}
+
+declare -a order=()
+declare -A pkg_ver=() pkg_needs=() pkg_deps=() pkg_runtime_closure=() pkg_includes=()
+
+build_step() {
+    local pkg_name="$1" recipe_file="sw/$1"
+    if test ! -f "$recipe_file"
+    then
+        return 0
+    fi
+    if test -v CROSS
+    then
+        ON=cross-build
+    else
+        ON=fluffy-build
+    fi
+    VERSION=""
+    ARCHIVES=()
+    NEEDS=()
+    MAKE_NEEDS=()
+    CHECK_NEEDS=()
+    INSTALL_NEEDS=()
+    current_eval_pkg="$pkg_name"
+    source "$recipe_file"
+    unset current_eval_pkg
+    unset -f MAKE CHECK INSTALL
+
+    pkg_ver["$pkg_name"]="$VERSION"
+    pkg_needs["$pkg_name"]="${NEEDS[*]}"
+
+    if test "$ON" != host-build && test "$ON" != "$pkg_name"
+    then
+        step_deps+=("$ON")
+    fi
+    step_deps+=("${NEEDS[@]}" "${MAKE_NEEDS[@]}" "${CHECK_NEEDS[@]}" "${INSTALL_NEEDS[@]}")
+    pkg_deps["$pkg_name"]="${step_deps[*]}"
+    unset ON VERSION ARCHIVES NEEDS MAKE_NEEDS CHECK_NEEDS INSTALL_NEEDS
+}
+
+dfs build_step "${valid_pkgs[@]}"
+
+declare -A pkg_closure=()
+for pkg in "${order[@]}"
+do
+    declare -A rset=(["$pkg"]=1) mset=()
+    for dep in ${pkg_needs[$pkg]:-}
+    do
+        for item in ${pkg_runtime_closure[$dep]:-}
+        do
+            rset["$item"]=1
+        done
+    done
+    pkg_runtime_closure["$pkg"]="${!rset[*]}"
+
+    for dep in ${pkg_deps[$pkg]:-}
+    do
+        for item in ${pkg_runtime_closure[$dep]:-}
+        do
+            mset["$item"]=1
+        done
+    done
+    pkg_closure["$pkg"]="${!mset[*]}"
+    unset rset mset
+done
+
+declare -A computed_recipe_chk=()
+for pkg in "${order[@]}"
+do
+    test -f "sw/$pkg" || continue
+    current_recipe_chk="$( {
+        cat "sw/$pkg"
+        if test -n "${pkg_includes[$pkg]:-}"
+        then
+            for inc in ${pkg_includes[$pkg]}
+            do
+                printf 'include:%s\n' "$inc"
+                cat "$inc"
+            done
+        fi
+        if test -n "${pkg_closure[$pkg]:-}"
+        then
+            for dep in ${pkg_closure[$pkg]}
+            do
+                printf '%s:%s\n' "$dep" "${pkg_img_chk[$dep]:-}"
+            done | LC_ALL=C sort
+        fi
+    } | sha256sum )"
+    computed_recipe_chk["$pkg"]="${current_recipe_chk%% *}"
+done
+
+log "Computed recipe checksums for ${#computed_recipe_chk[@]} active recipes."
+
+call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
+call_ptr p_fs malloc "ulong:8"
+val=(pointer:0)
+pack "$p_fs" val
+
+while true
+do
+    dlcall -r int -n ret mnt_table_next_fs "$mnt_table" "$itr" "$p_fs"
+    if test "$ret" != "int:0"
+    then
+        break
+    fi
+    unpack "$p_fs" val
+    curr_fs="${val[0]}"
+    pkg="${fs_to_pkg[$curr_fs]}"
+
+    img_chk="${pkg_img_chk[$pkg]}"
+    recipe_chk="${computed_recipe_chk[$pkg]:-${fallback_recipe_chk[$pkg]}}"
+    needs="${pkg_needs_opt[$pkg]:-}"
+
+    options="X-fluffy.image-checksum=$img_chk"
+    if test -n "$needs"
+    then
+        options="$options,X-fluffy.needs=\"$needs\""
+    fi
+    options="$options,X-fluffy.recipe-checksum=$recipe_chk"
+
+    call mnt_fs_set_options "$curr_fs" "string:$options"
+done
+
+dlcall free "$p_fs"
+dlcall mnt_free_iter "$itr"
+
+log "Signing and saving updated $FSTAB..."
+sign_and_save_fstab
+log "Done! $FSTAB has been updated and signed."

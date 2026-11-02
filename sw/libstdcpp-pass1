@@ -26,7 +26,8 @@ MAKE() {
         --prefix=/sw/libstdcpp \
         --disable-multilib \
         --disable-nls \
-        --disable-libstdcxx-pch
+        --disable-libstdcxx-pch \
+        --with-gxx-include-dir=/sw/libstdcpp/include/c++
     make
 }
 

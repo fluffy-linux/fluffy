@@ -61,7 +61,7 @@ MAKE() {
         --disable-multilib \
         --disable-nls \
         --disable-libstdcxx-pch \
-        --with-gxx-include-dir=/sw/libstdcpp/include/c++/$VERSION
+        --with-gxx-include-dir=/sw/libstdcpp/include/c++
     make
 }
 

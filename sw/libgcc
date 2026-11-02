@@ -12,9 +12,9 @@ ARCHIVES=(
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$GMP_VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
     56d4923478beb3abdd92be03416c40eff9da6427995642cf77b2f20c9fa012cb file://gcc-$VERSION-fluffy-source.patch
-    b3383fda757774c765974b00fda6c951bcff4d997e9f84501e78bf7cde7577f7 file://mpfr-$MPFR_VERSION-fluffy-shell.patch
-    59ea203e30d5a0030424a3caab9a8b10bd1d549356772abb751d82668d84bf9f file://mpc-$MPC_VERSION-fluffy-shell.patch
-    b6a109a718303b6add5a4d9e58d4a3d66bdc8e3e13fc807a4723466b65609ce1 file://gmp-$GMP_VERSION-fluffy-shell.patch
+    d6e5b7179a943a375757600a250b15e572d713ba12873126524bd25b692ad6be file://mpfr-$MPFR_VERSION-fluffy-shell.patch
+    b8a8497e880e35f53687c65dd7bb25ef9cd937ec650c22fddf0fa902ef1d6782 file://mpc-$MPC_VERSION-fluffy-shell.patch
+    f771fd5ba22d4f88f767694508ef19a99e649e3c60a0ebef7aa894055b9704b3 file://gmp-$GMP_VERSION-fluffy-shell.patch
 )
 
 MAKE_NEEDS=(
