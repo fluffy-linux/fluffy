@@ -30,6 +30,27 @@ fatal() {
     exit 1
 }
 
+source() {
+    local src="$1"
+    shift
+    if [[ "$src" != /* && "$src" != ./* ]] && test -f "sw/$src"
+    then
+        src="sw/$src"
+    fi
+    if test -n "${current_eval_pkg:-}" && test "$src" != "sw/$current_eval_pkg"
+    then
+        if [[ ! " ${pkg_includes["$current_eval_pkg"]:-} " =~ [[:space:]]"$src"[[:space:]] ]]
+        then
+            pkg_includes["$current_eval_pkg"]+="$src "
+        fi
+    fi
+    builtin source "$src" "$@"
+}
+
+.() {
+    source "$@"
+}
+
 call() {
     local ret
     dlcall -n ret -r int "$@"
@@ -828,7 +849,7 @@ build_pkgs() {
     tmp_plan="$(mktemp)"
     (
         declare -a order=()
-        declare -A pkg_ver=() pkg_needs=() pkg_deps=() pkg_runtime_closure=()
+        declare -A pkg_ver=() pkg_needs=() pkg_deps=() pkg_runtime_closure=() pkg_includes=()
 
         build_step() {
             local pkg_name="$1" recipe_file="sw/$1"
@@ -850,8 +871,10 @@ build_pkgs() {
             MAKE_NEEDS=()
             CHECK_NEEDS=()
             INSTALL_NEEDS=()
+            current_eval_pkg="$pkg_name"
             # shellcheck disable=SC1090
             source "$recipe_file"
+            unset current_eval_pkg
             unset -f MAKE CHECK INSTALL
 
             pkg_ver["$pkg_name"]="$VERSION"
@@ -890,19 +913,20 @@ build_pkgs() {
                     mset["$item"]=1
                 done
             done
-            printf '%s\t%s\t%s\n' "$pkg" "${pkg_ver[$pkg]}" "${!mset[*]}"
+            printf '%s\t%s\t%s\t%s\n' "$pkg" "${pkg_ver[$pkg]}" "${!mset[*]}" "${pkg_includes[$pkg]:-}"
             unset rset mset
         done
     ) > "$tmp_plan"
 
     local -a order=()
-    local -A pkg_ver=() pkg_closure=() pkg_sig=()
-    local p v c
-    while IFS=$'\t' read -r p v c
+    local -A pkg_ver=() pkg_closure=() pkg_sig=() pkg_includes=()
+    local p v c inc
+    while IFS=$'\t' read -r p v c inc
     do
         order+=("$p")
         pkg_ver["$p"]="$v"
         pkg_closure["$p"]="$c"
+        pkg_includes["$p"]="$inc"
     done < "$tmp_plan"
     rm -f "$tmp_plan"
 
@@ -927,8 +951,17 @@ build_pkgs() {
         fi
 
         local current_from
-        current_from="$({
+        current_from="$( {
             cat "sw/$pkg"
+            if test -n "${pkg_includes[$pkg]:-}"
+            then
+                local inc
+                for inc in ${pkg_includes[$pkg]}
+                do
+                    printf 'include:%s\n' "$inc"
+                    cat "$inc"
+                done
+            fi
             if test -n "${pkg_closure[$pkg]}"
             then
                 local dep
@@ -937,7 +970,7 @@ build_pkgs() {
                     printf '%s:%s\n' "$dep" "${pkg_sig[$dep]}"
                 done | LC_ALL=C sort
             fi
-        } | sha256sum)"
+        } | sha256sum )"
         current_from="${current_from%% *}"
 
         if test -n "$src" && test -s "$src" && test -n "$recorded_from" && test "$recorded_from" == "$current_from"
