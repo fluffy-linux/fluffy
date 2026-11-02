@@ -84,7 +84,7 @@ for archive in archives:
                 if os.path.islink(path):
                     continue
                 fname = f.lower()
-                if "changelog" in fname or fname in skip_files or any(fname.startswith(p) for p in doc_prefixes) or any(fname.endswith(ext) for ext in doc_exts):
+                if fname != "install-sh" and ("changelog" in fname or fname in skip_files or any(fname.startswith(p) for p in doc_prefixes) or any(fname.endswith(ext) for ext in doc_exts)):
                     continue
                 try:
                     with open(path, "rb") as fp:

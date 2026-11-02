@@ -53,6 +53,7 @@ CHECK_NEEDS=(
     gcc-pass2
     glibc
     grep-pass1
+    linux-headers
     make-pass1
     ncurses-pass1
     readline

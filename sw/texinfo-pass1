@@ -42,7 +42,9 @@ MAKE() {
 INSTALL_NEEDS=(
     bash-pass1
     coreutils-pass1
+    gawk-pass1
     gcc-pass2
+    grep-pass1
     linux-headers
     make-pass1
     perl-pass1

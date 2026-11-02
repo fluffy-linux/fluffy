@@ -1,7 +1,7 @@
 #!/sw/bash/bin/bash
 
 # shellcheck disable=SC2154
-# trim - transitive dependency reduction over /etc/fluffy/fstab
+# trim - transitive dependency reduction over /sw/.build/fstab
 
 set -euo pipefail
 
@@ -46,19 +46,11 @@ cleanup() {
 
 trap cleanup EXIT
 
-if test -d /mnt/fluffy
-then
-    FSTAB=${FSTAB:-/mnt/fluffy/etc/fluffy/fstab}
-else
-    FSTAB=${FSTAB:-/etc/fluffy/fstab}
-fi
+FSTAB=${FSTAB:-${FLUFFY:-}/sw/.build/fstab}
 
-if test -f /sw/util-linux/lib/libmount.so.1
+if test -f "${FLUFFY:-}/sw/util-linux/lib/libmount.so.1"
 then
-    dlopen /sw/util-linux/lib/libmount.so.1
-elif test -f /mnt/fluffy/sw/util-linux/lib/libmount.so.1
-then
-    dlopen /mnt/fluffy/sw/util-linux/lib/libmount.so.1
+    dlopen "${FLUFFY:-}/sw/util-linux/lib/libmount.so.1"
 else
     dlopen libmount.so.1
 fi

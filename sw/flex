@@ -51,6 +51,7 @@ CHECK_NEEDS=(
     gcc-pass2
     glibc
     grep-pass1
+    linux-headers
     m4
     make-pass1
     sed-pass1

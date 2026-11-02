@@ -4,11 +4,11 @@
 # swctl - manage /sw mounts, manifests, and package builds in Fluffy Linux
 
 set -euo pipefail
+shopt -s extglob
 
 source ctypes.sh
 
 MNT_ITER_FORWARD=0
-MNT_ITER_BACKWARD=1
 
 CLONE_NEWNS=0x00020000
 CLONE_NEWNET=0x40000000
@@ -23,14 +23,6 @@ MS_PRIVATE=0x00040000
 
 log() {
     echo "$@" >&2
-}
-
-banner() {
-    local prefix="---- $1 "
-    local dashes="---------------------------------------"
-    log
-    log "${prefix}${dashes:${#prefix}}"
-    log
 }
 
 fatal() {
@@ -57,58 +49,29 @@ call_ptr() {
     fi
 }
 
-cleanup() {
-    if test -n "${mnt_table:-}" && test "$mnt_table" != "$NULL"
-    then
-        dlcall mnt_free_table "$mnt_table"
-    fi
-}
-
 if test $# -lt 1
 then
     fatal "no arguments provided"
 fi
 
-trap cleanup EXIT
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
-script_dir="${BASH_SOURCE[0]%/*}"
-if test "$script_dir" == "${BASH_SOURCE[0]}"
+if test -n "${FLUFFY:-}"
 then
-    script_dir="."
-fi
-repo_dir="$(realpath "$script_dir")"
-
-if test -d /mnt/fluffy/sw
-then
-    FSTAB=${FSTAB:-/mnt/fluffy/etc/fluffy/fstab}
-else
-    FSTAB=${FSTAB:-/etc/fluffy/fstab}
+    call unshare $CLONE_NEWNS
+    call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+    call mount "$FLUFFY/sw" /sw $NULL $(( MS_BIND | MS_REC )) $NULL
 fi
 
-KEY_DIR="${FLUFFY_KEY_DIR:-${FSTAB%/*}/keys}"
-SEC_KEY="${FLUFFY_SEC_KEY:-$KEY_DIR/release.sec}"
-PUB_KEY="${FLUFFY_PUB_KEY:-$KEY_DIR/release.pub}"
-SIGNIFY="$(command -v signify || command -v signify-openbsd || true)"
+FSTAB=${FSTAB:-/sw/.build/fstab}
+SEC_KEY="${FLUFFY_SIGN_KEY:-/sw/.build/sign.sec}"
 
-ensure_keys() {
-    if test ! -f "$SEC_KEY"
-    then
-        if test -z "$SIGNIFY"
-        then
-            fatal "signify not found: cannot generate release keys"
-        fi
-        mkdir -p "${SEC_KEY%/*}"
-        chmod 700 "${SEC_KEY%/*}"
-        log "generating release keypair at $SEC_KEY..."
-        "$SIGNIFY" -G -n -c "fluffy release key" -p "$PUB_KEY" -s "$SEC_KEY"
-    fi
+sign_file() {
+    signify -S -s "$SEC_KEY" -m "$1" -x - | tail -n 1
 }
 
 verify_sha256() {
-    local file="$1"
-    local expected="$2"
-    local name="$3"
-    local actual
+    local file="$1" expected="$2" name="$3" actual
     actual="$(sha256sum "$file" | cut -d' ' -f1)"
     if test "$actual" != "$expected"
     then
@@ -117,10 +80,7 @@ verify_sha256() {
 }
 
 bring_up_lo() {
-    local ptr
-    local ptr16
-    local sock
-    local fd
+    local ptr ptr16 sock fd
     local -a arr=(short)
 
     dlcall -r pointer -n ptr malloc 40
@@ -144,9 +104,6 @@ bring_up_lo() {
 if test -f /sw/util-linux/lib/libmount.so.1
 then
     dlopen /sw/util-linux/lib/libmount.so.1
-elif test -f /mnt/fluffy/sw/util-linux/lib/libmount.so.1
-then
-    dlopen /mnt/fluffy/sw/util-linux/lib/libmount.so.1
 else
     dlopen libmount.so.1
 fi
@@ -170,10 +127,35 @@ reload_fstab() {
 
 reload_fstab
 
+fs_str() {
+    local __s
+    dlcall -r string -n __s "mnt_fs_get_$2" "$1"
+    eval "$3=\${__s#string:}"
+}
+
+get_fs_opt() {
+    local fs="$1" key="$2" __out="$3" opts
+    eval "$__out=''"
+    fs_str "$fs" options opts
+    opts=",$opts,"
+    if [[ "$opts" == *,"$key=\""* ]]
+    then
+        local val="${opts#*,"$key=\""}"
+        val="${val%%\"*}"
+        eval "$__out=\$val"
+        return 0
+    elif [[ "$opts" == *,"$key="* ]]
+    then
+        local val="${opts#*,"$key="}"
+        val="${val%%,*}"
+        eval "$__out=\$val"
+        return 0
+    fi
+    return 1
+}
+
 find_fs_by_pkg() {
-    local query="$1"
-    local __var="$2"
-    local exact="${3:-0}"
+    local query="$1" __var="$2" exact="${3:-0}"
     local query_name="${query##*/}"
     local query_base="${query_name%-pass*}"
 
@@ -193,25 +175,10 @@ find_fs_by_pkg() {
             break
         fi
         unpack "$p_fs" val
-        local curr_fs="${val[0]}"
-        dlcall -r string -n src_str mnt_fs_get_source "$curr_fs"
-        local src="${src_str#string:}"
-        local filename="${src##*/}"
-        local base="${filename%.squashfs}"
-        local cur_pkg
-        if [[ "$base" =~ ^(.*)-[0-9] ]]
-        then
-            cur_pkg="${BASH_REMATCH[1]}"
-        else
-            cur_pkg="$base"
-        fi
+        local curr_fs="${val[0]}" src
+        fs_str "$curr_fs" source src
 
-        dlcall -r string -n tgt_str mnt_fs_get_target "$curr_fs"
-        local tgt="${tgt_str#string:}"
-        local tgt_pkg="${tgt##*/}"
-        local cur_base="${cur_pkg%-pass*}"
-
-        if test "$cur_pkg" == "$query_name"
+        if [[ "$src" == "/sw/$query_name-"[0-9]*.squashfs ]]
         then
             eval "$__var=\$curr_fs"
             break
@@ -219,7 +186,9 @@ find_fs_by_pkg() {
 
         if test "$exact" -eq 0 && test "$fallback" == "$NULL"
         then
-            if test "$tgt_pkg" == "$query_name" || test "$cur_base" == "$query_name" || test "$cur_pkg" == "$query_base"
+            local tgt
+            fs_str "$curr_fs" target tgt
+            if test "$tgt" == "/sw/$query_base" || [[ "$src" == "/sw/$query_base-"[0-9]*.squashfs ]]
             then
                 fallback="$curr_fs"
             fi
@@ -235,90 +204,13 @@ find_fs_by_pkg() {
     fi
 }
 
-get_from() {
-    local pkg="$1"
-    local mnt_fs="$NULL"
-    find_fs_by_pkg "$pkg" mnt_fs 1
-    if test "$mnt_fs" == "$NULL"
-    then
-        return 1
-    fi
-
-    dlcall -r string -n src_str mnt_fs_get_source "$mnt_fs"
-    local src="${src_str#string:}"
-    local real_src="$src"
-    if test -d /mnt/fluffy/sw && test -f "/mnt/fluffy$src"
-    then
-        real_src="/mnt/fluffy$src"
-    fi
-    if test ! -s "$real_src"
-    then
-        return 1
-    fi
-
-    dlcall -r string -n opt_str mnt_fs_get_options "$mnt_fs"
-    local opts="${opt_str#string:}"
-    if [[ "$opts" =~ X-fluffy\.from=([^,]+) ]]
-    then
-        echo "${BASH_REMATCH[1]}"
-        return 0
-    fi
-    return 1
-}
-
 register_entry() {
-    if test $# -lt 1
-    then
-        fatal "usage: register_entry <squashfs> [mountpoint]"
-    fi
-
     local squashfs="$1"
-    local explicit_mountpoint="${2:-}"
-
-    if [[ "$1" == /sw/* ]] && [[ "${2:-}" == *.squashfs ]]
-    then
-        explicit_mountpoint="$1"
-        squashfs="$2"
-    fi
-
-    local real_squashfs="$squashfs"
-    if test -d /mnt/fluffy/sw && test -f "/mnt/fluffy$squashfs"
-    then
-        real_squashfs="/mnt/fluffy$squashfs"
-    fi
-
-    if test ! -f "$real_squashfs"
-    then
-        fatal "squashfs file not found: $real_squashfs"
-    fi
-
     local pkg_filename="${squashfs##*/}"
-    local pkg_base="${pkg_filename%.squashfs}"
-    local pkg_name
-    if [[ "$pkg_base" =~ ^(.*)-[0-9] ]]
-    then
-        pkg_name="${BASH_REMATCH[1]}"
-    else
-        pkg_name="$pkg_base"
-    fi
-
-    local mount_pkg="${pkg_name%-pass*}"
-    local mountpoint="${explicit_mountpoint:-/sw/$mount_pkg}"
-
-    local recipe_file="$repo_dir/sw/$pkg_name"
-    if test ! -f "$recipe_file"
-    then
-        fatal "recipe file not found for $pkg_name"
-    fi
-
-    local from
-    from="$(sha256sum "$recipe_file" | cut -d' ' -f1)"
-
-    local -a NEEDS=()
-    # shellcheck disable=SC1090
-    source "$recipe_file"
-
+    local mountpoint="/sw/$mount_pkg"
+    local from="${FLUFFY_FROM}"
     local needs=""
+
     if (( ${#NEEDS[@]} > 0 ))
     then
         local old_ifs="$IFS"
@@ -327,32 +219,38 @@ register_entry() {
         IFS="$old_ifs"
     fi
 
-    ensure_keys
-
-    if test -z "$SIGNIFY"
+    local mnt_fs="$NULL" old_src="" old_sig="" pkg_sig=""
+    find_fs_by_pkg "$pkg" mnt_fs 1
+    if test "$mnt_fs" != "$NULL"
     then
-        fatal "signify not found: cannot sign package"
+        fs_str "$mnt_fs" source old_src
+        get_fs_opt "$mnt_fs" "X-fluffy.signature" old_sig || true
     fi
 
-    local tmp_sig
-    tmp_sig="$(mktemp)"
-    "$SIGNIFY" -S -s "$SEC_KEY" -m "$real_squashfs" -x "$tmp_sig"
-    local pkg_sig
-    {
-        read -r _
-        read -r pkg_sig
-    } < "$tmp_sig"
-    rm -f "$tmp_sig"
+    if test -n "$old_src" && test -f "$old_src" && test -n "$old_sig" && cmp -s "$old_src" "$squashfs.new"
+    then
+        pkg_sig="$old_sig"
+        if test "$old_src" == "$squashfs"
+        then
+            rm -f "$squashfs.new"
+        else
+            mv -f "$squashfs.new" "$squashfs"
+            rm -f "$old_src"
+        fi
+    else
+        mv -f "$squashfs.new" "$squashfs"
+        if test -n "$old_src" && test "$old_src" != "$squashfs"
+        then
+            rm -f "$old_src"
+        fi
+        pkg_sig="$(sign_file "$squashfs")"
+    fi
 
-    find_fs_by_pkg "$pkg_name" mnt_fs 1
     if test "$mnt_fs" == "$NULL"
     then
-        log "doesn't exist - creating $mountpoint ($pkg_name)"
         call_ptr mnt_fs mnt_new_fs
         call mnt_table_add_fs "$mnt_table" "$mnt_fs"
-        dlcall mnt_unref_fs "$mnt_fs" # table holds a reference to mnt_fs
-    else
-        log "fstab entry exists: updating $mountpoint ($pkg_name)"
+        dlcall mnt_unref_fs "$mnt_fs"
     fi
 
     local options="X-fluffy.signature=$pkg_sig"
@@ -360,10 +258,7 @@ register_entry() {
     then
         options="$options,X-fluffy.needs=\"$needs\""
     fi
-    if test -n "$from"
-    then
-        options="$options,X-fluffy.from=$from"
-    fi
+    options="$options,X-fluffy.from=$from"
 
     call mnt_fs_set_source "$mnt_fs" "string:/sw/$pkg_filename"
     call mnt_fs_set_target "$mnt_fs" "string:$mountpoint"
@@ -372,225 +267,139 @@ register_entry() {
 }
 
 sign_and_save_fstab() {
-    ensure_keys
-
-    local tmp_content
-    local tmp_sig
+    local tmp_content fstab_sig
     tmp_content="$(mktemp)"
-    tmp_sig="$(mktemp)"
 
     call mnt_table_set_intro_comment "$mnt_table" $NULL
     call mnt_table_replace_file "$mnt_table" "string:$tmp_content"
-
-    "$SIGNIFY" -S -s "$SEC_KEY" -m "$tmp_content" -x "$tmp_sig"
-    local fstab_sig=""
-    {
-        read -r _
-        read -r fstab_sig
-    } < "$tmp_sig"
-    rm -f "$tmp_content" "$tmp_sig"
+    fstab_sig="$(sign_file "$tmp_content")"
+    rm -f "$tmp_content"
 
     call mnt_table_set_intro_comment "$mnt_table" "string:# fluffy.signature=$fstab_sig"$'\n'
     mkdir -p "${FSTAB%/*}"
     call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
-    log "fstab signed: $FSTAB"
+}
+
+dfs() {
+    local step_fn="$1"
+    shift
+    local -A state=()
+    local -a call_stack=()
+    order=()
+
+    dfs_visit() {
+        local raw_node="${1##*/}"
+        case "${state[$raw_node]:-0}" in
+            2) return 0 ;;
+            1) fatal "circular dependency detected: ${call_stack[*]} -> $raw_node" ;;
+        esac
+
+        local node_id="$raw_node"
+        local -a step_deps=()
+        "$step_fn" "$raw_node"
+
+        case "${state[$node_id]:-0}" in
+            2) state["$raw_node"]=2; return 0 ;;
+            1) fatal "circular dependency detected: ${call_stack[*]} -> $raw_node" ;;
+        esac
+
+        state["$raw_node"]=1
+        state["$node_id"]=1
+        call_stack+=("$raw_node")
+
+        local dep
+        for dep in "${step_deps[@]}"
+        do
+            dfs_visit "$dep"
+        done
+
+        call_stack=("${call_stack[@]:0:${#call_stack[@]}-1}")
+        state["$raw_node"]=2
+        state["$node_id"]=2
+        order+=("$node_id")
+    }
+
+    local root_node
+    for root_node in "$@"
+    do
+        dfs_visit "$root_node"
+    done
 }
 
 install_targets() {
-    local prefix=""
-    while test $# -gt 0
-    do
-        case "$1" in
-            --prefix)
-                prefix="$2"
-                shift 2
-                ;;
-            *)
-                break
-                ;;
-        esac
-    done
-
     if test $# -eq 0
     then
         fatal "no targets specified to install"
     fi
 
-    local -A missing_pkgs=()
-    local -A state=()
     local -a order=()
-    local -a call_stack=()
 
-    dfs() {
-        local target="$1"
-        local pkg_name="${target##*/}"
+    install_step() {
+        local pkg_name="$1" fs="$NULL" src needs_str=""
 
         find_fs_by_pkg "$pkg_name" fs
         if test "$fs" == "$NULL"
         then
-            missing_pkgs["$pkg_name"]=1
-            return 0
+            fatal "package $pkg_name not found in $FSTAB"
         fi
 
-        dlcall -r string -n src_str mnt_fs_get_source "$fs"
-        local src="${src_str#string:}"
-        local filename="${src##*/}"
-        local base="${filename%.squashfs}"
-        local canon_pkg
-        if [[ "$base" =~ ^(.*)-[0-9] ]]
+        fs_str "$fs" source src
+        if test ! -f "$src"
         then
-            canon_pkg="${BASH_REMATCH[1]}"
-        else
-            canon_pkg="$base"
+            fatal "squashfs file not found: $src"
         fi
 
-        local cur_state="${state[$canon_pkg]:-0}"
-        if test "$cur_state" -eq 2
-        then
-            return 0
-        fi
-        if test "$cur_state" -eq 1
-        then
-            fatal "circular dependency detected: ${call_stack[*]} -> $canon_pkg"
-        fi
-
-        state[$canon_pkg]=1
-        call_stack+=("$canon_pkg")
-
-        dlcall -r string -n fs_opts mnt_fs_get_options "$fs"
-        local opts="${fs_opts#string:}"
-        local needs=""
-        if [[ "$opts" =~ -?X-?fluffy\.needs=\"([^\"]*)\" || "$opts" =~ -?X-?fluffy\.needs=([^, ]*) ]]
-        then
-            needs="${BASH_REMATCH[1]}"
-        fi
-
-        if test -n "$needs"
+        node_id="$fs"
+        if get_fs_opt "$fs" "X-fluffy.needs" needs_str && test -n "$needs_str"
         then
             local old_ifs="$IFS"
             IFS=,
-            local -a sub_needs=()
-            read -ra sub_needs <<< "$needs"
+            read -ra step_deps <<< "$needs_str"
             IFS="$old_ifs"
-
-            local dep
-            for dep in "${sub_needs[@]}"
-            do
-                dfs "$dep"
-            done
         fi
-
-        call_stack=("${call_stack[@]:0:${#call_stack[@]}-1}")
-        state[$canon_pkg]=2
-        order+=("$canon_pkg")
     }
 
-    local root_tgt
-    for root_tgt in "$@"
+    dfs install_step "$@"
+
+    local -A target_fs=() mounted_tgt=()
+    local fs tgt src
+    for fs in "${order[@]}"
     do
-        dfs "$root_tgt"
+        fs_str "$fs" target tgt
+        target_fs["$tgt"]="$fs"
     done
 
-    if (( ${#missing_pkgs[@]} > 0 ))
-    then
-        local dep
-        for dep in "${!missing_pkgs[@]}"
-        do
-            log "package $dep not found in $FSTAB"
-        done
-        exit 1
-    fi
-
-    # Check that all squashfs files exist before mounting anything
-    local -A missing_files=()
-    local pkg
-    for pkg in "${order[@]}"
-    do
-        find_fs_by_pkg "$pkg" fs
-        if test "$fs" == "$NULL"
-        then
-            continue
-        fi
-
-        dlcall -r string -n src_str mnt_fs_get_source "$fs"
-        local src="${src_str#string:}"
-        local real_src
-        if test -n "$prefix"
-        then
-            real_src="$prefix$src"
-        else
-            real_src="$src"
-        fi
-
-        if test ! -f "$real_src"
-        then
-            missing_files["$real_src"]=1
-        fi
-    done
-
-    if (( ${#missing_files[@]} > 0 ))
-    then
-        local file
-        for file in "${!missing_files[@]}"
-        do
-            log "squashfs file not found: $file"
-        done
-        exit 1
-    fi
-
-    # Read kernel mount table via libmount to avoid mounting already-mounted targets
     call_ptr mtab mnt_new_table
     call mnt_table_parse_mtab "$mtab" $NULL
 
-    # Mount in topological post-order (dependencies mounted first)
-    for pkg in "${order[@]}"
+    for fs in "${order[@]}"
     do
-        find_fs_by_pkg "$pkg" fs
-        if test "$fs" == "$NULL"
+        fs_str "$fs" target tgt
+        if test "${target_fs[$tgt]}" != "$fs" || test -n "${mounted_tgt[$tgt]:-}"
         then
             continue
         fi
+        mounted_tgt["$tgt"]=1
+        fs_str "$fs" source src
 
-        dlcall -r string -n src_str mnt_fs_get_source "$fs"
-        local src="${src_str#string:}"
-        dlcall -r string -n tgt_str mnt_fs_get_target "$fs"
-        local tgt="${tgt_str#string:}"
-        local pkg_name="${tgt##*/}"
-
-        local real_src
-        local real_tgt
-        if test -n "$prefix"
-        then
-            real_src="$prefix$src"
-            real_tgt="$prefix$tgt"
-        else
-            real_src="$src"
-            real_tgt="$tgt"
-        fi
-
-        if test ! -f "$real_src"
-        then
-            fatal "squashfs file not found: $real_src"
-        fi
-
-        # Check if target is already mounted via libmount
         local is_mnt
-        dlcall -r pointer -n is_mnt mnt_table_find_target "$mtab" "string:$real_tgt" "int:0"
+        dlcall -r pointer -n is_mnt mnt_table_find_target "$mtab" "string:$tgt" "int:0"
         if test "$is_mnt" != "$NULL"
         then
-            continue
+            local mnt_src
+            fs_str "$is_mnt" source mnt_src
+            local backing_file="/sys/class/block/${mnt_src##*/}/loop/backing_file"
+            if test -r "$backing_file" && [[ "$(< "$backing_file")" == *"/${src##*/}" ]]
+            then
+                continue
+            fi
         fi
 
-        mkdir -p "$real_tgt"
+        mkdir -p "$tgt"
 
         call_ptr cxt mnt_new_context
-        if test "$cxt" == "$NULL"
-        then
-            fatal "failed to create mount context"
-        fi
-
-        call mnt_context_set_source "$cxt" "string:$real_src"
-        call mnt_context_set_target "$cxt" "string:$real_tgt"
+        call mnt_context_set_source "$cxt" "string:$src"
+        call mnt_context_set_target "$cxt" "string:$tgt"
         call mnt_context_set_fstype "$cxt" "string:squashfs"
         call mnt_context_set_options "$cxt" "string:ro,X-mount.mkdir"
 
@@ -598,86 +407,34 @@ install_targets() {
         if test "$ret" != "int:0"
         then
             dlcall -r int -n sys_err mnt_context_get_syscall_errno "$cxt"
-            fatal "failed to mount $real_src on $real_tgt: rc=${ret#*:} errno=${sys_err#*:}"
+            fatal "failed to mount $src on $tgt: rc=${ret#*:} errno=${sys_err#*:}"
         fi
         dlcall mnt_free_context "$cxt"
-        log "mounted $real_src on $real_tgt"
-
-        local hook=""
-        if test -f "$real_tgt/bin/fluffy-upsert"
-        then
-            hook="$real_tgt/bin/fluffy-upsert"
-        elif test -f "$real_tgt/lib/fluffy-upsert"
-        then
-            hook="$real_tgt/lib/fluffy-upsert"
-        fi
-
-        if test -n "$hook"
-        then
-            local etc_pkg="${prefix}/etc/$pkg_name"
-            if test ! -d "$etc_pkg" || test "$real_src" -nt "$etc_pkg"
-            then
-                log "running fluffy-upsert for $pkg_name..."
-                (
-                    call unshare $(( CLONE_NEWNS | CLONE_NEWNET ))
-                    call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
-                    if test -d /mnt/fluffy/sw
-                    then
-                        call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
-                    fi
-
-                    if test -n "$prefix"
-                    then
-                        call chroot "$prefix"
-                        call chdir "/"
-                    fi
-
-                    set +h
-                    shopt -s nullglob
-                    export PATH=""
-                    for d in /sw/*/bin
-                    do
-                        PATH="${PATH:+$PATH:}$d"
-                    done
-                    shopt -u nullglob
-                    export HOME=/tmp
-                    export LC_ALL=POSIX
-
-                    mkdir -p "/etc/$pkg_name"
-                    call mount "/etc/$pkg_name" "/etc/$pkg_name" $NULL $(( MS_BIND | MS_REC )) $NULL
-
-                    call mount / / $NULL $(( MS_BIND | MS_REC )) $NULL
-                    call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
-
-                    call mount none "/etc/$pkg_name" $NULL $(( MS_BIND | MS_REMOUNT )) $NULL
-                    call mount tmpfs /tmp tmpfs 0 $NULL
-
-                    local hook_in_ns
-                    if test -f "$tgt/bin/fluffy-upsert"
-                    then
-                        hook_in_ns="$tgt/bin/fluffy-upsert"
-                    else
-                        hook_in_ns="$tgt/lib/fluffy-upsert"
-                    fi
-
-                    "$hook_in_ns"
-                )
-                touch "$etc_pkg"
-                log "fluffy-upsert completed for $pkg_name"
-            fi
-        fi
+        log "mounted $src on $tgt"
     done
     dlcall mnt_free_table "$mtab"
 }
 
-lockdown() {
-    if test "$(type -t "$1")" != function
+run_phase() {
+    local phase_name="$1"
+    shift
+    log -n " $phase_name"
+    set +e
+    (
+        set -e
+        "$@"
+    ) > "$phase_log" 2>&1
+    local rc=$?
+    set -e
+    if (( rc != 0 ))
     then
-        return
+        log ""
+        cat "$phase_log" >&2 || true
+        fatal "$phase_name ($pkg) failed with exit code $rc"
     fi
+}
 
-    banner "$1"
-    trap 'fatal "$1 failed with exit code $?"' ERR
+lockdown_exec() {
     (
         wd="$(pwd)"
 
@@ -690,24 +447,16 @@ lockdown() {
                 ;;
         esac
 
-        # elevate back to root strictly to set up namespaces and mounts
         call setresuid 0 0 0
         call setresgid 0 0 0
 
-        # no network access for builds, ro / and rw /work
         call unshare $(( CLONE_NEWNET | CLONE_NEWNS ))
         bring_up_lo
 
-        # stop mount propagation back to the parent/host namespace
         call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
-        if test -d /mnt/fluffy/sw
-        then
-            call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
-        fi
 
         if test "$ON" == host-build
         then
-            call mount /mnt/fluffy/sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
             mkdir -p /sw/bash/bin
             touch /sw/bash/bin/bash
             call mount /bin/bash /sw/bash/bin/bash $NULL $MS_BIND $NULL
@@ -721,10 +470,7 @@ lockdown() {
         if test "$1" != SQUASHFS
         then
             local -n phase_needs="${1}_NEEDS"
-            for dep in "${phase_needs[@]}"
-            do
-                mount_targets+=("$dep")
-            done
+            mount_targets+=("${phase_needs[@]}")
         fi
 
         if (( ${#mount_targets[@]} > 0 ))
@@ -734,19 +480,18 @@ lockdown() {
 
         case "$1" in
             MAKE)
-                # mount pwd read-write at /work
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             CHECK)
                 call mount overlay /work overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
                 ;;
             INSTALL)
-                mkdir -p "/sw/.destdir/sw/$mount_pkg"
-                call mount "$work_dir/installed" "/sw/.destdir/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
+                mkdir -p "/sw/.build/destdir/sw/$mount_pkg"
+                call mount "$work_dir/installed" "/sw/.build/destdir/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             SQUASHFS)
-                call mount "$sw_dir" "$sw_dir" $NULL $(( MS_BIND | MS_REC )) $NULL
+                call mount /sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             *)
                 fatal "unknown phase: $1"
@@ -758,17 +503,14 @@ lockdown() {
             call mount none /sw $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
         fi
 
-        # bind-mount / to itself so VFS lets us change its per-mount ro flag,
-        # then remount the / bind-mount read-only
         call mount / / $NULL $(( MS_BIND | MS_REC )) $NULL
         call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
 
         if test "$1" == SQUASHFS
         then
-            call mount none "$sw_dir" $NULL $(( MS_BIND | MS_REMOUNT )) $NULL
+            call mount none /sw $NULL $(( MS_BIND | MS_REMOUNT )) $NULL
         fi
 
-        # mount a fresh private tmpfs on /tmp that is automatically destroyed when the namespace exits
         call mount tmpfs /tmp tmpfs 0 $NULL
 
         if test "$1" != SQUASHFS
@@ -777,40 +519,27 @@ lockdown() {
             call setgroups 0 $NULL
             call setresgid "$SUDO_GID" "$SUDO_GID" "$SUDO_GID"
             call setresuid "$SUDO_UID" "$SUDO_UID" "$SUDO_UID"
-        else
-            cd "$root"
         fi
 
         set +h
         umask 022
 
-        local saved_term="${TERM:-dumb}"
-        local nproc_val
+        local saved_term="${TERM:-dumb}" saved_fluffy="${FLUFFY:-}" nproc_val
         nproc_val="$(nproc)"
 
-        # scrub environment variables so host variables cannot leak into builds
         for var in $(compgen -e)
         do
-            case "$var" in
-                PWD|SHLVL|_)
-                    ;;
-                *)
-                    unset "$var"
-                    ;;
-            esac
+            if [[ "$var" != @(PWD|SHLVL|_) ]]
+            then
+                unset "$var"
+            fi
         done
 
-        export HOME=/tmp
-        export TERM="$saved_term"
-        export LC_ALL=POSIX
-        export MAKEFLAGS="-j$(( nproc_val > 1 ? nproc_val - 1 : 1 ))"
+        export HOME=/tmp TERM="$saved_term" LC_ALL=POSIX TZ=UTC0 SOURCE_DATE_EPOCH=0 MAKEFLAGS="-j$nproc_val"
         if test "$ON" != host-build
         then
             export MAKEFLAGS="$MAKEFLAGS SHELL=/sw/bash/bin/bash"
-            export PATH='/sw/*/bin'
-            export SHELL=/sw/bash/bin/bash
-            export CONFIG_SHELL=/sw/bash/bin/bash
-            export GCC_EXEC_PREFIX=/sw/gcc/lib/gcc/
+            export PATH='/sw/*/bin' SHELL=/sw/bash/bin/bash CONFIG_SHELL=/sw/bash/bin/bash GCC_EXEC_PREFIX=/sw/gcc/lib/gcc/
         else
             export PATH=/usr/bin
             if test ! -L /bin
@@ -823,26 +552,29 @@ lockdown() {
                 export PATH="$d:$PATH"
             done
             shopt -u nullglob
-            export FLUFFY=/mnt/fluffy
-            export FLUFFY_TGT="$(uname -m)-fluffy-linux-gnu"
-            export CONFIG_SITE=/dev/null
+            export FLUFFY="$saved_fluffy" FLUFFY_TGT="$(uname -m)-fluffy-linux-gnu" CONFIG_SITE=/dev/null
         fi
 
         if test "$1" == INSTALL
         then
-            export DESTDIR=/sw/.destdir
-            export MAKEFLAGS="$MAKEFLAGS DESTDIR=/sw/.destdir"
-            export PATH="/sw/.destdir/sw/$mount_pkg/bin:$PATH"
+            export DESTDIR=/sw/.build/destdir MAKEFLAGS="$MAKEFLAGS DESTDIR=/sw/.build/destdir" PATH="/sw/.build/destdir/sw/$mount_pkg/bin:$PATH"
         fi
 
         "$1"
     )
-    trap - ERR
+}
+
+lockdown() {
+    if test "$(type -t "$1")" != function
+    then
+        return 0
+    fi
+    run_phase "$1" lockdown_exec "$1"
 }
 
 build_single_pkg() {
     local pkg="${1##*/}"
-    local pkg_file="$repo_dir/sw/$pkg"
+    local pkg_file="sw/$pkg"
 
     if test ! -f "$pkg_file"
     then
@@ -850,62 +582,29 @@ build_single_pkg() {
     fi
 
     (
-        root="$repo_dir"
+        root="$PWD"
         work_dir="$root/work"
-        cd "$root"
+        phase_log="$work_dir/phase.log"
+        rm -f "$phase_log"
 
-        # if running on the host, enter a private mount namespace immediately so
-        # any mounts created during execution are automatically destroyed on exit
-        if test -d /mnt/fluffy/sw
-        then
-            call unshare $CLONE_NEWNS
-            call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
-            call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
-        fi
-
-        # drop to the calling user immediately, keeping saved UID/GID 0 only for lockdown mounts
         call setgroups 0 $NULL
         call setresgid "$SUDO_GID" "$SUDO_GID" 0
         call setresuid "$SUDO_UID" "$SUDO_UID" 0
 
         mount_pkg="${pkg%-pass*}"
 
-        unset -f MAKE CHECK INSTALL 2>/dev/null || true
+        unset -f MAKE CHECK INSTALL
         unset VERSION
-        declare -ga ARCHIVES=()
-        declare -ga archives=()
-        declare -ga NEEDS=()
-        declare -ga MAKE_NEEDS=()
-        declare -ga CHECK_NEEDS=()
-        declare -ga INSTALL_NEEDS=()
+        declare -ga ARCHIVES=() archives=() NEEDS=() MAKE_NEEDS=() CHECK_NEEDS=() INSTALL_NEEDS=()
 
         SQUASHFS() {
-            rm -f "$squashfs_file"
-            mksquashfs \
-                "$work_dir/installed" "$squashfs_file" \
-                -all-root \
-                -comp zstd \
-                -quiet \
-                -no-progress
+            rm -f "$squashfs_file.new"
+            mksquashfs "$work_dir/installed" "$squashfs_file.new" -all-root -comp zstd -quiet -no-progress
         }
 
         ON=fluffy-build
         # shellcheck disable=SC1090
         source "$pkg_file"
-
-        case "$ON" in
-            host)
-                ON=host-build
-                ;;
-            fluffy)
-                ON=fluffy-build
-                ;;
-        esac
-
-        if test ! -d /mnt/fluffy/sw
-        then
-            ON=fluffy-build
-        fi
 
         if test -z "${VERSION:-}"
         then
@@ -917,27 +616,31 @@ build_single_pkg() {
             fatal "Invalid number of items in ARCHIVES for $pkg: ${#ARCHIVES[@]}"
         fi
 
-        # If building for Fluffy target but running on host, enter a private mount
-        # namespace, set up the chroot environment, and re-exec swctl build inside it.
-        if test "$ON" != host-build && test -d /mnt/fluffy/sw
+        case "$ON" in
+            host-build)
+                if test -z "${FLUFFY:-}"
+                then
+                    fatal "cannot build ON=host-build natively (FLUFFY is not set)"
+                fi
+                ;;
+            cross-build|fluffy-build)
+                ;;
+            *)
+                fatal "Invalid ON target: $ON"
+                ;;
+        esac
+
+        if test "$ON" != host-build && test -n "${FLUFFY:-}"
         then
-            log "entering chroot on /mnt/fluffy for $pkg..."
-            trap 'fatal "chroot execution failed with exit code $?"' ERR
+            mkdir -p "$work_dir/archives"
             (
                 call setresuid 0 0 0
                 call setresgid 0 0 0
 
-                # get new mount namespace
                 call unshare $CLONE_NEWNS
-
-                # stop mount propagation back to the parent/host namespace
                 call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
-                call mount none /mnt/fluffy $NULL $(( MS_REC | MS_PRIVATE )) $NULL
 
-                FLUFFY=/mnt/fluffy
-
-                # virtual kernel filesystems
-                mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp}
+                mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp,"$root"}
                 call mount /dev "$FLUFFY/dev" $NULL $MS_BIND $NULL
                 call mount /dev/pts "$FLUFFY/dev/pts" $NULL $MS_BIND $NULL
                 call mount proc "$FLUFFY/proc" proc 0 $NULL
@@ -957,148 +660,126 @@ build_single_pkg() {
                     call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
                 fi
 
-                # bind-mount repository at identical path inside the chroot
-                mkdir -p "$FLUFFY$root"
                 call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
 
-                # mount build environment for chroot
-                install_targets --prefix "$FLUFFY" "$ON"
+                if ! install_targets "$ON" > "$phase_log" 2>&1
+                then
+                    cat "$phase_log" >&2 || true
+                    rm -f "$phase_log"
+                    fatal "chroot mount setup ($pkg) failed"
+                fi
+                rm -f "$phase_log"
 
-                # chroot into $FLUFFY and chdir to repo
+                call mount /sw "$FLUFFY/sw" $NULL $(( MS_BIND | MS_REC )) $NULL
                 call chroot "$FLUFFY"
                 call chdir "$root"
 
-                export PATH='/sw/*/bin'
-                export FLUFFY_IN_CHROOT=1
+                unset FLUFFY
+                export PATH='/sw/*/bin' FLUFFY_IN_CHROOT=1
                 /sw/bash/bin/bash "$root/swctl" build "$pkg"
             )
-            trap - ERR
             exit 0
         fi
-
-        banner "PREPARE ($pkg)"
-
-        case "$ON" in
-            host-build)
-                sw_dir="/mnt/fluffy/sw"
-                ;;
-            cross-build|fluffy-build)
-                sw_dir="/sw"
-                ;;
-            *)
-                fatal "Invalid ON target: $ON"
-                ;;
-        esac
 
         mkdir -p "$work_dir/archives"
 
         for ((i=0; i<${#ARCHIVES[@]}; i+=2))
         do
-            sha256="${ARCHIVES[i]}"
-            url="${ARCHIVES[i+1]}"
-            filename="${url##*/}"
-            archives+=("$filename")
-            if [[ "$url" != *://* || "$url" == file://* ]]
-            then
-                local_path="$root/sw/${url#file://}"
-                if test ! -f "$local_path"
-                then
-                    fatal "local archive not found: $local_path"
-                fi
-                verify_sha256 "$local_path" "$sha256" "$filename"
-                cp "$local_path" "$work_dir/archives/$filename"
-                continue
-            fi
-            if test -f "$work_dir/archives/$filename"
-            then
-                continue
-            fi
-            if test -f "$root/packages/$filename"
-            then
-                verify_sha256 "$root/packages/$filename" "$sha256" "$filename"
-                cp "$root/packages/$filename" "$work_dir/archives/$filename"
-                continue
-            fi
-            tmpfile="$(mktemp)"
-            log -n "downloading $filename... "
-            wget --quiet --output-document "$tmpfile" "$url"
-            verify_sha256 "$tmpfile" "$sha256" "$filename"
-            mv "$tmpfile" "$work_dir/archives/$filename"
-            log "done"
+            archives+=("${ARCHIVES[i+1]##*/}")
         done
 
-        log -n "cleaning work area... "
-        (
-            call setresuid 0 0 0
-            call setresgid 0 0 0
-            rm -rf "$work_dir"/{src,installed,test-results,test-work}
-        )
-        mkdir -p "$work_dir/src" "$work_dir/installed"
-        log "done"
-
-        cd "$work_dir/src"
-        if (( ${#archives[@]} > 0 ))
-        then
-            case "${archives[0]}" in
-                *.tar.*)
-                    log -n "extracting ${archives[0]}... "
-                    tar -xf "$work_dir/archives/${archives[0]}"
-                    log "done"
-
-                    # the first archive is special and we change to its directory
-                    # so that the build scripts can be run from there
-                    shopt -s extglob
-                    archive_name="${archives[0]%%?(-src).tar.*}"
-                    cd "$archive_name"
-                    shopt -u extglob
-                    ;;
-                *)
-                    cp "$work_dir/archives/${archives[0]}" .
-                    ;;
-            esac
-
-            for archive in "${archives[@]:1}"
+        log -n "$pkg${FLUFFY_PROGRESS:+ $FLUFFY_PROGRESS}:"
+        prepare_exec() {
+            for ((i=0; i<${#ARCHIVES[@]}; i+=2))
             do
+                sha256="${ARCHIVES[i]}"
+                url="${ARCHIVES[i+1]}"
+                filename="${url##*/}"
+                if [[ "$url" != *://* || "$url" == file://* ]]
+                then
+                    local_path="$root/sw/${url#file://}"
+                    if test ! -f "$local_path"
+                    then
+                        fatal "local archive not found: $local_path"
+                    fi
+                    verify_sha256 "$local_path" "$sha256" "$filename"
+                    cp "$local_path" "$work_dir/archives/$filename"
+                    continue
+                fi
+                if test -f "$work_dir/archives/$filename"
+                then
+                    continue
+                fi
+                if test -f "$root/packages/$filename"
+                then
+                    verify_sha256 "$root/packages/$filename" "$sha256" "$filename"
+                    cp "$root/packages/$filename" "$work_dir/archives/$filename"
+                    continue
+                fi
+                tmpfile="$(mktemp)"
+                log "downloading $filename..."
+                wget --quiet --output-document "$tmpfile" "$url"
+                verify_sha256 "$tmpfile" "$sha256" "$filename"
+                mv "$tmpfile" "$work_dir/archives/$filename"
+            done
+
+            (
+                call setresuid 0 0 0
+                call setresgid 0 0 0
+                rm -rf "$work_dir"/{src,installed,test-results,test-work}
+            )
+            mkdir -p "$work_dir/src" "$work_dir/installed"
+
+            cd "$work_dir/src"
+            for idx in "${!archives[@]}"
+            do
+                archive="${archives[idx]}"
                 case "$archive" in
                     *.tar.*)
-                        log -n "extracting $archive... "
                         tar -xf "$work_dir/archives/$archive"
-                        log "done"
+                        if (( idx == 0 ))
+                        then
+                            cd "${archive%%?(-src).tar.*}"
+                        fi
                         ;;
                     *)
                         cp "$work_dir/archives/$archive" .
                         ;;
                 esac
             done
+        }
+        run_phase PREPARE prepare_exec
+
+        if (( ${#archives[@]} > 0 )) && [[ "${archives[0]}" == *.tar.* ]]
+        then
+            cd "$work_dir/src/${archives[0]%%?(-src).tar.*}"
+        else
+            cd "$work_dir/src"
         fi
 
-        squashfs_file="$sw_dir/$pkg-$VERSION.squashfs"
+        squashfs_file="/sw/$pkg-$VERSION.squashfs"
 
         lockdown MAKE
         lockdown CHECK
         lockdown INSTALL
-        lockdown SQUASHFS
 
-        log "squashfs created: $squashfs_file"
+        package_exec() {
+            cd "$root"
+            lockdown_exec SQUASHFS
+            (
+                call setresuid 0 0 0
+                call setresgid 0 0 0
+                reload_fstab
+                register_entry "$squashfs_file"
+                sign_and_save_fstab
+                rm -rf "$work_dir"/{src,installed,test-results,test-work}
+            )
+            rm -rf /sw/.build/destdir 2>/dev/null || true
+            rm -f "$phase_log"
+        }
 
-        trap 'fatal "registration failed with exit code $?"' ERR
-        (
-            call setresuid 0 0 0
-            call setresgid 0 0 0
-            reload_fstab
-            register_entry "$squashfs_file"
-            sign_and_save_fstab
-        )
-        trap - ERR
-
-        banner "CLEANUP ($pkg)"
-        cd "$root"
-        (
-            call setresuid 0 0 0
-            call setresgid 0 0 0
-            rm -rf "$work_dir"/{src,installed,test-results,test-work}
-        )
-        rm -rf /sw/.destdir 2>/dev/null || true
+        run_phase PACKAGE package_exec
+        log ""
     )
 }
 
@@ -1113,110 +794,144 @@ build_pkgs() {
         fatal "must be run via sudo"
     fi
 
+    # set low priority to not lock up the host
+    dlcall setpriority int:0 int:0 int:9
+    dlcall syscall long:251 int:1 int:0 int:24576
+
     if test "${FLUFFY_IN_CHROOT:-0}" -eq 1
     then
         build_single_pkg "$1"
         return 0
     fi
 
-    local -A missing_pkgs=()
-    local -A state=()
+    local tmp_plan
+    tmp_plan="$(mktemp)"
+    (
+        declare -a order=()
+        declare -A pkg_ver=() pkg_needs=() pkg_deps=() pkg_runtime_closure=()
+
+        build_step() {
+            local pkg_name="$1" recipe_file="sw/$1"
+
+            if test ! -f "$recipe_file"
+            then
+                fatal "recipe file not found: $recipe_file"
+            fi
+
+            ON=fluffy-build
+            VERSION=""
+            ARCHIVES=()
+            NEEDS=()
+            MAKE_NEEDS=()
+            CHECK_NEEDS=()
+            INSTALL_NEEDS=()
+            # shellcheck disable=SC1090
+            source "$recipe_file"
+            unset -f MAKE CHECK INSTALL
+
+            pkg_ver["$pkg_name"]="$VERSION"
+            pkg_needs["$pkg_name"]="${NEEDS[*]}"
+
+            if test "$ON" != host-build && test "$ON" != "$pkg_name"
+            then
+                step_deps+=("$ON")
+            fi
+            step_deps+=("${NEEDS[@]}" "${MAKE_NEEDS[@]}" "${CHECK_NEEDS[@]}" "${INSTALL_NEEDS[@]}")
+            pkg_deps["$pkg_name"]="${step_deps[*]}"
+
+            unset ON VERSION ARCHIVES NEEDS MAKE_NEEDS CHECK_NEEDS INSTALL_NEEDS
+        }
+
+        dfs build_step "$@"
+
+        local pkg
+        for pkg in "${order[@]}"
+        do
+            local -A rset=(["$pkg"]=1) mset=()
+            local dep item
+            for dep in ${pkg_needs[$pkg]}
+            do
+                for item in ${pkg_runtime_closure[$dep]:-}
+                do
+                    rset["$item"]=1
+                done
+            done
+            pkg_runtime_closure["$pkg"]="${!rset[*]}"
+
+            for dep in ${pkg_deps[$pkg]}
+            do
+                for item in ${pkg_runtime_closure[$dep]:-}
+                do
+                    mset["$item"]=1
+                done
+            done
+            printf '%s\t%s\t%s\n' "$pkg" "${pkg_ver[$pkg]}" "${!mset[*]}"
+            unset rset mset
+        done
+    ) > "$tmp_plan"
+
     local -a order=()
-    local -a call_stack=()
-
-    build_dfs() {
-        local target="$1"
-        local pkg_name="${target##*/}"
-        local recipe_file="$repo_dir/sw/$pkg_name"
-
-        if test ! -f "$recipe_file"
-        then
-            missing_pkgs["$pkg_name"]=1
-            return 0
-        fi
-
-        local cur_state="${state[$pkg_name]:-0}"
-        if test "$cur_state" -eq 2
-        then
-            return 0
-        fi
-        if test "$cur_state" -eq 1
-        then
-            fatal "circular build dependency detected: ${call_stack[*]} -> $pkg_name"
-        fi
-
-        state["$pkg_name"]=1
-        call_stack+=("$pkg_name")
-
-        local ON=fluffy-build
-        local -a NEEDS=()
-        local -a MAKE_NEEDS=()
-        local -a CHECK_NEEDS=()
-        local -a INSTALL_NEEDS=()
-        # shellcheck disable=SC1090
-        source "$recipe_file"
-
-        case "$ON" in
-            host)
-                ON=host-build
-                ;;
-            fluffy)
-                ON=fluffy-build
-                ;;
-        esac
-
-        local -a sub_deps=()
-        if test "$ON" != host-build && test "$ON" != "$pkg_name"
-        then
-            sub_deps+=("$ON")
-        fi
-        sub_deps+=("${NEEDS[@]}" "${MAKE_NEEDS[@]}" "${CHECK_NEEDS[@]}" "${INSTALL_NEEDS[@]}")
-
-        local dep
-        for dep in "${sub_deps[@]}"
-        do
-            build_dfs "$dep"
-        done
-
-        call_stack=("${call_stack[@]:0:${#call_stack[@]}-1}")
-        state["$pkg_name"]=2
-        order+=("$pkg_name")
-    }
-
-    local root_pkg
-    for root_pkg in "$@"
+    local -A pkg_ver=() pkg_closure=() pkg_sig=()
+    local p v c
+    while IFS=$'\t' read -r p v c
     do
-        build_dfs "$root_pkg"
-    done
+        order+=("$p")
+        pkg_ver["$p"]="$v"
+        pkg_closure["$p"]="$c"
+    done < "$tmp_plan"
+    rm -f "$tmp_plan"
 
-    unset -f MAKE CHECK INSTALL 2>/dev/null || true
-
-    if (( ${#missing_pkgs[@]} > 0 ))
-    then
-        local dep
-        for dep in "${!missing_pkgs[@]}"
-        do
-            log "recipe file not found: $repo_dir/sw/$dep"
-        done
-        exit 1
-    fi
-
-    local pkg
+    local total="${#order[@]}" idx=0 pkg
     for pkg in "${order[@]}"
     do
-        local pkg_file="$repo_dir/sw/$pkg"
-        local pkg_sha
-        pkg_sha="$(sha256sum "$pkg_file" | cut -d' ' -f1)"
-        local recorded_sha
-        recorded_sha="$(get_from "$pkg" 2>/dev/null || true)"
-        if test -n "$recorded_sha" && test "$recorded_sha" == "$pkg_sha"
+        idx=$(( idx + 1 ))
+        local sq="/sw/$pkg-${pkg_ver[$pkg]}.squashfs" fs="$NULL"
+        dlcall -r pointer -n fs mnt_table_find_source "$mnt_table" "string:$sq" "int:$MNT_ITER_FORWARD"
+        if test "$fs" == "$NULL"
         then
-            log "$pkg is up to date ($pkg_sha)"
+            find_fs_by_pkg "$pkg" fs 1
+        fi
+
+        local sig="" recorded_from="" src=""
+        if test "$fs" != "$NULL"
+        then
+            fs_str "$fs" source src
+            get_fs_opt "$fs" "X-fluffy.signature" sig || true
+            get_fs_opt "$fs" "X-fluffy.from" recorded_from || true
+            pkg_sig["$pkg"]="$sig"
+        fi
+
+        local current_from
+        current_from="$({
+            cat "sw/$pkg"
+            if test -n "${pkg_closure[$pkg]}"
+            then
+                local dep
+                for dep in ${pkg_closure[$pkg]}
+                do
+                    printf '%s:%s\n' "$dep" "${pkg_sig[$dep]}"
+                done | LC_ALL=C sort
+            fi
+        } | sha256sum)"
+        current_from="${current_from%% *}"
+
+        if test -n "$src" && test -s "$src" && test -n "$recorded_from" && test "$recorded_from" == "$current_from"
+        then
+            log "$pkg [$idx/$total]: UP-TO-DATE"
             continue
         fi
 
+        export FLUFFY_PROGRESS="[$idx/$total]" FLUFFY_FROM="$current_from"
         build_single_pkg "$pkg"
         reload_fstab
+
+        fs="$NULL"
+        dlcall -r pointer -n fs mnt_table_find_source "$mnt_table" "string:$sq" "int:$MNT_ITER_FORWARD"
+        if test "$fs" != "$NULL"
+        then
+            get_fs_opt "$fs" "X-fluffy.signature" sig || true
+            pkg_sig["$pkg"]="$sig"
+        fi
     done
 }
 

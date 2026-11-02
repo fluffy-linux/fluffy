@@ -1,0 +1,20 @@
+diff -Naur dejagnu-1.6.3.orig/testsuite/runtest.libs/utils.test dejagnu-1.6.3/testsuite/runtest.libs/utils.test
+--- dejagnu-1.6.3.orig/testsuite/runtest.libs/utils.test	2021-05-20 22:04:35.000000000 +0000
++++ dejagnu-1.6.3/testsuite/runtest.libs/utils.test	2021-05-20 22:04:35.000000000 +0000
+@@ -139,12 +139,12 @@
+   fail "which, absolute path to config.status"
+ }
+ 
+-# Test 'which sh'.
++# Test 'which bash'.
+ #
+-if {[which sh] != 0} {
+-  pass "which, sh"
++if {[which bash] != 0} {
++  pass "which, bash"
+ } else {
+-  fail "which, sh"
++  fail "which, bash"
+ }
+ 
+ ### Do not adjust the comment on the next line. The grep test case

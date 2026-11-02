@@ -3,7 +3,7 @@ VERSION=4.0.1
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/openssl/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
     5b26ab2d703d911005c3edc9e8ed71f66b0fe46c399703dc75871a5296c11c21 file://openssl-$VERSION-fluffy-shell.patch
-    e41b6190c05262569b4a3f8b71dc1d24680f1c4933e5a228be1870218956df72 file://openssl-$VERSION-fluffy-source.patch
+    fcba612593e5ca9c40129ce372de8f45d176cf0c5aa26a27188f7e91da144f46 file://openssl-$VERSION-fluffy-source.patch
     ea528a091f500129a418ad31db3bd75ca8fe3c351425b66c51d4c2a5bf9dcfc2 file://openssl-$VERSION-fluffy-test.patch
 )
 
@@ -13,7 +13,7 @@ MAKE() {
     patch -Z -Np1 -i openssl-$VERSION-fluffy-test.patch
     ./config \
         --prefix=/sw/openssl \
-        --openssldir=/etc/ssl \
+        --openssldir='/etc/*/ssl' \
         --libdir=lib \
         shared \
         zlib-dynamic
@@ -25,7 +25,7 @@ CHECK() {
 }
 
 INSTALL() {
-    make INSTALL_LIBS= MANSUFFIX=ssl install
-    mv -v /sw/openssl/share/doc/openssl /sw/openssl/share/doc/openssl-$VERSION
-    cp -vfr doc/* /sw/openssl/share/doc/openssl-$VERSION
+    make INSTALL_LIBS= MANSUFFIX=ssl OPENSSLDIR=/sw/openssl/etc/ssl install
+    mv -v $DESTDIR/sw/openssl/share/doc/openssl $DESTDIR/sw/openssl/share/doc/openssl-$VERSION
+    cp -vfr doc/* $DESTDIR/sw/openssl/share/doc/openssl-$VERSION
 }
