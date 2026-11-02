@@ -439,23 +439,22 @@ install_targets() {
     dlcall mnt_free_table "$mtab"
 }
 
+report_phase_err() {
+    local rc=$?
+    log ""
+    cat "$phase_log" >&2 || true
+    fatal "$phase_name ($pkg) failed with exit code $rc"
+}
+
 run_phase() {
     local phase_name="$1"
     shift
     log -n " $phase_name"
-    set +e
+    trap report_phase_err ERR
     (
-        set -e
         "$@"
     ) > "$phase_log" 2>&1
-    local rc=$?
-    set -e
-    if (( rc != 0 ))
-    then
-        log ""
-        cat "$phase_log" >&2 || true
-        fatal "$phase_name ($pkg) failed with exit code $rc"
-    fi
+    trap - ERR
 }
 
 lockdown_exec() {
