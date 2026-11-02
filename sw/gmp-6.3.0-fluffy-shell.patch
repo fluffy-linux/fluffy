@@ -16,35 +16,15 @@ diff -Naur gmp-6.3.0.orig/config.guess gmp-6.3.0/config.guess
  #
  # GMP config.guess wrapper.
  
-@@ -54,8 +54,8 @@
- fi
+@@ -55,7 +55,7 @@
  
  # Setup a $SHELL with which to run configfsf.guess, using the same
--# $CONFIG_SHELL or /bin/sh as autoconf does when running config.guess
+ # $CONFIG_SHELL or /bin/sh as autoconf does when running config.guess
 -SHELL=${CONFIG_SHELL-/bin/sh}
-+# $CONFIG_SHELL or /sw/bash/bin/bash as autoconf does when running config.guess
 +SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
  
  # Identify ourselves on --version, --help or errors
  if test $# != 0; then
-@@ -1106,7 +1106,7 @@
-     # On 80386 and early 80486 cpuid is not available and will result in a
-     # SIGILL message, hence 2>/dev/null.
-     #
--    # On i386-unknown-freebsd4.9, "/bin/sh -c ./dummy" seems to send an
-+    # On i386-unknown-freebsd4.9, "/sw/bash/bin/bash -c ./dummy" seems to send an
-     # "Illegal instruction (core dumped)" message to stdout, so we test $?
-     # to check if the program run was successful.
-     #
-@@ -1141,7 +1141,7 @@
-     # On 80386 and early 80486 cpuid is not available and will result in a
-     # SIGILL message, hence 2>/dev/null.
-     #
--    # On i386-unknown-freebsd4.9, "/bin/sh -c ./dummy" seems to send an
-+    # On i386-unknown-freebsd4.9, "/sw/bash/bin/bash -c ./dummy" seems to send an
-     # "Illegal instruction (core dumped)" message to stdout, so we test $?
-     # to check if the program run was successful.
-     #
 diff -Naur gmp-6.3.0.orig/config.sub gmp-6.3.0/config.sub
 --- gmp-6.3.0.orig/config.sub	2023-07-29 13:42:16.000000000 +0000
 +++ gmp-6.3.0/config.sub	2023-07-29 13:42:16.000000000 +0000
@@ -72,15 +52,6 @@ diff -Naur gmp-6.3.0.orig/configfsf.guess gmp-6.3.0/configfsf.guess
  # Attempt to guess a canonical system name.
  #   Copyright 1992-2023 Free Software Foundation, Inc.
  
-@@ -39,7 +39,7 @@
- # superseded or lifted in POSIX.  However, this script identifies a wide
- # variety of pre-POSIX systems that do not have POSIX shells at all, and
- # even some reasonably current systems (Solaris 10 as case-in-point) still
--# have a pre-POSIX /bin/sh.
-+# have a pre-POSIX /sw/bash/bin/bash.
- 
- 
- me=`echo "$0" | sed -e 's,.*/,,'`
 @@ -992,7 +992,7 @@
  	  EV67)  UNAME_MACHINE=alphaev67 ;;
  	  EV68*) UNAME_MACHINE=alphaev68 ;;
@@ -98,15 +69,6 @@ diff -Naur gmp-6.3.0.orig/configfsf.sub gmp-6.3.0/configfsf.sub
 +#!/sw/bash/bin/bash
  # Configuration validation subroutine script.
  #   Copyright 1992-2023 Free Software Foundation, Inc.
- 
-@@ -57,7 +57,7 @@
- # superseded or lifted in POSIX.  However, this script identifies a wide
- # variety of pre-POSIX systems that do not have POSIX shells at all, and
- # even some reasonably current systems (Solaris 10 as case-in-point) still
--# have a pre-POSIX /bin/sh.
-+# have a pre-POSIX /sw/bash/bin/bash.
- 
- me=`echo "$0" | sed -e 's,.*/,,'`
  
 diff -Naur gmp-6.3.0.orig/configure gmp-6.3.0/configure
 --- gmp-6.3.0.orig/configure	2023-07-29 13:42:22.000000000 +0000
@@ -162,15 +124,15 @@ diff -Naur gmp-6.3.0.orig/doc/mdate-sh gmp-6.3.0/doc/mdate-sh
  # Get modification time of a file or directory and pretty-print it.
  
  scriptversion=2010-08-21.06; # UTC
-@@ -107,7 +107,7 @@
- # the extended ls output of the root directory to decide how many
- # words should be skipped to get the date.
+diff -Naur gmp-6.3.0.orig/install-sh gmp-6.3.0/install-sh
+--- gmp-6.3.0.orig/install-sh	2023-07-29 13:42:25.000000000 +0000
++++ gmp-6.3.0/install-sh	2023-07-29 13:42:25.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
  
--# On HPUX /bin/sh, "set" interprets "-rw-r--r--" as options, so the "x" below.
-+# On HPUX /sw/bash/bin/bash, "set" interprets "-rw-r--r--" as options, so the "x" below.
- set x`$ls_command /`
- 
- # Find which argument is the month.
+ scriptversion=2013-12-25.23; # UTC
 diff -Naur gmp-6.3.0.orig/ltmain.sh gmp-6.3.0/ltmain.sh
 --- gmp-6.3.0.orig/ltmain.sh	2023-07-29 13:42:25.000000000 +0000
 +++ gmp-6.3.0/ltmain.sh	2023-07-29 13:42:25.000000000 +0000
@@ -198,15 +160,6 @@ diff -Naur gmp-6.3.0.orig/ltmain.sh gmp-6.3.0/ltmain.sh
  
  # Set a version string for this script.
  scriptversion=2014-01-07.03; # UTC
-@@ -1405,7 +1405,7 @@
- #
- # For the simplest scripts you might need only:
- #
--#   #!/bin/sh
-+#   #!/sw/bash/bin/bash
- #   . relative/path/to/funclib.sh
- #   . relative/path/to/options-parser
- #   scriptversion=1.0
 @@ -4091,7 +4091,7 @@
  
      # There may be an optional sh(1) argument at the beginning of

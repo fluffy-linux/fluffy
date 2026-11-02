@@ -1,0 +1,384 @@
+diff -Naur binutils-2.47.orig/binutils/testsuite/binutils-all/compress.exp binutils-2.47/binutils/testsuite/binutils-all/compress.exp
+--- binutils-2.47.orig/binutils/testsuite/binutils-all/compress.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/binutils/testsuite/binutils-all/compress.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -804,13 +804,13 @@
+     }
+ 
+     remote_file host delete tmpdir/testprog.compress
+-    set got [remote_exec host [concat sh -c [list "$OBJDUMP --syms tmpdir/testprog > /dev/null"]]]
++    set got [remote_exec host [concat bash -c [list "$OBJDUMP --syms tmpdir/testprog > /dev/null"]]]
+     if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
+ 	fail "$test (objdump with missing link)"
+     } else {
+ 	pass "$test (objdump with missing link)"
+     }
+-    set got [remote_exec host [concat sh -c [list "$READELF -S tmpdir/testprog > /dev/null"]]]
++    set got [remote_exec host [concat bash -c [list "$READELF -S tmpdir/testprog > /dev/null"]]]
+     if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
+ 	fail "$test (readelf with missing link)"
+     } else {
+diff -Naur binutils-2.47.orig/binutils/testsuite/lib/binutils-common.exp binutils-2.47/binutils/testsuite/lib/binutils-common.exp
+--- binutils-2.47.orig/binutils/testsuite/lib/binutils-common.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/binutils/testsuite/lib/binutils-common.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -1369,7 +1369,7 @@
+ 	    set sfile "./[file rootname $ofile].s"
+ 	    set cmd "$CC_FOR_TARGET $CFLAGS_FOR_TARGET -S $opts(cc) -o $sfile $cfile"
+ 	    send_log "$cmd\n"
+-	    set cmdret [remote_exec host [concat sh -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
++	    set cmdret [remote_exec host [concat bash -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
+ 	    remote_upload host "dump.tmp"
+ 	    set comp_output [prune_warnings [file_contents "dump.tmp"]]
+ 	    remote_file host delete "dump.tmp"
+@@ -1464,7 +1464,7 @@
+ 			 && ![istarget "*-*-netbsd*" ] } {
+ 		    set cmd "sed -e 's/^\[	 \]*\.comm \\(\[^,\]*\\),\\(.*\\)/\\1 .comm \\2/' < $sourcefile > tmpdir/asm.s"
+ 		    send_log "$cmd\n"
+-		    set cmdret [remote_exec host [concat sh -c [list "$cmd"]]]
++		    set cmdret [remote_exec host [concat bash -c [list "$cmd"]]]
+ 		    set cmdret [lindex $cmdret 0]
+ 		    if { $cmdret != 0 } {
+ 			perror "sed failure"
+@@ -1476,7 +1476,7 @@
+ 		set cmd "$AS $ASFLAGS $as_flags $sourceasflags -o $objfile $sourcefile"
+ 
+ 		send_log "$cmd\n"
+-		set cmdret [remote_exec host [concat sh -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
++		set cmdret [remote_exec host [concat bash -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
+ 		remote_upload host "dump.tmp"
+ 		set comp_output [prune_warnings [file_contents "dump.tmp"]]
+ 		remote_file host delete "dump.tmp"
+@@ -1487,7 +1487,7 @@
+ 		set cmd "$OBJCOPY $opts(objcopy_objects) $objfile"
+ 
+ 		send_log "$cmd\n"
+-		set cmdret [remote_exec host [concat sh -c [list "$cmd 2>&1"]] \
++		set cmdret [remote_exec host [concat bash -c [list "$cmd 2>&1"]] \
+ 				"" "/dev/null" "dump.tmp"]
+ 		remote_upload host "dump.tmp"
+ 		append comp_output [prune_warnings [file_contents "dump.tmp"]]
+@@ -1502,7 +1502,7 @@
+ 	    set dlltool [findfile $base_dir/../binutils/dlltool]
+ 	    set cmd "$dlltool -S $AS $opts(dlltool)"
+ 	    send_log "$cmd\n"
+-	    set cmdret [remote_exec host [concat sh -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
++	    set cmdret [remote_exec host [concat bash -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
+ 	    remote_upload host "dump.tmp"
+ 	    append comp_output [prune_warnings [file_contents "dump.tmp"]]
+ 	    remote_file host delete "dump.tmp"
+@@ -1545,7 +1545,7 @@
+ 	    }
+ 
+ 	    send_log "$cmd\n"
+-	    set cmdret [remote_exec host [concat sh -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
++	    set cmdret [remote_exec host [concat bash -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
+ 	    remote_upload host "dump.tmp"
+ 	    append comp_output [prune_warnings [file_contents "dump.tmp"]]
+ 	    remote_file host delete "dump.tmp"
+@@ -1562,7 +1562,7 @@
+ 		set cmd "$OBJCOPY $opts(objcopy_linked_file) $infile $objfile"
+ 
+ 		send_log "$cmd\n"
+-		set cmdret [remote_exec host [concat sh -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
++		set cmdret [remote_exec host [concat bash -c [list "$cmd 2>&1"]] "" "/dev/null" "dump.tmp"]
+ 		remote_upload host "dump.tmp"
+ 		append comp_output [prune_warnings [file_contents "dump.tmp"]]
+ 		remote_file host delete "dump.tmp"
+@@ -1614,7 +1614,7 @@
+ 	    }
+ 	    set env(LC_ALL) "C"
+ 	    send_log "$cmd\n"
+-	    set cmdret [remote_exec host [concat sh -c [list "$cmd 2>dump.tmp"]] "" "/dev/null"]
++	    set cmdret [remote_exec host [concat bash -c [list "$cmd 2>dump.tmp"]] "" "/dev/null"]
+ 	    set cmdret [lindex $cmdret 0]
+ 	    remote_upload host "dump.tmp"
+ 	    append comp_output [prune_warnings [file_contents "dump.tmp"]]
+@@ -1743,7 +1743,7 @@
+ 	}
+ 	set env(LC_ALL) "C"
+ 	send_log "$cmd\n"
+-	set cmdret [remote_exec host [concat sh -c [list "$cmd 2>dump.tmp"]] "" "/dev/null"]
++	set cmdret [remote_exec host [concat bash -c [list "$cmd 2>dump.tmp"]] "" "/dev/null"]
+ 	set cmdret [lindex $cmdret 0]
+ 	remote_upload host "dump.tmp"
+ 	set comp_output [prune_warnings [file_contents "dump.tmp"]]
+diff -Naur binutils-2.47.orig/gas/testsuite/lib/gas-defs.exp binutils-2.47/gas/testsuite/lib/gas-defs.exp
+--- binutils-2.47.orig/gas/testsuite/lib/gas-defs.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/gas/testsuite/lib/gas-defs.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -88,7 +88,7 @@
+ 	fail "gas_host_run: unknown form of redirection string"
+     }
+ 
+-    set status [remote_exec host [concat sh -c [list $command]] "" "/dev/null" "$output_file"]
++    set status [remote_exec host [concat bash -c [list $command]] "" "/dev/null" "$output_file"]
+     set to_return ""
+     if { "$return_contents_of" != "" } then {
+ 	remote_upload host "$return_contents_of"
+diff -Naur binutils-2.47.orig/gprofng/testsuite/config/default.exp binutils-2.47/gprofng/testsuite/config/default.exp
+--- binutils-2.47.orig/gprofng/testsuite/config/default.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/gprofng/testsuite/config/default.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -33,7 +33,7 @@
+     set CFLAGS "-g -O2"
+ }
+ 
+-remote_exec host "sh -c \"rm -rf tmpdir; mkdir -p tmpdir\""
++remote_exec host "bash -c \"rm -rf tmpdir; mkdir -p tmpdir\""
+ if { "$CHECK_TARGET" == "check-install" } {
+     set ::env(GPROFNG) "$PREFIX/bin/gprofng"
+ } else {
+diff -Naur binutils-2.47.orig/gprofng/testsuite/gprofng.display/gp-collect-app_F.exp binutils-2.47/gprofng/testsuite/gprofng.display/gp-collect-app_F.exp
+--- binutils-2.47.orig/gprofng/testsuite/gprofng.display/gp-collect-app_F.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/gprofng/testsuite/gprofng.display/gp-collect-app_F.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -32,7 +32,7 @@
+   global tdir gprofng
+   set output [run_native_host_cmd "cd $tdir && \
+     $gprofng collect app -p on -a off -F '$F_opt' -O exp.er \
+-      sh -c 'mkdir t && touch t/x; rm -rf t' "]
++      bash -c 'mkdir t && touch t/x; rm -rf t' "]
+   if { [lindex $output 0] != 0 } then {
+     set out [lindex $output 1]
+     send_log "Experiment is not created in $tdir\n"
+diff -Naur binutils-2.47.orig/gprofng/testsuite/lib/display-lib.exp binutils-2.47/gprofng/testsuite/lib/display-lib.exp
+--- binutils-2.47.orig/gprofng/testsuite/lib/display-lib.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/gprofng/testsuite/lib/display-lib.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -26,8 +26,8 @@
+     verbose -log "$command"
+     set run_output ""
+     try {
+-	send_log "% timeout $TEST_TIMEOUT sh -c '$command' 2>@1\n"
+-	set run_output [exec "timeout" $TEST_TIMEOUT "sh" "-c" "$command" "2>@1"]
++	send_log "% timeout $TEST_TIMEOUT bash -c '$command' 2>@1\n"
++	set run_output [exec "timeout" $TEST_TIMEOUT "bash" "-c" "$command" "2>@1"]
+ 	set status 0
+     } trap CHILDSTATUS {results options} {
+ 	set status [lindex [dict get $options -errorcode] 2]
+diff -Naur binutils-2.47.orig/ld/testsuite/config/default.exp binutils-2.47/ld/testsuite/config/default.exp
+--- binutils-2.47.orig/ld/testsuite/config/default.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/config/default.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -209,7 +209,7 @@
+ proc get_target_emul {} {
+     global target_triplet
+     global srcdir
+-    set status [catch "exec sh -c \"targ='$target_triplet' && . $srcdir/../configure.tgt && echo \\\$targ_emul\"" result]
++    set status [catch "exec bash -c \"targ='$target_triplet' && . $srcdir/../configure.tgt && echo \\\$targ_emul\"" result]
+     if $status { error "Error getting emulation name: $result" }
+     return $result
+ }
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-bootstrap/bootstrap.exp binutils-2.47/ld/testsuite/ld-bootstrap/bootstrap.exp
+--- binutils-2.47.orig/ld/testsuite/ld-bootstrap/bootstrap.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-bootstrap/bootstrap.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -248,7 +248,7 @@
+ 	set do_compare [string map {16 220 f1 tmpdir/ld2 f2 tmpdir/ld3 tmp-foo1 tmpdir/ld2tail tmp-foo2 tmpdir/ld3tail} $DO_COMPARE]
+ 	send_log "$do_compare\n"
+ 	verbose  "$do_compare"
+-	catch "exec sh -c [list $do_compare]" exec_output
++	catch "exec bash -c [list $do_compare]" exec_output
+     } else {
+ 	send_log "cmp tmpdir/ld2 tmpdir/ld3\n"
+ 	verbose  "cmp tmpdir/ld2 tmpdir/ld3"
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-elf/compress.exp binutils-2.47/ld/testsuite/ld-elf/compress.exp
+--- binutils-2.47.orig/ld/testsuite/ld-elf/compress.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-elf/compress.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -168,7 +168,7 @@
+ set test_name "Link with zlib compressed debug output 1"
+ set test normal
+ send_log "$READELF -w tmpdir/$test > tmpdir/$test.out\n"
+-set got [remote_exec host [concat sh -c [list "$READELF -w tmpdir/$test > tmpdir/$test.out"]] "" "/dev/null"]
++set got [remote_exec host [concat bash -c [list "$READELF -w tmpdir/$test > tmpdir/$test.out"]] "" "/dev/null"]
+ if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
+     send_log "$got\n"
+     fail "$test_name"
+@@ -177,7 +177,7 @@
+ set test_name "Link with zlib compressed debug output 2"
+ set test zlibnormal
+ send_log "$READELF -w tmpdir/$test | sed -e \"s/.zdebug_/.debug_/\" > tmpdir/$test.out\n"
+-set got [remote_exec host [concat sh -c [list "$READELF -w tmpdir/$test | sed -e \"s/.zdebug_/.debug_/\" > tmpdir/$test.out"]] "" "/dev/null"]
++set got [remote_exec host [concat bash -c [list "$READELF -w tmpdir/$test | sed -e \"s/.zdebug_/.debug_/\" > tmpdir/$test.out"]] "" "/dev/null"]
+ if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
+     send_log "$got\n"
+     fail "$test_name"
+@@ -204,7 +204,7 @@
+ set test_name "Link with zlib-gnu compressed debug output 1"
+ set test gnunormal
+ send_log "$READELF -w tmpdir/$test | sed -e \"s/.zdebug_/.debug_/\" > tmpdir/$test.out\n"
+-set got [remote_exec host [concat sh -c [list "$READELF -w tmpdir/$test | sed -e \"s/.zdebug_/.debug_/\" > tmpdir/$test.out"]] "" "/dev/null"]
++set got [remote_exec host [concat bash -c [list "$READELF -w tmpdir/$test | sed -e \"s/.zdebug_/.debug_/\" > tmpdir/$test.out"]] "" "/dev/null"]
+ if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
+     send_log "$got\n"
+     fail "$test_name"
+@@ -231,7 +231,7 @@
+ set test gabinormal
+ set test_name "Link with zlib-gabi compressed debug output 1"
+ send_log "$READELF -w tmpdir/$test > tmpdir/$test.out\n"
+-set got [remote_exec host [concat sh -c [list "$READELF -w tmpdir/$test > tmpdir/$test.out"]] "" "/dev/null"]
++set got [remote_exec host [concat bash -c [list "$READELF -w tmpdir/$test > tmpdir/$test.out"]] "" "/dev/null"]
+ if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
+     send_log "$got\n"
+     fail "$test_name"
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-mips-elf/mips-elf-flags.exp binutils-2.47/ld/testsuite/ld-mips-elf/mips-elf-flags.exp
+--- binutils-2.47.orig/ld/testsuite/ld-mips-elf/mips-elf-flags.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-mips-elf/mips-elf-flags.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -110,7 +110,7 @@
+ 	set A [expr {[llength $args] > 0} ? {"A"} : {""}]
+ 	set cmd "$READELF -h$A $finalobj"
+ 	send_log "$cmd\n"
+-	set cmdret [remote_exec host [concat sh -c [list "$cmd 2>&1"]]]
++	set cmdret [remote_exec host [concat bash -c [list "$cmd 2>&1"]]]
+ 	set output [lindex $cmdret 1]
+ 	set cmdret [lindex $cmdret 0]
+ 	if {$cmdret != 0 \
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-plugin/lto.exp binutils-2.47/ld/testsuite/ld-plugin/lto.exp
+--- binutils-2.47.orig/ld/testsuite/ld-plugin/lto.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-plugin/lto.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -1008,7 +1008,7 @@
+ ]
+ 
+ set board_flags [get_board_flags]
+-set exec_output [run_host_cmd "sh" \
++set exec_output [run_host_cmd "bash" \
+ 			      "-c \"ulimit -n 25; \
+ 			      $CC_FOR_TARGET $gcc_B_opt $CFLAGS_FOR_TARGET \
+ 			      $board_flags $ld_L_opt -o tmpdir/pr28138 \
+@@ -1122,7 +1122,7 @@
+ 	     pr23460d.c pr23460e.c pr23460f.c} \
+ 	] \
+     ]
+-    set exec_output [run_host_cmd "sh" \
++    set exec_output [run_host_cmd "bash" \
+ 				  "-c \"ulimit -n 20; \
+ 				   $ar -rc $plug_opt \
+ 				   tmpdir/libpr23460.a \
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-spu/spu.exp binutils-2.47/ld/testsuite/ld-spu/spu.exp
+--- binutils-2.47.orig/ld/testsuite/ld-spu/spu.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-spu/spu.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -49,7 +49,7 @@
+ 	return
+     }
+ 
+-    set cmd "sh $srcdir/../../binutils/embedspu.sh -m32 ear tmpdir/ear tmpdir/embed.o"
++    set cmd "bash $srcdir/../../binutils/embedspu.sh -m32 ear tmpdir/ear tmpdir/embed.o"
+     send_log "$cmd\n"
+     set cmdret [catch "exec $cmd" comp_output]
+     set comp_output [prune_warnings $comp_output]
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-tic6x/tic6x.exp binutils-2.47/ld/testsuite/ld-tic6x/tic6x.exp
+--- binutils-2.47.orig/ld/testsuite/ld-tic6x/tic6x.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-tic6x/tic6x.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -171,7 +171,7 @@
+ 
+     set cmd "$READELF $READELFFLAGS --file-header $binary_file"
+     send_log "$cmd\n"
+-    set got [remote_exec host [concat sh -c [list "$cmd >dump.out"]] "" "/dev/null"]
++    set got [remote_exec host [concat bash -c [list "$cmd >dump.out"]] "" "/dev/null"]
+ 
+     if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
+ 	send_log "$got\n"
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-undefined/weak-undef.exp binutils-2.47/ld/testsuite/ld-undefined/weak-undef.exp
+--- binutils-2.47.orig/ld/testsuite/ld-undefined/weak-undef.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-undefined/weak-undef.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -126,7 +126,7 @@
+     # Find -z options supported by the default emulation
+     set emul [get_target_emul]
+     set cmd [list "$ld --help 2>&1 | sed -e '1,/^$emul:/d;/^\[^ \]*:/,\$d'"]
+-    set status [remote_exec host [concat sh -c $cmd]]
++    set status [remote_exec host [concat bash -c $cmd]]
+     if { [lindex $status 0] != 0 } {
+ 	verbose -log "$cmd exited with status [lindex $status 0]"
+     }
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-x86-64/dwarfreloc.exp binutils-2.47/ld/testsuite/ld-x86-64/dwarfreloc.exp
+--- binutils-2.47.orig/ld/testsuite/ld-x86-64/dwarfreloc.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-x86-64/dwarfreloc.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -75,7 +75,7 @@
+ set testname "Check dwarfreloca.o readelf"
+ set dumpfile "dwarfreloc.rd"
+ set cmd "$READELF --debug-dump=info tmpdir/dwarfreloca.o"
+-set status [remote_exec host [concat sh -c [list "$cmd >dump.out 2>ld.stderr"]] "" "/dev/null"]
++set status [remote_exec host [concat bash -c [list "$cmd >dump.out 2>ld.stderr"]] "" "/dev/null"]
+ send_log "$cmd\n"
+ remote_upload host "ld.stderr"
+ set comp_output [prune_warnings [file_contents "ld.stderr"]]
+@@ -100,7 +100,7 @@
+ set testname "Check dwarfrelocb.o readelf"
+ set dumpfile "dwarfreloc.rd"
+ set cmd "$READELF --debug-dump=info tmpdir/dwarfrelocb.o"
+-set status [remote_exec host [concat sh -c [list "$cmd >dump.out 2>ld.stderr"]] "" "/dev/null"]
++set status [remote_exec host [concat bash -c [list "$cmd >dump.out 2>ld.stderr"]] "" "/dev/null"]
+ send_log "$cmd\n"
+ remote_upload host "ld.stderr"
+ set comp_output [prune_warnings [file_contents "ld.stderr"]]
+diff -Naur binutils-2.47.orig/ld/testsuite/lib/ld-lib.exp binutils-2.47/ld/testsuite/lib/ld-lib.exp
+--- binutils-2.47.orig/ld/testsuite/lib/ld-lib.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/lib/ld-lib.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -36,7 +36,7 @@
+     regsub -all -- {-Wl,[^ \t]+} $CC_FOR_TARGET {} cc_cmd
+     set prog "\"#if $major < __GNUC__ + ($minor <= __GNUC_MINOR__)\nyes\n#endif\""
+     set cmd "echo $prog | $cc_cmd -E -"
+-    set state [remote_exec host [concat sh -c [list "$cmd 2>/dev/null"]]]
++    set state [remote_exec host [concat bash -c [list "$cmd 2>/dev/null"]]]
+     if { [lindex $state 0] != 0 } {
+ 	return 0;
+     }
+@@ -131,7 +131,7 @@
+     }
+ 
+     verbose -log "$prog $gccflags $command"
+-    set status [remote_exec host [concat sh -c [list "$prog $gccflags $command 2>&1"]] "" "/dev/null" "ld.tmp"]
++    set status [remote_exec host [concat bash -c [list "$prog $gccflags $command 2>&1"]] "" "/dev/null" "ld.tmp"]
+     remote_upload host "ld.tmp"
+     set link_output [file_contents "ld.tmp"]
+     if { [lindex $status 0] != 0 && [string match "" $link_output] } then {
+@@ -322,7 +322,7 @@
+     set cmd "$cc $flags $ccflags $cflag_test -c $source -o $object"
+     verbose -log "$cmd"
+ 
+-    set status [remote_exec host [concat sh -c [list "$cmd 2>&1"]] "" "/dev/null" "ld.tmp"]
++    set status [remote_exec host [concat bash -c [list "$cmd 2>&1"]] "" "/dev/null" "ld.tmp"]
+     remote_upload host "ld.tmp"
+     set exec_output [file_contents "ld.tmp"]
+     remote_file build delete "ld.tmp"
+@@ -397,7 +397,7 @@
+ 
+     verbose -log "$nm $NMFLAGS $nmflags $object >tmpdir/nm.out"
+ 
+-    set status [remote_exec host [concat sh -c [list "$nm $NMFLAGS $nmflags $object 2>ld.stderr"]] "" "/dev/null" "tmpdir/nm.out"]
++    set status [remote_exec host [concat bash -c [list "$nm $NMFLAGS $nmflags $object 2>ld.stderr"]] "" "/dev/null" "tmpdir/nm.out"]
+     if {[info exists old_lc_all]} {
+ 	set env(LC_ALL) $old_lc_all
+     } else {
+@@ -680,7 +680,7 @@
+ 		    }
+ 		    set env(LC_ALL) "C"
+ 		    set cmd "$binary $progopts $binfile"
+-		    set status [remote_exec host [concat sh -c [list "$cmd >dump.out 2>ld.stderr"]] "" "/dev/null"]
++		    set status [remote_exec host [concat bash -c [list "$cmd >dump.out 2>ld.stderr"]] "" "/dev/null"]
+ 		    send_log "$cmd\n"
+ 		    remote_upload host "ld.stderr"
+ 		    set comp_output [prune_warnings [file_contents "ld.stderr"]]
+@@ -1244,7 +1244,7 @@
+ 	set cmd "targ=$target_triplet . $srcdir/../../bfd/config.bfd &&"
+ 	append cmd { echo "$targ_underscore"}
+ 	verbose -log "$cmd"
+-	set status [catch {exec sh -c $cmd} result]
++	set status [catch {exec bash -c $cmd} result]
+ 	if { $status == 0 && [string match "yes" $result] } {
+ 	    set is_underscore_target_saved 1
+ 	} else {
+diff -Naur binutils-2.47.orig/libctf/testsuite/lib/ctf-lib.exp binutils-2.47/libctf/testsuite/lib/ctf-lib.exp
+--- binutils-2.47.orig/libctf/testsuite/lib/ctf-lib.exp	2026-07-25 23:00:00.000000000 +0000
++++ binutils-2.47/libctf/testsuite/lib/ctf-lib.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -40,7 +40,7 @@
+ 
+ 	    # Don't use run_host_cmd: it dumps the entire output into the log,
+ 	    # even on success.
+-	    set cmdret [remote_exec host [concat sh -c [list "$objdump --ctf $basename.so >dump.out 2>dump.err"]] "" "/dev/null"]
++	    set cmdret [remote_exec host [concat bash -c [list "$objdump --ctf $basename.so >dump.out 2>dump.err"]] "" "/dev/null"]
+ 	    set cmdret [lindex $cmdret 0]
+ 	    remote_upload host "dump.out"
+ 	    remote_upload host "dump.err"
+@@ -72,7 +72,7 @@
+     verbose -log "$command"
+     set run_output ""
+     try {
+-	set run_output [exec "sh" "-c" "$command" "2>@1"]
++	set run_output [exec "bash" "-c" "$command" "2>@1"]
+ 	set status 0
+     } trap CHILDSTATUS {results options} {
+ 	set status [lindex [dict get $options -errorcode] 2]

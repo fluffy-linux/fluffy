@@ -1,0 +1,84 @@
+ON=cross-build
+
+VERSION=4.2.2
+
+ARCHIVES=(
+    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$VERSION.tar.xz
+    d6e5b7179a943a375757600a250b15e572d713ba12873126524bd25b692ad6be file://mpfr-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    gmp
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    gmp
+    grep-pass1
+    libgcc
+    linux-headers
+    make-pass1
+    patch-pass1
+    perl-pass1
+    sed-pass1
+    texinfo-pass1
+)
+
+MAKE() {
+    patch -Z -Np1 -i mpfr-$VERSION-fluffy-shell.patch
+
+    ./configure \
+        --prefix=/sw/mpfr \
+        --disable-static \
+        --enable-thread-safe \
+        --docdir=/sw/mpfr/share/doc/mpfr-$VERSION
+    make
+    make html
+}
+
+CHECK_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    gmp
+    grep-pass1
+    libgcc
+    linux-headers
+    make-pass1
+    sed-pass1
+)
+
+CHECK() {
+    make check
+}
+
+INSTALL_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    gawk-pass1
+    glibc
+    gmp
+    grep-pass1
+    make-pass1
+    sed-pass1
+    texinfo-pass1
+)
+
+INSTALL() {
+    make install
+    make install-html
+    rm -fv $DESTDIR/sw/mpfr/lib/libmpfr.la
+}

@@ -1,3 +1,4 @@
 work/
 .envrc
 GEMINI.md
+__pycache__/

@@ -1,0 +1,87 @@
+ON=cross-build
+
+VERSION=1.4.1
+
+ARCHIVES=(
+    91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$VERSION.tar.xz
+    b8a8497e880e35f53687c65dd7bb25ef9cd937ec650c22fddf0fa902ef1d6782 file://mpc-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    gmp
+    mpfr
+)
+
+MAKE_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    gmp
+    grep-pass1
+    libgcc
+    linux-headers
+    make-pass1
+    mpfr
+    patch-pass1
+    perl-pass1
+    sed-pass1
+    texinfo-pass1
+)
+
+MAKE() {
+    patch -Z -Np1 -i mpc-$VERSION-fluffy-shell.patch
+
+    ./configure \
+        --prefix=/sw/mpc \
+        --disable-static \
+        --docdir=/sw/mpc/share/doc/mpc-$VERSION
+    make
+    make html
+}
+
+CHECK_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    gmp
+    grep-pass1
+    libgcc
+    linux-headers
+    make-pass1
+    mpfr
+    sed-pass1
+)
+
+CHECK() {
+    make check
+}
+
+INSTALL_NEEDS=(
+    bash-pass1
+    binutils
+    coreutils-pass1
+    gawk-pass1
+    glibc
+    gmp
+    grep-pass1
+    make-pass1
+    mpfr
+    sed-pass1
+    texinfo-pass1
+)
+
+INSTALL() {
+    make install
+    make install-html
+    rm -fv $DESTDIR/sw/mpc/lib/libmpc.la
+}

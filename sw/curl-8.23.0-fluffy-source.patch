@@ -1,0 +1,82 @@
+diff -Naur curl-8.23.0.orig/lib/vtls/openssl.c curl-8.23.0/lib/vtls/openssl.c
+--- curl-8.23.0.orig/lib/vtls/openssl.c	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/lib/vtls/openssl.c	2026-10-14 05:54:05.000000000 +0000
+@@ -70,6 +70,7 @@
+ #include <openssl/pkcs12.h>
+ #include <openssl/tls1.h>
+ #include <openssl/evp.h>
++#include <glob.h>
+ 
+ #if defined(HAVE_SSL_SET1_ECH_CONFIG_LIST) && !defined(HAVE_BORINGSSL_LIKE)
+ #include <openssl/ech.h>
+@@ -3028,7 +3029,27 @@
+ #ifdef HAVE_OPENSSL3
+     /* OpenSSL 3.0.0 has deprecated SSL_CTX_load_verify_locations */
+     if(ssl_cafile) {
+-      if(!X509_STORE_load_file(store, ssl_cafile)) {
++      bool loaded = FALSE;
++      if(strpbrk(ssl_cafile, "*?[")) {
++        glob_t gbuf;
++        if(glob(ssl_cafile, 0, NULL, &gbuf) == 0) {
++          size_t gi;
++          for(gi = 0; gi < gbuf.gl_pathc; gi++) {
++            if(X509_STORE_load_file(store, gbuf.gl_pathv[gi])) {
++              infof(data, "  CAfile: %s", gbuf.gl_pathv[gi]);
++              octx->store_is_empty = FALSE;
++              loaded = TRUE;
++            }
++          }
++          globfree(&gbuf);
++        }
++      }
++      else if(X509_STORE_load_file(store, ssl_cafile)) {
++        infof(data, "  CAfile: %s", ssl_cafile);
++        octx->store_is_empty = FALSE;
++        loaded = TRUE;
++      }
++      if(!loaded) {
+         if(octx->store_is_empty && !have_native_check) {
+           /* Fail if we insist on successfully verifying the server. */
+           failf(data, "error adding trust anchors from file: %s", ssl_cafile);
+@@ -3037,11 +3058,29 @@
+         else
+           infof(data, "error setting certificate file, continuing anyway");
+       }
+-      infof(data, "  CAfile: %s", ssl_cafile);
+-      octx->store_is_empty = FALSE;
+     }
+     if(ssl_capath) {
+-      if(!X509_STORE_load_path(store, ssl_capath)) {
++      bool loaded = FALSE;
++      if(strpbrk(ssl_capath, "*?[")) {
++        glob_t gbuf;
++        if(glob(ssl_capath, 0, NULL, &gbuf) == 0) {
++          size_t gi;
++          for(gi = 0; gi < gbuf.gl_pathc; gi++) {
++            if(X509_STORE_load_path(store, gbuf.gl_pathv[gi])) {
++              infof(data, "  CApath: %s", gbuf.gl_pathv[gi]);
++              octx->store_is_empty = FALSE;
++              loaded = TRUE;
++            }
++          }
++          globfree(&gbuf);
++        }
++      }
++      else if(X509_STORE_load_path(store, ssl_capath)) {
++        infof(data, "  CApath: %s", ssl_capath);
++        octx->store_is_empty = FALSE;
++        loaded = TRUE;
++      }
++      if(!loaded) {
+         if(octx->store_is_empty && !have_native_check) {
+           /* Fail if we insist on successfully verifying the server. */
+           failf(data, "error adding trust anchors from path: %s", ssl_capath);
+@@ -3050,8 +3089,6 @@
+         else
+           infof(data, "error setting certificate path, continuing anyway");
+       }
+-      infof(data, "  CApath: %s", ssl_capath);
+-      octx->store_is_empty = FALSE;
+     }
+ #else
+     /* tell OpenSSL where to find CA certificates that are used to verify the

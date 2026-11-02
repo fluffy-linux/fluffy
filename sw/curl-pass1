@@ -1,0 +1,62 @@
+ON=host-build
+
+VERSION=8.23.0
+
+ARCHIVES=(
+    8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5 https://curl.se/download/curl-$VERSION.tar.xz
+    b1fc8dfae54424bea6a546125d59d1a5a293c4aa79b0978179bd50e225bd5d3e file://curl-$VERSION-fluffy-shell.patch
+    afe278436da2a91bffe1aa4556424eb5f22aca3c3061a5856bfcec36f662315c file://curl-$VERSION-fluffy-source.patch
+    a3f92fc9cec3592efcb089bcec37fa5025b8b7f3b67d22ca4a8abac343c4e4b7 file://curl-$VERSION-fluffy-test.patch
+)
+
+NEEDS=(
+    ca-certificates
+    openssl-pass1
+    zlib-pass1
+    zstd-pass1
+)
+
+MAKE_NEEDS=(
+    coreutils-pass1
+    gcc-pass1
+    linux-headers
+    make-pass1
+    openssl-pass1
+    patch-pass1
+    sed-pass1
+    zlib-pass1
+    zstd-pass1
+)
+
+MAKE() {
+    patch -Z -Np1 -i curl-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i curl-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i curl-$VERSION-fluffy-test.patch
+    PKG_CONFIG=no ./configure \
+        --prefix=/sw/curl \
+        --host=$FLUFFY_TGT \
+        --build=$(./config.guess) \
+        --disable-static \
+        --with-openssl \
+        --without-libpsl \
+        --with-ca-bundle='/sw/*/etc/ssl/certs/ca-certificates.crt' \
+        --with-ca-path='/sw/*/etc/ssl/certs' \
+        --with-ca-fallback
+    make
+}
+
+INSTALL_NEEDS=(
+    coreutils-pass1
+    gcc-pass1
+    linux-headers
+    make-pass1
+    openssl-pass1
+    sed-pass1
+    zlib-pass1
+    zstd-pass1
+)
+
+INSTALL() {
+    make install
+    find $DESTDIR/sw/curl/lib -name '*.la' -delete
+}

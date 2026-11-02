@@ -4,13 +4,14 @@ VERSION=1.0
 
 NEEDS=(
     bzip2
+    coreutils
     ctypes-sh
+    curl
     gzip
     signify
     squashfs-tools
     tar
     util-linux
-    wget
     xz
     zstd
 )

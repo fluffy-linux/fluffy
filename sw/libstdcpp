@@ -1,0 +1,98 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=16.2.0
+
+ARCHIVES=(
+    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
+    14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    libgcc
+)
+
+if test -v CROSS
+then
+    MAKE_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed-pass1
+    )
+else
+    MAKE_NEEDS=(
+        bash
+        binutils
+        diffutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
+
+    mkdir -v build
+    cd build
+    ../libstdc++-v3/configure \
+        --prefix=/sw/libstdcpp \
+        --disable-multilib \
+        --disable-nls \
+        --disable-libstdcxx-pch \
+        --with-gxx-include-dir=/sw/libstdcpp/include/c++/$VERSION
+    make
+}
+
+if test -v CROSS
+then
+    INSTALL_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        libgcc
+        make-pass1
+        sed-pass1
+    )
+else
+    INSTALL_NEEDS=(
+        bash
+        binutils
+        gcc
+        glibc
+        grep
+        libgcc
+        make
+        sed
+    )
+fi
+
+INSTALL() {
+    cd build
+    make install
+    rm -fv $DESTDIR/sw/libstdcpp/lib/lib{stdc++{,exp,fs},supc++}.la
+}

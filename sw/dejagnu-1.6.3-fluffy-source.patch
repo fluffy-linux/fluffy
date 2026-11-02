@@ -1,3 +1,33 @@
+diff -Naur dejagnu-1.6.3.orig/lib/remote.exp dejagnu-1.6.3/lib/remote.exp
+--- dejagnu-1.6.3.orig/lib/remote.exp	2020-07-08 23:12:33.000000000 +0000
++++ dejagnu-1.6.3/lib/remote.exp	2020-07-08 23:12:33.000000000 +0000
+@@ -78,7 +78,7 @@
+ 	foreach spid $pid {
+ 	    # Prepend "-" to generate the "process group ID" needed by
+ 	    # kill.
+-	    exec sh -c "exec > /dev/null 2>&1 && (kill -2 -$spid || kill -2 $spid)"
++	    exec bash -c "exec > /dev/null 2>&1 && (kill -2 -$spid || kill -2 $spid)"
+ 	}
+ 
+ 	# If the program doesn't exit gracefully when stdin closes,
+@@ -98,7 +98,7 @@
+ 	    append sh_cmd "(kill -9 -$spid || kill -9 $spid);"
+ 	}
+ 	append sh_cmd ") && sleep $secs"
+-	set exec_pid [exec sh -c $sh_cmd &]
++	set exec_pid [exec bash -c $sh_cmd &]
+     }
+     verbose "pid is $pid"
+ 
+@@ -120,7 +120,7 @@
+ 	#
+ 	# Use `catch' in case the force-kills have completed, so as not
+ 	# to cause TCL to choke if `kill' returns a failure.
+-	catch {exec sh -c "kill -9 $exec_pid" >& /dev/null}
++	catch {exec bash -c "kill -9 $exec_pid" >& /dev/null}
+     }
+ 
+     return $res
 diff -Naur dejagnu-1.6.3.orig/lib/utils.exp dejagnu-1.6.3/lib/utils.exp
 --- dejagnu-1.6.3.orig/lib/utils.exp	2020-07-01 01:24:33.000000000 +0000
 +++ dejagnu-1.6.3/lib/utils.exp	2020-07-01 01:24:33.000000000 +0000
