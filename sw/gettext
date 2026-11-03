@@ -9,8 +9,7 @@ VERSION=1.0
 
 ARCHIVES=(
     71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7 https://ftpmirror.gnu.org/gettext/gettext-$VERSION.tar.xz
-    f9f233ee9053183de5d76ead66f475d1d7789ee1fa99ee14848967ef0cef3bf8 file://gettext-$VERSION-fluffy-shell.patch
-    9784517849fb34ada1167d40c963fa6506d10f86c0ccc3fba5fdec007e70e110 file://gettext-$VERSION-fluffy-test.patch
+    c28a9cc28f304bbc76869731b08e8d3f68f4067c776205b689b8904b7a69b2d1 file://gettext-$VERSION-fluffy-shell.patch
 )
 
 NEEDS=(
@@ -77,7 +76,6 @@ fi
 
 MAKE() {
     patch -Z -Np1 -i gettext-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i gettext-$VERSION-fluffy-test.patch
 
     ./configure \
         --prefix=/sw/gettext \
