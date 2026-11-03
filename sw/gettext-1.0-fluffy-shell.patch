@@ -70,6 +70,60 @@ diff -Naur gettext-1.0.orig/build-aux/config.sub gettext-1.0/build-aux/config.su
  
  me=`echo "$0" | sed -e 's,.*/,,'`
  
+diff -Naur gettext-1.0.orig/build-aux/csharpcomp.sh.in gettext-1.0/build-aux/csharpcomp.sh.in
+--- gettext-1.0.orig/build-aux/csharpcomp.sh.in	2026-01-02 10:16:13.000000000 +0000
++++ gettext-1.0/build-aux/csharpcomp.sh.in	2026-01-02 10:16:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Compile a C# program.
+ 
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+@@ -24,7 +24,7 @@
+ # This is a separate shell script, because the various C# compilers have
+ # different command line options.
+ #
+-# Usage: /bin/sh csharpcomp.sh [OPTION] SOURCE.cs ... RES.resource ...
++# Usage: /sw/bash/bin/bash csharpcomp.sh [OPTION] SOURCE.cs ... RES.resource ...
+ # Options:
+ #   -o PROGRAM.exe  or  -o LIBRARY.dll
+ #                     set the output assembly name
+diff -Naur gettext-1.0.orig/build-aux/csharpexec.sh.in gettext-1.0/build-aux/csharpexec.sh.in
+--- gettext-1.0.orig/build-aux/csharpexec.sh.in	2026-01-02 10:16:15.000000000 +0000
++++ gettext-1.0/build-aux/csharpexec.sh.in	2026-01-02 10:16:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Execute a C# program.
+ 
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+@@ -24,7 +24,7 @@
+ # This is a separate shell script, because the various C# interpreters have
+ # different command line options.
+ #
+-# Usage: /bin/sh csharpexec.sh [OPTION] program.exe [ARGUMENTS]
++# Usage: /sw/bash/bin/bash csharpexec.sh [OPTION] program.exe [ARGUMENTS]
+ # Options:
+ #   -L DIRECTORY      search for C# libraries also in DIRECTORY
+ 
+diff -Naur gettext-1.0.orig/build-aux/dcomp.sh.in gettext-1.0/build-aux/dcomp.sh.in
+--- gettext-1.0.orig/build-aux/dcomp.sh.in	2026-01-02 10:16:13.000000000 +0000
++++ gettext-1.0/build-aux/dcomp.sh.in	2026-01-02 10:16:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Compile a D program, library, or compilation unit.
+ 
+ # Copyright (C) 2025-2026 Free Software Foundation, Inc.
+@@ -17,7 +17,7 @@
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ 
+-# Usage: /bin/sh dcomp.sh [OPTION] SOURCE.d ...
++# Usage: /sw/bash/bin/bash dcomp.sh [OPTION] SOURCE.d ...
+ # where the supported OPTIONs are:
+ #   -I DIR
+ #   -c
 diff -Naur gettext-1.0.orig/build-aux/depcomp gettext-1.0/build-aux/depcomp
 --- gettext-1.0.orig/build-aux/depcomp	2026-01-28 23:39:23.000000000 +0000
 +++ gettext-1.0/build-aux/depcomp	2026-01-28 23:39:23.000000000 +0000
@@ -79,6 +133,42 @@ diff -Naur gettext-1.0.orig/build-aux/depcomp gettext-1.0/build-aux/depcomp
  # depcomp - compile a program generating dependencies as side-effects
  
  scriptversion=2025-06-18.21; # UTC
+diff -Naur gettext-1.0.orig/build-aux/git-version-gen gettext-1.0/build-aux/git-version-gen
+--- gettext-1.0.orig/build-aux/git-version-gen	2026-01-02 10:16:50.000000000 +0000
++++ gettext-1.0/build-aux/git-version-gen	2026-01-02 10:16:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2025-06-10.02; # UTC
+ 
+diff -Naur gettext-1.0.orig/build-aux/gocomp.sh.in gettext-1.0/build-aux/gocomp.sh.in
+--- gettext-1.0.orig/build-aux/gocomp.sh.in	2026-01-02 10:16:15.000000000 +0000
++++ gettext-1.0/build-aux/gocomp.sh.in	2026-01-02 10:16:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Compile a Go program.
+ 
+ # Copyright (C) 2025-2026 Free Software Foundation, Inc.
+@@ -17,7 +17,7 @@
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ 
+-# Usage: /bin/sh gocomp.sh [OPTION] SOURCE.go ...
++# Usage: /sw/bash/bin/bash gocomp.sh [OPTION] SOURCE.go ...
+ #
+ # Limitation: Go programs that make use of the C to Go interface ('cgo') are
+ # unsupported.
+diff -Naur gettext-1.0.orig/build-aux/install-reloc gettext-1.0/build-aux/install-reloc
+--- gettext-1.0.orig/build-aux/install-reloc	2026-01-02 10:16:13.000000000 +0000
++++ gettext-1.0/build-aux/install-reloc	2026-01-02 10:16:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install-reloc - install a program including a relocating wrapper
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+ # Written by Bruno Haible <bruno@clisp.org>, 2003.
 diff -Naur gettext-1.0.orig/build-aux/install-sh gettext-1.0/build-aux/install-sh
 --- gettext-1.0.orig/build-aux/install-sh	2026-01-28 23:39:23.000000000 +0000
 +++ gettext-1.0/build-aux/install-sh	2026-01-28 23:39:23.000000000 +0000
@@ -88,6 +178,99 @@ diff -Naur gettext-1.0.orig/build-aux/install-sh gettext-1.0/build-aux/install-s
  # install - install a program, script, or datafile
  
  scriptversion=2025-06-18.21; # UTC
+diff -Naur gettext-1.0.orig/build-aux/jar-cf gettext-1.0/build-aux/jar-cf
+--- gettext-1.0.orig/build-aux/jar-cf	2026-01-27 04:45:13.000000000 +0000
++++ gettext-1.0/build-aux/jar-cf	2026-01-27 04:45:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Creating a Java archive (.jar).
+ 
+ # Copyright (C) 2024-2026 Free Software Foundation, Inc.
+diff -Naur gettext-1.0.orig/build-aux/javacomp.sh.in gettext-1.0/build-aux/javacomp.sh.in
+--- gettext-1.0.orig/build-aux/javacomp.sh.in	2026-01-02 10:16:13.000000000 +0000
++++ gettext-1.0/build-aux/javacomp.sh.in	2026-01-02 10:16:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Compile a Java program.
+ 
+ # Copyright (C) 2001-2026 Free Software Foundation, Inc.
+diff -Naur gettext-1.0.orig/build-aux/javaexec.sh.in gettext-1.0/build-aux/javaexec.sh.in
+--- gettext-1.0.orig/build-aux/javaexec.sh.in	2026-01-02 10:16:15.000000000 +0000
++++ gettext-1.0/build-aux/javaexec.sh.in	2026-01-02 10:16:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Execute a Java program.
+ 
+ # Copyright (C) 2001-2026 Free Software Foundation, Inc.
+diff -Naur gettext-1.0.orig/build-aux/libtool-reloc gettext-1.0/build-aux/libtool-reloc
+--- gettext-1.0.orig/build-aux/libtool-reloc	2026-01-02 10:16:13.000000000 +0000
++++ gettext-1.0/build-aux/libtool-reloc	2026-01-02 10:16:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # libtool-reloc - libtool wrapper with support for relocatable programs
+ # Copyright (C) 2019-2026 Free Software Foundation, Inc.
+ # Written by Bruno Haible <bruno@clisp.org>, 2019.
+diff -Naur gettext-1.0.orig/build-aux/ltmain.sh gettext-1.0/build-aux/ltmain.sh
+--- gettext-1.0.orig/build-aux/ltmain.sh	2025-10-01 11:28:43.000000000 +0000
++++ gettext-1.0/build-aux/ltmain.sh	2025-10-01 11:28:43.000000000 +0000
+@@ -332,7 +332,7 @@
+ : ${MKDIR="mkdir"}
+ : ${MV="mv -f"}
+ : ${RM="rm -f"}
+-: ${SHELL="${CONFIG_SHELL-/bin/sh}"}
++: ${SHELL="${CONFIG_SHELL-/sw/bash/bin/bash}"}
+ 
+ 
+ ## -------------------- ##
+@@ -1528,7 +1528,7 @@
+ # time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
+ # time-stamp-time-zone: "UTC"
+ # End:
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
+@@ -1562,7 +1562,7 @@
+ #
+ # For the simplest scripts you might need only:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . relative/path/to/funclib.sh
+ #   . relative/path/to/options-parser
+ #   scriptversion=1.0
+@@ -4553,7 +4553,7 @@
+ 
+     # There may be an optional sh(1) argument at the beginning of
+     # install_prog (especially on Windows NT).
+-    if test "$SHELL" = "$nonopt" || test /bin/sh = "$nonopt" ||
++    if test "$SHELL" = "$nonopt" || test /sw/bash/bin/bash = "$nonopt" ||
+        # Allow the use of GNU shtool's install command.
+        case $nonopt in *shtool*) :;; *) false;; esac
+     then
+diff -Naur gettext-1.0.orig/build-aux/mdate-sh gettext-1.0/build-aux/mdate-sh
+--- gettext-1.0.orig/build-aux/mdate-sh	2026-01-28 23:39:43.000000000 +0000
++++ gettext-1.0/build-aux/mdate-sh	2026-01-28 23:39:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory, or value of
+ # $SOURCE_DATE_EPOCH, and pretty-print it, formatted like 1 January 2000.
+ 
+@@ -138,7 +138,7 @@
+ # the extended ls output of the root directory to decide how many
+ # words should be skipped to get the date.
+ 
+-# On HPUX /bin/sh, "set" interprets "-rw-r--r--" as options, so the "x" below.
++# On HPUX /sw/bash/bin/bash, "set" interprets "-rw-r--r--" as options, so the "x" below.
+ set x`$ls_command /`
+ 
+ # Find which argument is the month.
 diff -Naur gettext-1.0.orig/build-aux/missing gettext-1.0/build-aux/missing
 --- gettext-1.0.orig/build-aux/missing	2026-01-28 23:39:23.000000000 +0000
 +++ gettext-1.0/build-aux/missing	2026-01-28 23:39:23.000000000 +0000
@@ -97,6 +280,36 @@ diff -Naur gettext-1.0.orig/build-aux/missing gettext-1.0/build-aux/missing
  # Common wrapper for a few potentially missing GNU and other programs.
  
  scriptversion=2025-06-18.21; # UTC
+diff -Naur gettext-1.0.orig/build-aux/mkinstalldirs gettext-1.0/build-aux/mkinstalldirs
+--- gettext-1.0.orig/build-aux/mkinstalldirs	2019-05-11 11:29:32.000000000 +0000
++++ gettext-1.0/build-aux/mkinstalldirs	2019-05-11 11:29:32.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # mkinstalldirs --- make directory hierarchy
+ 
+ scriptversion=2005-06-29.22
+diff -Naur gettext-1.0.orig/build-aux/reloc-ldflags gettext-1.0/build-aux/reloc-ldflags
+--- gettext-1.0.orig/build-aux/reloc-ldflags	2026-01-02 10:16:13.000000000 +0000
++++ gettext-1.0/build-aux/reloc-ldflags	2026-01-02 10:16:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # Output a system dependent compiler option for putting a relocatable library
+ # search path into an executable.
+ #
+diff -Naur gettext-1.0.orig/build-aux/relocatable.sh.in gettext-1.0/build-aux/relocatable.sh.in
+--- gettext-1.0.orig/build-aux/relocatable.sh.in	2026-01-02 10:16:15.000000000 +0000
++++ gettext-1.0/build-aux/relocatable.sh.in	2026-01-02 10:16:15.000000000 +0000
+@@ -31,7 +31,7 @@
+     */* | *\\*) ;;
+     *) # Need to look in the PATH.
+       if test "${PATH_SEPARATOR+set}" != set; then
+-        # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++        # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+         # contains only /bin. Note that ksh looks also at the FPATH variable,
+         # so we have to set that as well for the test.
+         PATH_SEPARATOR=:
 diff -Naur gettext-1.0.orig/build-aux/test-driver gettext-1.0/build-aux/test-driver
 --- gettext-1.0.orig/build-aux/test-driver	2026-01-28 23:39:32.000000000 +0000
 +++ gettext-1.0/build-aux/test-driver	2026-01-28 23:39:32.000000000 +0000
@@ -104,6 +317,15 @@ diff -Naur gettext-1.0.orig/build-aux/test-driver gettext-1.0/build-aux/test-dri
 -#! /bin/sh
 +#! /sw/bash/bin/bash
  # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur gettext-1.0.orig/build-aux/ylwrap gettext-1.0/build-aux/ylwrap
+--- gettext-1.0.orig/build-aux/ylwrap	2026-01-28 23:39:23.000000000 +0000
++++ gettext-1.0/build-aux/ylwrap	2026-01-28 23:39:23.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # ylwrap - wrapper for lex/yacc invocations.
  
  scriptversion=2025-06-18.21; # UTC
 diff -Naur gettext-1.0.orig/configure gettext-1.0/configure
@@ -286,6 +508,132 @@ diff -Naur gettext-1.0.orig/gettext-runtime/configure gettext-1.0/gettext-runtim
        echo '/* dummy */' > sub/conftst$i.h
      done
      echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff -Naur gettext-1.0.orig/gettext-runtime/intl/configure gettext-1.0/gettext-runtime/intl/configure
+--- gettext-1.0.orig/gettext-runtime/intl/configure	2026-01-28 23:39:22.000000000 +0000
++++ gettext-1.0/gettext-runtime/intl/configure	2026-01-28 23:39:22.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for libintl package.
+ #
+@@ -289,7 +289,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -588,7 +588,7 @@
+ as_sed_sh="y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
+ as_tr_sh="eval sed '$as_sed_sh'" # deprecated
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ 
+ test -n "$DJDIR" || exec 7<&0 </dev/null
+@@ -5382,7 +5382,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -7002,7 +7002,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -9832,7 +9832,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+@@ -18469,7 +18469,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -18482,7 +18482,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -18594,7 +18594,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -18607,7 +18607,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -18673,7 +18673,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -18686,7 +18686,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -18794,7 +18794,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -18978,7 +18978,7 @@
+ else case e in #(
+   e)
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
 diff -Naur gettext-1.0.orig/gettext-runtime/libasprintf/configure gettext-1.0/gettext-runtime/libasprintf/configure
 --- gettext-1.0.orig/gettext-runtime/libasprintf/configure	2026-01-28 23:39:25.000000000 +0000
 +++ gettext-1.0/gettext-runtime/libasprintf/configure	2026-01-28 23:39:25.000000000 +0000
@@ -349,6 +697,24 @@ diff -Naur gettext-1.0.orig/gettext-runtime/libasprintf/configure gettext-1.0/ge
        # If test is not a shell built-in, we'll probably end up computing a
        # maximum length that is only half of the actual maximum length, but
        # we can't tell.
+diff -Naur gettext-1.0.orig/gettext-runtime/src/gettext.sh.in gettext-1.0/gettext-runtime/src/gettext.sh.in
+--- gettext-1.0.orig/gettext-runtime/src/gettext.sh.in	2026-01-27 08:03:07.000000000 +0000
++++ gettext-1.0/gettext-runtime/src/gettext.sh.in	2026-01-27 08:03:07.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ #
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+ #
+@@ -44,7 +44,7 @@
+   # it sets $0 to "gettext.sh", defeating the purpose of this test. But
+   # fortunately we know that when running under zsh, this script is always
+   # being sourced, not executed, because hardly anyone is crazy enough to
+-  # install zsh as /bin/sh.
++  # install zsh as /sw/bash/bin/bash.
+   case "$0" in
+     gettext.sh | */gettext.sh | *\\gettext.sh)
+       progname=$0
 diff -Naur gettext-1.0.orig/gettext-tools/build-aux/xml-validate-10.in gettext-1.0/gettext-tools/build-aux/xml-validate-10.in
 --- gettext-1.0.orig/gettext-tools/build-aux/xml-validate-10.in	2026-01-27 04:45:13.000000000 +0000
 +++ gettext-1.0/gettext-tools/build-aux/xml-validate-10.in	2026-01-27 04:45:13.000000000 +0000
@@ -529,6 +895,87 @@ diff -Naur gettext-1.0.orig/gettext-tools/configure gettext-1.0/gettext-tools/co
        echo '/* dummy */' > sub/conftst$i.h
      done
      echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff -Naur gettext-1.0.orig/gettext-tools/examples/configure gettext-1.0/gettext-tools/examples/configure
+--- gettext-1.0.orig/gettext-tools/examples/configure	2026-01-28 23:39:38.000000000 +0000
++++ gettext-1.0/gettext-tools/examples/configure	2026-01-28 23:39:38.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for gettext package.
+ #
+@@ -281,7 +281,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -2462,7 +2462,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -2900,7 +2900,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -2913,7 +2913,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -3025,7 +3025,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -3038,7 +3038,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -3104,7 +3104,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -3117,7 +3117,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
 diff -Naur gettext-1.0.orig/gettext-tools/src/project-id gettext-1.0/gettext-tools/src/project-id
 --- gettext-1.0.orig/gettext-tools/src/project-id	2026-01-27 04:45:13.000000000 +0000
 +++ gettext-1.0/gettext-tools/src/project-id	2026-01-27 04:45:13.000000000 +0000
@@ -536,6 +983,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/src/project-id gettext-1.0/gettext-too
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  # Prints a package's identification PACKAGE VERSION or PACKAGE.
+ #
+ # Copyright (C) 2001-2026 Free Software Foundation, Inc.
+diff -Naur gettext-1.0.orig/gettext-tools/src/user-email.sh.in gettext-1.0/gettext-tools/src/user-email.sh.in
+--- gettext-1.0.orig/gettext-tools/src/user-email.sh.in	2026-01-27 04:45:13.000000000 +0000
++++ gettext-1.0/gettext-tools/src/user-email.sh.in	2026-01-27 04:45:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Prints the user's email address, with confirmation from the user.
  #
  # Copyright (C) 2001-2026 Free Software Foundation, Inc.
 diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-sh-1 gettext-1.0/gettext-tools/tests/lang-sh-1
@@ -745,6 +1201,171 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgfilter-8 gettext-1.0/gettext-
  esac
  LC_ALL=C ${MSGFILTER} --newline -i mfi-test8.po -o mfi-test8.out \
        ${CONFIG_SHELL} filter.sh >mfi-test8.err 2>&1
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/compile gettext-1.0/libtextstyle/build-aux/compile
+--- gettext-1.0.orig/libtextstyle/build-aux/compile	2026-01-28 23:39:37.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/compile	2026-01-28 23:39:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/config.guess gettext-1.0/libtextstyle/build-aux/config.guess
+--- gettext-1.0.orig/libtextstyle/build-aux/config.guess	2025-07-19 14:18:47.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/config.guess	2025-07-19 14:18:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1020,7 +1020,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/config.rpath gettext-1.0/libtextstyle/build-aux/config.rpath
+--- gettext-1.0.orig/libtextstyle/build-aux/config.rpath	2026-01-02 10:17:03.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/config.rpath	2026-01-02 10:17:03.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/config.sub gettext-1.0/libtextstyle/build-aux/config.sub
+--- gettext-1.0.orig/libtextstyle/build-aux/config.sub	2025-07-19 14:18:47.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/config.sub	2025-07-19 14:18:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/depcomp gettext-1.0/libtextstyle/build-aux/depcomp
+--- gettext-1.0.orig/libtextstyle/build-aux/depcomp	2026-01-28 23:39:37.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/depcomp	2026-01-28 23:39:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/install-sh gettext-1.0/libtextstyle/build-aux/install-sh
+--- gettext-1.0.orig/libtextstyle/build-aux/install-sh	2026-01-28 23:39:37.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/install-sh	2026-01-28 23:39:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/join-v-1 gettext-1.0/libtextstyle/build-aux/join-v-1
+--- gettext-1.0.orig/libtextstyle/build-aux/join-v-1	2026-01-27 04:45:13.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/join-v-1	2026-01-27 04:45:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # join-v-1 - Filter out a set of items from another set of items.
+ 
+ # Copyright (C) 2021-2026 Free Software Foundation, Inc.
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/ltmain.sh gettext-1.0/libtextstyle/build-aux/ltmain.sh
+--- gettext-1.0.orig/libtextstyle/build-aux/ltmain.sh	2025-10-01 11:28:43.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/ltmain.sh	2025-10-01 11:28:43.000000000 +0000
+@@ -332,7 +332,7 @@
+ : ${MKDIR="mkdir"}
+ : ${MV="mv -f"}
+ : ${RM="rm -f"}
+-: ${SHELL="${CONFIG_SHELL-/bin/sh}"}
++: ${SHELL="${CONFIG_SHELL-/sw/bash/bin/bash}"}
+ 
+ 
+ ## -------------------- ##
+@@ -1528,7 +1528,7 @@
+ # time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
+ # time-stamp-time-zone: "UTC"
+ # End:
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
+@@ -1562,7 +1562,7 @@
+ #
+ # For the simplest scripts you might need only:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . relative/path/to/funclib.sh
+ #   . relative/path/to/options-parser
+ #   scriptversion=1.0
+@@ -4553,7 +4553,7 @@
+ 
+     # There may be an optional sh(1) argument at the beginning of
+     # install_prog (especially on Windows NT).
+-    if test "$SHELL" = "$nonopt" || test /bin/sh = "$nonopt" ||
++    if test "$SHELL" = "$nonopt" || test /sw/bash/bin/bash = "$nonopt" ||
+        # Allow the use of GNU shtool's install command.
+        case $nonopt in *shtool*) :;; *) false;; esac
+     then
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/mdate-sh gettext-1.0/libtextstyle/build-aux/mdate-sh
+--- gettext-1.0.orig/libtextstyle/build-aux/mdate-sh	2026-01-28 23:39:37.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/mdate-sh	2026-01-28 23:39:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory, or value of
+ # $SOURCE_DATE_EPOCH, and pretty-print it, formatted like 1 January 2000.
+ 
+@@ -138,7 +138,7 @@
+ # the extended ls output of the root directory to decide how many
+ # words should be skipped to get the date.
+ 
+-# On HPUX /bin/sh, "set" interprets "-rw-r--r--" as options, so the "x" below.
++# On HPUX /sw/bash/bin/bash, "set" interprets "-rw-r--r--" as options, so the "x" below.
+ set x`$ls_command /`
+ 
+ # Find which argument is the month.
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/missing gettext-1.0/libtextstyle/build-aux/missing
+--- gettext-1.0.orig/libtextstyle/build-aux/missing	2026-01-28 23:39:37.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/missing	2026-01-28 23:39:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur gettext-1.0.orig/libtextstyle/build-aux/moopp gettext-1.0/libtextstyle/build-aux/moopp
+--- gettext-1.0.orig/libtextstyle/build-aux/moopp	2026-01-28 12:59:46.000000000 +0000
++++ gettext-1.0/libtextstyle/build-aux/moopp	2026-01-28 12:59:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Minimal Object-Oriented style PreProcessor.
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
 diff -Naur gettext-1.0.orig/libtextstyle/build-aux/run-test gettext-1.0/libtextstyle/build-aux/run-test
 --- gettext-1.0.orig/libtextstyle/build-aux/run-test	2026-01-02 10:17:03.000000000 +0000
 +++ gettext-1.0/libtextstyle/build-aux/run-test	2026-01-02 10:17:03.000000000 +0000
@@ -853,3 +1474,12 @@ diff -Naur gettext-1.0.orig/libtextstyle/configure gettext-1.0/libtextstyle/conf
      . ./conftest.sh
      rm -f ./conftest.sh
      acl_cv_rpath=done
+diff -Naur gettext-1.0.orig/libtextstyle/gnulib-local/build-aux/moopp gettext-1.0/libtextstyle/gnulib-local/build-aux/moopp
+--- gettext-1.0.orig/libtextstyle/gnulib-local/build-aux/moopp	2026-01-27 08:04:37.000000000 +0000
++++ gettext-1.0/libtextstyle/gnulib-local/build-aux/moopp	2026-01-27 08:04:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Minimal Object-Oriented style PreProcessor.
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
