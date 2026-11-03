@@ -304,6 +304,7 @@
   - 8.31 `gcc` (16.2.0) verified and registered (`gcc-16.2.0.squashfs`, 649M) and `libstdcpp` (16.2.0, `libstdcpp-16.2.0.squashfs`, 3.6M).
   - 8.32 `ncurses` (6.6) verified and registered (`ncurses-6.6.squashfs`, 1.7M): wide-character ABI enabled (`--enable-widec`, `--enable-overwrite`), shared C++ bindings (`--with-cxx-shared`, `libncurses++w.so`), curses.h wide-character ABI fix applied, and non-wide compatibility symlinks (`libncurses.so`, `libform.so`, `libpanel.so`, `libmenu.so`, `libcurses.so`).
   - 8.33 `sed` (4.10) verified and registered (`sed-4.10.squashfs`, 500K): built with HTML documentation, full test suite passing, and `/sw/sed/bin/sed` verified.
+  - 8.34 `psmisc` (23.7) verified and registered (`psmisc-23.7.squashfs`, 352K): full DejaGnu test suite passing; `fuser`, `killall`, `peekfd`, `prtstat`, `pslog`, `pstree`, and `pstree.x11` verified.
 
 - **Chapter 7 Complete (In-Chroot Native Compilation & Network Stack)**:
   - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.
