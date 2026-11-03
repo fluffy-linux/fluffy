@@ -1483,3 +1483,16 @@ diff -Naur gettext-1.0.orig/libtextstyle/gnulib-local/build-aux/moopp gettext-1.
  # Minimal Object-Oriented style PreProcessor.
  
  # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+
+diff -Naur gettext-1.0.orig/gettext-tools/config.h.in gettext-1.0/gettext-tools/config.h.in
+--- gettext-1.0.orig/gettext-tools/config.h.in	2026-01-28 23:39:43.000000000 +0000
++++ gettext-1.0/gettext-tools/config.h.in	2026-01-28 23:39:43.000000000 +0000
+@@ -3020,7 +3020,7 @@
+    - On Android, /bin/sh does not exist. It's /system/bin/sh instead.  */
+ # define BOURNE_SHELL "sh"
+ #else
+-# define BOURNE_SHELL "/bin/sh"
++# define BOURNE_SHELL "/sw/bash/bin/bash"
+ #endif
+ 
+ /* Define if lists must be signal-safe. */

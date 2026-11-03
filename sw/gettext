@@ -9,7 +9,7 @@ VERSION=1.0
 
 ARCHIVES=(
     71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7 https://ftpmirror.gnu.org/gettext/gettext-$VERSION.tar.xz
-    c86347ca7961bc40085671ab96a2196837297e2b99d3eb1b527ef7ebff0f95b5 file://gettext-$VERSION-fluffy-shell.patch
+    0dcf6b402f8ba8c40e98ea1c5c79daab2f0143629351263c1e0c798eaabd9a9b file://gettext-$VERSION-fluffy-shell.patch
 )
 
 NEEDS=(
