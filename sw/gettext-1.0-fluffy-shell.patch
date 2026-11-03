@@ -1496,3 +1496,19 @@ diff -Naur gettext-1.0.orig/gettext-tools/config.h.in gettext-1.0/gettext-tools/
  #endif
  
  /* Define if lists must be signal-safe. */
+
+diff -Naur gettext-1.0.orig/gettext-tools/system-tests/run-test gettext-1.0/gettext-tools/system-tests/run-test
+--- gettext-1.0.orig/gettext-tools/system-tests/run-test	2025-10-01 11:28:43.000000000 +0000
++++ gettext-1.0/gettext-tools/system-tests/run-test	2025-10-01 11:28:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Run a test whose source and data files are located in the ../tests/ directory.
+ 
+ srcdir="$srcdir/../tests"
+@@ -9,4 +9,4 @@
+ testname=`echo "$1" | sed 's,^.*/,,'`
+ shift
+ 
+-exec /bin/sh "$srcdir/$testname" "$@"
++exec /sw/bash/bin/bash "$srcdir/$testname" "$@"
