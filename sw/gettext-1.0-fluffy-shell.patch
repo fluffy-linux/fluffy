@@ -178,6 +178,15 @@ diff -Naur gettext-1.0.orig/build-aux/ltmain.sh gettext-1.0/build-aux/ltmain.sh
  
  
  ## -------------------- ##
+@@ -1528,7 +1528,7 @@
+ # time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
+ # time-stamp-time-zone: "UTC"
+ # End:
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
 @@ -4553,7 +4553,7 @@
  
      # There may be an optional sh(1) argument at the beginning of
@@ -322,6 +331,33 @@ diff -Naur gettext-1.0.orig/gettext-runtime/configure gettext-1.0/gettext-runtim
        # If test is not a shell built-in, we'll probably end up computing a
        # maximum length that is only half of the actual maximum length, but
        # we can't tell.
+@@ -24389,7 +24389,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -24514,7 +24514,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -24593,7 +24593,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
 @@ -24885,7 +24885,7 @@
  else case e in #(
    e)
@@ -385,6 +421,33 @@ diff -Naur gettext-1.0.orig/gettext-runtime/intl/configure gettext-1.0/gettext-r
        # If test is not a shell built-in, we'll probably end up computing a
        # maximum length that is only half of the actual maximum length, but
        # we can't tell.
+@@ -18482,7 +18482,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -18607,7 +18607,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -18686,7 +18686,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
 @@ -18978,7 +18978,7 @@
  else case e in #(
    e)
@@ -589,6 +652,33 @@ diff -Naur gettext-1.0.orig/gettext-tools/configure gettext-1.0/gettext-tools/co
        # If test is not a shell built-in, we'll probably end up computing a
        # maximum length that is only half of the actual maximum length, but
        # we can't tell.
+@@ -28312,7 +28312,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -28437,7 +28437,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -28516,7 +28516,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
 @@ -28808,7 +28808,7 @@
  else case e in #(
    e)
@@ -643,6 +733,33 @@ diff -Naur gettext-1.0.orig/gettext-tools/examples/configure gettext-1.0/gettext
  all:
  	@echo '@@@%%%=$(MAKE)=@@@%%%'
  _ACEOF
+@@ -2913,7 +2913,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -3038,7 +3038,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -3117,7 +3117,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
 diff -Naur gettext-1.0.orig/gettext-tools/examples/hello-c/autoclean.sh gettext-1.0/gettext-tools/examples/hello-c/autoclean.sh
 --- gettext-1.0.orig/gettext-tools/examples/hello-c/autoclean.sh	2026-01-28 23:36:24.000000000 +0000
 +++ gettext-1.0/gettext-tools/examples/hello-c/autoclean.sh	2026-01-28 23:36:24.000000000 +0000
@@ -3055,6 +3172,18 @@ diff -Naur gettext-1.0.orig/gettext-tools/projects/GNOME/trigger gettext-1.0/get
  #
  # Copyright (C) 2001-2026 Free Software Foundation, Inc.
  #
+@@ -46,9 +46,9 @@
+       exit 1
+   esac
+   # Go to parent directory
+-  last=`/bin/pwd`
++  last=`pwd`
+   cd ..
+-  curr=`/bin/pwd`
++  curr=`pwd`
+   if test "$last" = "$curr"; then
+     # Oops, didn't find the top level directory.
+     exit 1
 diff -Naur gettext-1.0.orig/gettext-tools/projects/KDE/team-address gettext-1.0/gettext-tools/projects/KDE/team-address
 --- gettext-1.0.orig/gettext-tools/projects/KDE/team-address	2026-01-27 04:45:13.000000000 +0000
 +++ gettext-1.0/gettext-tools/projects/KDE/team-address	2026-01-27 04:45:13.000000000 +0000
@@ -3073,6 +3202,18 @@ diff -Naur gettext-1.0.orig/gettext-tools/projects/KDE/trigger gettext-1.0/gette
  #
  # Copyright (C) 2001-2026 Free Software Foundation, Inc.
  #
+@@ -48,9 +48,9 @@
+       exit 1
+   esac
+   # Go to parent directory
+-  last=`/bin/pwd`
++  last=`pwd`
+   cd ..
+-  curr=`/bin/pwd`
++  curr=`pwd`
+   if test "$last" = "$curr"; then
+     # Oops, didn't find the top level directory.
+     exit 1
 diff -Naur gettext-1.0.orig/gettext-tools/projects/TP/team-address gettext-1.0/gettext-tools/projects/TP/team-address
 --- gettext-1.0.orig/gettext-tools/projects/TP/team-address	2026-01-27 04:45:13.000000000 +0000
 +++ gettext-1.0/gettext-tools/projects/TP/team-address	2026-01-27 04:45:13.000000000 +0000
@@ -3119,6 +3260,18 @@ diff -Naur gettext-1.0.orig/gettext-tools/src/project-id gettext-1.0/gettext-too
  # Prints a package's identification PACKAGE VERSION or PACKAGE.
  #
  # Copyright (C) 2001-2026 Free Software Foundation, Inc.
+@@ -73,9 +73,9 @@
+       ;;
+   esac
+   # Go to parent directory
+-  last=`/bin/pwd`
++  last=`pwd`
+   cd ..
+-  curr=`/bin/pwd`
++  curr=`pwd`
+   if test "$last" = "$curr"; then
+     # Oops, didn't find the package name.
+     if test -n "$want_version"; then
 diff -Naur gettext-1.0.orig/gettext-tools/src/user-email.sh.in gettext-1.0/gettext-tools/src/user-email.sh.in
 --- gettext-1.0.orig/gettext-tools/src/user-email.sh.in	2026-01-27 04:45:13.000000000 +0000
 +++ gettext-1.0/gettext-tools/src/user-email.sh.in	2026-01-27 04:45:13.000000000 +0000
@@ -4156,6 +4309,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-bash gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src ../../gettext-runtime/src
  
  # Test of gettext facilities in the bash language.
+@@ -15,7 +15,7 @@
+ # any message catalog lookups.
+ 
+ cat <<\EOF > prog.bash
+-#! /bin/bash
++#!/sw/bash/bin/bash
+ 
+ n=$1
+ 
 diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-c gettext-1.0/gettext-tools/tests/lang-c
 --- gettext-1.0.orig/gettext-tools/tests/lang-c	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/lang-c	2025-10-01 11:28:43.000000000 +0000
@@ -4552,6 +4714,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-sh-1 gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src ../../gettext-runtime/src
  
  # Test of gettext facilities in the sh language.
+@@ -12,7 +12,7 @@
+ # any message catalog lookups.
+ 
+ cat <<\EOF > prog.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ n=$1
+ 
 diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-sh-2 gettext-1.0/gettext-tools/tests/lang-sh-2
 --- gettext-1.0.orig/gettext-tools/tests/lang-sh-2	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/lang-sh-2	2025-10-01 11:28:43.000000000 +0000
@@ -4561,6 +4732,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-sh-2 gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src ../../gettext-runtime/src
  
  # Test of gettext facilities in the sh language.
+@@ -15,7 +15,7 @@
+ # any message catalog lookups.
+ 
+ cat <<\EOF > prog.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ n=$1
+ 
 diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-sh-3 gettext-1.0/gettext-tools/tests/lang-sh-3
 --- gettext-1.0.orig/gettext-tools/tests/lang-sh-3	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/lang-sh-3	2025-10-01 11:28:43.000000000 +0000
@@ -4570,6 +4750,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-sh-3 gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src ../../gettext-runtime/src
  
  # Test of gettext facilities in the sh language.
+@@ -12,7 +12,7 @@
+ # any message catalog lookups.
+ 
+ cat <<\EOF > prog.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ n=$1
+ 
 diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-smalltalk gettext-1.0/gettext-tools/tests/lang-smalltalk
 --- gettext-1.0.orig/gettext-tools/tests/lang-smalltalk	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/lang-smalltalk	2025-10-01 11:28:43.000000000 +0000
@@ -5434,6 +5623,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-1 gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src
  
  # Test of an external command.
+@@ -55,7 +55,7 @@
+ EOF
+ 
+ cat <<\EOF > mex-test1.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ echo "========================= $MSGEXEC_LOCATION =========================" | LC_ALL=C tr -d '\r'
+ cat <<MEOF
+ $MSGEXEC_MSGID
 diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-2 gettext-1.0/gettext-tools/tests/msgexec-2
 --- gettext-1.0.orig/gettext-tools/tests/msgexec-2	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/msgexec-2	2025-10-01 11:28:43.000000000 +0000
@@ -5452,6 +5650,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-3 gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src
  
  # Test of an external command with Java .properties syntax.
+@@ -30,7 +30,7 @@
+ EOF
+ 
+ cat <<\EOF > mex-test3.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ echo "========================= $MSGEXEC_LOCATION =========================" | LC_ALL=C tr -d '\r'
+ cat <<MEOF
+ $MSGEXEC_MSGID
 diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-4 gettext-1.0/gettext-tools/tests/msgexec-4
 --- gettext-1.0.orig/gettext-tools/tests/msgexec-4	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/msgexec-4	2025-10-01 11:28:43.000000000 +0000
@@ -5461,6 +5668,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-4 gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src
  
  # Test msgexec on a PO file with contexts.
+@@ -62,7 +62,7 @@
+ EOF
+ 
+ cat <<\EOF > mex-test4.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ echo "========================= $MSGEXEC_LOCATION =========================" | LC_ALL=C tr -d '\r'
+ if test -n "${MSGEXEC_MSGCTXT+set}"; then
+   echo "context: $MSGEXEC_MSGCTXT" | LC_ALL=C tr -d '\r'
 diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-5 gettext-1.0/gettext-tools/tests/msgexec-5
 --- gettext-1.0.orig/gettext-tools/tests/msgexec-5	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/msgexec-5	2025-10-01 11:28:43.000000000 +0000
@@ -5470,6 +5686,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-5 gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src
  
  # Test msgexec on a PO file with plurals.
+@@ -29,7 +29,7 @@
+ EOF
+ 
+ cat <<\EOF > mex-test5.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ echo "========================= $MSGEXEC_LOCATION =========================" | LC_ALL=C tr -d '\r'
+ if test -n "${MSGEXEC_MSGCTXT+set}"; then
+   echo "context: $MSGEXEC_MSGCTXT" | LC_ALL=C tr -d '\r'
 diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-6 gettext-1.0/gettext-tools/tests/msgexec-6
 --- gettext-1.0.orig/gettext-tools/tests/msgexec-6	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/msgexec-6	2025-10-01 11:28:43.000000000 +0000
@@ -5479,6 +5704,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgexec-6 gettext-1.0/gettext-to
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src
  
  # Test --newline option.
+@@ -55,7 +55,7 @@
+ EOF
+ 
+ cat <<\EOF > mex-test6.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ echo "========================= $MSGEXEC_LOCATION =========================" | LC_ALL=C tr -d '\r'
+ cat <<MEOF
+ $MSGEXEC_MSGID
 diff -Naur gettext-1.0.orig/gettext-tools/tests/msgfilter-1 gettext-1.0/gettext-tools/tests/msgfilter-1
 --- gettext-1.0.orig/gettext-tools/tests/msgfilter-1	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/msgfilter-1	2025-10-01 11:28:43.000000000 +0000
@@ -5533,6 +5767,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgfilter-6 gettext-1.0/gettext-
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src
  
  # Test msgfilter on a PO file with plurals.
+@@ -31,7 +31,7 @@
+ : > mf-test6.tmp
+ 
+ cat <<\EOF > mf-test6.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ echo "========================= $MSGFILTER_LOCATION =========================" >> mf-test6.tmp
+ if test -n "${MSGFILTER_MSGCTXT+set}"; then
+   echo "context: $MSGFILTER_MSGCTXT" >> mf-test6.tmp
 diff -Naur gettext-1.0.orig/gettext-tools/tests/msgfilter-7 gettext-1.0/gettext-tools/tests/msgfilter-7
 --- gettext-1.0.orig/gettext-tools/tests/msgfilter-7	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/msgfilter-7	2025-10-01 11:28:43.000000000 +0000
@@ -5542,6 +5785,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgfilter-7 gettext-1.0/gettext-
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src
  
  # Test empty msgstr handling.
+@@ -55,7 +55,7 @@
+ EOF
+ 
+ cat <<\EOF > mf-test7.sh
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Eat up filter input to avoid EPIPE in the parent process.
+ cat > /dev/null
 diff -Naur gettext-1.0.orig/gettext-tools/tests/msgfilter-8 gettext-1.0/gettext-tools/tests/msgfilter-8
 --- gettext-1.0.orig/gettext-tools/tests/msgfilter-8	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/msgfilter-8	2025-10-01 11:28:43.000000000 +0000
@@ -5551,6 +5803,15 @@ diff -Naur gettext-1.0.orig/gettext-tools/tests/msgfilter-8 gettext-1.0/gettext-
  . "${srcdir=.}/init.sh"; path_prepend_ . ../src
  
  # Test --newline option.
+@@ -66,7 +66,7 @@
+ EOF
+ 
+ cat <<\EOF > filter.sh
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ cat
+ if test "$MSGFILTER_MSGID" = "the excitement of a love affair"; then
+   echo $ac_n "non-terminated line$ac_c"
 @@ -78,7 +78,7 @@
  : ${MSGFILTER=msgfilter}
  case "$host_os" in
@@ -9514,6 +9775,15 @@ diff -Naur gettext-1.0.orig/libtextstyle/build-aux/ltmain.sh gettext-1.0/libtext
  
  
  ## -------------------- ##
+@@ -1528,7 +1528,7 @@
+ # time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
+ # time-stamp-time-zone: "UTC"
+ # End:
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
 @@ -4553,7 +4553,7 @@
  
      # There may be an optional sh(1) argument at the beginning of

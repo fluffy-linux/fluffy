@@ -95,7 +95,7 @@ for archive in archives:
                 lines = text.splitlines(keepends=True)
                 new_lines = []
                 for idx, line in enumerate(lines):
-                    if idx == 0 and line.startswith("#!"):
+                    if line.startswith("#!"):
                         line = re.sub(
                             r"^#!\s*(?:/(?:usr/)?bin/(?:ba)?sh|(?:/usr)?/bin/env\s+(?:ba)?sh)(\s|$)",
                             r"#!/sw/bash/bin/bash\1",
@@ -103,6 +103,7 @@ for archive in archives:
                         )
                     elif not line.lstrip().startswith("#"):
                         line = re.sub(r"(?<!/sw/bash)/bin/(ba)?sh\b", r"/sw/bash/bin/bash", line)
+                    line = re.sub(r"/bin/pwd\b", r"pwd", line)
                     new_lines.append(line)
                 s2 = "".join(new_lines)
                 if s2 != text:
