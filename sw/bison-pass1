@@ -12,8 +12,9 @@ NEEDS=(
     m4-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
+    binutils-pass2
     coreutils-pass1
     diffutils-pass1
     findutils-pass1
@@ -38,18 +39,6 @@ MAKE() {
         --docdir=/sw/bison/share/doc/bison-$VERSION
     make
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    grep-pass1
-    m4-pass1
-    make-pass1
-    sed-pass1
-)
 
 INSTALL() {
     make install

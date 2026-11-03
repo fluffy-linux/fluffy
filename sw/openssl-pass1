@@ -13,7 +13,7 @@ NEEDS=(
     glibc-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     coreutils-pass1
     gcc-pass1
     linux-headers
@@ -35,11 +35,6 @@ MAKE() {
         CC="$FLUFFY_TGT-gcc"
     make
 }
-
-INSTALL_NEEDS=(
-    coreutils-pass1
-    make-pass1
-)
 
 INSTALL() {
     make install_sw

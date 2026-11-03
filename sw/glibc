@@ -14,11 +14,12 @@ NEEDS=(
     libgcc
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     bison-pass1
     coreutils-pass1
     diffutils-pass1
+    findutils-pass1
     gawk-pass1
     gcc-pass2
     grep-pass1
@@ -54,38 +55,10 @@ EOF
     make
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    bison-pass1
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    grep-pass1
-    linux-headers
-    make-pass1
-    perl-pass1
-    python-pass1
-    sed-pass1
-)
-
 CHECK() {
     cd build
     make check
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    gawk-pass1
-    gcc-pass2
-    linux-headers
-    make-pass1
-    perl-pass1
-    python-pass1
-    sed-pass1
-)
 
 INSTALL() {
     cd build

@@ -11,8 +11,9 @@ NEEDS=(
     zstd-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     gcc-pass1
+    glibc-pass1
     linux-headers
     zstd-pass1
 )
@@ -29,11 +30,6 @@ MAKE() {
         EXTRA_CFLAGS="-I/sw/zstd/include" \
         EXTRA_LDFLAGS="-L/sw/zstd/lib"
 }
-
-INSTALL_NEEDS=(
-    gcc-pass1
-    glibc-pass1
-)
 
 INSTALL() {
     mkdir -pv $DESTDIR/sw/squashfs-tools/bin

@@ -1,0 +1,81 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=23.7
+
+ARCHIVES=(
+    58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327 https://downloads.sourceforge.net/psmisc/psmisc-$VERSION.tar.xz
+    2b3229fd2b71695fe93c059226e2a66284b7188dd2d4dc214653b57743ebc8d7 file://psmisc-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    ncurses
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        dejagnu
+        diffutils-pass1
+        expect
+        findutils-pass1
+        gawk-pass1
+        gcc
+        gettext-pass1
+        glibc
+        grep-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        ncurses
+        patch-pass1
+        sed-pass1
+        tcl
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        dejagnu
+        diffutils
+        expect
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        tcl
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i psmisc-$VERSION-fluffy-shell.patch
+
+    ./configure \
+        --prefix=/sw/psmisc
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

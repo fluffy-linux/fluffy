@@ -16,7 +16,7 @@ NEEDS=(
     zstd-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     coreutils-pass1
     gcc-pass1
     linux-headers
@@ -44,17 +44,6 @@ MAKE() {
         --with-ca-fallback
     make
 }
-
-INSTALL_NEEDS=(
-    coreutils-pass1
-    gcc-pass1
-    linux-headers
-    make-pass1
-    openssl-pass1
-    sed-pass1
-    zlib-pass1
-    zstd-pass1
-)
 
 INSTALL() {
     make install

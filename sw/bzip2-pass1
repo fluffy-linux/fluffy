@@ -12,7 +12,7 @@ NEEDS=(
     glibc-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     binutils-pass1
     gcc-pass1
     glibc-pass1
@@ -31,12 +31,6 @@ MAKE() {
         RANLIB=$FLUFFY_TGT-ranlib \
         bzip2 bzip2recover
 }
-
-INSTALL_NEEDS=(
-    binutils-pass1
-    gcc-pass1
-    glibc-pass1
-)
 
 INSTALL() {
     make \

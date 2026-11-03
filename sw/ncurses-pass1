@@ -10,7 +10,7 @@ NEEDS=(
     libstdcpp-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     gcc-pass1
     libstdcpp-pass1
     linux-headers
@@ -41,12 +41,6 @@ MAKE() {
         AWK=gawk
     make
 }
-
-INSTALL_NEEDS=(
-    gcc-pass1
-    libstdcpp-pass1
-    linux-headers
-)
 
 INSTALL() {
     PATH="$PWD/build/progs:$PATH" make install

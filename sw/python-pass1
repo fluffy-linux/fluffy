@@ -16,7 +16,7 @@ NEEDS=(
     zstd-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     bzip2-pass1
     coreutils-pass1
@@ -47,23 +47,6 @@ MAKE() {
         --without-static-libpython
     make SHELL=/sw/bash/bin/bash
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    bzip2-pass1
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    gcc-pass2
-    grep-pass1
-    linux-headers
-    make-pass1
-    mpdecimal-pass1
-    sed-pass1
-    xz-pass1
-    zlib-pass1
-    zstd-pass1
-)
 
 INSTALL() {
     make SHELL=/sw/bash/bin/bash install

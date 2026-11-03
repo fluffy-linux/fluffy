@@ -9,7 +9,7 @@ ARCHIVES=(
     b88caff550f5406e4910aa0cd38d4e2fef437082c4a4ca788dc1c9155757f0c0 file://glibc-$VERSION-fluffy-source.patch
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     gcc-pass1
     linux-headers
 )
@@ -35,11 +35,6 @@ EOF
         --enable-kernel=5.4
     make
 }
-
-INSTALL_NEEDS=(
-    gcc-pass1
-    linux-headers
-)
 
 INSTALL() {
     cd build

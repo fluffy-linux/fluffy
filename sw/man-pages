@@ -8,9 +8,14 @@ ARCHIVES=(
     0d84d157288e440c1f6602472f57d27de6315be13d0c442e1bc3110664aec4a1 file://man-pages-$VERSION-fluffy-test.patch
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
+    bash-pass1
     coreutils-pass1
+    findutils-pass1
+    grep-pass1
+    make-pass1
     patch-pass1
+    sed-pass1
 )
 
 MAKE() {
@@ -18,15 +23,6 @@ MAKE() {
     patch -Z -Np1 -i man-pages-$VERSION-fluffy-test.patch
     rm -vf man/man3/crypt*
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    findutils-pass1
-    grep-pass1
-    make-pass1
-    sed-pass1
-)
 
 INSTALL() {
     make -R GIT=false SHELL=/sw/bash/bin/bash prefix=/sw/man-pages install

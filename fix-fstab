@@ -292,9 +292,7 @@ build_step() {
     VERSION=""
     ARCHIVES=()
     NEEDS=()
-    MAKE_NEEDS=()
-    CHECK_NEEDS=()
-    INSTALL_NEEDS=()
+    BUILD_NEEDS=()
     current_eval_pkg="$pkg_name"
     source "$recipe_file"
     unset current_eval_pkg
@@ -307,9 +305,9 @@ build_step() {
     then
         step_deps+=("$ON")
     fi
-    step_deps+=("${NEEDS[@]}" "${MAKE_NEEDS[@]}" "${CHECK_NEEDS[@]}" "${INSTALL_NEEDS[@]}")
+    step_deps+=("${NEEDS[@]}" "${BUILD_NEEDS[@]}")
     pkg_deps["$pkg_name"]="${step_deps[*]}"
-    unset ON VERSION ARCHIVES NEEDS MAKE_NEEDS CHECK_NEEDS INSTALL_NEEDS
+    unset ON VERSION ARCHIVES NEEDS BUILD_NEEDS
 }
 
 dfs build_step "${valid_pkgs[@]}"

@@ -10,7 +10,7 @@ NEEDS=(
     glibc-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     coreutils-pass1
     gcc-pass1
     linux-headers
@@ -20,10 +20,6 @@ MAKE_NEEDS=(
 MAKE() {
     make CC="$FLUFFY_TGT-gcc" BUNDLED_LIBBSD=1 EXTRA_CFLAGS="-D_GNU_SOURCE" VERIFY_ONLY=0
 }
-
-INSTALL_NEEDS=(
-    coreutils-pass1
-)
 
 INSTALL() {
     mkdir -pv $DESTDIR/sw/signify/bin

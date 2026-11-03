@@ -6,7 +6,7 @@ ARCHIVES=(
     796f1389bfea13c0ed78f663b765baaff54a508e5483786bd6ece73c5e3e3cbe https://curl.se/ca/cacert.pem
 )
 
-INSTALL_NEEDS=(
+BUILD_NEEDS=(
     coreutils-pass1
 )
 

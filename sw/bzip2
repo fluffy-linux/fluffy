@@ -12,7 +12,7 @@ NEEDS=(
     glibc
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     binutils-pass2
     coreutils-pass1
@@ -32,26 +32,9 @@ MAKE() {
     make bzip2 bzip2recover
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    gcc-pass2
-    glibc
-    linux-headers
-    make-pass1
-)
-
 CHECK() {
     make test
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    glibc
-    make-pass1
-)
 
 INSTALL() {
     make PREFIX=$DESTDIR/sw/bzip2 install

@@ -10,7 +10,7 @@ NEEDS=(
     glibc-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     gcc-pass1
     glibc-pass1
     linux-headers
@@ -24,12 +24,6 @@ MAKE() {
         --build=$(./build-aux/config.guess)
     make
 }
-
-INSTALL_NEEDS=(
-    gcc-pass1
-    glibc-pass1
-    linux-headers
-)
 
 INSTALL() {
     make install

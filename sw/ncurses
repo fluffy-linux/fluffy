@@ -20,7 +20,7 @@ NEEDS=(
 
 if test -v CROSS
 then
-    MAKE_NEEDS=(
+    BUILD_NEEDS=(
         bash-pass1
         binutils
         coreutils-pass1
@@ -38,7 +38,7 @@ then
         sed-pass1
     )
 else
-    MAKE_NEEDS=(
+    BUILD_NEEDS=(
         bash
         binutils
         coreutils
@@ -69,32 +69,10 @@ MAKE() {
         --without-normal \
         --with-cxx-shared \
         --enable-widec \
+        --enable-overwrite \
         AWK=gawk
     make
 }
-
-if test -v CROSS
-then
-    INSTALL_NEEDS=(
-        bash-pass1
-        coreutils-pass1
-        glibc
-        libgcc
-        libstdcpp
-        make-pass1
-        sed-pass1
-    )
-else
-    INSTALL_NEEDS=(
-        bash
-        coreutils
-        glibc
-        libgcc
-        libstdcpp
-        make
-        sed
-    )
-fi
 
 INSTALL() {
     make install
@@ -106,6 +84,8 @@ INSTALL() {
         ln -sfv lib${lib}w.so $DESTDIR/sw/ncurses/lib/lib${lib}.so
     done
     ln -sfv libncursesw.so $DESTDIR/sw/ncurses/lib/libcurses.so
+
+    ln -sfv . $DESTDIR/sw/ncurses/include/ncursesw
 
     mkdir -pv $DESTDIR/sw/ncurses/share/doc/ncurses-$VERSION
     cp -v -R doc/* $DESTDIR/sw/ncurses/share/doc/ncurses-$VERSION

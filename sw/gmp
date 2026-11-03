@@ -14,7 +14,7 @@ NEEDS=(
     libstdcpp-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     binutils
     coreutils-pass1
@@ -48,42 +48,10 @@ MAKE() {
     make html
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    binutils
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    libgcc
-    libstdcpp-pass1
-    linux-headers
-    make-pass1
-    sed-pass1
-)
-
 CHECK() {
     make check 2>&1 | tee gmp-check-log
     test "$(awk '/# PASS:/{total+=$3} ; END{print total}' gmp-check-log)" -ge 199
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    binutils
-    coreutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    libgcc
-    libstdcpp-pass1
-    linux-headers
-    make-pass1
-    sed-pass1
-    texinfo-pass1
-)
 
 INSTALL() {
     make install

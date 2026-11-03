@@ -19,7 +19,7 @@ NEEDS=(
     binutils-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     binutils-pass1
 )
 
@@ -68,10 +68,6 @@ EOF
         --enable-languages=c,c++
     make
 }
-
-INSTALL_NEEDS=(
-    binutils-pass1
-)
 
 INSTALL() {
     cd build
