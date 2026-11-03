@@ -17,7 +17,7 @@ NEEDS=(
     tcl
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     coreutils-pass1
     diffutils-pass1
@@ -49,30 +49,9 @@ MAKE() {
     make
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    make-pass1
-    tcl
-)
-
 CHECK() {
     make test
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    glibc
-    make-pass1
-    sed-pass1
-    tcl
-)
 
 INSTALL() {
     make install

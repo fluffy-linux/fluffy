@@ -13,8 +13,9 @@ NEEDS=(
     glibc-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
+    binutils-pass2
     coreutils-pass1
     diffutils-pass1
     findutils-pass1
@@ -40,14 +41,6 @@ MAKE() {
         --docdir=/sw/mpdecimal/share/doc/mpdecimal-$VERSION
     make SHELL=/sw/bash/bin/bash
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    coreutils-pass1
-    make-pass1
-    sed-pass1
-)
 
 INSTALL() {
     make SHELL=/sw/bash/bin/bash install

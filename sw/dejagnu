@@ -19,7 +19,7 @@ NEEDS=(
     tcl
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     coreutils-pass1
     diffutils-pass1
@@ -53,34 +53,10 @@ MAKE() {
     makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    expect
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    sed-pass1
-    tcl
-)
-
 CHECK() {
     cd build
     make check
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    gawk-pass1
-    grep-pass1
-    make-pass1
-    sed-pass1
-)
 
 INSTALL() {
     cd build

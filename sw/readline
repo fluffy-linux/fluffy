@@ -13,7 +13,7 @@ NEEDS=(
     ncurses-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     binutils-pass2
     coreutils-pass1
@@ -41,14 +41,6 @@ MAKE() {
         --docdir=/sw/readline/share/doc/readline-$VERSION
     make SHLIB_LIBS="-lncursesw"
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    glibc
-    make-pass1
-    sed-pass1
-)
 
 INSTALL() {
     make install

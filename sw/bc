@@ -13,7 +13,7 @@ NEEDS=(
     readline
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     coreutils-pass1
     diffutils-pass1
@@ -45,35 +45,9 @@ MAKE() {
     make
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    ncurses-pass1
-    readline
-    sed-pass1
-)
-
 CHECK() {
     make test
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    gawk-pass1
-    glibc
-    grep-pass1
-    make-pass1
-    readline
-    sed-pass1
-)
 
 INSTALL() {
     make install

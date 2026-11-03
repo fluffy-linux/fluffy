@@ -10,7 +10,7 @@ NEEDS=(
     glibc-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     gcc-pass1
     glibc-pass1
     linux-headers
@@ -30,12 +30,6 @@ MAKE() {
         --with-gxx-include-dir=/sw/libstdcpp/include/c++
     make
 }
-
-INSTALL_NEEDS=(
-    gcc-pass1
-    glibc-pass1
-    linux-headers
-)
 
 INSTALL() {
     cd build

@@ -19,7 +19,7 @@ NEEDS=(
 
 if test -v CROSS
 then
-    MAKE_NEEDS=(
+    BUILD_NEEDS=(
         bash-pass1
         binutils
         coreutils-pass1
@@ -34,10 +34,11 @@ then
         linux-headers
         make-pass1
         patch-pass1
+        perl-pass1
         sed-pass1
     )
 else
-    MAKE_NEEDS=(
+    BUILD_NEEDS=(
         bash
         binutils
         diffutils
@@ -51,6 +52,7 @@ else
         linux-headers
         make
         patch
+        perl
         sed
     )
 fi
@@ -67,71 +69,9 @@ MAKE() {
     make
 }
 
-if test -v CROSS
-then
-    CHECK_NEEDS=(
-        bash-pass1
-        binutils
-        coreutils-pass1
-        diffutils-pass1
-        findutils-pass1
-        gawk-pass1
-        gcc-pass2
-        glibc
-        grep-pass1
-        libgcc
-        linux-headers
-        make-pass1
-        perl-pass1
-        sed-pass1
-    )
-else
-    CHECK_NEEDS=(
-        bash
-        binutils
-        diffutils
-        findutils
-        gawk
-        gcc
-        glibc
-        grep
-        libgcc
-        linux-headers
-        make
-        perl
-        sed
-    )
-fi
-
 CHECK() {
     make check
 }
-
-if test -v CROSS
-then
-    INSTALL_NEEDS=(
-        bash-pass1
-        binutils
-        coreutils-pass1
-        gawk-pass1
-        gettext-pass1
-        glibc
-        grep-pass1
-        make-pass1
-        sed-pass1
-    )
-else
-    INSTALL_NEEDS=(
-        bash
-        binutils
-        gawk
-        gettext
-        glibc
-        grep
-        make
-        sed
-    )
-fi
 
 INSTALL() {
     make install

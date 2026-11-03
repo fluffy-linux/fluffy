@@ -12,8 +12,9 @@ NEEDS=(
     glibc
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
+    binutils-pass2
     coreutils-pass1
     diffutils-pass1
     findutils-pass1
@@ -37,26 +38,9 @@ MAKE() {
     make
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    coreutils-pass1
-    diffutils-pass1
-    glibc
-    make-pass1
-)
-
 CHECK() {
     make check
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    coreutils-pass1
-    glibc
-    make-pass1
-)
 
 INSTALL() {
     make install

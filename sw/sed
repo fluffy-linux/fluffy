@@ -1,0 +1,84 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=4.10
+
+ARCHIVES=(
+    b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7 https://ftpmirror.gnu.org/sed/sed-$VERSION.tar.xz
+    ab1627eaacacd068c970582f2b565a22e34b1bb12165bfbd1e333d359c58be71 file://sed-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    acl
+    attr
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        acl
+        attr
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        perl-pass1
+        sed-pass1
+        texinfo-pass1
+    )
+else
+    BUILD_NEEDS=(
+        acl
+        attr
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        patch
+        perl
+        sed
+        texinfo
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i sed-$VERSION-fluffy-shell.patch
+
+    ./configure \
+        --prefix=/sw/sed \
+        --docdir=/sw/sed/share/doc/sed-$VERSION
+    make
+    make html
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    install -d -m755 $DESTDIR/sw/sed/share/doc/sed-$VERSION
+    install -m644 doc/sed.html $DESTDIR/sw/sed/share/doc/sed-$VERSION
+}

@@ -14,8 +14,9 @@ NEEDS=(
     zlib
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
+    binutils-pass2
     bzip2
     coreutils-pass1
     diffutils-pass1
@@ -40,41 +41,9 @@ MAKE() {
     make
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    bzip2
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    sed-pass1
-    xz
-    zlib
-)
-
 CHECK() {
     make check
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    bzip2
-    coreutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    sed-pass1
-    xz
-    zlib
-)
 
 INSTALL() {
     make install

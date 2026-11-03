@@ -11,7 +11,7 @@ NEEDS=(
     ncurses-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     gcc-pass1
     linux-headers
     ncurses-pass1
@@ -27,12 +27,6 @@ MAKE() {
         --without-bash-malloc
     make
 }
-
-INSTALL_NEEDS=(
-    gcc-pass1
-    linux-headers
-    ncurses-pass1
-)
 
 INSTALL() {
     make install

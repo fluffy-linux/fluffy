@@ -27,7 +27,7 @@ NEEDS=(
 
 if test -v CROSS
 then
-    MAKE_NEEDS=(
+    BUILD_NEEDS=(
         bash-pass1
         binutils
         coreutils-pass1
@@ -54,7 +54,7 @@ then
         zstd
     )
 else
-    MAKE_NEEDS=(
+    BUILD_NEEDS=(
         bash
         binutils
         coreutils
@@ -75,6 +75,7 @@ else
         patch
         perl
         sed
+        tar
         texinfo
         zlib
         zstd
@@ -118,55 +119,6 @@ EOF
         --enable-languages=c,c++
     make
 }
-
-if test -v CROSS
-then
-    INSTALL_NEEDS=(
-        bash-pass1
-        binutils
-        coreutils-pass1
-        diffutils-pass1
-        findutils-pass1
-        gawk-pass1
-        gcc-pass2
-        glibc
-        gmp
-        grep-pass1
-        libgcc
-        libstdcpp
-        linux-headers
-        make-pass1
-        mpc
-        mpfr
-        sed-pass1
-        tar-pass1
-        zlib
-        zstd
-    )
-else
-    INSTALL_NEEDS=(
-        bash
-        binutils
-        coreutils
-        diffutils
-        findutils
-        gawk
-        gcc
-        glibc
-        gmp
-        grep
-        libgcc
-        libstdcpp
-        linux-headers
-        make
-        mpc
-        mpfr
-        sed
-        tar
-        zlib
-        zstd
-    )
-fi
 
 INSTALL() {
     cd build

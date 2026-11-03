@@ -12,7 +12,7 @@ NEEDS=(
     gmp
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     binutils
     coreutils-pass1
@@ -44,38 +44,9 @@ MAKE() {
     make html
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    binutils
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    gmp
-    grep-pass1
-    libgcc
-    linux-headers
-    make-pass1
-    sed-pass1
-)
-
 CHECK() {
     make check
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    binutils
-    coreutils-pass1
-    gawk-pass1
-    glibc
-    gmp
-    grep-pass1
-    make-pass1
-    sed-pass1
-    texinfo-pass1
-)
 
 INSTALL() {
     make install

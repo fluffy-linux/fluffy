@@ -17,7 +17,7 @@ ARCHIVES=(
     f771fd5ba22d4f88f767694508ef19a99e649e3c60a0ebef7aa894055b9704b3 file://gmp-$GMP_VERSION-fluffy-shell.patch
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     coreutils-pass1
     diffutils-pass1
@@ -73,16 +73,6 @@ EOF
         --enable-languages=c
     make all-target-libgcc
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    gcc-pass2
-    grep-pass1
-    linux-headers
-    make-pass1
-    sed-pass1
-)
 
 INSTALL() {
     cd build

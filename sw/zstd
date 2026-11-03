@@ -15,10 +15,11 @@ NEEDS=(
     zlib
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     coreutils-pass1
     diffutils-pass1
+    file
     gcc-pass2
     glibc
     grep-pass1
@@ -38,36 +39,9 @@ MAKE() {
     make prefix=/sw/zstd
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    file
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    lz4
-    make-pass1
-    sed-pass1
-    xz
-    zlib
-)
-
 CHECK() {
     make check
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    sed-pass1
-)
 
 INSTALL() {
     make prefix=/sw/zstd install

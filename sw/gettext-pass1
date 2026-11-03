@@ -12,7 +12,7 @@ NEEDS=(
     glibc-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     coreutils-pass1
     diffutils-pass1
@@ -35,11 +35,6 @@ MAKE() {
     ./configure --disable-shared
     make
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-)
 
 INSTALL() {
     mkdir -pv $DESTDIR/sw/gettext/bin

@@ -13,7 +13,7 @@ NEEDS=(
     zlib
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     coreutils-pass1
     diffutils-pass1
@@ -64,32 +64,10 @@ MAKE() {
     unset SRCDIR
 }
 
-CHECK_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    sed-pass1
-    zlib
-)
-
 CHECK() {
     cd unix
     make test
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    glibc
-    make-pass1
-    sed-pass1
-)
 
 INSTALL() {
     cd unix

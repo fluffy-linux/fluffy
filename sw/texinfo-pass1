@@ -13,7 +13,7 @@ NEEDS=(
     perl-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     bash-pass1
     coreutils-pass1
     diffutils-pass1
@@ -38,18 +38,6 @@ MAKE() {
         --prefix=/sw/texinfo
     make
 }
-
-INSTALL_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    gawk-pass1
-    gcc-pass2
-    grep-pass1
-    linux-headers
-    make-pass1
-    perl-pass1
-    sed-pass1
-)
 
 INSTALL() {
     make install

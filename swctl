@@ -513,8 +513,7 @@ lockdown_exec() {
         fi
         if test "$1" != SQUASHFS
         then
-            local -n phase_needs="${1}_NEEDS"
-            mount_targets+=("${phase_needs[@]}")
+            mount_targets+=("${NEEDS[@]}" "${BUILD_NEEDS[@]}")
         fi
 
         if (( ${#mount_targets[@]} > 0 ))
@@ -639,7 +638,7 @@ build_single_pkg() {
 
         unset -f MAKE CHECK INSTALL
         unset VERSION
-        declare -ga ARCHIVES=() archives=() NEEDS=() MAKE_NEEDS=() CHECK_NEEDS=() INSTALL_NEEDS=()
+        declare -ga ARCHIVES=() archives=() NEEDS=() BUILD_NEEDS=()
 
         SQUASHFS() {
             rm -f "$squashfs_file.new"
@@ -860,9 +859,7 @@ build_pkgs() {
             VERSION=""
             ARCHIVES=()
             NEEDS=()
-            MAKE_NEEDS=()
-            CHECK_NEEDS=()
-            INSTALL_NEEDS=()
+            BUILD_NEEDS=()
             current_eval_pkg="$pkg_name"
             # shellcheck disable=SC1090
             source "$recipe_file"
@@ -876,10 +873,10 @@ build_pkgs() {
             then
                 step_deps+=("$ON")
             fi
-            step_deps+=("${NEEDS[@]}" "${MAKE_NEEDS[@]}" "${CHECK_NEEDS[@]}" "${INSTALL_NEEDS[@]}")
+            step_deps+=("${NEEDS[@]}" "${BUILD_NEEDS[@]}")
             pkg_deps["$pkg_name"]="${step_deps[*]}"
 
-            unset ON VERSION ARCHIVES NEEDS MAKE_NEEDS CHECK_NEEDS INSTALL_NEEDS
+            unset ON VERSION ARCHIVES NEEDS BUILD_NEEDS
         }
 
         dfs build_step "$@"

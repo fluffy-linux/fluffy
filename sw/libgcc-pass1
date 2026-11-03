@@ -18,7 +18,7 @@ NEEDS=(
     glibc-pass1
 )
 
-MAKE_NEEDS=(
+BUILD_NEEDS=(
     binutils-pass1
     gcc-pass1
     glibc-pass1
@@ -58,14 +58,6 @@ MAKE() {
         target_configargs=gcc_cv_target_thread_file=posix
     make all-target-libgcc
 }
-
-INSTALL_NEEDS=(
-    binutils-pass1
-    gcc-pass1
-    glibc-pass1
-    libstdcpp-pass1
-    linux-headers
-)
 
 INSTALL() {
     cd build
