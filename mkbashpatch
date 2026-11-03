@@ -1,144 +1,18 @@
-#!/usr/bin/env python3
+#!/bin/bash
+set -euo pipefail
 
-import os
-import re
-import shutil
-import subprocess
-import sys
-import tempfile
+dir="$(mktemp -d)"
+trap 'rm -rf "$dir"' EXIT
 
-if len(sys.argv) < 2:
-    print(f"Usage: {sys.argv[0]} <archive...>", file=sys.stderr)
-    sys.exit(1)
+tar -xf "$1" -C "$dir"
+src="$(find "$dir" -mindepth 1 -maxdepth 1 -type d)"
+cp -a "$src" "$src.orig"
 
-root_dir = os.path.dirname(os.path.abspath(__file__))
-sw_dir = os.path.join(root_dir, "sw")
-os.makedirs(sw_dir, exist_ok=True)
+find "$src" -type f -exec sed -E -i 's|/(usr/)?bin/(ba)?sh\b|/sw/bash/bin/bash|g' {} + 2>/dev/null || true
+(cd "$src.orig" && find . -type f -exec touch -r {} "$src/{}" \;)
 
-archives = sys.argv[1:]
-
-doc_exts = {
-    ".po", ".pot", ".gmo", ".texi", ".info", ".md", ".rst", ".html",
-    ".1", ".2", ".3", ".4", ".5", ".6", ".7", ".8", ".9", ".man", ".doc", ".txt",
-    ".m4", ".ac", ".am", ".yml", ".yaml", ".json", ".toml", ".pbxproj", ".com",
-    ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".go", ".d", ".rs",
-    ".def", ".ada", ".adb", ".ads", ".f", ".f90",
-}
-doc_prefixes = (
-    "changelog", "changes", "news", "readme", "copying",
-    "license", "authors", "thanks", "todo", "install",
-)
-skip_files = {"aclocal.m4", "configure.ac", "configure.in", "makefile.am", "dockerfile"}
-
-for archive in archives:
-    archive_path = archive
-    if not os.path.isfile(archive_path):
-        candidate = os.path.join(root_dir, "packages", archive)
-        if os.path.isfile(candidate):
-            archive_path = candidate
-        else:
-            candidate = os.path.join(root_dir, "work", "archives", archive)
-            if os.path.isfile(candidate):
-                archive_path = candidate
-            else:
-                print(f"Error: archive not found: {archive}", file=sys.stderr)
-                sys.exit(1)
-
-    tmpdir = tempfile.mkdtemp(prefix="fluffy-patch-")
-    try:
-        extract_dir = os.path.join(tmpdir, "extract")
-        os.makedirs(extract_dir, exist_ok=True)
-        subprocess.run(["tar", "-xf", archive_path, "-C", extract_dir], check=True)
-
-        entries = [e for e in os.listdir(extract_dir) if not e.startswith(".")]
-        if len(entries) == 1 and os.path.isdir(os.path.join(extract_dir, entries[0])):
-            dir_name = entries[0]
-            work_dir = os.path.join(tmpdir, dir_name)
-            orig_dir = os.path.join(tmpdir, f"{dir_name}.orig")
-            src_dir = os.path.join(extract_dir, dir_name)
-            shutil.copytree(src_dir, orig_dir, symlinks=True)
-            shutil.move(src_dir, work_dir)
-        else:
-            filename = os.path.basename(archive_path)
-            base = re.sub(r"\.tar\.[a-zA-Z0-9]+$", "", filename)
-            base = re.sub(r"\.tgz$", "", base)
-            dir_name = base
-            work_dir = os.path.join(tmpdir, dir_name)
-            orig_dir = os.path.join(tmpdir, f"{dir_name}.orig")
-            shutil.copytree(extract_dir, orig_dir, symlinks=True)
-            shutil.move(extract_dir, work_dir)
-
-        changed_files = 0
-        for root, dirs, files in os.walk(work_dir):
-            dirs[:] = [d for d in dirs if not d.startswith(".")]
-            for f in files:
-                path = os.path.join(root, f)
-                if os.path.islink(path):
-                    continue
-                fname = f.lower()
-                if fname != "install-sh" and (
-                    "changelog" in fname
-                    or fname in skip_files
-                    or any(fname.startswith(p) for p in doc_prefixes)
-                    or any(fname.endswith(ext) for ext in doc_exts)
-                ):
-                    continue
-                try:
-                    with open(path, "rb") as fp:
-                        raw = fp.read()
-                except Exception:
-                    continue
-                if b"\0" in raw:
-                    continue
-
-                text = raw.decode("latin-1")
-                lines = text.splitlines(keepends=True)
-                new_lines = []
-                for idx, line in enumerate(lines):
-                    if line.startswith("#!"):
-                        line = re.sub(
-                            r"^#!\s*(?:/(?:usr/)?bin/(?:ba)?sh|(?:/usr)?/bin/env\s+(?:ba)?sh)(\s|$)",
-                            r"#!/sw/bash/bin/bash\1",
-                            line,
-                        )
-                    elif not line.lstrip().startswith("#"):
-                        line = re.sub(r"(?<!/sw/bash)/bin/(ba)?sh\b", r"/sw/bash/bin/bash", line)
-                    line = re.sub(r"/bin/pwd\b", r"pwd", line)
-                    new_lines.append(line)
-                s2 = "".join(new_lines)
-                if s2 != text:
-                    st = os.stat(path)
-                    os.chmod(path, st.st_mode | 0o200)
-                    with open(path, "wb") as fp:
-                        fp.write(s2.encode("latin-1"))
-                    os.chmod(path, st.st_mode)
-                    os.utime(path, ns=(st.st_atime_ns, st.st_mtime_ns))
-                    changed_files += 1
-
-        patch_filename = f"{dir_name}-fluffy-shell.patch"
-        patch_path = os.path.join(sw_dir, patch_filename)
-
-        diff_env = dict(os.environ, TZ="UTC0", LC_ALL="C")
-        diff_proc = subprocess.run(
-            ["diff", "-Naur", "--no-dereference", f"{dir_name}.orig", dir_name],
-            cwd=tmpdir,
-            capture_output=True,
-            text=True,
-            encoding="latin-1",
-            env=diff_env,
-        )
-
-        patch_content = diff_proc.stdout
-        # Normalize diff header to match existing patch style
-        patch_content = re.sub(r"^diff -Naur --no-dereference ", "diff -Naur ", patch_content, flags=re.MULTILINE)
-
-        if patch_content.strip():
-            with open(patch_path, "w", encoding="latin-1") as fp:
-                fp.write(patch_content)
-            line_count = len(patch_content.splitlines())
-            print(f"Created sw/{patch_filename} ({changed_files} files changed, {line_count} diff lines)")
-        else:
-            print(f"No /bin/bash or /bin/sh references found in {archive_path}")
-
-    finally:
-        shutil.rmtree(tmpdir, ignore_errors=True)
+if [ $# -ge 2 ]; then
+    (cd "$dir" && TZ=UTC0 LC_ALL=C diff -Naur "$(basename "$src").orig" "$(basename "$src")") > "$2" || true
+else
+    (cd "$dir" && TZ=UTC0 LC_ALL=C diff -Naur "$(basename "$src").orig" "$(basename "$src")") || true
+fi
