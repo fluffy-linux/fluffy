@@ -733,6 +733,22 @@ diff -Naur gettext-1.0.orig/gettext-tools/build-aux/xml-validate-11.in gettext-1
  # Validating an XML document against an XML Schema 1.1.
  
  # Copyright (C) 2024-2026 Free Software Foundation, Inc.
+diff -Naur gettext-1.0.orig/gettext-tools/config.h.in gettext-1.0/gettext-tools/config.h.in
+--- gettext-1.0.orig/gettext-tools/config.h.in	2026-01-28 23:39:43.000000000 +0000
++++ gettext-1.0/gettext-tools/config.h.in	2026-01-28 23:39:43.000000000 +0000
+@@ -3017,10 +3017,10 @@
+      are not visible.
+    - For 32-bit Cygwin programs in a 64-bit Cygwin environment, the Cygwin
+      mounts are not visible.
+-   - On Android, /bin/sh does not exist. It's /system/bin/sh instead.  */
++   - On Android, /sw/bash/bin/bash does not exist. It's /system/sw/bash/bin/bash instead.  */
+ # define BOURNE_SHELL "sh"
+ #else
+-# define BOURNE_SHELL "/bin/sh"
++# define BOURNE_SHELL "/sw/bash/bin/bash"
+ #endif
+ 
+ /* Define if lists must be signal-safe. */
 diff -Naur gettext-1.0.orig/gettext-tools/configure gettext-1.0/gettext-tools/configure
 --- gettext-1.0.orig/gettext-tools/configure	2026-01-28 23:37:49.000000000 +0000
 +++ gettext-1.0/gettext-tools/configure	2026-01-28 23:37:49.000000000 +0000
@@ -976,6 +992,1425 @@ diff -Naur gettext-1.0.orig/gettext-tools/examples/configure gettext-1.0/gettext
  exit 0
  _ASEOF
  chmod +x conf$$.file
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/executable-shell-script gettext-1.0/gettext-tools/gnulib-tests/executable-shell-script
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/executable-shell-script	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/executable-shell-script	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This script is a proper shell script.
+ printf 'Halle '
+ printf "Potta"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/init.sh gettext-1.0/gettext-tools/gnulib-tests/init.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/init.sh	2026-01-02 10:16:17.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/init.sh	2026-01-02 10:16:17.000000000 +0000
+@@ -20,7 +20,7 @@
+ #
+ # The typical skeleton of a test looks like this:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . "${srcdir=.}/init.sh"; path_prepend_ .
+ #   Execute some commands.
+ #   Note that these commands are executed in a subdirectory, therefore you
+@@ -68,7 +68,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -134,7 +134,7 @@
+ 
+ # We require $(...) support unconditionally.
+ # We require that the printf built-in work correctly regarding octal escapes;
+-# this eliminates /bin/sh on AIX 7.2.
++# this eliminates /sw/bash/bin/bash on AIX 7.2.
+ # We require non-surprising "local" semantics (this eliminates dash).
+ # This takes the admittedly draconian step of eliminating dash, because the
+ # assignment tab=$(printf '\t') works fine, yet preceding it with "local "
+@@ -153,10 +153,10 @@
+ # If no acceptable shell is found, skip the current test.
+ #
+ # The "...set -x; P=1 true 2>err..." test is to disqualify any shell that
+-# emits "P=1" into err, as /bin/sh from SunOS 5.11 and OpenBSD 4.7 do.
++# emits "P=1" into err, as /sw/bash/bin/bash from SunOS 5.11 and OpenBSD 4.7 do.
+ #
+ # Use "9" to indicate success (rather than 0), in case some shell acts
+-# like Solaris 10's /bin/sh but exits successfully instead of with status 2.
++# like Solaris 10's /sw/bash/bin/bash but exits successfully instead of with status 2.
+ 
+ # Eval this code in a subshell to determine a shell's suitability.
+ # 10 - passes all tests; ok to use
+@@ -198,7 +198,7 @@
+ 
+   # Search for a shell that meets our requirements.
+   for re_shell_ in __current__ "${CONFIG_SHELL:-no_shell}" \
+-      /bin/sh bash dash zsh pdksh fail
++      /sw/bash/bin/bash bash dash zsh pdksh fail
+   do
+     test "$re_shell_" = no_shell && continue
+ 
+@@ -213,7 +213,7 @@
+     # When testing the current shell, simply "eval" the test code.
+     # Otherwise, run it via $re_shell_ -c ...
+     if test "$re_shell_" = __current__; then
+-      # 'eval'ing this code makes Solaris 10's /bin/sh exit with
++      # 'eval'ing this code makes Solaris 10's /sw/bash/bin/bash exit with
+       # $? set to 2.  It does not evaluate any of the code after the
+       # "unexpected" first '('.  Thus, we must run it in a subshell.
+       ( eval "$gl_shell_test_script_" ) > /dev/null 2>&1
+@@ -414,7 +414,7 @@
+ {
+   if test "$VERBOSE" = yes; then
+     # Test whether set -x may cause the selected shell to corrupt an
+-    # application's stderr.  Many do, including zsh-4.3.10 and the /bin/sh
++    # application's stderr.  Many do, including zsh-4.3.10 and the /sw/bash/bin/bash
+     # from SunOS 5.11 and OpenBSD 4.7.
+     # If enabling verbose output this way would cause trouble, simply
+     # issue a warning and refrain.
+@@ -597,9 +597,9 @@
+ 
+ # The interpreter for Bourne-shell scripts.
+ # No special standards compatibility requirements.
+-# Some environments, such as Android, don't have /bin/sh.
+-if test -f /bin/sh$EXEEXT; then
+-  BOURNE_SHELL=/bin/sh
++# Some environments, such as Android, don't have /sw/bash/bin/bash.
++if test -f /sw/bash/bin/bash$EXEEXT; then
++  BOURNE_SHELL=/sw/bash/bin/bash
+ else
+   BOURNE_SHELL=sh
+ fi
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-atexit.sh gettext-1.0/gettext-tools/gnulib-tests/test-atexit.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-atexit.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-atexit.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-binary-io.sh gettext-1.0/gettext-tools/gnulib-tests/test-binary-io.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-binary-io.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-binary-io.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-btoc32-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-btoc32-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-btoc32-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-btoc32-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-btoc32-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-btoc32-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-btoc32-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-btoc32-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-btoc32-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-btoc32-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-btoc32-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-btoc32-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-btowc-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-btowc-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-btowc-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-btowc-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-btowc-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-btowc-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-btowc-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-btowc-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-btowc-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-btowc-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-btowc-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-btowc-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c-strcasecmp.sh gettext-1.0/gettext-tools/gnulib-tests/test-c-strcasecmp.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c-strcasecmp.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c-strcasecmp.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the C locale.
+ ${CHECKER} ./test-c-strcasecmp${EXEEXT} || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c-strncasecmp.sh gettext-1.0/gettext-tools/gnulib-tests/test-c-strncasecmp.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c-strncasecmp.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c-strncasecmp.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the C locale.
+ ${CHECKER} ./test-c-strncasecmp${EXEEXT} || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isalnum.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isalnum.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isalnum.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isalnum.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isalnum${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isalpha.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isalpha.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isalpha.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isalpha.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isalpha${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isblank.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isblank.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isblank.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isblank.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isblank${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32iscntrl.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32iscntrl.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32iscntrl.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32iscntrl.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32iscntrl${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isdigit.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isdigit.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isdigit.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isdigit.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isdigit${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isgraph.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isgraph.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isgraph.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isgraph.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isgraph${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32islower.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32islower.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32islower.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32islower.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32islower${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isprint.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isprint.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isprint.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isprint.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isprint${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32ispunct.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32ispunct.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32ispunct.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32ispunct.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32ispunct${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isspace.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isspace.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isspace.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isspace.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isspace${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isupper.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isupper.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isupper.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isupper.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isupper${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isxdigit.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32isxdigit.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32isxdigit.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32isxdigit.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isxdigit${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} French_France 1252
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Japanese_Japan 932
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-6.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-6.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-7.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-7.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_China 936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-8.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_China 54936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32rtomb.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32rtomb.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32rtomb${EXEEXT} 1 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32tolower.sh gettext-1.0/gettext-tools/gnulib-tests/test-c32tolower.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-c32tolower.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-c32tolower.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Allow distinguishing the various invocations in the .log file.
+ set -x
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-acl-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-copy-acl-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-acl-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-copy-acl-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test copy-acl on the file system of /var/tmp, which usually is a local
+ # file system.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-acl-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-copy-acl-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-acl-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-copy-acl-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test copy-acl on the file system of the build directory, which may be
+ # a local file system or NFS mounted.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-acl.sh gettext-1.0/gettext-tools/gnulib-tests/test-copy-acl.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-acl.sh	2025-09-15 15:56:20.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-copy-acl.sh	2025-09-15 15:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Show all commands when run with environment variable VERBOSE=yes.
+ test -z "$VERBOSE" || set -x
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-file-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-copy-file-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-file-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-copy-file-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test copy-file on the file system of /var/tmp, which usually is a local
+ # file system.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-file-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-copy-file-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-file-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-copy-file-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test copy-file on the file system of the build directory, which may be
+ # a local file system or NFS mounted.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-file.sh gettext-1.0/gettext-tools/gnulib-tests/test-copy-file.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-copy-file.sh	2025-09-15 15:56:20.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-copy-file.sh	2025-09-15 15:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Show all commands when run with environment variable VERBOSE=yes.
+ test -z "$VERBOSE" || set -x
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-error.sh gettext-1.0/gettext-tools/gnulib-tests/test-error.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-error.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-error.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test of the 'error' module.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-execute.sh gettext-1.0/gettext-tools/gnulib-tests/test-execute.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-execute.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-execute.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ st=0
+ for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 ; do
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fflush2.sh gettext-1.0/gettext-tools/gnulib-tests/test-fflush2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fflush2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fflush2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Execute the test only with seekable input stream.
+ # The behaviour of fflush() on a non-seekable input stream is undefined.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-file-has-acl-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-file-has-acl-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-file-has-acl-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-file-has-acl-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test file-has-acl on the file system of /var/tmp, which usually is a local
+ # file system.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-file-has-acl-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-file-has-acl-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-file-has-acl-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-file-has-acl-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test file-has-acl on the file system of the build directory, which may be
+ # a local file system or NFS mounted.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-file-has-acl.sh gettext-1.0/gettext-tools/gnulib-tests/test-file-has-acl.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-file-has-acl.sh	2025-09-15 15:56:20.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-file-has-acl.sh	2025-09-15 15:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Show all commands when run with environment variable VERBOSE=yes.
+ test -z "$VERBOSE" || set -x
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C \
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} French_France 1252
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Japanese_Japan 932
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-6.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-6.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-7.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-7.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_China 936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-8.sh gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fnmatch-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fnmatch-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_China 54936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseek.sh gettext-1.0/gettext-tools/gnulib-tests/test-fseek.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseek.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fseek.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseek${EXEEXT} 1 < "$srcdir/test-fseek.sh" || exit 1
+ echo hi | ${CHECKER} ./test-fseek${EXEEXT} || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseek2.sh gettext-1.0/gettext-tools/gnulib-tests/test-fseek2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseek2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fseek2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-fseek${EXEEXT} 1 2 < "$srcdir/test-fseek2.sh"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseeko.sh gettext-1.0/gettext-tools/gnulib-tests/test-fseeko.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseeko.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fseeko.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko${EXEEXT} 1 < "$srcdir/test-fseeko.sh" || exit 1
+ echo hi | ${CHECKER} ./test-fseeko${EXEEXT} || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseeko2.sh gettext-1.0/gettext-tools/gnulib-tests/test-fseeko2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseeko2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fseeko2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-fseeko${EXEEXT} 1 2 < "$srcdir/test-fseeko2.sh"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseeko3.sh gettext-1.0/gettext-tools/gnulib-tests/test-fseeko3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseeko3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fseeko3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko3${EXEEXT} 0 "$srcdir/test-fseeko3.sh" || exit 1
+ 
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseeko4.sh gettext-1.0/gettext-tools/gnulib-tests/test-fseeko4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-fseeko4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-fseeko4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko4${EXEEXT} "$srcdir/test-fseeko4.sh" || exit 1
+ 
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftell.sh gettext-1.0/gettext-tools/gnulib-tests/test-ftell.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftell.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-ftell.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftell${EXEEXT} 1 < "$srcdir/test-ftell.sh" || exit 1
+ echo hi | ${CHECKER} ./test-ftell${EXEEXT} || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftell2.sh gettext-1.0/gettext-tools/gnulib-tests/test-ftell2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftell2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-ftell2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftell${EXEEXT} 1 2 < "$srcdir/test-ftell2.sh"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftello.sh gettext-1.0/gettext-tools/gnulib-tests/test-ftello.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftello.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-ftello.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftello${EXEEXT} 1 < "$srcdir/test-ftello.sh" || exit 1
+ echo hi | ${CHECKER} ./test-ftello${EXEEXT} || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftello2.sh gettext-1.0/gettext-tools/gnulib-tests/test-ftello2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftello2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-ftello2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftello${EXEEXT} 1 2 < "$srcdir/test-ftello2.sh"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftello4.sh gettext-1.0/gettext-tools/gnulib-tests/test-ftello4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftello4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-ftello4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftello4${EXEEXT} "$srcdir/test-ftello4.sh" || exit 1
+ 
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftruncate.sh gettext-1.0/gettext-tools/gnulib-tests/test-ftruncate.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-ftruncate.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-ftruncate.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftruncate${EXEEXT} "$srcdir/test-ftruncate.sh"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-getcwd.sh gettext-1.0/gettext-tools/gnulib-tests/test-getcwd.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-getcwd.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-getcwd.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+ 
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-init.sh gettext-1.0/gettext-tools/gnulib-tests/test-init.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-init.sh	2026-01-02 10:16:17.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-init.sh	2026-01-02 10:16:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for init.sh
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-iswdigit.sh gettext-1.0/gettext-tools/gnulib-tests/test-iswdigit.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-iswdigit.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-iswdigit.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswdigit${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-iswpunct.sh gettext-1.0/gettext-tools/gnulib-tests/test-iswpunct.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-iswpunct.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-iswpunct.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswpunct${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-iswxdigit.sh gettext-1.0/gettext-tools/gnulib-tests/test-iswxdigit.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-iswxdigit.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-iswxdigit.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswxdigit${EXEEXT} 0 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-localcharset-w32utf8.sh gettext-1.0/gettext-tools/gnulib-tests/test-localcharset-w32utf8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-localcharset-w32utf8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-localcharset-w32utf8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-localename-w32utf8.sh gettext-1.0/gettext-tools/gnulib-tests/test-localename-w32utf8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-localename-w32utf8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-localename-w32utf8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-lseek.sh gettext-1.0/gettext-tools/gnulib-tests/test-lseek.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-lseek.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-lseek.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} French_France 1252
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Japanese_Japan 932
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-6.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-6.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-7.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-7.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_China 936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-8.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtoc32-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtoc32-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_China 54936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France 1252
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Japanese_Japan 932
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-6.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-6.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-7.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-7.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_China 936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-8.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_China 54936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32utf8.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32utf8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbrtowc-w32utf8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbrtowc-w32utf8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsinit.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsinit.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsinit.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsinit.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbslen.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbslen.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbslen.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbslen.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsnlen.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsnlen.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsnlen.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsnlen.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtoc32s-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtoc32s-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsrtowcs-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsrtowcs-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsstr2.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsstr2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsstr2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsstr2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsstr3.sh gettext-1.0/gettext-tools/gnulib-tests/test-mbsstr3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-mbsstr3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-mbsstr3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-perror.sh gettext-1.0/gettext-tools/gnulib-tests/test-perror.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-perror.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-perror.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-pipe-filter-ii1.sh gettext-1.0/gettext-tools/gnulib-tests/test-pipe-filter-ii1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-pipe-filter-ii1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-pipe-filter-ii1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Find a 'tr' program that supports character ranges in the POSIX syntax.
+ # Solaris /usr/bin/tr does not.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-pipe-filter-ii2.sh gettext-1.0/gettext-tools/gnulib-tests/test-pipe-filter-ii2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-pipe-filter-ii2.sh	2026-01-02 10:16:17.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-pipe-filter-ii2.sh	2026-01-02 10:16:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ 
+ # pipe-filter test driver.
+ #
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-posix_spawn-dup2-stdin.in.sh gettext-1.0/gettext-tools/gnulib-tests/test-posix_spawn-dup2-stdin.in.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-posix_spawn-dup2-stdin.in.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-posix_spawn-dup2-stdin.in.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ read line
+ test "$line" = "Halle Potta"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-posix_spawn-dup2-stdout.in.sh gettext-1.0/gettext-tools/gnulib-tests/test-posix_spawn-dup2-stdout.in.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-posix_spawn-dup2-stdout.in.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-posix_spawn-dup2-stdout.in.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ echo "Halle Potta"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-select-in.sh gettext-1.0/gettext-tools/gnulib-tests/test-select-in.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-select-in.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-select-in.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test select() on file descriptors opened for reading.
+ 
+ # This test is known to fail on Solaris 2.6 and older, due to its handling
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-select-out.sh gettext-1.0/gettext-tools/gnulib-tests/test-select-out.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-select-out.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-select-out.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test select() on file descriptors opened for writing.
+ 
+ tmpfiles=""
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-set-mode-acl-1.sh gettext-1.0/gettext-tools/gnulib-tests/test-set-mode-acl-1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-set-mode-acl-1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-set-mode-acl-1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test set-mode-acl on the file system of /var/tmp, which usually is a local
+ # file system.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-set-mode-acl-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-set-mode-acl-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-set-mode-acl-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-set-mode-acl-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test set-mode-acl on the file system of the build directory, which may be
+ # a local file system or NFS mounted.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-set-mode-acl.sh gettext-1.0/gettext-tools/gnulib-tests/test-set-mode-acl.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-set-mode-acl.sh	2025-09-15 15:56:20.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-set-mode-acl.sh	2025-09-15 15:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Show all commands when run with environment variable VERBOSE=yes.
+ test -z "$VERBOSE" || set -x
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-setlocale-w32utf8.sh gettext-1.0/gettext-tools/gnulib-tests/test-setlocale-w32utf8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-setlocale-w32utf8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-setlocale-w32utf8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-setlocale1.sh gettext-1.0/gettext-tools/gnulib-tests/test-setlocale1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-setlocale1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-setlocale1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ : "${LOCALE_FR=fr_FR}"
+ : "${LOCALE_FR_UTF8=fr_FR.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-setlocale2.sh gettext-1.0/gettext-tools/gnulib-tests/test-setlocale2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-setlocale2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-setlocale2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test locale names with likely unsupported encoding in Unix syntax.
+ for name in ar_SA.ISO-8859-1 fr_FR.CP1251 zh_TW.GB18030 zh_CN.BIG5; do
+@@ -10,7 +10,7 @@
+             French_France.65001 Japanese_Japan.65001 Turkish_Turkey.65001 \
+             Chinese_Taiwan.65001 Chinese_China.54936 Chinese_China.65001; do
+   # Here we use 'env' to set the LC_ALL environment variable, because on
+-  # Solaris 11.0, the /bin/sh refuses to do it for Turkish_Turkey.65001.
++  # Solaris 11.0, the /sw/bash/bin/bash refuses to do it for Turkish_Turkey.65001.
+   env LC_ALL="$name" ${CHECKER} ./test-setlocale2${EXEEXT} 1 || exit 1
+ done
+ 
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-sigpipe.sh gettext-1.0/gettext-tools/gnulib-tests/test-sigpipe.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-sigpipe.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-sigpipe.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-spawn-pipe.sh gettext-1.0/gettext-tools/gnulib-tests/test-spawn-pipe.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-spawn-pipe.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-spawn-pipe.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ st=0
+ for i in 0 1 2 3 4 5 6 7 ; do
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-string-desc.sh gettext-1.0/gettext-tools/gnulib-tests/test-string-desc.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-string-desc.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-string-desc.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+ 
+ ${CHECKER} test-string-desc${EXEEXT} test-string-desc-3.tmp > test-string-desc-1.tmp || Exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-trim1.sh gettext-1.0/gettext-tools/gnulib-tests/test-trim1.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-trim1.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-trim1.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the "C" or "POSIX" locale.
+ LC_ALL=C \
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-trim2.sh gettext-1.0/gettext-tools/gnulib-tests/test-trim2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-trim2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-trim2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-trim3.sh gettext-1.0/gettext-tools/gnulib-tests/test-trim3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-trim3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-trim3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-verify.sh gettext-1.0/gettext-tools/gnulib-tests/test-verify.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-verify.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-verify.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ . "${srcdir=.}/init.sh"
+ 
+ # We are not interested in triggering bugs in the compilers and tools
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-2.sh gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-2.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-2.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} French_France 1252
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-3.sh gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-3.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-3.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-4.sh gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-4.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-4.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-5.sh gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-5.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-5.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Japanese_Japan 932
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-6.sh gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-6.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-6.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_Taiwan 950
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-7.sh gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-7.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-7.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_China 936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-8.sh gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-8.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb-w32-8.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_China 54936
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb.sh gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-wcrtomb.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-wcrtomb.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-wcrtomb${EXEEXT} 1 || exit 1
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-xalloc-die.sh gettext-1.0/gettext-tools/gnulib-tests/test-xalloc-die.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-xalloc-die.sh	2026-01-02 10:16:17.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-xalloc-die.sh	2026-01-02 10:16:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for xalloc_die.
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/test-xstrtol.sh gettext-1.0/gettext-tools/gnulib-tests/test-xstrtol.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/test-xstrtol.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/test-xstrtol.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/uniname/test-uninames.sh gettext-1.0/gettext-tools/gnulib-tests/uniname/test-uninames.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/uniname/test-uninames.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/uniname/test-uninames.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec ${CHECKER} ./test-uninames${EXEEXT} "$srcdir/uniname/UnicodeData.txt" "$srcdir/uniname/HangulSyllableNames.txt" -- "$srcdir/uniname/NameAliases.txt"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/uninorm/test-u32-nfc-big.sh gettext-1.0/gettext-tools/gnulib-tests/uninorm/test-u32-nfc-big.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/uninorm/test-u32-nfc-big.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/uninorm/test-u32-nfc-big.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec ${CHECKER} ./test-u32-nfc-big${EXEEXT} "$srcdir/uninorm/NormalizationTest.txt"
+diff -Naur gettext-1.0.orig/gettext-tools/gnulib-tests/uninorm/test-u32-nfd-big.sh gettext-1.0/gettext-tools/gnulib-tests/uninorm/test-u32-nfd-big.sh
+--- gettext-1.0.orig/gettext-tools/gnulib-tests/uninorm/test-u32-nfd-big.sh	2025-07-08 08:54:40.000000000 +0000
++++ gettext-1.0/gettext-tools/gnulib-tests/uninorm/test-u32-nfd-big.sh	2025-07-08 08:54:40.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec ${CHECKER} ./test-u32-nfd-big${EXEEXT} "$srcdir/uninorm/NormalizationTest.txt"
 diff -Naur gettext-1.0.orig/gettext-tools/src/project-id gettext-1.0/gettext-tools/src/project-id
 --- gettext-1.0.orig/gettext-tools/src/project-id	2026-01-27 04:45:13.000000000 +0000
 +++ gettext-1.0/gettext-tools/src/project-id	2026-01-27 04:45:13.000000000 +0000
@@ -994,6 +2429,21 @@ diff -Naur gettext-1.0.orig/gettext-tools/src/user-email.sh.in gettext-1.0/gette
  # Prints the user's email address, with confirmation from the user.
  #
  # Copyright (C) 2001-2026 Free Software Foundation, Inc.
+diff -Naur gettext-1.0.orig/gettext-tools/system-tests/run-test gettext-1.0/gettext-tools/system-tests/run-test
+--- gettext-1.0.orig/gettext-tools/system-tests/run-test	2025-10-01 11:28:43.000000000 +0000
++++ gettext-1.0/gettext-tools/system-tests/run-test	2025-10-01 11:28:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Run a test whose source and data files are located in the ../tests/ directory.
+ 
+ srcdir="$srcdir/../tests"
+@@ -9,4 +9,4 @@
+ testname=`echo "$1" | sed 's,^.*/,,'`
+ shift
+ 
+-exec /bin/sh "$srcdir/$testname" "$@"
++exec /sw/bash/bin/bash "$srcdir/$testname" "$@"
 diff -Naur gettext-1.0.orig/gettext-tools/tests/lang-sh-1 gettext-1.0/gettext-tools/tests/lang-sh-1
 --- gettext-1.0.orig/gettext-tools/tests/lang-sh-1	2025-10-01 11:28:43.000000000 +0000
 +++ gettext-1.0/gettext-tools/tests/lang-sh-1	2025-10-01 11:28:43.000000000 +0000
@@ -1483,32 +2933,3 @@ diff -Naur gettext-1.0.orig/libtextstyle/gnulib-local/build-aux/moopp gettext-1.
  # Minimal Object-Oriented style PreProcessor.
  
  # Copyright (C) 2006-2026 Free Software Foundation, Inc.
-
-diff -Naur gettext-1.0.orig/gettext-tools/config.h.in gettext-1.0/gettext-tools/config.h.in
---- gettext-1.0.orig/gettext-tools/config.h.in	2026-01-28 23:39:43.000000000 +0000
-+++ gettext-1.0/gettext-tools/config.h.in	2026-01-28 23:39:43.000000000 +0000
-@@ -3020,7 +3020,7 @@
-    - On Android, /bin/sh does not exist. It's /system/bin/sh instead.  */
- # define BOURNE_SHELL "sh"
- #else
--# define BOURNE_SHELL "/bin/sh"
-+# define BOURNE_SHELL "/sw/bash/bin/bash"
- #endif
- 
- /* Define if lists must be signal-safe. */
-
-diff -Naur gettext-1.0.orig/gettext-tools/system-tests/run-test gettext-1.0/gettext-tools/system-tests/run-test
---- gettext-1.0.orig/gettext-tools/system-tests/run-test	2025-10-01 11:28:43.000000000 +0000
-+++ gettext-1.0/gettext-tools/system-tests/run-test	2025-10-01 11:28:43.000000000 +0000
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- # Run a test whose source and data files are located in the ../tests/ directory.
- 
- srcdir="$srcdir/../tests"
-@@ -9,4 +9,4 @@
- testname=`echo "$1" | sed 's,^.*/,,'`
- shift
- 
--exec /bin/sh "$srcdir/$testname" "$@"
-+exec /sw/bash/bin/bash "$srcdir/$testname" "$@"
