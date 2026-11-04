@@ -17,7 +17,7 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/diffutils \
         --host=$FLUFFY_TGT \
         gl_cv_func_strcasecmp_works=yes \

@@ -25,7 +25,7 @@ MAKE() {
 
     mkdir -v build
     cd build
-    ../configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --prefix=/sw/binutils \
         --with-lib-path='/sw/*/lib' \
         --build=$(../config.guess) \
@@ -37,7 +37,7 @@ MAKE() {
         --enable-64-bit-bfd \
         --enable-new-dtags \
         --enable-default-hash-style=gnu
-    make
+    CONFIG_SITE=/sw/glibc/share/config.site make
 }
 
 INSTALL() {

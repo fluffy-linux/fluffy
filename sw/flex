@@ -35,7 +35,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i flex-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i flex-$VERSION-fluffy-test.patch
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/flex \
         --disable-static \
         --docdir=/sw/flex/share/doc/flex-$VERSION

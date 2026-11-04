@@ -67,7 +67,7 @@ fi
 MAKE() {
     patch -Z -Np1 -i psmisc-$VERSION-fluffy-shell.patch
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/psmisc
     make
 }

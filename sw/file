@@ -36,7 +36,7 @@ BUILD_NEEDS=(
 
 MAKE() {
     patch -Z -Np1 -i file-$VERSION-fluffy-shell.patch
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/file
     make
 }

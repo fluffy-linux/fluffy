@@ -64,7 +64,7 @@ MAKE() {
     patch -Z -Np1 -i acl-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i acl-$VERSION-fluffy-test.patch
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/acl \
         --disable-static \
         --docdir=/sw/acl/share/doc/acl-$VERSION

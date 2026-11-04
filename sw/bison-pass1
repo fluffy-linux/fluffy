@@ -34,7 +34,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i bison-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i bison-$VERSION-fluffy-test.patch
-    CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
         --prefix=/sw/bison \
         --docdir=/sw/bison/share/doc/bison-$VERSION
     make

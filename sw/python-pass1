@@ -40,7 +40,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i Python-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i Python-$VERSION-fluffy-source.patch
-    CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
         --prefix=/sw/python \
         --enable-shared \
         --without-ensurepip \

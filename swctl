@@ -578,7 +578,7 @@ lockdown_exec() {
             fi
         done
 
-        export HOME=/tmp TERM="$saved_term" LC_ALL=POSIX TZ=UTC0 SOURCE_DATE_EPOCH=0 MAKEFLAGS="-j$nproc_val"
+        export HOME=/tmp TERM="$saved_term" LC_ALL=POSIX TZ=UTC0 SOURCE_DATE_EPOCH=0 MAKEFLAGS="-j$nproc_val" TESTSUITEFLAGS="-j$nproc_val"
         if test "$ON" != host-build
         then
             export MAKEFLAGS="$MAKEFLAGS SHELL=/sw/bash/bin/bash"
@@ -768,7 +768,7 @@ build_single_pkg() {
                 archive="${archives[idx]}"
                 case "$archive" in
                     *.tar.*)
-                        tar -xf "$work_dir/archives/$archive"
+                        tar --one-top-level="${archive%%?(-src).tar.*}" -xf "$work_dir/archives/$archive"
                         if (( idx == 0 ))
                         then
                             cd "${archive%%?(-src).tar.*}"

@@ -35,7 +35,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i mpfr-$VERSION-fluffy-shell.patch
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/mpfr \
         --disable-static \
         --enable-thread-safe \

@@ -62,7 +62,7 @@ MAKE() {
     cd build
 
     export ZSTD_CFLAGS=" " ZSTD_LIBS="-lzstd"
-    ../configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --prefix=/sw/binutils \
         --sysconfdir=/sw/binutils/etc \
         --with-lib-path='/sw/*/lib' \
@@ -75,7 +75,7 @@ MAKE() {
         --with-system-zlib \
         --with-zstd \
         --enable-default-hash-style=gnu
-    make tooldir=/sw/binutils
+    CONFIG_SITE=/sw/glibc/share/config.site make tooldir=/sw/binutils
 }
 
 CHECK() {

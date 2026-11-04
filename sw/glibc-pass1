@@ -5,6 +5,7 @@ VERSION=2.44
 ARCHIVES=(
     37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667 https://ftpmirror.gnu.org/glibc/glibc-$VERSION.tar.xz
     643552db030e2f2d7ffde4f558e0f5f83d3fabf34a2e0e56ebdb49750ac27b0d https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-fhs-1.patch
+    500567ff0a22e295bfe3b55e9b397796f71a19f01e1ff7fb29c9189482ee1809 https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-$VERSION-upstream_fixes-1.patch
     aa7dc37d87cd1c3cd5edd70755415c3cc50c0165752cd519a58df225e9f66bdc file://glibc-$VERSION-fluffy-shell.patch
     b88caff550f5406e4910aa0cd38d4e2fef437082c4a4ca788dc1c9155757f0c0 file://glibc-$VERSION-fluffy-source.patch
 )
@@ -16,6 +17,7 @@ BUILD_NEEDS=(
 
 MAKE() {
     patch -Z -Np1 -i glibc-fhs-1.patch
+    patch -Z -Np1 -i glibc-$VERSION-upstream_fixes-1.patch
     patch -Z -Np1 -i glibc-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i glibc-$VERSION-fluffy-source.patch
 
@@ -32,7 +34,7 @@ EOF
         --build=$(../scripts/config.guess) \
         --disable-nscd \
         libc_cv_slibdir=/sw/glibc/lib \
-        --enable-kernel=5.4
+        --enable-kernel=5.10
     make
 }
 
@@ -40,4 +42,9 @@ INSTALL() {
     cd build
     make install
     sed '/RTLDLIST/s@/usr@@g' -i $DESTDIR/sw/glibc/bin/ldd
+    mkdir -p $DESTDIR/sw/glibc/share
+    cat > $DESTDIR/sw/glibc/share/config.site << "EOF"
+ac_cv_func_posix_spawn_file_actions_addchdir=yes
+ac_cv_func_posix_spawn_file_actions_addfchdir=yes
+EOF
 }

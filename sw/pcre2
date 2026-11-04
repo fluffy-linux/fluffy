@@ -37,7 +37,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i pcre2-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i pcre2-$VERSION-fluffy-test.patch
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/pcre2 \
         --docdir=/sw/pcre2/share/doc/pcre2-$VERSION \
         --enable-unicode \

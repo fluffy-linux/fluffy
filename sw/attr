@@ -61,7 +61,7 @@ MAKE() {
     patch -Z -Np1 -i attr-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i attr-$VERSION-fluffy-test.patch
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/attr \
         --disable-static \
         --sysconfdir=/sw/attr/etc \
