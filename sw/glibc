@@ -1,10 +1,13 @@
 ON=cross-build
 
 VERSION=2.44
+TZDATA_VERSION=2026c
 
 ARCHIVES=(
     37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667 https://ftpmirror.gnu.org/glibc/glibc-$VERSION.tar.xz
+    e4a178a4477f3d0ea77cc31828ff72aa38feff8d61aa13e7e99e142e9d902be4 https://www.iana.org/time-zones/repository/releases/tzdata$TZDATA_VERSION.tar.gz
     643552db030e2f2d7ffde4f558e0f5f83d3fabf34a2e0e56ebdb49750ac27b0d https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-fhs-1.patch
+    500567ff0a22e295bfe3b55e9b397796f71a19f01e1ff7fb29c9189482ee1809 https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-$VERSION-upstream_fixes-1.patch
     aa7dc37d87cd1c3cd5edd70755415c3cc50c0165752cd519a58df225e9f66bdc file://glibc-$VERSION-fluffy-shell.patch
     b88caff550f5406e4910aa0cd38d4e2fef437082c4a4ca788dc1c9155757f0c0 file://glibc-$VERSION-fluffy-source.patch
     00c0f87b819b43ae62316ad847bbec8e437133a74e6c8f7730a327508c0af5ba file://glibc-$VERSION-fluffy-test.patch
@@ -23,6 +26,7 @@ BUILD_NEEDS=(
     gawk-pass1
     gcc-pass2
     grep-pass1
+    gzip-pass1
     linux-headers
     make-pass1
     patch-pass1
@@ -33,6 +37,7 @@ BUILD_NEEDS=(
 
 MAKE() {
     patch -Z -Np1 -i glibc-fhs-1.patch
+    patch -Z -Np1 -i glibc-$VERSION-upstream_fixes-1.patch
     patch -Z -Np1 -i glibc-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i glibc-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i glibc-$VERSION-fluffy-test.patch
@@ -41,14 +46,15 @@ MAKE() {
     cd build
     cat > configparms << "EOF"
 rootsbindir=/sw/glibc/bin
+sbindir=/sw/glibc/bin
 user-defined-trusted-dirs=/sw/*/lib
 EOF
 
-    ../configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --prefix=/sw/glibc \
         --disable-profile \
         --disable-werror \
-        --enable-kernel=5.4 \
+        --enable-kernel=5.10 \
         --enable-stack-protector=strong \
         --disable-nscd \
         libc_cv_slibdir=/sw/glibc/lib
@@ -62,6 +68,47 @@ CHECK() {
 
 INSTALL() {
     cd build
+    sed '/test-installation/s@$(PERL)@echo not running@' -i ../Makefile
     make install
     sed '/RTLDLIST/s@/usr@@g' -i $DESTDIR/sw/glibc/bin/ldd
+    make localedata/install-locales
+
+    mkdir -p $DESTDIR/sw/glibc/etc
+    cat > $DESTDIR/sw/glibc/etc/nsswitch.conf << "EOF"
+# Begin /sw/glibc/etc/nsswitch.conf
+
+passwd: files systemd
+group: files systemd
+shadow: files systemd
+
+hosts: mymachines resolve [!UNAVAIL=return] files myhostname dns
+networks: files
+
+protocols: files
+services: files
+ethers: files
+rpc: files
+
+# End /sw/glibc/etc/nsswitch.conf
+EOF
+
+    pushd ../tzdata$TZDATA_VERSION
+    ZONEINFO=$DESTDIR/sw/glibc/share/zoneinfo
+    mkdir -pv $ZONEINFO/{posix,right}
+    for tz in etcetera southamerica northamerica europe africa antarctica asia australasia backward
+    do
+        zic -L /dev/null   -d $ZONEINFO       $tz
+        zic -L /dev/null   -d $ZONEINFO/posix $tz
+        zic -L leapseconds -d $ZONEINFO/right $tz
+    done
+    cp -v zone.tab zone1970.tab iso3166.tab $ZONEINFO
+    zic -d $ZONEINFO -p America/New_York
+    unset ZONEINFO
+    popd
+
+    mkdir -p $DESTDIR/sw/glibc/share
+    cat > $DESTDIR/sw/glibc/share/config.site << "EOF"
+ac_cv_func_posix_spawn_file_actions_addchdir=yes
+ac_cv_func_posix_spawn_file_actions_addfchdir=yes
+EOF
 }

@@ -102,13 +102,15 @@ EOF
 
     mkdir -v build
     cd build
-    ../configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --prefix=/sw/gcc \
         LD=/sw/binutils/bin/ld \
         --with-native-system-header-dir='/sw/*/include' \
         --with-gxx-include-dir='/sw/*/include/c++' \
         --enable-default-pie \
         --enable-default-ssp \
+        --enable-host-pie \
+        --enable-targets=all \
         --disable-fixincludes \
         --disable-nls \
         --disable-multilib \
@@ -117,13 +119,17 @@ EOF
         --with-system-zlib \
         --with-zstd \
         --enable-languages=c,c++
-    make
+    CONFIG_SITE=/sw/glibc/share/config.site make
 }
 
 INSTALL() {
     cd build
     make install
+    ln -svr $DESTDIR/sw/gcc/bin/cpp $DESTDIR/sw/gcc/lib
     ln -sv gcc $DESTDIR/sw/gcc/bin/cc
+    ln -sv gcc.1 $DESTDIR/sw/gcc/share/man/man1/cc.1
+    install -v -dm755 $DESTDIR/sw/gcc/lib/bfd-plugins
+    ln -sfvr $DESTDIR/sw/gcc/libexec/gcc/*/$VERSION/liblto_plugin.so $DESTDIR/sw/gcc/lib/bfd-plugins/
 
     rm -fv $DESTDIR/sw/gcc/lib/libgcc_s.so*
 }

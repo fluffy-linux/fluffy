@@ -32,7 +32,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i xz-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i xz-$VERSION-fluffy-test.patch
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/xz \
         --disable-static \
         --docdir=/sw/xz/share/doc/xz-$VERSION

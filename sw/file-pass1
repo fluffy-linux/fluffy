@@ -19,14 +19,14 @@ BUILD_NEEDS=(
 MAKE() {
     mkdir build
     pushd build
-        ../configure \
+        CONFIG_SITE=/sw/glibc/share/config.site ../configure \
             --disable-bzlib \
             --disable-libseccomp \
             --disable-xzlib \
             --disable-zlib
         make
     popd
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/file \
         --host=$FLUFFY_TGT \
         --build=$(./config.guess)

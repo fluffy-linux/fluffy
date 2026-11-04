@@ -10,7 +10,6 @@ VERSION=1.0
 ARCHIVES=(
     71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7 https://ftpmirror.gnu.org/gettext/gettext-$VERSION.tar.xz
     24d2a42e3eb51d0574b51e019e5864f374dc2a26170049ac00f5db849567d0ce file://gettext-$VERSION-fluffy-shell.patch
-    7039e9c1252c47f98618c7e1609fadcabc117cd3e3ebfbe7ac0b21bc55893c3b file://gettext-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -77,9 +76,8 @@ fi
 
 MAKE() {
     patch -Z -Np1 -i gettext-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i gettext-$VERSION-fluffy-source.patch
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/gettext \
         --disable-static \
         --docdir=/sw/gettext/share/doc/gettext-$VERSION
@@ -93,4 +91,5 @@ CHECK() {
 INSTALL() {
     make install
     chmod -v 0755 $DESTDIR/sw/gettext/lib/preloadable_libintl.so
+    rm -fv $DESTDIR/sw/gettext/lib/lib*.la
 }

@@ -51,7 +51,7 @@ EOF
 
     mkdir -v build
     cd build
-    ../configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --build=$(../config.guess) \
         --host=$FLUFFY_TGT \
         --target=$FLUFFY_TGT \
@@ -72,7 +72,7 @@ EOF
         CXX_FOR_TARGET="$FLUFFY_TGT-gcc -nostdinc++" \
         LDFLAGS_FOR_TARGET=-L$PWD/$FLUFFY_TGT/libgcc \
         target_configargs=gcc_cv_target_thread_file=posix
-    make
+    CONFIG_SITE=/sw/glibc/share/config.site make
 }
 
 INSTALL() {

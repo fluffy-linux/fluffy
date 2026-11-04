@@ -34,7 +34,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i readline-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i readline-$VERSION-fluffy-source.patch
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/readline \
         --disable-static \
         --with-curses \

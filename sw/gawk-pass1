@@ -22,7 +22,7 @@ MAKE() {
     patch -Z -Np1 -i gawk-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i gawk-$VERSION-fluffy-source.patch
     sed -i 's/extras//' Makefile.in
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/gawk \
         --host=$FLUFFY_TGT \
         --build=$(build-aux/config.guess)

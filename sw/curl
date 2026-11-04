@@ -11,7 +11,7 @@ MAKE() {
     patch -Z -Np1 -i curl-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i curl-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i curl-$VERSION-fluffy-test.patch
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/curl \
         --disable-static \
         --with-openssl \

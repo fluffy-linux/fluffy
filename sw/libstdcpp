@@ -38,6 +38,7 @@ else
     BUILD_NEEDS=(
         bash
         binutils
+        coreutils
         diffutils
         gawk
         gcc
@@ -56,7 +57,7 @@ MAKE() {
 
     mkdir -v build
     cd build
-    ../libstdc++-v3/configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ../libstdc++-v3/configure \
         --prefix=/sw/libstdcpp \
         --disable-multilib \
         --disable-nls \
@@ -69,4 +70,6 @@ INSTALL() {
     cd build
     make install
     rm -fv $DESTDIR/sw/libstdcpp/lib/lib{stdc++{,exp,fs},supc++}.la
+    mkdir -pv $DESTDIR/sw/libstdcpp/share/gdb/auto-load/sw/libstdcpp/lib
+    mv -v $DESTDIR/sw/libstdcpp/lib/*gdb.py $DESTDIR/sw/libstdcpp/share/gdb/auto-load/sw/libstdcpp/lib
 }

@@ -19,12 +19,12 @@ BUILD_NEEDS=(
 MAKE() {
     mkdir -pv build
     pushd build
-        ../configure AWK=gawk
+        CONFIG_SITE=/sw/glibc/share/config.site ../configure AWK=gawk
         make -C include
         make -C progs tic
     popd
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/ncurses \
         --host=$FLUFFY_TGT \
         --build=$(./config.guess) \

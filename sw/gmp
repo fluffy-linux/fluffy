@@ -39,7 +39,7 @@ MAKE() {
     patch -Z -Np1 -i gmp-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i gmp-$VERSION-fluffy-source.patch
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/gmp \
         --enable-cxx \
         --disable-static \

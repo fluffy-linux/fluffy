@@ -57,7 +57,7 @@ EOF
     mkdir -v build
     cd build
 
-    ../configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --prefix=/sw/libgcc \
         --with-native-system-header-dir='/sw/*/include' \
         --disable-fixincludes \
@@ -71,7 +71,7 @@ EOF
         --disable-libssp \
         --disable-libvtv \
         --enable-languages=c
-    make all-target-libgcc
+    CONFIG_SITE=/sw/glibc/share/config.site make all-target-libgcc
 }
 
 INSTALL() {

@@ -37,7 +37,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i mpc-$VERSION-fluffy-shell.patch
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/mpc \
         --disable-static \
         --docdir=/sw/mpc/share/doc/mpc-$VERSION

@@ -17,7 +17,7 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/gzip \
         --host=$FLUFFY_TGT
     make

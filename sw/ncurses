@@ -60,7 +60,7 @@ fi
 MAKE() {
     patch -Z -Np1 -i ncurses-$VERSION-fluffy-shell.patch
 
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/ncurses \
         --mandir=/sw/ncurses/share/man \
         --with-manpage-format=normal \

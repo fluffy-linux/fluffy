@@ -47,7 +47,7 @@ MAKE() {
     mkdir -v build
     cd build
 
-    ../configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --prefix=/sw/dejagnu
     makeinfo --html --no-split -o doc/dejagnu.html ../doc/dejagnu.texi
     makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi

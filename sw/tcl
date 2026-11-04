@@ -4,6 +4,7 @@ VERSION=8.6.18
 
 ARCHIVES=(
     14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://downloads.sourceforge.net/tcl/tcl$VERSION-src.tar.gz
+    bee2d83a19ce50624eeae951be29fe5f654b171357a6391123caf18107cec543 https://downloads.sourceforge.net/tcl/tcl$VERSION-html.tar.gz
     9832123f0ff7fe7280e7419eab14079a6b65665a89976513a5d3323f114a769d file://tcl$VERSION-fluffy-shell.patch
     cdd34e7cc4cf85421d19169a1c5d3cd830af8b2193d6ad80e8b5635014071e89 file://tcl$VERSION-fluffy-source.patch
 )
@@ -37,7 +38,7 @@ MAKE() {
 
     SRCDIR=$(pwd)
     cd unix
-    ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/tcl \
         --mandir=/sw/tcl/share/man \
         --disable-rpath \
@@ -66,12 +67,13 @@ MAKE() {
 
 CHECK() {
     cd unix
-    make test
+    LC_ALL=C.UTF-8 make test
 }
 
 INSTALL() {
     cd unix
     make install
+    chmod 644 $DESTDIR/sw/tcl/lib/libtclstub8.6.a
     chmod -v u+w $DESTDIR/sw/tcl/lib/libtcl8.6.so
     make install-private-headers
     ln -sfv tclsh8.6 $DESTDIR/sw/tcl/bin/tclsh
@@ -79,4 +81,6 @@ INSTALL() {
     then
         mv -v $DESTDIR/sw/tcl/share/man/man3/{Thread,Tcl_Thread}.3
     fi
+    mkdir -v -p $DESTDIR/sw/tcl/share/doc/tcl-$VERSION
+    cp -v -r ../tcl$VERSION-html/tcl$VERSION/html/* $DESTDIR/sw/tcl/share/doc/tcl-$VERSION
 }
