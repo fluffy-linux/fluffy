@@ -9,7 +9,7 @@ VERSION=704
 
 ARCHIVES=(
     20a0b0a2bb2525fa53c7eee9beb854b4c9cf172eabb209af7020743547bfe9fb https://www.greenwoodsoftware.com/less/less-$VERSION.tar.gz
-    5193ee7284312cc8e0029d0b3f609a19f4083c2d8802374ece6493629f1e7c9c file://less-$VERSION-fluffy-shell.patch
+    c013ac298913733d55598338bb1a93ae0b8f071875a2252edc46af734fc09bf0 file://less-$VERSION-fluffy-shell.patch
 )
 
 NEEDS=(
@@ -35,6 +35,7 @@ then
         make-pass1
         ncurses
         patch-pass1
+        perl-pass1
         sed
         tar-pass1
         xz
@@ -56,6 +57,7 @@ else
         make
         ncurses
         patch
+        perl
         sed
         tar
         xz
