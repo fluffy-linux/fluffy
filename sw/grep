@@ -9,6 +9,7 @@ VERSION=3.12
 
 ARCHIVES=(
     2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9 https://ftpmirror.gnu.org/grep/grep-$VERSION.tar.xz
+    5daa063aad39f4db4a03b01a5c717978a48042caed94659262796c4edf722550 file://grep-$VERSION-fluffy-shell.patch
 )
 
 NEEDS=(
@@ -64,9 +65,11 @@ else
 fi
 
 MAKE() {
+    patch -Z -Np1 -i grep-$VERSION-fluffy-shell.patch
+
     sed -i "s/echo/#echo/" src/egrep.sh
     export PCRE_CFLAGS="-I/sw/pcre2/include" PCRE_LIBS="-lpcre2-8"
-    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/grep
     make
 }
