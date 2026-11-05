@@ -9,7 +9,7 @@ VERSION=2.6.2
 
 ARCHIVES=(
     2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e https://ftpmirror.gnu.org/libtool/libtool-$VERSION.tar.xz
-    b9308194cd6e5546a8d15cb810cccebc921c1eacba72b7d5ad1954ad98295cdb file://libtool-$VERSION-fluffy-shell.patch
+    d48bebaabeb967162767994595d80e20698116e83c6e7c142429fe92882b5d9b file://libtool-$VERSION-fluffy-shell.patch
 )
 
 NEEDS=(
