@@ -80,10 +80,24 @@
          2. If `gcc` produces a byte-identical `.squashfs` (`cmp -s`), `register_entry` preserves $G_0$, so `glibc`'s `current_from` immediately matches its `recorded_from` (`X-fluffy.recipe-checksum`) and the cycle terminates in 1 pass.
          3. If `gcc`'s binary output changed ($G_1 \neq G_0$), `glibc`'s `current_from` (which hashes $G_1$) differs from its `recorded_from` (which hashed $G_0$), so Pass 2 rebuilds `glibc` with $G_1$ (and if needed, `gcc` with $C_2$) until `cmp -s` preserves every `X-fluffy.image-checksum` around the cycle and **every package in `/sw/.build/fstab` simultaneously satisfies `recorded_recipe_chk == current_recipe_chk`**.
          4. **Bounded Convergence Guard**: If a cyclic SCC fails to reach a fixed point within a small bounded number of passes (e.g. `MAX_CYCLE_PASSES=3`, analogous to GCC's 3-stage bootstrap comparison), `swctl build` fails with a fatal diagnostic naming the non-converging package(s) whose `.squashfs` output is failing to stabilize (automatically catching any build nondeterminism).
-   - **Unified `BUILD_NEEDS` Architecture (Two-Tier Dependency Model)**:
+   - **Unified `BUILD_NEEDS` Architecture & Strict Isolation (Build-Time vs. Runtime)**:
      - Dependency declarations across all recipes are consolidated into a clean two-tier model: `NEEDS` (runtime dependencies) and `BUILD_NEEDS` (all tools required across `MAKE`, `CHECK`, and `INSTALL`).
-     - Prior fine-grained arrays (`MAKE_NEEDS`, `CHECK_NEEDS`, `INSTALL_NEEDS`) introduced brittle lifecycle boundaries—such as Automake silently failing `install-binPROGRAMS` with an empty binary output directory when `awk` was missing in `INSTALL_NEEDS` despite being present in `MAKE_NEEDS`.
-     - Because squashfs mounts are instantaneous kernel loop operations with shared memory page caches, keeping all build tools mounted throughout the build lifecycle eliminates phase-boundary bugs, simplifies recipe maintenance, and ensures completely reproducible builds.
+     - **Strict Sandbox Mount Isolation (`BUILD_NEEDS` Only)**:
+       - `NEEDS` represents runtime-only dependencies of the packaged software. It is **never mounted** during `MAKE`, `CHECK`, or `INSTALL`.
+       - Build phases only mount `BUILD_NEEDS` (and the runtime dependencies those build tools themselves need to execute). Leaking runtime `NEEDS` into the build sandbox is eliminated, ensuring that a package cannot silently link against or inspect undeclared build requirements.
+   - **Sound Early Cutoff via Direct `BUILD_NEEDS` + `$ON` Image Hashing**:
+     - `X-fluffy.recipe-checksum` locks strictly against the recipe definition, any included files, and the image checksums (`X-fluffy.image-checksum`) of **direct** `BUILD_NEEDS` + `$ON` images only.
+     - **No `NEEDS` in Recipe Checksum**: A runtime-only dependency change (e.g. updating `ca-certificates` or `shadow`) never alters compiled build outputs and must never trigger a rebuild.
+     - **No Transitive Expansion**: To enable true early cutoff, the recipe checksum does not expand transitive dependencies. If an upstream dependency $Z$ changes, but intermediate package $Y \in \text{BUILD\_NEEDS}$ rebuilds to an identical squashfs image (`cmp -s`), downstream package $X$ skips recompilation entirely.
+   - **Multipart MIME Serialization for Recipe Checksums (`source X`)**:
+     - Recipes execute as plain, untouched Bash at runtime (`source "$inc"` is just `builtin source`).
+     - For modification detection and recipe checksumming, `swctl` serializes the recipe, all sourced snippets, and direct image checksums into a canonical multipart MIME envelope (RFC 2046) with explicit boundaries, preventing ad-hoc delimiter collisions and providing an inspectable, self-contained record of the build recipe inputs.
+   - **Declarative Direct Dependency Contract (The Recipe Honor System)**:
+     - As in Arch (`makedepends`), Debian (`Build-Depends`), and Alpine (`makedepends`), dependency declaration is fundamentally a declarative recipe contract.
+     - If package $X$ directly consumes APIs, headers, tools, or libraries from package $Y$, the recipe author declares $Y$ in `BUILD_NEEDS`.
+     - If package $X$ only uses $Y$, and $Y$ internally uses $Z$ as a transitive implementation detail, $X$ does *not* declare $Z$.
+     - By keeping dependency declarations strictly direct, early cutoff functions as intended: if $Z$ changes, $Y$ rebuilds; if $Y$ produces an identical squashfs image (`cmp -s`), $X$ skips recompilation entirely.
+     - Sandbox isolation (never mounting runtime `NEEDS` during `MAKE`) naturally prevents the most common class of undeclared dependencies without requiring complex language-specific source scanners or kernel tracing.
    - **Explicit `CROSS=1` Bootstrap vs. Native Self-Hosting (`ON=fluffy-build`)**:
       - **Runtime `NEEDS=(...)` is Strictly Invariant**:
         - A final package's runtime contract never varies between bootstrap and native modes. `NEEDS=(...)` is always 100% composed of final packages (`glibc`, `attr`, `acl`, `libxcrypt`, etc.) from day one.
@@ -98,7 +112,7 @@
    - **Distro-as-Build-Environment, Remote Repositories (`/etc/sw/repositories`), Trust Store (`/etc/sw/*.pub`) & Parallel Bottle Prefetch (`curl -Z`)**:
      - **Core Philosophy — A Distribution That Is Secretly a Build Environment**:
        - Fluffy does not have a separate "binary package manager" vs. "source build system". A Fluffy installation is simply a `swctl build` environment backed by signed binary bottle caches, and the installed system universe is managed by building/mounting a top-level `world` (or `local`) pseudopackage.
-       - Because every `fstab` entry records `X-fluffy.recipe-checksum` (the SHA-256 of `sw/<pkg>` plus sorted `<dep>:<X-fluffy.image-checksum>` pairs across the entire transitive runtime closure of `$ON`, `NEEDS`, and `BUILD_NEEDS`), changing any recipe or any transitive dependency inside `fluffy-build` automatically invalidates `X-fluffy.recipe-checksum` downstream.
+       - Because every `fstab` entry records `X-fluffy.recipe-checksum` (the SHA-256 of the RFC 2046 multipart MIME envelope containing the recipe, any sourced includes, and sorted `<dep>:<X-fluffy.image-checksum>` pairs across direct `BUILD_NEEDS` + `$ON` images), changing any recipe, include, or direct build dependency automatically invalidates `X-fluffy.recipe-checksum` downstream while preserving early cutoff across untouched dependencies.
      - **Trust Store (`/etc/sw/*.pub`) & Repository Sources (`/etc/sw/repositories`)**:
        - `/etc/sw/*.pub` (overlaid on `/sw/*/etc/sw/*.pub`) holds trusted `signify` public keys.
        - `/etc/sw/repositories` configures one or more remote repository URLs serving signed `fstab` manifests and `.squashfs` bottles (supporting multiple merged repository sources).

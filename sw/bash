@@ -1,0 +1,98 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=5.3
+
+ARCHIVES=(
+    0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz
+    9dd1e607089d21baff2db33932059035482948d5b21fa30bd671dc4cfff6f294 file://bash-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc
+    ncurses
+    readline
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        expect
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep-pass1
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        ncurses
+        patch-pass1
+        perl-pass1
+        readline
+        sed-pass1
+        tar-pass1
+        tcl
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        expect
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        perl
+        readline
+        sed
+        tar
+        tcl
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i bash-$VERSION-fluffy-source.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/bash \
+        --without-bash-malloc \
+        --with-installed-readline \
+        --docdir=/sw/bash/share/doc/bash-$VERSION
+    make
+}
+
+CHECK() {
+    expect -c '
+set timeout -1
+spawn make tests
+expect eof
+lassign [wait] _ _ _ value
+exit $value
+'
+}
+
+INSTALL() {
+    make install
+    ln -sv bash $DESTDIR/sw/bash/bin/sh
+}
