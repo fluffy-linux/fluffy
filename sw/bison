@@ -70,6 +70,9 @@ fi
 MAKE() {
     patch -Z -Np1 -i bison-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i bison-$VERSION-fluffy-test.patch
+    touch tests/package.m4
+    touch -d "+1 second" tests/testsuite
+
     CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
         --prefix=/sw/bison \
         --docdir=/sw/bison/share/doc/bison-$VERSION \
@@ -78,6 +81,8 @@ MAKE() {
 }
 
 CHECK() {
+    touch tests/package.m4
+    touch -d "+1 second" tests/testsuite
     make check
 }
 
