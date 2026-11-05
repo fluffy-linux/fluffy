@@ -1,0 +1,86 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=3.8.2
+
+ARCHIVES=(
+    9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2 https://ftpmirror.gnu.org/bison/bison-$VERSION.tar.xz
+    54ba9d1e700e52524054f50f360247cf11bf2e241d4772a4bc52bbdd2d300385 file://bison-$VERSION-fluffy-shell.patch
+    9c342a8ae8e198ec885986126813c221f84cf0b9854ec65795945ac8433fa16d file://bison-$VERSION-fluffy-test.patch
+)
+
+NEEDS=(
+    glibc
+    m4
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        flex
+        gawk-pass1
+        gcc
+        glibc
+        grep-pass1
+        gzip-pass1
+        libgcc
+        linux-headers
+        m4
+        make-pass1
+        patch-pass1
+        perl-pass1
+        sed-pass1
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        m4
+        make
+        patch
+        perl
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i bison-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i bison-$VERSION-fluffy-test.patch
+    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+        --prefix=/sw/bison \
+        --docdir=/sw/bison/share/doc/bison-$VERSION \
+        M4=/sw/m4/bin/m4
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

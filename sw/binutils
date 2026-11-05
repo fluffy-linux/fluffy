@@ -6,7 +6,7 @@ ARCHIVES=(
     154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff https://ftpmirror.gnu.org/binutils/binutils-$VERSION.tar.xz
     4602feb91bec5a8053b8683a5032a835d35940f0d1e3aa17a28c6db42adfbd9a file://binutils-$VERSION-fluffy-shell.patch
     6690a172945cba4e886738bb16a66acf115d88d044212a3ae9f4b42454f33d4d file://binutils-$VERSION-fluffy-source.patch
-    747151e30077244d42539e59b22b740dc19b2aae483848dae471444fa3d96de9 file://binutils-$VERSION-fluffy-test.patch
+    a90a0a242ac4af22d0ab9dea370faeb189a20a1613763c106c1fc53ecaa96b29 file://binutils-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(

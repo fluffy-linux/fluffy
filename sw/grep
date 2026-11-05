@@ -1,0 +1,80 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=3.12
+
+ARCHIVES=(
+    2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9 https://ftpmirror.gnu.org/grep/grep-$VERSION.tar.xz
+)
+
+NEEDS=(
+    glibc
+    pcre2
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep-pass1
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        pcre2
+        perl-pass1
+        sed-pass1
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        pcre2
+        perl
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    sed -i "s/echo/#echo/" src/egrep.sh
+    export PCRE_CFLAGS="-I/sw/pcre2/include" PCRE_LIBS="-lpcre2-8"
+    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+        --prefix=/sw/grep
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

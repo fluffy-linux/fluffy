@@ -513,7 +513,7 @@ lockdown_exec() {
         fi
         if test "$1" != SQUASHFS
         then
-            mount_targets+=("${NEEDS[@]}" "${BUILD_NEEDS[@]}")
+            mount_targets+=("${BUILD_NEEDS[@]}")
         fi
 
         if (( ${#mount_targets[@]} > 0 ))
@@ -815,32 +815,66 @@ build_single_pkg() {
     )
 }
 
-build_pkgs() {
-    if test $# -lt 1
+format_recipe_mime() {
+    local pkg="$1"
+    local boundary="===============fluffy-build-recipe-boundary==============="
+
+    printf 'MIME-Version: 1.0\r\n'
+    printf 'Content-Type: multipart/mixed; boundary="%s"\r\n' "$boundary"
+    printf '\r\n'
+
+    # Part 1: Main recipe
+    printf -- '--%s\r\n' "$boundary"
+    printf 'Content-Type: text/x-shellscript; charset="utf-8"\r\n'
+    printf 'Content-Disposition: inline; filename="sw/%s"\r\n' "$pkg"
+    printf '\r\n'
+    cat "sw/$pkg"
+    printf '\r\n'
+
+    # Part 2: Sourced includes (if any)
+    if test -n "${pkg_includes[$pkg]:-}"
     then
-        fatal "Usage: $0 build <package...>"
+        local inc
+        for inc in $(printf '%s\n' ${pkg_includes[$pkg]} | LC_ALL=C sort -u)
+        do
+            if test -f "$inc"
+            then
+                printf -- '--%s\r\n' "$boundary"
+                printf 'Content-Type: text/x-shellscript; charset="utf-8"\r\n'
+                printf 'Content-Disposition: inline; filename="%s"\r\n' "$inc"
+                printf '\r\n'
+                cat "$inc"
+                printf '\r\n'
+            fi
+        done
     fi
 
-    if test -z "${SUDO_UID:-}" || test -z "${SUDO_GID:-}"
+    # Part 3: Direct build image manifest
+    printf -- '--%s\r\n' "$boundary"
+    printf 'Content-Type: text/plain; charset="utf-8"\r\n'
+    printf 'Content-Disposition: inline; filename="manifest"\r\n'
+    printf '\r\n'
+    if test -n "${pkg_bneeds[$pkg]:-}"
     then
-        fatal "must be run via sudo"
+        local dep
+        for dep in ${pkg_bneeds[$pkg]}
+        do
+            if test -z "${pkg_img_chk[$dep]:-}"
+            then
+                fatal "missing image checksum for build dependency: $dep (required by $pkg)"
+            fi
+            printf '%s:%s\r\n' "$dep" "${pkg_img_chk[$dep]}"
+        done | LC_ALL=C sort -u
     fi
+    printf -- '--%s--\r\n' "$boundary"
+}
 
-    # set low priority to not lock up the host
-    dlcall setpriority int:0 int:0 int:9
-    dlcall syscall long:251 int:1 int:0 int:24576
-
-    if test "${FLUFFY_IN_CHROOT:-0}" -eq 1
-    then
-        build_single_pkg "$1"
-        return 0
-    fi
-
+plan_pkgs() {
     local tmp_plan
     tmp_plan="$(mktemp)"
     (
         declare -a order=()
-        declare -A pkg_ver=() pkg_needs=() pkg_deps=() pkg_runtime_closure=() pkg_includes=()
+        declare -A pkg_ver=() pkg_needs=() pkg_deps=() pkg_bneeds=() pkg_includes=()
 
         build_step() {
             local pkg_name="$1" recipe_file="sw/$1"
@@ -869,12 +903,16 @@ build_pkgs() {
             pkg_ver["$pkg_name"]="$VERSION"
             pkg_needs["$pkg_name"]="${NEEDS[*]}"
 
+            local -a direct_bneeds=()
             if test "$ON" != host-build && test "$ON" != "$pkg_name"
             then
                 step_deps+=("$ON")
+                direct_bneeds+=("$ON")
             fi
             step_deps+=("${NEEDS[@]}" "${BUILD_NEEDS[@]}")
+            direct_bneeds+=("${BUILD_NEEDS[@]}")
             pkg_deps["$pkg_name"]="${step_deps[*]}"
+            pkg_bneeds["$pkg_name"]="${direct_bneeds[*]}"
 
             unset ON VERSION ARCHIVES NEEDS BUILD_NEEDS
         }
@@ -884,40 +922,50 @@ build_pkgs() {
         local pkg
         for pkg in "${order[@]}"
         do
-            local -A rset=(["$pkg"]=1) mset=()
-            local dep item
-            for dep in ${pkg_needs[$pkg]}
-            do
-                for item in ${pkg_runtime_closure[$dep]:-}
-                do
-                    rset["$item"]=1
-                done
-            done
-            pkg_runtime_closure["$pkg"]="${!rset[*]}"
-
-            for dep in ${pkg_deps[$pkg]}
-            do
-                for item in ${pkg_runtime_closure[$dep]:-}
-                do
-                    mset["$item"]=1
-                done
-            done
-            printf '%s\t%s\t%s\t%s\n' "$pkg" "${pkg_ver[$pkg]}" "${!mset[*]}" "${pkg_includes[$pkg]:-}"
-            unset rset mset
+            printf '%s\t%s\t%s\t%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}"
         done
     ) > "$tmp_plan"
 
-    local -a order=()
-    local -A pkg_ver=() pkg_closure=() pkg_img_chk=() pkg_includes=()
-    local p v c inc
-    while IFS=$'\t' read -r p v c inc
+    order=()
+    pkg_ver=()
+    pkg_bneeds=()
+    pkg_img_chk=()
+    pkg_includes=()
+    local p v b inc
+    while IFS=$'\t' read -r p v b inc
     do
         order+=("$p")
         pkg_ver["$p"]="$v"
-        pkg_closure["$p"]="$c"
+        pkg_bneeds["$p"]="$b"
         pkg_includes["$p"]="$inc"
     done < "$tmp_plan"
     rm -f "$tmp_plan"
+}
+
+build_pkgs() {
+    if test $# -lt 1
+    then
+        fatal "Usage: $0 build <package...>"
+    fi
+
+    if test -z "${SUDO_UID:-}" || test -z "${SUDO_GID:-}"
+    then
+        fatal "must be run via sudo"
+    fi
+
+    # set low priority to not lock up the host
+    dlcall setpriority int:0 int:0 int:9
+    dlcall syscall long:251 int:1 int:0 int:24576
+
+    if test "${FLUFFY_IN_CHROOT:-0}" -eq 1
+    then
+        build_single_pkg "$1"
+        return 0
+    fi
+
+    local -a order=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
+    plan_pkgs "$@"
 
     local total="${#order[@]}" idx=0 pkg
     for pkg in "${order[@]}"
@@ -940,26 +988,7 @@ build_pkgs() {
         fi
 
         local current_recipe_chk
-        current_recipe_chk="$( {
-            cat "sw/$pkg"
-            if test -n "${pkg_includes[$pkg]:-}"
-            then
-                local inc
-                for inc in ${pkg_includes[$pkg]}
-                do
-                    printf 'include:%s\n' "$inc"
-                    cat "$inc"
-                done
-            fi
-            if test -n "${pkg_closure[$pkg]}"
-            then
-                local dep
-                for dep in ${pkg_closure[$pkg]}
-                do
-                    printf '%s:%s\n' "$dep" "${pkg_img_chk[$dep]}"
-                done | LC_ALL=C sort
-            fi
-        } | sha256sum )"
+        current_recipe_chk="$( format_recipe_mime "$pkg" | sha256sum )"
         current_recipe_chk="${current_recipe_chk%% *}"
 
         if test -n "$src" && test -s "$src" && test -n "$recorded_recipe_chk" && test "$recorded_recipe_chk" == "$current_recipe_chk"
@@ -974,6 +1003,10 @@ build_pkgs() {
 
         fs="$NULL"
         dlcall -r pointer -n fs mnt_table_find_source "$mnt_table" "string:$sq" "int:$MNT_ITER_FORWARD"
+        if test "$fs" == "$NULL"
+        then
+            find_fs_by_pkg "$pkg" fs 1
+        fi
         if test "$fs" != "$NULL"
         then
             get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || true
@@ -982,10 +1015,101 @@ build_pkgs() {
     done
 }
 
+refresh_recipe_checksums() {
+    if test -z "${SUDO_UID:-}" || test -z "${SUDO_GID:-}"
+    then
+        fatal "must be run via sudo"
+    fi
+
+    local -a target_pkgs=("$@")
+    if (( ${#target_pkgs[@]} == 0 ))
+    then
+        call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
+        call_ptr p_fs malloc "ulong:8"
+        local val=(pointer:0)
+        pack "$p_fs" val
+
+        while true
+        do
+            dlcall -r int -n ret mnt_table_next_fs "$mnt_table" "$itr" "$p_fs"
+            if test "$ret" != "int:0"
+            then
+                break
+            fi
+            unpack "$p_fs" val
+            local curr_fs="${val[0]}" src
+            fs_str "$curr_fs" source src
+            local filename="${src##*/}"
+            local pkg_name="${filename%-[0-9]*.squashfs}"
+            if test -f "sw/$pkg_name"
+            then
+                target_pkgs+=("$pkg_name")
+            fi
+        done
+
+        dlcall free "$p_fs"
+        dlcall mnt_free_iter "$itr"
+    fi
+
+    if (( ${#target_pkgs[@]} == 0 ))
+    then
+        log "no packages found in $FSTAB to refresh"
+        return 0
+    fi
+
+    local -a order=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
+    plan_pkgs "${target_pkgs[@]}"
+
+    local total="${#order[@]}" idx=0 pkg
+    for pkg in "${order[@]}"
+    do
+        idx=$(( idx + 1 ))
+        local sq="/sw/$pkg-${pkg_ver[$pkg]}.squashfs" fs="$NULL"
+        dlcall -r pointer -n fs mnt_table_find_source "$mnt_table" "string:$sq" "int:$MNT_ITER_FORWARD"
+        if test "$fs" == "$NULL"
+        then
+            find_fs_by_pkg "$pkg" fs 1
+        fi
+
+        local img_chk="" recorded_recipe_chk="" needs_str=""
+        if test "$fs" != "$NULL"
+        then
+            get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || true
+            get_fs_opt "$fs" "X-fluffy.recipe-checksum" recorded_recipe_chk || true
+            get_fs_opt "$fs" "X-fluffy.needs" needs_str || true
+            pkg_img_chk["$pkg"]="$img_chk"
+        fi
+
+        local current_recipe_chk
+        current_recipe_chk="$( format_recipe_mime "$pkg" | sha256sum )"
+        current_recipe_chk="${current_recipe_chk%% *}"
+
+        if test "$fs" != "$NULL"
+        then
+            local options="X-fluffy.image-checksum=$img_chk"
+            if test -n "$needs_str"
+            then
+                options="$options,X-fluffy.needs=\"$needs_str\""
+            fi
+            options="$options,X-fluffy.recipe-checksum=$current_recipe_chk"
+            call mnt_fs_set_options "$fs" "string:$options"
+            log "$pkg [$idx/$total]: refreshed recipe checksum ($current_recipe_chk)"
+        fi
+    done
+
+    sign_and_save_fstab
+    log "successfully signed and saved $FSTAB"
+}
+
 case "$1" in
 build)
     shift
     build_pkgs "$@"
+    ;;
+refresh-checksums)
+    shift
+    refresh_recipe_checksums "$@"
     ;;
 install)
     shift
