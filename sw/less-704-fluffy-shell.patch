@@ -34,6 +34,42 @@ diff -Naur less-704.orig/less-osc8-open.sh less-704/less-osc8-open.sh
  
  # Less OSC 8 handler.
  
+diff -Naur less-704.orig/lesstest/extract less-704/lesstest/extract
+--- less-704.orig/lesstest/extract	2026-05-30 19:55:13.000000000 -0400
++++ less-704/lesstest/extract	2026-05-30 19:55:13.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ use Getopt::Std;
+ 
+diff -Naur less-704.orig/lesstest/ltview less-704/lesstest/ltview
+--- less-704.orig/lesstest/ltview	2026-05-30 19:55:13.000000000 -0400
++++ less-704/lesstest/ltview	2026-05-30 19:55:13.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ use Getopt::Std;
+ use IO::Stty;
+diff -Naur less-704.orig/lesstest/maketest less-704/lesstest/maketest
+--- less-704.orig/lesstest/maketest	2026-05-30 19:55:13.000000000 -0400
++++ less-704/lesstest/maketest	2026-05-30 19:55:13.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ 
+ # Create a test file.
+diff -Naur less-704.orig/lesstest/runtest less-704/lesstest/runtest
+--- less-704.orig/lesstest/runtest	2026-05-30 19:55:13.000000000 -0400
++++ less-704/lesstest/runtest	2026-05-30 19:55:13.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ 
+ # Run one or more test files.
 diff -Naur less-704.orig/Makefile.in less-704/Makefile.in
 --- less-704.orig/Makefile.in	2026-05-30 19:55:05.000000000 -0400
 +++ less-704/Makefile.in	2026-05-30 19:55:05.000000000 -0400
@@ -46,6 +82,15 @@ diff -Naur less-704.orig/Makefile.in less-704/Makefile.in
  
  # This rule allows us to supply the necessary -D options
  # in addition to whatever the user asks for.
+diff -Naur less-704.orig/mkhelp.pl less-704/mkhelp.pl
+--- less-704.orig/mkhelp.pl	2026-05-30 19:55:08.000000000 -0400
++++ less-704/mkhelp.pl	2026-05-30 19:55:08.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ 
+ # Silly little program to generate the help.c source file
 diff -Naur less-704.orig/mkinstalldirs less-704/mkinstalldirs
 --- less-704.orig/mkinstalldirs	2026-05-30 19:55:07.000000000 -0400
 +++ less-704/mkinstalldirs	2026-05-30 19:55:07.000000000 -0400
@@ -55,3 +100,12 @@ diff -Naur less-704.orig/mkinstalldirs less-704/mkinstalldirs
  # mkinstalldirs --- make directory hierarchy
  # Author: Noah Friedman <friedman@prep.ai.mit.edu>
  # Created: 1993-05-16
+diff -Naur less-704.orig/mkutable less-704/mkutable
+--- less-704.orig/mkutable	2026-05-30 19:55:09.000000000 -0400
++++ less-704/mkutable	2026-05-30 19:55:09.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ 
+ my $USAGE = <<__EOF__;
