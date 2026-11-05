@@ -1,0 +1,79 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.8.3
+
+ARCHIVES=(
+    f6256df90c906773d344da084402b7d3e4f22ed41b1a59c989098a83d3ea0c85 https://github.com/libexpat/libexpat/releases/download/R_2_8_3/expat-$VERSION.tar.xz
+    ba22d330ffab62e4b28753aa0c226ad73587ba38091ab8e138553b6d37366f63 file://expat-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i expat-$VERSION-fluffy-shell.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/expat \
+        --disable-static \
+        --docdir=/sw/expat/share/doc/expat-$VERSION
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    install -v -m644 doc/*.{html,css} $DESTDIR/sw/expat/share/doc/expat-$VERSION
+}

@@ -1,0 +1,417 @@
+diff -Naur libtool-2.6.2.orig/bootstrap libtool-2.6.2/bootstrap
+--- libtool-2.6.2.orig/bootstrap	2026-07-16 09:56:58.000000000 -0400
++++ libtool-2.6.2/bootstrap	2026-07-16 09:56:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ ## DO NOT EDIT - This file generated from build-aux/bootstrap.in
+ ##               by inline-source v2019-02-19.15
+ 
+diff -Naur libtool-2.6.2.orig/build-aux/announce-gen libtool-2.6.2/build-aux/announce-gen
+--- libtool-2.6.2.orig/build-aux/announce-gen	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/build-aux/announce-gen	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Generate a release announcement message.
+diff -Naur libtool-2.6.2.orig/build-aux/compile libtool-2.6.2/build-aux/compile
+--- libtool-2.6.2.orig/build-aux/compile	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/compile	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2026-05-29.23; # UTC
+diff -Naur libtool-2.6.2.orig/build-aux/config.guess libtool-2.6.2/build-aux/config.guess
+--- libtool-2.6.2.orig/build-aux/config.guess	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/config.guess	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2026 Free Software Foundation, Inc.
+ 
+diff -Naur libtool-2.6.2.orig/build-aux/config.sub libtool-2.6.2/build-aux/config.sub
+--- libtool-2.6.2.orig/build-aux/config.sub	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/config.sub	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2026 Free Software Foundation, Inc.
+ 
+diff -Naur libtool-2.6.2.orig/build-aux/depcomp libtool-2.6.2/build-aux/depcomp
+--- libtool-2.6.2.orig/build-aux/depcomp	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/depcomp	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2026-05-29.23; # UTC
+diff -Naur libtool-2.6.2.orig/build-aux/do-release-commit-and-tag libtool-2.6.2/build-aux/do-release-commit-and-tag
+--- libtool-2.6.2.orig/build-aux/do-release-commit-and-tag	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/build-aux/do-release-commit-and-tag	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # In a git/autoconf/automake-enabled project with a NEWS file and a version-
+ # controlled .prev-version file, automate the procedure by which we record
+ # the date, release-type and version string in the NEWS file.  That commit
+diff -Naur libtool-2.6.2.orig/build-aux/edit-readme-alpha libtool-2.6.2/build-aux/edit-readme-alpha
+--- libtool-2.6.2.orig/build-aux/edit-readme-alpha	2026-07-16 09:56:58.000000000 -0400
++++ libtool-2.6.2/build-aux/edit-readme-alpha	2026-07-16 09:56:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ #   edit-readme-alpha - edit README file for alpha releases
+ #   Copyright (C) 2010-2019, 2021-2026 Free Software Foundation, Inc.
+diff -Naur libtool-2.6.2.orig/build-aux/extract-trace libtool-2.6.2/build-aux/extract-trace
+--- libtool-2.6.2.orig/build-aux/extract-trace	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/build-aux/extract-trace	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Extract macro arguments from autotools input with GNU M4.
+ # Written by Gary V. Vaughan, 2010
+diff -Naur libtool-2.6.2.orig/build-aux/gendocs.sh libtool-2.6.2/build-aux/gendocs.sh
+--- libtool-2.6.2.orig/build-aux/gendocs.sh	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/gendocs.sh	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ # gendocs.sh -- generate a GNU manual in many formats.  This script is
+ #   mentioned in maintain.texi.  See the help message below for usage details.
+ 
+diff -Naur libtool-2.6.2.orig/build-aux/git-version-gen libtool-2.6.2/build-aux/git-version-gen
+--- libtool-2.6.2.orig/build-aux/git-version-gen	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/git-version-gen	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2025-06-10.02; # UTC
+ 
+diff -Naur libtool-2.6.2.orig/build-aux/gnupload libtool-2.6.2/build-aux/gnupload
+--- libtool-2.6.2.orig/build-aux/gnupload	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/gnupload	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2025-06-28.18; # UTC
+diff -Naur libtool-2.6.2.orig/build-aux/gnu-web-doc-update libtool-2.6.2/build-aux/gnu-web-doc-update
+--- libtool-2.6.2.orig/build-aux/gnu-web-doc-update	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/gnu-web-doc-update	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Run this after each non-alpha release, to update the web documentation at
+ # https://www.gnu.org/software/$pkg/manual/
+ 
+diff -Naur libtool-2.6.2.orig/build-aux/inline-source libtool-2.6.2/build-aux/inline-source
+--- libtool-2.6.2.orig/build-aux/inline-source	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/build-aux/inline-source	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Output the contents of a shell script with sourced files inlined.
+ # Written by Gary V. Vaughan, 2012
+diff -Naur libtool-2.6.2.orig/build-aux/install-sh libtool-2.6.2/build-aux/install-sh
+--- libtool-2.6.2.orig/build-aux/install-sh	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/install-sh	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur libtool-2.6.2.orig/build-aux/ltmain.in libtool-2.6.2/build-aux/ltmain.in
+--- libtool-2.6.2.orig/build-aux/ltmain.in	2026-07-16 09:56:58.000000000 -0400
++++ libtool-2.6.2/build-aux/ltmain.in	2026-07-16 09:56:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env sh
++#!/sw/bash/bin/bash
+ 
+ # libtool (GNU @PACKAGE@) @VERSION@
+ # Provide generalized library-building support services.
+diff -Naur libtool-2.6.2.orig/build-aux/ltmain.sh libtool-2.6.2/build-aux/ltmain.sh
+--- libtool-2.6.2.orig/build-aux/ltmain.sh	2026-07-16 11:37:13.000000000 -0400
++++ libtool-2.6.2/build-aux/ltmain.sh	2026-07-16 11:37:13.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env sh
++#!/sw/bash/bin/bash
+ ## DO NOT EDIT - This file generated from ./build-aux/ltmain.in
+ ##               by inline-source v2019-02-19.15
+ 
+diff -Naur libtool-2.6.2.orig/build-aux/mdate-sh libtool-2.6.2/build-aux/mdate-sh
+--- libtool-2.6.2.orig/build-aux/mdate-sh	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/mdate-sh	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it,
+ # formatted like 1 January 2000.
+ 
+diff -Naur libtool-2.6.2.orig/build-aux/missing libtool-2.6.2/build-aux/missing
+--- libtool-2.6.2.orig/build-aux/missing	2025-08-05 14:52:28.000000000 -0400
++++ libtool-2.6.2/build-aux/missing	2025-08-05 14:52:28.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur libtool-2.6.2.orig/build-aux/no-bogus-m4-defines libtool-2.6.2/build-aux/no-bogus-m4-defines
+--- libtool-2.6.2.orig/build-aux/no-bogus-m4-defines	2026-07-16 09:56:58.000000000 -0400
++++ libtool-2.6.2/build-aux/no-bogus-m4-defines	2026-07-16 09:56:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ #   no-bogus-m4-defines - detect wrong m4 definitions
+ #   -------------------------------------------------
+diff -Naur libtool-2.6.2.orig/build-aux/options-parser libtool-2.6.2/build-aux/options-parser
+--- libtool-2.6.2.orig/build-aux/options-parser	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/build-aux/options-parser	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
+diff -Naur libtool-2.6.2.orig/build-aux/test-driver libtool-2.6.2/build-aux/test-driver
+--- libtool-2.6.2.orig/build-aux/test-driver	2025-08-05 14:52:28.000000000 -0400
++++ libtool-2.6.2/build-aux/test-driver	2025-08-05 14:52:28.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur libtool-2.6.2.orig/build-aux/update-copyright libtool-2.6.2/build-aux/update-copyright
+--- libtool-2.6.2.orig/build-aux/update-copyright	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/update-copyright	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Update an FSF copyright year list to include the current year.
+diff -Naur libtool-2.6.2.orig/build-aux/useless-if-before-free libtool-2.6.2/build-aux/useless-if-before-free
+--- libtool-2.6.2.orig/build-aux/useless-if-before-free	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/useless-if-before-free	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Detect instances of "if (p) free (p);".
+diff -Naur libtool-2.6.2.orig/build-aux/vc-list-files libtool-2.6.2/build-aux/vc-list-files
+--- libtool-2.6.2.orig/build-aux/vc-list-files	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/build-aux/vc-list-files	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # List version-controlled file names.
+ 
+ # Print a version string.
+diff -Naur libtool-2.6.2.orig/configure libtool-2.6.2/configure
+--- libtool-2.6.2.orig/configure	2026-07-16 11:37:03.000000000 -0400
++++ libtool-2.6.2/configure	2026-07-16 11:37:03.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.73 for GNU Libtool 2.6.2.
+ #
+@@ -295,7 +295,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -573,7 +573,7 @@
+ 
+ lt_ltdl_dir='libltdl'
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ lt_dlopen_dir=$lt_ltdl_dir; lt_libobj_prefix=$lt_ltdl_dir/
+ 
+@@ -7473,7 +7473,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+diff -Naur libtool-2.6.2.orig/gnulib-tests/init.sh libtool-2.6.2/gnulib-tests/init.sh
+--- libtool-2.6.2.orig/gnulib-tests/init.sh	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/init.sh	2026-07-16 10:06:48.000000000 -0400
+@@ -198,7 +198,7 @@
+ 
+   # Search for a shell that meets our requirements.
+   for re_shell_ in __current__ "${CONFIG_SHELL:-no_shell}" \
+-      /bin/sh bash dash zsh pdksh fail
++      /sw/bash/bin/bash bash dash zsh pdksh fail
+   do
+     test "$re_shell_" = no_shell && continue
+ 
+@@ -599,7 +599,7 @@
+ # No special standards compatibility requirements.
+ # Some environments, such as Android, don't have /bin/sh.
+ if test -f /bin/sh$EXEEXT; then
+-  BOURNE_SHELL=/bin/sh
++  BOURNE_SHELL=/sw/bash/bin/bash
+ else
+   BOURNE_SHELL=sh
+ fi
+diff -Naur libtool-2.6.2.orig/gnulib-tests/test-all-shells.sh libtool-2.6.2/gnulib-tests/test-all-shells.sh
+--- libtool-2.6.2.orig/gnulib-tests/test-all-shells.sh	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/test-all-shells.sh	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Unit test helper.
+ 
+diff -Naur libtool-2.6.2.orig/gnulib-tests/test-funclib-quote.sh libtool-2.6.2/gnulib-tests/test-funclib-quote.sh
+--- libtool-2.6.2.orig/gnulib-tests/test-funclib-quote.sh	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/test-funclib-quote.sh	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Unit tests for funclib.sh
+ 
+diff -Naur libtool-2.6.2.orig/gnulib-tests/test-init.sh libtool-2.6.2/gnulib-tests/test-init.sh
+--- libtool-2.6.2.orig/gnulib-tests/test-init.sh	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/test-init.sh	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for init.sh
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur libtool-2.6.2.orig/gnulib-tests/test-option-parser-helper libtool-2.6.2/gnulib-tests/test-option-parser-helper
+--- libtool-2.6.2.orig/gnulib-tests/test-option-parser-helper	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/test-option-parser-helper	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Unit tests for funclib.sh
+ 
+diff -Naur libtool-2.6.2.orig/gnulib-tests/test-option-parser.sh libtool-2.6.2/gnulib-tests/test-option-parser.sh
+--- libtool-2.6.2.orig/gnulib-tests/test-option-parser.sh	2026-07-16 10:06:52.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/test-option-parser.sh	2026-07-16 10:06:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Unit tests for option-parser
+ 
+diff -Naur libtool-2.6.2.orig/gnulib-tests/test-update-copyright.sh libtool-2.6.2/gnulib-tests/test-update-copyright.sh
+--- libtool-2.6.2.orig/gnulib-tests/test-update-copyright.sh	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/test-update-copyright.sh	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for update-copyright.
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur libtool-2.6.2.orig/gnulib-tests/test-vc-list-files-cvs.sh libtool-2.6.2/gnulib-tests/test-vc-list-files-cvs.sh
+--- libtool-2.6.2.orig/gnulib-tests/test-vc-list-files-cvs.sh	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/test-vc-list-files-cvs.sh	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for vc-list-files
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur libtool-2.6.2.orig/gnulib-tests/test-vc-list-files-git.sh libtool-2.6.2/gnulib-tests/test-vc-list-files-git.sh
+--- libtool-2.6.2.orig/gnulib-tests/test-vc-list-files-git.sh	2026-07-16 10:06:48.000000000 -0400
++++ libtool-2.6.2/gnulib-tests/test-vc-list-files-git.sh	2026-07-16 10:06:48.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for vc-list-files
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff -Naur libtool-2.6.2.orig/libltdl/configure libtool-2.6.2/libltdl/configure
+--- libtool-2.6.2.orig/libltdl/configure	2026-07-16 11:37:16.000000000 -0400
++++ libtool-2.6.2/libltdl/configure	2026-07-16 11:37:16.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.73 for libltdl 2.4.3a.
+ #
+@@ -295,7 +295,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -571,7 +571,7 @@
+ as_sed_sh="y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
+ as_tr_sh="eval sed '$as_sed_sh'" # deprecated
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ 
+ test -n "$DJDIR" || exec 7<&0 </dev/null
+@@ -6006,7 +6006,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+diff -Naur libtool-2.6.2.orig/libtoolize.in libtool-2.6.2/libtoolize.in
+--- libtool-2.6.2.orig/libtoolize.in	2026-07-16 09:56:58.000000000 -0400
++++ libtool-2.6.2/libtoolize.in	2026-07-16 09:56:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env sh
++#!/sw/bash/bin/bash
+ 
+ # Prepare a package to use libtool.
+ # Written by Gary V. Vaughan <gary@gnu.org>, 2003
+diff -Naur libtool-2.6.2.orig/libtool-next-version.in libtool-2.6.2/libtool-next-version.in
+--- libtool-2.6.2.orig/libtool-next-version.in	2026-07-16 09:56:58.000000000 -0400
++++ libtool-2.6.2/libtool-next-version.in	2026-07-16 09:56:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2026 Free Software Foundation, Inc.
+ #
+diff -Naur libtool-2.6.2.orig/tests/testsuite libtool-2.6.2/tests/testsuite
+--- libtool-2.6.2.orig/tests/testsuite	2026-07-16 11:37:18.000000000 -0400
++++ libtool-2.6.2/tests/testsuite	2026-07-16 11:37:18.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Generated from testsuite.at by GNU Autoconf 2.73.
+ #
+ # Copyright (C) 2009-2017, 2020-2026 Free Software Foundation, Inc.

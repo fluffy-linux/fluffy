@@ -1,0 +1,78 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.26
+
+ARCHIVES=(
+    6a24504a14de4a744103dcb936be976df6fbe88ccff26065e54c1c47946f4a5e https://ftpmirror.gnu.org/gdbm/gdbm-$VERSION.tar.gz
+    79ccd7b729fb1081e6ff12ba0388e439ea0ddf04d08a2d9957c8bcc20830005a file://gdbm-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i gdbm-$VERSION-fluffy-shell.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/gdbm \
+        --disable-static \
+        --enable-libgdbm-compat
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

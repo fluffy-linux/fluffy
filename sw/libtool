@@ -1,0 +1,84 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.6.2
+
+ARCHIVES=(
+    2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e https://ftpmirror.gnu.org/libtool/libtool-$VERSION.tar.xz
+    b9308194cd6e5546a8d15cb810cccebc921c1eacba72b7d5ad1954ad98295cdb file://libtool-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    bash
+    glibc
+    sed
+    tar
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        m4
+        make-pass1
+        patch-pass1
+        perl-pass1
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        m4
+        make
+        patch
+        perl
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i libtool-$VERSION-fluffy-shell.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/libtool
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    rm -fv $DESTDIR/sw/libtool/lib/libltdl.a
+}
