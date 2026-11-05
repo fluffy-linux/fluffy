@@ -1,0 +1,94 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.8
+
+ARCHIVES=(
+    57b3cf4f77555992881e5ba2a09a63b05aa2c56342a60ed4305b5f45938390b5 https://ftpmirror.gnu.org/inetutils/inetutils-$VERSION.tar.gz
+    f8a8b648a494ad272f6b9d9914a74da9f6e6c81b5dc7ee48d00a0cdf6893e386 file://inetutils-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    ncurses
+    readline
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        ncurses
+        patch-pass1
+        readline
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        readline
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i inetutils-$VERSION-fluffy-shell.patch
+
+    sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/inetutils \
+        --localstatedir=/sw/inetutils/var \
+        --disable-logger \
+        --disable-whois \
+        --disable-rcp \
+        --disable-rexec \
+        --disable-rlogin \
+        --disable-rsh \
+        --disable-servers
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    install -d -m755 $DESTDIR/sw/inetutils/sbin
+    ln -sfv ../bin/ifconfig $DESTDIR/sw/inetutils/sbin/ifconfig
+}

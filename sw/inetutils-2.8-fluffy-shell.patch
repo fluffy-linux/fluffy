@@ -1,0 +1,378 @@
+diff -Naur inetutils-2.8.orig/bootstrap inetutils-2.8/bootstrap
+--- inetutils-2.8.orig/bootstrap	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/bootstrap	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Bootstrap this package from checked-out sources.
+ 
+ scriptversion=2025-06-10.02; # UTC
+diff -Naur inetutils-2.8.orig/build-aux/announce-gen inetutils-2.8/build-aux/announce-gen
+--- inetutils-2.8.orig/build-aux/announce-gen	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/announce-gen	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Generate a release announcement message.
+diff -Naur inetutils-2.8.orig/build-aux/ar-lib inetutils-2.8/build-aux/ar-lib
+--- inetutils-2.8.orig/build-aux/ar-lib	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/ar-lib	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for Microsoft lib.exe
+ 
+ me=ar-lib
+diff -Naur inetutils-2.8.orig/build-aux/compile inetutils-2.8/build-aux/compile
+--- inetutils-2.8.orig/build-aux/compile	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/compile	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur inetutils-2.8.orig/build-aux/config.guess inetutils-2.8/build-aux/config.guess
+--- inetutils-2.8.orig/build-aux/config.guess	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/config.guess	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+diff -Naur inetutils-2.8.orig/build-aux/config.rpath inetutils-2.8/build-aux/config.rpath
+--- inetutils-2.8.orig/build-aux/config.rpath	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/config.rpath	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff -Naur inetutils-2.8.orig/build-aux/config.sub inetutils-2.8/build-aux/config.sub
+--- inetutils-2.8.orig/build-aux/config.sub	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/config.sub	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+diff -Naur inetutils-2.8.orig/build-aux/depcomp inetutils-2.8/build-aux/depcomp
+--- inetutils-2.8.orig/build-aux/depcomp	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/depcomp	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur inetutils-2.8.orig/build-aux/do-release-commit-and-tag inetutils-2.8/build-aux/do-release-commit-and-tag
+--- inetutils-2.8.orig/build-aux/do-release-commit-and-tag	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/do-release-commit-and-tag	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # In a git/autoconf/automake-enabled project with a NEWS file and a version-
+ # controlled .prev-version file, automate the procedure by which we record
+ # the date, release-type and version string in the NEWS file.  That commit
+diff -Naur inetutils-2.8.orig/build-aux/gendocs.sh inetutils-2.8/build-aux/gendocs.sh
+--- inetutils-2.8.orig/build-aux/gendocs.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/gendocs.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ # gendocs.sh -- generate a GNU manual in many formats.  This script is
+ #   mentioned in maintain.texi.  See the help message below for usage details.
+ 
+diff -Naur inetutils-2.8.orig/build-aux/gitlog-to-changelog inetutils-2.8/build-aux/gitlog-to-changelog
+--- inetutils-2.8.orig/build-aux/gitlog-to-changelog	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/gitlog-to-changelog	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Convert git log output to ChangeLog format.
+diff -Naur inetutils-2.8.orig/build-aux/git-version-gen inetutils-2.8/build-aux/git-version-gen
+--- inetutils-2.8.orig/build-aux/git-version-gen	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/git-version-gen	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2025-06-10.02; # UTC
+ 
+diff -Naur inetutils-2.8.orig/build-aux/gnupload inetutils-2.8/build-aux/gnupload
+--- inetutils-2.8.orig/build-aux/gnupload	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/gnupload	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2025-06-28.18; # UTC
+diff -Naur inetutils-2.8.orig/build-aux/gnu-web-doc-update inetutils-2.8/build-aux/gnu-web-doc-update
+--- inetutils-2.8.orig/build-aux/gnu-web-doc-update	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/gnu-web-doc-update	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Run this after each non-alpha release, to update the web documentation at
+ # https://www.gnu.org/software/$pkg/manual/
+ 
+diff -Naur inetutils-2.8.orig/build-aux/install-sh inetutils-2.8/build-aux/install-sh
+--- inetutils-2.8.orig/build-aux/install-sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/install-sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff -Naur inetutils-2.8.orig/build-aux/mdate-sh inetutils-2.8/build-aux/mdate-sh
+--- inetutils-2.8.orig/build-aux/mdate-sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/mdate-sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it,
+ # formatted like 1 January 2000.
+ 
+diff -Naur inetutils-2.8.orig/build-aux/missing inetutils-2.8/build-aux/missing
+--- inetutils-2.8.orig/build-aux/missing	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/missing	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2024-06-07.14; # UTC
+diff -Naur inetutils-2.8.orig/build-aux/test-driver inetutils-2.8/build-aux/test-driver
+--- inetutils-2.8.orig/build-aux/test-driver	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/test-driver	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur inetutils-2.8.orig/build-aux/update-copyright inetutils-2.8/build-aux/update-copyright
+--- inetutils-2.8.orig/build-aux/update-copyright	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/update-copyright	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Update an FSF copyright year list to include the current year.
+diff -Naur inetutils-2.8.orig/build-aux/useless-if-before-free inetutils-2.8/build-aux/useless-if-before-free
+--- inetutils-2.8.orig/build-aux/useless-if-before-free	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/useless-if-before-free	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Detect instances of "if (p) free (p);".
+diff -Naur inetutils-2.8.orig/build-aux/vc-list-files inetutils-2.8/build-aux/vc-list-files
+--- inetutils-2.8.orig/build-aux/vc-list-files	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/vc-list-files	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # List version-controlled file names.
+ 
+ # Print a version string.
+diff -Naur inetutils-2.8.orig/build-aux/ylwrap inetutils-2.8/build-aux/ylwrap
+--- inetutils-2.8.orig/build-aux/ylwrap	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/build-aux/ylwrap	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # ylwrap - wrapper for lex/yacc invocations.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff -Naur inetutils-2.8.orig/configure inetutils-2.8/configure
+--- inetutils-2.8.orig/configure	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/configure	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for GNU inetutils 2.8.
+ #
+@@ -281,7 +281,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -30736,7 +30736,7 @@
+ else case e in #(
+   e)
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff -Naur inetutils-2.8.orig/summary.sh.in inetutils-2.8/summary.sh.in
+--- inetutils-2.8.orig/summary.sh.in	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/summary.sh.in	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2013-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/dnsdomainname.sh inetutils-2.8/tests/dnsdomainname.sh
+--- inetutils-2.8.orig/tests/dnsdomainname.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/dnsdomainname.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2012-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/ftp-localhost.sh inetutils-2.8/tests/ftp-localhost.sh
+--- inetutils-2.8.orig/tests/ftp-localhost.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/ftp-localhost.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/ftp-parser.sh inetutils-2.8/tests/ftp-parser.sh
+--- inetutils-2.8.orig/tests/ftp-parser.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/ftp-parser.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/ftp-regressions.sh inetutils-2.8/tests/ftp-regressions.sh
+--- inetutils-2.8.orig/tests/ftp-regressions.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/ftp-regressions.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/hostname.sh inetutils-2.8/tests/hostname.sh
+--- inetutils-2.8.orig/tests/hostname.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/hostname.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/ifconfig_modes.sh inetutils-2.8/tests/ifconfig_modes.sh
+--- inetutils-2.8.orig/tests/ifconfig_modes.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/ifconfig_modes.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/ifconfig.sh inetutils-2.8/tests/ifconfig.sh
+--- inetutils-2.8.orig/tests/ifconfig.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/ifconfig.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/inetd.sh inetutils-2.8/tests/inetd.sh
+--- inetutils-2.8.orig/tests/inetd.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/inetd.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2013-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/libls.sh inetutils-2.8/tests/libls.sh
+--- inetutils-2.8.orig/tests/libls.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/libls.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2014-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/ping-localhost.sh inetutils-2.8/tests/ping-localhost.sh
+--- inetutils-2.8.orig/tests/ping-localhost.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/ping-localhost.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/syslogd.sh inetutils-2.8/tests/syslogd.sh
+--- inetutils-2.8.orig/tests/syslogd.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/syslogd.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/telnet-localhost.sh inetutils-2.8/tests/telnet-localhost.sh
+--- inetutils-2.8.orig/tests/telnet-localhost.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/telnet-localhost.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/tftp-regressions.sh inetutils-2.8/tests/tftp-regressions.sh
+--- inetutils-2.8.orig/tests/tftp-regressions.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/tftp-regressions.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2022-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/tftp.sh inetutils-2.8/tests/tftp.sh
+--- inetutils-2.8.orig/tests/tftp.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/tftp.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2010-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/traceroute-localhost.sh inetutils-2.8/tests/traceroute-localhost.sh
+--- inetutils-2.8.orig/tests/traceroute-localhost.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/traceroute-localhost.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ #
+diff -Naur inetutils-2.8.orig/tests/utmp.sh inetutils-2.8/tests/utmp.sh
+--- inetutils-2.8.orig/tests/utmp.sh	2026-04-29 03:53:25.000000000 -0400
++++ inetutils-2.8/tests/utmp.sh	2026-04-29 03:53:25.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2012-2026 Free Software Foundation, Inc.
+ #

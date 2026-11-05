@@ -1,0 +1,80 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=704
+
+ARCHIVES=(
+    20a0b0a2bb2525fa53c7eee9beb854b4c9cf172eabb209af7020743547bfe9fb https://www.greenwoodsoftware.com/less/less-$VERSION.tar.gz
+    5193ee7284312cc8e0029d0b3f609a19f4083c2d8802374ece6493629f1e7c9c file://less-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    ncurses
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        ncurses
+        patch-pass1
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i less-$VERSION-fluffy-shell.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/less \
+        --sysconfdir=/sw/less/etc
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

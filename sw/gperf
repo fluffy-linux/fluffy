@@ -1,0 +1,81 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=3.3
+
+ARCHIVES=(
+    fd87e0aba7e43ae054837afd6cd4db03a3f2693deb3619085e6ed9d8d9604ad8 https://ftpmirror.gnu.org/gperf/gperf-$VERSION.tar.gz
+    9a56a3a7a8cf1054524571d5ca9738125d4df95ba14b9e1db815a5ca1e5d5de5 file://gperf-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    libgcc
+    libstdcpp
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        libstdcpp
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        libstdcpp
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i gperf-$VERSION-fluffy-shell.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/gperf \
+        --docdir=/sw/gperf/share/doc/gperf-$VERSION
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}
