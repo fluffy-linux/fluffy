@@ -1,5 +1,5 @@
---- bash-5.3.orig/findcmd.c	2026-10-27 22:42:53.341373280 -0400
-+++ bash-5.3/findcmd.c	2026-10-27 22:44:23.807381430 -0400
+--- bash-5.3.orig/findcmd.c	2023-05-31 16:30:31.000000000 -0400
++++ bash-5.3/findcmd.c	2023-05-31 16:30:31.000000000 -0400
 @@ -485,6 +485,34 @@ user_command_matches (const char *name,
  	  if (path_element == 0)
  	    break;
@@ -74,8 +74,8 @@
        /* Side effects: sets dot_found_in_search, possibly sets
  	 file_to_lose_on. */
        full_path = find_in_path_element (name, path, flags, name_len, &dotinfo, &rflags);
---- bash-5.3.orig/bashline.c	2026-10-27 22:42:53.289060898 -0400
-+++ bash-5.3/bashline.c	2026-10-27 22:44:23.807872061 -0400
+--- bash-5.3.orig/bashline.c	2025-06-25 15:53:44.000000000 -0400
++++ bash-5.3/bashline.c	2025-06-25 15:53:44.000000000 -0400
 @@ -2012,6 +2012,8 @@ command_word_completion_function (const
    static char *dequoted_hint = (char *)NULL;
    static char *directory_part = (char *)NULL;

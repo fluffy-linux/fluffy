@@ -9,7 +9,8 @@ VERSION=5.3
 
 ARCHIVES=(
     0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz
-    9dd1e607089d21baff2db33932059035482948d5b21fa30bd671dc4cfff6f294 file://bash-$VERSION-fluffy-source.patch
+    89543561daf7a466eb36f55a22788efabc48b27e0f7ee8a4f91e163d348148cc file://bash-$VERSION-fluffy-shell.patch
+    1c93ce4cbb6926e7bde96c227aba4bbff9325065acfe30b5bcc624743e7d7f82 file://bash-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -72,6 +73,7 @@ else
 fi
 
 MAKE() {
+    patch -Z -Np1 -i bash-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i bash-$VERSION-fluffy-source.patch
 
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
