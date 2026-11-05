@@ -16,7 +16,6 @@ NEEDS=(
     bash
     glibc
     sed
-    tar
 )
 
 if test -v CROSS
