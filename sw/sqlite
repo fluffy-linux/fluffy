@@ -9,7 +9,7 @@ VERSION=3530400
 
 ARCHIVES=(
     0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c https://sqlite.org/2026/sqlite-autoconf-$VERSION.tar.gz
-    14d9a5e4200e4d9e59d13190c30245d9eac133f95a9b92e4489381cf33ed11a4 file://sqlite-$VERSION-fluffy.patch
+    85e8d0b9ffad96a8f7261dddfdc103b10794d4d7952bb45cb0412490061e5844 file://sqlite-$VERSION-fluffy.patch
 )
 
 NEEDS=(

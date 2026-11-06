@@ -25,6 +25,23 @@ diff -Naur sqlite-autoconf-3530400/autosetup/autosetup sqlite-autoconf-3530400.m
  			user-error $alias
  		}
  	}
+@@ -2086,7 +2086,15 @@
+ } else {
+ 	# unix separates $PATH with colons and has and executable bit
+ 	proc split-path {} {
+-		split [getenv PATH .] :
++		set dirs {}
++		foreach p [split [getenv PATH .] :] {
++			if {[string match {*[*?]*} $p]} {
++				lappend dirs {*}[glob -nocomplain -types d -- $p]
++			} else {
++				lappend dirs $p
++			}
++		}
++		return $dirs
+ 	}
+ 	# Check for an executable file
+ 	proc file-isexec {exec} {
 diff -Naur sqlite-autoconf-3530400/autosetup/autosetup-config.guess sqlite-autoconf-3530400.mod/autosetup/autosetup-config.guess
 --- sqlite-autoconf-3530400/autosetup/autosetup-config.guess	2026-07-24 15:28:58.000000000 -0400
 +++ sqlite-autoconf-3530400.mod/autosetup/autosetup-config.guess	2026-07-24 15:28:58.000000000 -0400
