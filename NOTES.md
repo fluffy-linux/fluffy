@@ -57,6 +57,10 @@
               - Because gnulib's `find_in_given_path` splits `PATH` on `:` without expanding `/sw/*/bin`, relative command names (fast-path `touch`, `printf`, or `argv[0] = "bash"` when `SHELL = bash`) fail unless `SHELL` is an absolute path (`SHELL = /sw/bash/bin/bash`).
               - While `--disable-posix-spawn` falls back to `vfork()` + `environ = child->environment; execvp()` (which uses `glibc`'s wildcard `PATH`), it has the downside that missing commands (`ENOENT`) `vfork()` first and invoke `OSS(error, ...)` (`gettext`/`stdio`) inside the `vfork()` child while sharing the parent's heap, and skips `posix_spawn`'s dedicated stack and full signal masking.
               - **Fix for Chapter 8 `make`**: Set `default_shell = "bash"` in `src/job.c` and teach `find_in_given_path` (`lib/findprog-in.c`) to expand wildcard `PATH` entries via `glob()`. That keeps `USE_POSIX_SPAWN` enabled while making both `SHELL = bash` and Makefiles that omit `SHELL` altogether work out of the box via `/sw/*/bin`.
+            - **Perl `File::Spec::Unix::path()` Wildcard `PATH` Expansion (`dist/PathTools/lib/File/Spec/Unix.pm`)**:
+              - In Perl's standard library, `File::Spec->path()` (`File::Spec::Unix::path`) is the canonical function used by `IPC::Cmd::can_run()`, `ExtUtils::MakeMaker` (`maybe_command`), `CPAN`, and downstream consumers like OpenSSL's `./config` (`OpenSSL::config`) to iterate `$ENV{PATH}` directories.
+              - Upstream `File::Spec::Unix::path` simply runs `split(':', $ENV{PATH}, -1)`, returning the literal string `"/sw/*/bin"`, which fails `-d $dir` checks in callers.
+              - **TODO for Next `perl` Pass**: Patch `File::Spec::Unix::path` in `dist/PathTools/lib/File/Spec/Unix.pm` to expand wildcard `PATH` entries (using pure-Perl `opendir`/`readdir` so it works even inside `miniperl` before the `File::Glob` XS module is built), making `File::Spec->path()` and `IPC::Cmd::can_run()` work transparently across all Perl scripts without per-package overrides.
        - Shell defaults in `paths.h` and `system.c`: `_PATH_DEFPATH` defaults to `"/sw/*/bin"`, `_PATH_STDPATH` to `"/sw/*/bin:/sw/*/sbin"`, and `_PATH_BSHELL` / `SHELL_PATH` to `"/sw/bash/bin/bash"`, ensuring `system()` and `popen()` run natively without `/bin/sh`.
      - **Dynamic Linker (`ld.so`)**: Iterates `/sw/*/lib` (`_dl_init_paths` in `elf/dl-load.c`) to resolve shared libraries dynamically at runtime.
      - **Final Pass Toolchain Vision (Glibc & GCC Native Wildcard Inclusion)**:
@@ -345,6 +349,7 @@
   - 8.45 `less` (704) verified and registered (`less-704.squashfs`).
   - 8.46 `perl` (5.44.0) verified and registered (`perl-5.44.0.squashfs`).
   - 8.47 `autoconf` (2.73) verified and registered (`autoconf-2.73.squashfs`).
+  - 8.48 `automake` (1.18.1) verified and registered (`automake-1.18.1.squashfs`).
 
 - **Chapter 7 Complete (In-Chroot Native Compilation & Network Stack)**:
   - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.
