@@ -9,7 +9,7 @@ VERSION=1.18.1
 
 ARCHIVES=(
     168aa363278351b89af56684448f525a5bce5079d0b6842bd910fdd3f1646887 https://ftpmirror.gnu.org/automake/automake-$VERSION.tar.xz
-    688a42200ee416b882038f112da1073fc591e5424a9f7b79ea823f07e799bd4b file://automake-$VERSION-fluffy-shell.patch
+    099d3d2ef5072367a548040617a8d7db5a28d963a38e29a8ff58d91448b252c9 file://automake-$VERSION-fluffy-shell.patch
 )
 
 if test -v CROSS

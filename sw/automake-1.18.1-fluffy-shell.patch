@@ -34,7 +34,25 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  export SHELL
  # Unset more variables known to interfere with behavior of common tools.
  CLICOLOR_FORCE= GREP_OPTIONS=
-@@ -3408,7 +3408,7 @@
+@@ -2712,6 +2712,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) if printf "%s\n" 'TRUE=$(BAR$(V))
++SHELL=/sw/bash/bin/bash
+ BAR0=false
+ BAR1=true
+ V=1
+@@ -3046,7 +3047,8 @@
+       #
+       # Create a Makefile (real tab character here):
+       rm -f conftest.mk
+-      echo 'conftest.ts1: conftest.ts2' >conftest.mk
++      echo 'SHELL = /sw/bash/bin/bash' >conftest.mk
++      echo 'conftest.ts1: conftest.ts2' >>conftest.mk
+       echo '	touch conftest.ts2' >>conftest.mk
+       #
+       # Now, running
+@@ -3408,7 +3410,7 @@
    printf %s "(cached) " >&6
  else case e in #(
    e) cat >conftest.make <<\_ACEOF
@@ -43,7 +61,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  all:
  	@echo '@@@%%%=$(MAKE)=@@@%%%'
  _ACEOF
-@@ -4348,8 +4348,8 @@
+@@ -4348,8 +4350,8 @@
  #  $ set -x; echo x 2>file
  # would emit "+ echo x" into file with older zsh versions.  Similarly,
  #   $ set -x; P=1 true 2>file
@@ -54,7 +72,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  #
  # Use '$am_score' to indicate the degree of acceptability of the shell.
  # A score of "10" means that the shell is good enough for our needs;
-@@ -4465,7 +4465,7 @@
+@@ -4465,7 +4467,7 @@
  test \"\$(echo x)\" = x
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -63,7 +81,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4485,7 +4485,7 @@
+@@ -4485,7 +4487,7 @@
  test \$((1 + 2 * 3)) = 7
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -72,7 +90,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4508,7 +4508,7 @@
+@@ -4508,7 +4510,7 @@
          && test \${#twelve} -eq 12
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -81,7 +99,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4532,7 +4532,7 @@
+@@ -4532,7 +4534,7 @@
          && test \${v%%/*} = a
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -90,7 +108,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4552,7 +4552,7 @@
+@@ -4552,7 +4554,7 @@
  set -e; trap 'exit \$?' 0; (exit 77); exit 77
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -99,7 +117,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4572,7 +4572,7 @@
+@@ -4572,7 +4574,7 @@
  fail=0 && foo() { trap 'fail=1' 0; } && foo && test \$fail = 0
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -108,7 +126,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4592,7 +4592,7 @@
+@@ -4592,7 +4594,7 @@
  (set -x; P=1 true 2>&3) 3>&1 2>/dev/null | grep P=1
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -117,7 +135,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4614,7 +4614,7 @@
+@@ -4614,7 +4616,7 @@
  ok=yes; . ./conftest-return.sh; test \$? -eq 34 && test \$ok = yes
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -126,7 +144,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4636,7 +4636,7 @@
+@@ -4636,7 +4638,7 @@
  . ./conftest-alias.sh
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -135,7 +153,7 @@ diff -Naur automake-1.18.1.orig/configure automake-1.18.1/configure
  # syntax errors.
  exit 77" >&5 2>&1; test $? -eq 77; }
    then
-@@ -4656,7 +4656,7 @@
+@@ -4656,7 +4658,7 @@
  test -e config.log && test -e . && test ! -e nonesuch
  test \$? -eq 0 || exit 1
  # Use 77 to indicate success (rather than 0), in case some shell
@@ -612,6 +630,41 @@ diff -Naur automake-1.18.1.orig/m4/depend.m4 automake-1.18.1/m4/depend.m4
        echo '/* dummy */' > sub/conftst$i.h
      done
      echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff -Naur automake-1.18.1.orig/m4/make.m4 automake-1.18.1/m4/make.m4
+--- automake-1.18.1.orig/m4/make.m4	2025-01-12 11:30:29.000000000 -0500
++++ automake-1.18.1/m4/make.m4	2025-01-12 11:30:29.000000000 -0500
+@@ -13,6 +13,7 @@
+ AC_DEFUN([AM_MAKE_INCLUDE],
+ [AC_MSG_CHECKING([whether ${MAKE-make} supports the include directive])
+ cat > confinc.mk << 'END'
++SHELL = /sw/bash/bin/bash
+ am__doit:
+ 	@echo this is the am__doit target >confinc.out
+ .PHONY: am__doit
+diff -Naur automake-1.18.1.orig/m4/sanity.m4 automake-1.18.1/m4/sanity.m4
+--- automake-1.18.1.orig/m4/sanity.m4	2025-02-20 18:33:35.000000000 -0500
++++ automake-1.18.1/m4/sanity.m4	2025-02-20 18:33:35.000000000 -0500
+@@ -119,7 +119,8 @@
+       #
+       # Create a Makefile (real tab character here):
+       rm -f conftest.mk
+-      echo 'conftest.ts1: conftest.ts2' >conftest.mk
++      echo 'SHELL = /sw/bash/bin/bash' >conftest.mk
++      echo 'conftest.ts1: conftest.ts2' >>conftest.mk
+       echo '	touch conftest.ts2' >>conftest.mk
+       #
+       # Now, running
+diff -Naur automake-1.18.1.orig/m4/silent.m4 automake-1.18.1/m4/silent.m4
+--- automake-1.18.1.orig/m4/silent.m4	2025-02-21 12:50:11.000000000 -0500
++++ automake-1.18.1/m4/silent.m4	2025-02-21 12:50:11.000000000 -0500
+@@ -26,6 +26,7 @@
+ AC_CACHE_CHECK([whether $am_make supports nested variables],
+    [am_cv_make_support_nested_variables],
+    [if AS_ECHO([['TRUE=$(BAR$(V))
++SHELL=/sw/bash/bin/bash
+ BAR0=false
+ BAR1=true
+ V=1
 diff -Naur automake-1.18.1.orig/maintainer/am-ft automake-1.18.1/maintainer/am-ft
 --- automake-1.18.1.orig/maintainer/am-ft	2025-01-12 11:30:29.000000000 -0500
 +++ automake-1.18.1/maintainer/am-ft	2025-01-12 11:30:29.000000000 -0500
@@ -1197,6 +1250,17 @@ diff -Naur automake-1.18.1.orig/t/amhello-binpkg.sh automake-1.18.1/t/amhello-bi
  # Copyright (C) 2011-2025 Free Software Foundation, Inc.
  #
  # This program is free software; you can redistribute it and/or modify
+@@ -25,6 +25,10 @@
+ 
+ gzip -dc amhello-1.0.tar.gz | tar xf -
+ cd amhello-1.0
++sed -i -e 's|/bin/sh|/sw/bash/bin/bash|g' \
++  -e "s|echo '""conftest.ts1: conftest.ts2""' >conftest.mk|echo '""SHELL = /sw/bash/bin/bash""' >conftest.mk; echo '""conftest.ts1: conftest.ts2""' >>conftest.mk|" \
++  -e '/^am__doit:/i SHELL = /sw/bash/bin/bash' \
++  configure compile depcomp install-sh missing
+ 
+ ./configure --prefix /usr
+ $MAKE
 diff -Naur automake-1.18.1.orig/t/amhello-cflags.sh automake-1.18.1/t/amhello-cflags.sh
 --- automake-1.18.1.orig/t/amhello-cflags.sh	2025-01-12 11:30:29.000000000 -0500
 +++ automake-1.18.1/t/amhello-cflags.sh	2025-01-12 11:30:29.000000000 -0500
@@ -1206,6 +1270,17 @@ diff -Naur automake-1.18.1.orig/t/amhello-cflags.sh automake-1.18.1/t/amhello-cf
  # Copyright (C) 2011-2025 Free Software Foundation, Inc.
  #
  # This program is free software; you can redistribute it and/or modify
+@@ -27,6 +27,10 @@
+ 
+ gzip -dc amhello-1.0.tar.gz | tar xf -
+ cd amhello-1.0
++sed -i -e 's|/bin/sh|/sw/bash/bin/bash|g' \
++  -e "s|echo '""conftest.ts1: conftest.ts2""' >conftest.mk|echo '""SHELL = /sw/bash/bin/bash""' >conftest.mk; echo '""conftest.ts1: conftest.ts2""' >>conftest.mk|" \
++  -e '/^am__doit:/i SHELL = /sw/bash/bin/bash' \
++  configure compile depcomp install-sh missing
+ 
+ mkdir debug optim
+ cd debug
 diff -Naur automake-1.18.1.orig/t/amhello-cross-compile.sh automake-1.18.1/t/amhello-cross-compile.sh
 --- automake-1.18.1.orig/t/amhello-cross-compile.sh	2025-01-12 11:30:29.000000000 -0500
 +++ automake-1.18.1/t/amhello-cross-compile.sh	2025-01-12 11:30:29.000000000 -0500
@@ -1215,6 +1290,17 @@ diff -Naur automake-1.18.1.orig/t/amhello-cross-compile.sh automake-1.18.1/t/amh
  # Copyright (C) 2011-2025 Free Software Foundation, Inc.
  #
  # This program is free software; you can redistribute it and/or modify
+@@ -31,6 +31,10 @@
+ 
+ gzip -dc amhello-1.0.tar.gz | tar xf -
+ cd amhello-1.0
++sed -i -e 's|/bin/sh|/sw/bash/bin/bash|g' \
++  -e "s|echo '""conftest.ts1: conftest.ts2""' >conftest.mk|echo '""SHELL = /sw/bash/bin/bash""' >conftest.mk; echo '""conftest.ts1: conftest.ts2""' >>conftest.mk|" \
++  -e '/^am__doit:/i SHELL = /sw/bash/bin/bash' \
++  configure compile depcomp install-sh missing
+ 
+ ./configure --build "$build" --host "$host" > stdout \
+   || { cat stdout ; exit 1; }
 diff -Naur automake-1.18.1.orig/t/am-include-only-one-generated-fragment.sh automake-1.18.1/t/am-include-only-one-generated-fragment.sh
 --- automake-1.18.1.orig/t/am-include-only-one-generated-fragment.sh	2025-01-12 11:30:29.000000000 -0500
 +++ automake-1.18.1/t/am-include-only-one-generated-fragment.sh	2025-01-12 11:30:29.000000000 -0500
@@ -10946,6 +11032,14 @@ diff -Naur automake-1.18.1.orig/t/self-check-shell-no-trail-bslash.sh automake-1
  # Copyright (C) 2012-2025 Free Software Foundation, Inc.
  #
  # This program is free software; you can redistribute it and/or modify
+@@ -24,6 +24,7 @@
+ . test-init.sh
+ 
+ cat >> Makefile <<'END'
++SHELL = /sw/bash/bin/bash
+ am__backslash = \\ # foo
+ .PHONY: good bad
+ good:
 diff -Naur automake-1.18.1.orig/t/self-check-unindent.tap automake-1.18.1/t/self-check-unindent.tap
 --- automake-1.18.1.orig/t/self-check-unindent.tap	2025-01-12 11:30:29.000000000 -0500
 +++ automake-1.18.1/t/self-check-unindent.tap	2025-01-12 11:30:29.000000000 -0500
@@ -11225,6 +11319,14 @@ diff -Naur automake-1.18.1.orig/t/spy-double-colon.sh automake-1.18.1/t/spy-doub
  # Copyright (C) 2003-2025 Free Software Foundation, Inc.
  #
  # This program is free software; you can redistribute it and/or modify
+@@ -70,6 +70,7 @@
+ . test-init.sh
+ 
+ cat >Makefile <<\EOF
++SHELL = /sw/bash/bin/bash
+ a :: b
+ 	echo rule1 >> $@
+ a :: c
 diff -Naur automake-1.18.1.orig/t/spy-rm.tap automake-1.18.1/t/spy-rm.tap
 --- automake-1.18.1.orig/t/spy-rm.tap	2025-01-12 11:30:29.000000000 -0500
 +++ automake-1.18.1/t/spy-rm.tap	2025-01-12 11:30:29.000000000 -0500
