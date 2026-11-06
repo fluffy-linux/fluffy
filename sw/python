@@ -1,0 +1,128 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=3.14.7
+
+ARCHIVES=(
+    3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz
+    d484b784ec35c5776c5ff55f81fa984b5251a38b532b24bb00e43148bd73ffe9 https://www.python.org/ftp/python/doc/$VERSION/python-$VERSION-docs-html.tar.bz2
+    b8664a0776f8c4a1ba4d8c61171991b437bc0952b5ecf6947e9c0c87b4d345e8 file://Python-$VERSION-fluffy.patch
+)
+
+NEEDS=(
+    bzip2
+    expat
+    gdbm
+    glibc
+    libffi
+    libxcrypt
+    mpdecimal
+    ncurses
+    openssl
+    readline
+    sqlite
+    xz
+    zlib
+    zstd
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bzip2
+        coreutils-pass1
+        diffutils-pass1
+        expat
+        findutils-pass1
+        gawk-pass1
+        gcc
+        gdbm
+        glibc
+        grep
+        gzip-pass1
+        libffi
+        libxcrypt
+        linux-headers
+        make-pass1
+        mpdecimal
+        ncurses
+        openssl
+        patch-pass1
+        readline
+        sed
+        sqlite
+        tar-pass1
+        xz
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bzip2
+        coreutils
+        diffutils
+        expat
+        findutils
+        gawk
+        gcc
+        gdbm
+        glibc
+        grep
+        gzip
+        libffi
+        libxcrypt
+        linux-headers
+        make
+        mpdecimal
+        ncurses
+        openssl
+        patch
+        readline
+        sed
+        sqlite
+        tar
+        xz
+        zlib
+        zstd
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i Python-$VERSION-fluffy.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+        --prefix=/sw/python \
+        --enable-shared \
+        --with-system-expat \
+        --without-static-libpython
+    make SHELL=/sw/bash/bin/bash
+}
+
+CHECK() {
+    make test TESTOPTS="--timeout 120 -x test_urllib2 -x test_urllibnet"
+}
+
+INSTALL() {
+    make SHELL=/sw/bash/bin/bash install
+
+    cat > $DESTDIR/sw/python/pip.conf << 'EOF'
+[global]
+root-user-action = ignore
+disable-pip-version-check = true
+EOF
+
+    install -v -dm755 $DESTDIR/sw/python/share/doc/python-$VERSION/html
+    if [ -d ../python-$VERSION-docs-html/python-$VERSION-docs-html ]; then
+        cp -a ../python-$VERSION-docs-html/python-$VERSION-docs-html/* $DESTDIR/sw/python/share/doc/python-$VERSION/html/
+    elif [ -d ../python-$VERSION-docs-html ]; then
+        cp -a ../python-$VERSION-docs-html/* $DESTDIR/sw/python/share/doc/python-$VERSION/html/
+    fi
+}
