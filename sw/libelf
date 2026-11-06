@@ -86,6 +86,7 @@ MAKE() {
         --prefix=/sw/libelf \
         --disable-debuginfod \
         --enable-libdebuginfod=dummy \
+        --without-libarchive \
         PKG_CONFIG=/sw/coreutils/bin/true \
         ZSTD_COMPRESS_CFLAGS=" " \
         ZSTD_COMPRESS_LIBS="-lzstd"
