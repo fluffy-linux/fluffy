@@ -1,0 +1,114 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=5.44.0
+
+ARCHIVES=(
+    505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://www.cpan.org/src/5.0/perl-$VERSION.tar.xz
+    02bcb501257e1256771a4832977aeea1761ff4442501f29e631a5aed90a60e2b file://perl-$VERSION-fluffy-shell.patch
+    e6ff3e538acbaa3823fef31c2f230a004c3fe19ab104837bf340612a9330cb6b file://perl-$VERSION-fluffy-test.patch
+)
+
+NEEDS=(
+    bzip2
+    gdbm
+    glibc
+    less
+    libxcrypt
+    zlib
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bzip2
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        gdbm
+        glibc
+        grep
+        gzip-pass1
+        iana-etc
+        less
+        libgcc
+        libxcrypt
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed
+        tar-pass1
+        xz
+        zlib
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bzip2
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gdbm
+        glibc
+        grep
+        gzip
+        iana-etc
+        less
+        libgcc
+        libxcrypt
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        xz
+        zlib
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i perl-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i perl-$VERSION-fluffy-test.patch
+
+    export BUILD_ZLIB=False
+    export BUILD_BZIP2=0
+
+    sh Configure -des \
+        -D prefix=/sw/perl \
+        -D vendorprefix=/sw/perl \
+        -D privlib=/sw/perl/lib/perl5/5.44/core_perl \
+        -D archlib=/sw/perl/lib/perl5/5.44/core_perl \
+        -D sitelib=/sw/perl/lib/perl5/5.44/site_perl \
+        -D sitearch=/sw/perl/lib/perl5/5.44/site_perl \
+        -D vendorlib=/sw/perl/lib/perl5/5.44/vendor_perl \
+        -D vendorarch=/sw/perl/lib/perl5/5.44/vendor_perl \
+        -D man1dir=/sw/perl/share/man/man1 \
+        -D man3dir=/sw/perl/share/man/man3 \
+        -D pager="/sw/less/bin/less -isR" \
+        -D useshrplib \
+        -D usethreads \
+        -D targetsh=/sw/bash/bin/bash \
+        -D locincpth="" \
+        -D loclibpth=""
+    make
+}
+
+CHECK() {
+    TEST_JOBS=$(nproc) make test_harness
+}
+
+INSTALL() {
+    make install
+    unset BUILD_ZLIB BUILD_BZIP2
+}

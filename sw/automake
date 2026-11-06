@@ -1,0 +1,119 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.18.1
+
+ARCHIVES=(
+    168aa363278351b89af56684448f525a5bce5079d0b6842bd910fdd3f1646887 https://ftpmirror.gnu.org/automake/automake-$VERSION.tar.xz
+    688a42200ee416b882038f112da1073fc591e5424a9f7b79ea823f07e799bd4b file://automake-$VERSION-fluffy-shell.patch
+)
+
+if test -v CROSS
+then
+    NEEDS=(
+        autoconf
+        bash
+        coreutils-pass1
+        grep
+        m4
+        perl
+        sed
+        texinfo-pass1
+    )
+
+    BUILD_NEEDS=(
+        autoconf
+        bash
+        binutils
+        bison
+        bzip2
+        coreutils-pass1
+        dejagnu
+        diffutils-pass1
+        expect
+        findutils-pass1
+        flex
+        gawk-pass1
+        gcc
+        gettext
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        libstdcpp
+        libtool
+        linux-headers
+        m4
+        make-pass1
+        patch-pass1
+        perl
+        sed
+        tar-pass1
+        texinfo-pass1
+        xz
+    )
+else
+    NEEDS=(
+        autoconf
+        bash
+        coreutils
+        grep
+        m4
+        perl
+        sed
+        texinfo
+    )
+
+    BUILD_NEEDS=(
+        autoconf
+        bash
+        binutils
+        bison
+        bzip2
+        coreutils
+        dejagnu
+        diffutils
+        expect
+        findutils
+        flex
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        libstdcpp
+        libtool
+        linux-headers
+        m4
+        make
+        patch
+        perl
+        sed
+        tar
+        texinfo
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i automake-$VERSION-fluffy-shell.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/automake \
+        --docdir=/sw/automake/share/doc/automake-$VERSION
+    make
+}
+
+CHECK() {
+    make -j$(($(nproc)>4?$(nproc):4)) check
+}
+
+INSTALL() {
+    make install
+}
