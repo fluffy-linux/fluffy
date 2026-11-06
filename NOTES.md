@@ -373,6 +373,7 @@
   - 8.49 `openssl` (4.0.1) verified and registered (`openssl-4.0.1.squashfs`): `HASHBANGPERL` configured to `/sw/perl/bin/perl` in `Configurations/00-base-templates.conf`, full test suite passing.
   - 8.50 `libelf` (0.195 from `elfutils-0.195`) verified and registered (`libelf-0.195.squashfs`): configured with `--disable-debuginfod --enable-libdebuginfod=dummy --without-libarchive`, passing all 260 unit tests (`PASS: 251`, `SKIP: 9`, `FAIL: 0`).
   - 8.51 `libffi` (3.8.0) verified and registered (`libffi-3.8.0.squashfs`): configured with `--disable-multi-os-directory --with-gcc-arch=native`, DejaGnu test suite passing.
+  - 8.52 `sqlite` (3530400) verified and registered (`sqlite-3530400.squashfs`): configured with `--disable-static --enable-fts4 --enable-fts5 --disable-rpath --soname=legacy`; `autosetup` patched to expand wildcard `PATH` entries and avoid hardcoded `/bin/sh`.
 
 - **Autosetup `$CROSS` Collision Note**:
   - `autosetup` (used by modern SQLite and other tools) defines its cross-compilation prefix directly from the `CROSS` environment variable: `define cross [get-env CROSS $cross]`.
