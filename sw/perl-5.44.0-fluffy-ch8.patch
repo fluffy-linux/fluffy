@@ -52,6 +52,23 @@ diff -Naur perl-5.44.0.orig/cpan/bignum/gentest/scope-nested-hex-oct.sh perl-5.4
  # -*- mode: cperl; coding: utf-8-unix; -*-
  
  eval 'exec ${PERL-perl} -Sx "$0" ${1+"$@"}'
+diff -Naur perl-5.44.0.orig/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm perl-5.44.0/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm
+--- perl-5.44.0.orig/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm	2026-06-22 10:48:00.000000000 -0400
++++ perl-5.44.0/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm	2026-06-22 10:48:00.000000000 -0400
+@@ -1997,11 +1997,11 @@
+ 
+     $self->{LD}         ||= 'ld';
+ 
+-    return $self->SUPER::init_tools(@_);
++    $self->SUPER::init_tools(@_);
+ 
+     # After SUPER::init_tools so $Config{shell} has a
+     # chance to get set.
+-    $self->{SHELL}      ||= '/bin/sh';
++    $self->{SHELL}      ||= $Config{sh} || '/sw/bash/bin/bash';
+ 
+     return;
+ }
 diff -Naur perl-5.44.0.orig/cpan/Memoize/t/st_concurrency perl-5.44.0/cpan/Memoize/t/st_concurrency
 --- perl-5.44.0.orig/cpan/Memoize/t/st_concurrency	2026-05-13 20:58:28.000000000 -0400
 +++ perl-5.44.0/cpan/Memoize/t/st_concurrency	2026-05-13 20:58:28.000000000 -0400
@@ -130,6 +147,18 @@ diff -Naur perl-5.44.0.orig/Cross/warp perl-5.44.0/Cross/warp
  
  ## This script contains an rm -rf.  This may alarm you.
  ## These directories need to be recursively deleted.
+diff -Naur perl-5.44.0.orig/ext/Pod-Html/t/lib/Testing.pm perl-5.44.0/ext/Pod-Html/t/lib/Testing.pm
+--- perl-5.44.0.orig/ext/Pod-Html/t/lib/Testing.pm	2026-06-22 10:48:00.000000000 -0400
++++ perl-5.44.0/ext/Pod-Html/t/lib/Testing.pm	2026-06-22 10:48:00.000000000 -0400
+@@ -572,7 +572,7 @@
+     }
+     die("process_diff() arguments missing: @keys_missing") if @keys_missing;
+ 
+-    my $diff = '/bin/diff';
++    my $diff = '/sw/diffutils/bin/diff';
+     -x $diff or $diff = '/usr/bin/diff';
+     -x $diff or $diff = undef;
+     my $diffopt = $diff ? $^O =~ m/(linux|darwin)/ ? '-u' : '-c'
 diff -Naur perl-5.44.0.orig/ext/SDBM_File/grind perl-5.44.0/ext/SDBM_File/grind
 --- perl-5.44.0.orig/ext/SDBM_File/grind	2026-05-13 20:58:29.000000000 -0400
 +++ perl-5.44.0/ext/SDBM_File/grind	2026-05-13 20:58:29.000000000 -0400
@@ -184,6 +213,18 @@ diff -Naur perl-5.44.0.orig/hints/riscos.sh perl-5.44.0/hints/riscos.sh
  # riscos.sh - hints for building perl using the gccsdk cross compiler for RISC OS
  #
  
+diff -Naur perl-5.44.0.orig/installman perl-5.44.0/installman
+--- perl-5.44.0.orig/installman	2026-05-13 20:58:29.000000000 -0400
++++ perl-5.44.0/installman	2026-05-13 20:58:29.000000000 -0400
+@@ -49,7 +49,7 @@
+ $opts{destdir} //= '';
+ 
+ foreach my $pre (qw(man1 man3)) {
+-    $opts{"${pre}dir"} //= $opts{destdir} . $Config{"install${pre}dir"};
++    $opts{"${pre}dir"} //= length($Config{"install${pre}dir"}) ? $opts{destdir} . $Config{"install${pre}dir"} : "";
+     $opts{"${pre}ext"} //= $Config{"${pre}ext"};
+ }
+ $opts{verbose} ||= $opts{notify};
 diff -Naur perl-5.44.0.orig/makedependfile.SH perl-5.44.0/makedependfile.SH
 --- perl-5.44.0.orig/makedependfile.SH	2026-06-22 10:48:00.000000000 -0400
 +++ perl-5.44.0/makedependfile.SH	2026-06-22 10:48:00.000000000 -0400
@@ -310,18 +351,6 @@ diff -Naur perl-5.44.0.orig/qnx/cpp perl-5.44.0/qnx/cpp
  #__USAGE
  #%C	[-P] [-C] other options
  #	cpp is a wrapper for wcc to make it work like other cpp's
-diff -Naur perl-5.44.0.orig/installman perl-5.44.0/installman
---- perl-5.44.0.orig/installman	2026-05-13 20:58:29.000000000 -0400
-+++ perl-5.44.0/installman	2026-05-13 20:58:29.000000000 -0400
-@@ -49,7 +49,7 @@
- $opts{destdir} //= '';
- 
- foreach my $pre (qw(man1 man3)) {
--    $opts{"${pre}dir"} //= $opts{destdir} . $Config{"install${pre}dir"};
-+    $opts{"${pre}dir"} //= length($Config{"install${pre}dir"}) ? $opts{destdir} . $Config{"install${pre}dir"} : "";
-     $opts{"${pre}ext"} //= $Config{"${pre}ext"};
- }
- $opts{verbose} ||= $opts{notify};
 diff -Naur perl-5.44.0.orig/runtests.SH perl-5.44.0/runtests.SH
 --- perl-5.44.0.orig/runtests.SH	2026-05-13 20:58:29.000000000 -0400
 +++ perl-5.44.0/runtests.SH	2026-05-13 20:58:29.000000000 -0400
