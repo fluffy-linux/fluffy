@@ -47,8 +47,11 @@
             - **Wildcard Executable Paths in `glibc` (`exec*` / `posix_spawn`)**: Teach `glibc` execution routines (`execve`, `execv`, `execvpe` when `file` contains `/`, `posix_spawn`) to expand glob patterns directly in the executable path itself (e.g. `/sw/*/bin/sh`, `/sw/*/bin/diff`), where the first lexicographical match wins.
             - **Kernel-Level `#!` Resolution via `binfmt_misc` (`#!bash`, `#!perl`, `#!/sw/*/bin/...`)**:
               - In the Linux kernel (`fs/exec.c`), `binfmt_misc` (`register_binfmt`, added at the head of `formats`) runs *before* `binfmt_script` (`insert_binfmt`, added at the tail) and applies to all `execve(2)` callers—including statically linked non-libc binaries like Go.
-              - Since Linux 6.7+, `binfmt_misc` is per-user-namespace, so `swctl` (or a booted Fluffy system) can mount an isolated `binfmt_misc` instance and register a tiny C trampoline on magic `#!` (with `P` `preserve-argv[0]` and `O` `open-binary` flags).
-              - Because `binfmt_misc` invokes the trampoline in the calling process's context with its exact `envp` (including `PATH`), shebangs can honor the caller's `PATH` via `execvp()`—enabling pathless shebangs like `#!bash`, `#!sh`, `#!perl -w`, or `#!python3`, as well as globbed shebangs (`#!/sw/*/bin/bash`) or legacy FHS shebangs (`#!/bin/sh`, `#!/usr/bin/env ...`) without patching script headers.
+              - Since Linux 6.7+, `binfmt_misc` is per-user-namespace, so `swctl` (or a booted Fluffy system) can mount an isolated `binfmt_misc` instance and register a handler at `/sw/shebang/bin/shebang` on magic `#!` (with `P` `preserve-argv[0]` and `O` `open-binary` flags, and *without* `F` so the kernel resolves `/sw/shebang/bin/shebang` dynamically inside the caller's active mount/chroot namespace).
+              - Because `binfmt_misc` invokes the handler in the calling process's context with its exact `envp` (including `PATH`), shebangs can honor the caller's `PATH` via `execvp()`—enabling pathless shebangs like `#!bash`, `#!sh`, `#!perl -w`, or `#!python3`, as well as globbed shebangs (`#!/sw/*/bin/bash`) or legacy FHS shebangs (`#!/bin/sh`, `#!/usr/bin/env ...`) without patching script headers.
+              - **Two-Stage Bootstrap (`host /bin/bash` Shim → Native C `shebang` Binary)**:
+                1. **Stage 1 (`host-build` Bootstrap Placeholder)**: On the host (where `swctl` already expands `/sw/*/bin` into explicit `PATH` entries so no `PATH` globbing is needed yet), `swctl` bind-mounts the host's `/bin/bash` ELF binary to `/sw/shebang/bin/shebang` with a tiny `BASH_ENV` hook. Because `/bin/bash` is an ELF binary (`\x7fELF`), `binfmt_misc` does not recurse on `#!`; when invoked on a script, `bash` sources `$BASH_ENV`, inspects line 1 of `$0`, executes plain `#!bash`/`#!sh` scripts directly in-process (treating line 1 as a `#` comment), and uses `BASH_ENV= exec <interp> "$0" "$@"` to dispatch flagged (`#!bash -e`) or non-shell (`#!perl -w`, `#!gawk -f`) scripts via normal `PATH` lookup.
+                2. **Stage 2 (`cross-build` / `fluffy-build` Native C Handler)**: Once the cross-toolchain (`gcc-pass1` + `glibc-pass1`) is built, a tiny, zero-overhead native C `shebang` binary is cross-compiled against Fluffy's glob-aware `glibc` (`execvp`) and packaged at `/sw/shebang/bin/shebang`. Entering the chroot mounts `/sw/shebang` at the exact same `/sw/shebang/bin/shebang` path already registered in `binfmt_misc`, handing off seamlessly from the host bash placeholder to the native C binary.
        - Shell defaults in `paths.h` and `system.c`: `_PATH_DEFPATH` defaults to `"/sw/*/bin"`, `_PATH_STDPATH` to `"/sw/*/bin:/sw/*/sbin"`, and `_PATH_BSHELL` / `SHELL_PATH` to `"/sw/bash/bin/bash"`, ensuring `system()` and `popen()` run natively without `/bin/sh`.
      - **Dynamic Linker (`ld.so`)**: Iterates `/sw/*/lib` (`_dl_init_paths` in `elf/dl-load.c`) to resolve shared libraries dynamically at runtime.
      - **Final Pass Toolchain Vision (Glibc & GCC Native Wildcard Inclusion)**:
@@ -334,7 +337,9 @@
   - 8.41 `gperf` (3.3) verified and registered (`gperf-3.3.squashfs`).
   - 8.42 `expat` (2.8.3) verified and registered (`expat-2.8.3.squashfs`).
   - 8.43 `inetutils` (2.8) verified and registered (`inetutils-2.8.squashfs`).
-  - 8.44 `less` (704) verified and registered (`less-704.squashfs`).
+  - 8.45 `less` (704) verified and registered (`less-704.squashfs`).
+  - 8.46 `perl` (5.44.0) verified and registered (`perl-5.44.0.squashfs`).
+  - 8.47 `autoconf` (2.73) verified and registered (`autoconf-2.73.squashfs`).
 
 - **Chapter 7 Complete (In-Chroot Native Compilation & Network Stack)**:
   - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.
