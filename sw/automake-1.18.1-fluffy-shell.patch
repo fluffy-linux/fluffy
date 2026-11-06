@@ -11184,6 +11184,14 @@ diff -Naur automake-1.18.1.orig/t/silent-nested-vars.sh automake-1.18.1/t/silent
  makerules=
  
  case $1 in
+@@ -91,6 +91,7 @@
+ # As a sanity check, verify that 'mymake' rejects Makefiles that
+ # use nested variables.
+ cat > Makefile <<'END'
++SHELL = /sw/bash/bin/bash
+ a = $(b$(c))
+ all:
+ 	touch bar
 diff -Naur automake-1.18.1.orig/t/silent-texi.sh automake-1.18.1/t/silent-texi.sh
 --- automake-1.18.1.orig/t/silent-texi.sh	2025-01-12 11:30:29.000000000 -0500
 +++ automake-1.18.1/t/silent-texi.sh	2025-01-12 11:30:29.000000000 -0500
