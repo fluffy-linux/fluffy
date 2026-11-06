@@ -1,0 +1,103 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=0.195
+
+ARCHIVES=(
+    37629fdf7f1f3dc2818e138fca2b8094177d6c2d0f701d3bb650a561218dc026 https://sourceware.org/ftp/elfutils/$VERSION/elfutils-$VERSION.tar.bz2
+    00cc21817315ba515f3c72de3badfb7439a7935e1fb244ebdc41f08c600c121b file://elfutils-$VERSION-fluffy.patch
+)
+
+NEEDS=(
+    bzip2
+    glibc
+    xz
+    zlib
+    zstd
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        bzip2
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        flex
+        gawk-pass1
+        gcc
+        gettext
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        libstdcpp
+        linux-headers
+        m4
+        make-pass1
+        patch-pass1
+        pkgconf
+        sed
+        tar-pass1
+        xz
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        bzip2
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        libstdcpp
+        linux-headers
+        m4
+        make
+        patch
+        pkgconf
+        sed
+        tar
+        xz
+        zlib
+        zstd
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i elfutils-$VERSION-fluffy.patch
+
+    ./configure \
+        --prefix=/sw/libelf \
+        --disable-debuginfod \
+        --enable-libdebuginfod=dummy
+    make -C lib
+    make -C libelf
+}
+
+CHECK() {
+    make -k check
+}
+
+INSTALL() {
+    make -C libelf install
+    install -vDm644 config/libelf.pc $DESTDIR/sw/libelf/lib/pkgconfig/libelf.pc
+    rm -v $DESTDIR/sw/libelf/lib/libelf.a
+}
