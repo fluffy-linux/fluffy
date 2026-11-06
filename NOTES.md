@@ -43,6 +43,9 @@
        - Fluffy does not use `sbin` directories anywhere. All utilities, system binaries, and administrative daemons reside in `/sw/<pkg>/bin` (configured via `--sbindir=/sw/<pkg>/bin` or `rootsbindir=/sw/<pkg>/bin`).
        - `bash`: `findcmd.c` and `bashline.c` dynamically glob and iterate `/sw/*/bin` for command resolution and TAB completion.
        - `glibc`: `posix/execvpe.c` (`__execvpe_common`) parses wildcard PATH entries like `/sw/*/bin`, discovers all `/sw/<pkg>/bin` directories via `__getdents64` without heap allocations (`vfork`/`CLONE_VM` safe), and tests executables in alphabetical order. All POSIX execution APIs (`execvp`, `execvpe`, `execlp`, `posix_spawnp`) work transparently with literal wildcard `PATH`.
+          - **Future Enhancement — Wildcard Executable Paths & Userspace `#!` Fallback in `glibc` (`exec*` / `posix_spawn`)**:
+            - Teach `glibc` execution routines (`execve`, `execv`, `execvpe` when `file` contains `/`, `posix_spawn`) to expand glob patterns directly in the executable path itself (e.g. `/sw/*/bin/sh`, `/sw/*/bin/diff`), where the first lexicographical match wins.
+            - Because builds run on host kernels we do not control (so kernel `binfmt_script` cannot be modified and `binfmt_misc` would require host privileges), `glibc`'s userspace `execve` / `spawni` wrapper can also intercept `ENOENT` when executing a script whose `#!` interpreter contains a glob (e.g. `#!/sw/*/bin/perl` or `#!/sw/*/bin/sh`), parse the `#!` line in userspace, expand the globbed interpreter path (first match wins), and invoke the resolved interpreter directly.
        - Shell defaults in `paths.h` and `system.c`: `_PATH_DEFPATH` defaults to `"/sw/*/bin"`, `_PATH_STDPATH` to `"/sw/*/bin:/sw/*/sbin"`, and `_PATH_BSHELL` / `SHELL_PATH` to `"/sw/bash/bin/bash"`, ensuring `system()` and `popen()` run natively without `/bin/sh`.
      - **Dynamic Linker (`ld.so`)**: Iterates `/sw/*/lib` (`_dl_init_paths` in `elf/dl-load.c`) to resolve shared libraries dynamically at runtime.
      - **Final Pass Toolchain Vision (Glibc & GCC Native Wildcard Inclusion)**:
@@ -319,6 +322,16 @@
   - 8.32 `ncurses` (6.6) verified and registered (`ncurses-6.6.squashfs`, 1.7M): wide-character ABI enabled (`--enable-widec`, `--enable-overwrite`), shared C++ bindings (`--with-cxx-shared`, `libncurses++w.so`), curses.h wide-character ABI fix applied, and non-wide compatibility symlinks (`libncurses.so`, `libform.so`, `libpanel.so`, `libmenu.so`, `libcurses.so`).
   - 8.33 `sed` (4.10) verified and registered (`sed-4.10.squashfs`, 500K): built with HTML documentation, full test suite passing, and `/sw/sed/bin/sed` verified.
   - 8.34 `psmisc` (23.7) verified and registered (`psmisc-23.7.squashfs`, 352K): full DejaGnu test suite passing; `fuser`, `killall`, `peekfd`, `prtstat`, `pslog`, `pstree`, and `pstree.x11` verified.
+  - 8.35 `gettext` (1.0) verified and registered (`gettext-1.0.squashfs`).
+  - 8.36 `bison` (3.8.2) verified and registered (`bison-3.8.2.squashfs`).
+  - 8.37 `grep` (3.12) verified and registered (`grep-3.12.squashfs`).
+  - 8.38 `bash` (5.3) verified and registered (`bash-5.3.squashfs`).
+  - 8.39 `libtool` (2.6.2) verified and registered (`libtool-2.6.2.squashfs`).
+  - 8.40 `gdbm` (1.26) verified and registered (`gdbm-1.26.squashfs`).
+  - 8.41 `gperf` (3.3) verified and registered (`gperf-3.3.squashfs`).
+  - 8.42 `expat` (2.8.3) verified and registered (`expat-2.8.3.squashfs`).
+  - 8.43 `inetutils` (2.8) verified and registered (`inetutils-2.8.squashfs`).
+  - 8.44 `less` (704) verified and registered (`less-704.squashfs`).
 
 - **Chapter 7 Complete (In-Chroot Native Compilation & Network Stack)**:
   - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.
