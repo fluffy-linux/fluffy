@@ -69,6 +69,18 @@ diff -Naur perl-5.44.0.orig/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm perl
  
      return;
  }
+diff -Naur perl-5.44.0.orig/cpan/ExtUtils-MakeMaker/t/echo.t perl-5.44.0/cpan/ExtUtils-MakeMaker/t/echo.t
+--- perl-5.44.0.orig/cpan/ExtUtils-MakeMaker/t/echo.t	2026-05-13 20:58:28.000000000 -0400
++++ perl-5.44.0/cpan/ExtUtils-MakeMaker/t/echo.t	2026-05-13 20:58:28.000000000 -0400
+@@ -53,7 +53,7 @@
+         open my $makefh, ">", "Makefile" or croak "Can't open Makefile: $!";
+         print $makefh "FOO=42\n";       # a variable to test with
+ 
+-        for my $key (qw(INST_ARCHLIB INST_LIB PERL ABSPERL ABSPERLRUN ECHO)) {
++        for my $key (qw(SHELL INST_ARCHLIB INST_LIB PERL ABSPERL ABSPERLRUN ECHO)) {
+             print $makefh "$key=$mm->{$key}\n";
+         }
+         print $makefh "SHELL=$shell\n" if defined $shell;
 diff -Naur perl-5.44.0.orig/cpan/Memoize/t/st_concurrency perl-5.44.0/cpan/Memoize/t/st_concurrency
 --- perl-5.44.0.orig/cpan/Memoize/t/st_concurrency	2026-05-13 20:58:28.000000000 -0400
 +++ perl-5.44.0/cpan/Memoize/t/st_concurrency	2026-05-13 20:58:28.000000000 -0400
