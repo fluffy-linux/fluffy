@@ -67,7 +67,7 @@ fi
 MAKE() {
     patch -Z -Np1 -i sqlite-$VERSION-fluffy.patch
 
-    autosetup_tclsh=/sw/tcl/bin/tclsh CROSS="" ./configure \
+    CROSS="" ./configure \
         --prefix=/sw/sqlite \
         --disable-static \
         --enable-fts4 \
