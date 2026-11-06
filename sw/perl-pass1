@@ -4,8 +4,8 @@ VERSION=5.44.0
 
 ARCHIVES=(
     505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://www.cpan.org/src/5.0/perl-$VERSION.tar.xz
-    88349b06fc44db99308859fe656f375e32788ff0ab877b5d862409541b0387a0 file://perl-$VERSION-fluffy-shell.patch
-    682a045cdb9360a10ea089bd8b75806ae763b4734151aa457a47c5115e2752a5 file://perl-$VERSION-fluffy-test.patch
+    02bcb501257e1256771a4832977aeea1761ff4442501f29e631a5aed90a60e2b file://perl-$VERSION-fluffy-shell.patch
+    e6ff3e538acbaa3823fef31c2f230a004c3fe19ab104837bf340612a9330cb6b file://perl-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
