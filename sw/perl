@@ -9,8 +9,7 @@ VERSION=5.44.0
 
 ARCHIVES=(
     505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://www.cpan.org/src/5.0/perl-$VERSION.tar.xz
-    02bcb501257e1256771a4832977aeea1761ff4442501f29e631a5aed90a60e2b file://perl-$VERSION-fluffy-shell.patch
-    e6ff3e538acbaa3823fef31c2f230a004c3fe19ab104837bf340612a9330cb6b file://perl-$VERSION-fluffy-test.patch
+    5b43f9b095072c3e47c8cb7498b8afe68f17ac045cb1071af8df13a630c567aa file://perl-$VERSION-fluffy-ch8.patch
 )
 
 NEEDS=(
@@ -78,8 +77,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i perl-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i perl-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i perl-$VERSION-fluffy-ch8.patch
 
     export BUILD_ZLIB=False
     export BUILD_BZIP2=0

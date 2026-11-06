@@ -4,8 +4,9 @@ VERSION=4.0.1
 
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/openssl/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
-    abf82586f823b212db5b5bd21c67ae08cb6482bdb5f1c347b346f5288507c2c1 file://openssl-$VERSION-fluffy-shell.patch
+    5b26ab2d703d911005c3edc9e8ed71f66b0fe46c399703dc75871a5296c11c21 file://openssl-$VERSION-fluffy-shell.patch
     fcba612593e5ca9c40129ce372de8f45d176cf0c5aa26a27188f7e91da144f46 file://openssl-$VERSION-fluffy-source.patch
+    ea528a091f500129a418ad31db3bd75ca8fe3c351425b66c51d4c2a5bf9dcfc2 file://openssl-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -23,6 +24,7 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i openssl-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i openssl-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i openssl-$VERSION-fluffy-test.patch
     ./Configure linux-x86_64 \
         --prefix=/sw/openssl \
         --openssldir='/sw/*/etc/ssl' \
