@@ -55,6 +55,8 @@ fi
 MAKE() {
     patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
 
+    ln -sv gthr-posix.h libgcc/gthr-default.h
+
     mkdir -v build
     cd build
     CONFIG_SITE=/sw/glibc/share/config.site ../libstdc++-v3/configure \
