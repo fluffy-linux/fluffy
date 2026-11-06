@@ -43,7 +43,6 @@ then
         m4
         make-pass1
         patch-pass1
-        pkgconf
         sed
         tar-pass1
         xz
@@ -72,7 +71,6 @@ else
         m4
         make
         patch
-        pkgconf
         sed
         tar
         xz
@@ -87,7 +85,9 @@ MAKE() {
     ./configure \
         --prefix=/sw/libelf \
         --disable-debuginfod \
-        --enable-libdebuginfod=dummy
+        --enable-libdebuginfod=dummy \
+        ZSTD_COMPRESS_CFLAGS=" " \
+        ZSTD_COMPRESS_LIBS="-lzstd"
     make -C lib
     make -C libelf
 }
@@ -98,6 +98,5 @@ CHECK() {
 
 INSTALL() {
     make -C libelf install
-    install -vDm644 config/libelf.pc $DESTDIR/sw/libelf/lib/pkgconfig/libelf.pc
     rm -v $DESTDIR/sw/libelf/lib/libelf.a
 }
