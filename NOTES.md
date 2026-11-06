@@ -350,6 +350,14 @@
   - 8.46 `perl` (5.44.0) verified and registered (`perl-5.44.0.squashfs`).
   - 8.47 `autoconf` (2.73) verified and registered (`autoconf-2.73.squashfs`).
   - 8.48 `automake` (1.18.1) verified and registered (`automake-1.18.1.squashfs`).
+  - 8.49 `openssl` (4.0.1) verified and registered (`openssl-4.0.1.squashfs`): `HASHBANGPERL` configured to `/sw/perl/bin/perl` in `Configurations/00-base-templates.conf`, full test suite passing.
+  - 8.50 `libelf` (0.195 from `elfutils-0.195`) verified and registered (`libelf-0.195.squashfs`): configured with `--disable-debuginfod --enable-libdebuginfod=dummy --without-libarchive`, passing all 260 unit tests (`PASS: 251`, `SKIP: 9`, `FAIL: 0`).
+  - 8.51 `libffi` (3.8.0) verified and registered (`libffi-3.8.0.squashfs`): configured with `--disable-multi-os-directory --with-gcc-arch=native`, DejaGnu test suite passing.
+
+- **Autosetup `$CROSS` Collision Note**:
+  - `autosetup` (used by modern SQLite and other tools) defines its cross-compilation prefix directly from the `CROSS` environment variable: `define cross [get-env CROSS $cross]`.
+  - When building with `CROSS=1 ./swctl build ...`, `autosetup` treats `CROSS=1` as a tool prefix string `"1"` and attempts to invoke `1cc`, `1gcc`, `1ar`, `1ld`.
+  - Recipes using `autosetup` must invoke configure with `CROSS="" ./configure ...` to ensure native tools (`cc`, `ar`, etc.) are resolved correctly.
 
 - **Chapter 7 Complete (In-Chroot Native Compilation & Network Stack)**:
   - `zstd-pass1` and `squashfs-tools-pass1` cross-compiled with `$FLUFFY_TGT-gcc` on host.
