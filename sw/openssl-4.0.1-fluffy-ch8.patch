@@ -6143,6 +6143,21 @@ diff -Naur openssl-4.0.1.orig/util/perl/OpenSSL/config.pm openssl-4.0.1/util/per
  # Copyright 1998-2026 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
+@@ -16,6 +16,14 @@
+ use Getopt::Std;
+ use File::Basename;
+ use File::Spec;
++use File::Spec;
++{
++    no warnings 'redefine';
++    *File::Spec::Unix::path = sub {
++        return () unless exists $ENV{PATH};
++        return map { $_ eq '' ? '.' : (/\*/ ? glob($_) : $_) } split(':', $ENV{PATH}, -1);
++    };
++}
+ use IPC::Cmd;
+ use POSIX;
+ use Config;
 diff -Naur openssl-4.0.1.orig/util/perl/OpenSSL/copyright.pm openssl-4.0.1/util/perl/OpenSSL/copyright.pm
 --- openssl-4.0.1.orig/util/perl/OpenSSL/copyright.pm	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/util/perl/OpenSSL/copyright.pm	2026-06-09 07:36:41.000000000 -0400
@@ -6197,6 +6212,24 @@ diff -Naur openssl-4.0.1.orig/util/perl/OpenSSL/Template.pm openssl-4.0.1/util/p
  # Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
+diff -Naur openssl-4.0.1.orig/util/perl/OpenSSL/Test.pm openssl-4.0.1/util/perl/OpenSSL/Test.pm
+--- openssl-4.0.1.orig/util/perl/OpenSSL/Test.pm	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/util/perl/OpenSSL/Test.pm	2026-06-09 07:36:41.000000000 -0400
+@@ -65,6 +65,14 @@
+ =cut
+ 
+ use File::Copy;
++use File::Spec;
++{
++    no warnings 'redefine';
++    *File::Spec::Unix::path = sub {
++        return () unless exists $ENV{PATH};
++        return map { $_ eq '' ? '.' : (/\*/ ? glob($_) : $_) } split(':', $ENV{PATH}, -1);
++    };
++}
+ use File::Spec::Functions qw/file_name_is_absolute curdir canonpath splitdir
+                              catdir catfile splitpath catpath devnull abs2rel/;
+ use File::Path 2.00 qw/rmtree mkpath/;
 diff -Naur openssl-4.0.1.orig/util/perl/OpenSSL/Util.pm openssl-4.0.1/util/perl/OpenSSL/Util.pm
 --- openssl-4.0.1.orig/util/perl/OpenSSL/Util.pm	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/util/perl/OpenSSL/Util.pm	2026-06-09 07:36:41.000000000 -0400
