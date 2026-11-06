@@ -9,7 +9,7 @@ VERSION=4.0.1
 
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/openssl/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
-    079e8073597e5ad1571314a13041ea0231af016b7148ef68e307492ac905d77f file://openssl-$VERSION-fluffy-ch8.patch
+    d41db2346162560a7f13cf61ebefbcc181a06a596aaea83a7efbbc10fd249808 file://openssl-$VERSION-fluffy-ch8.patch
     fcba612593e5ca9c40129ce372de8f45d176cf0c5aa26a27188f7e91da144f46 file://openssl-$VERSION-fluffy-source.patch
 )
 

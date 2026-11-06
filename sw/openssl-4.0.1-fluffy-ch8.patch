@@ -16,6 +16,27 @@ diff -Naur openssl-4.0.1.orig/config openssl-4.0.1/config
  # Copyright 2020 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
+diff -Naur openssl-4.0.1.orig/Configurations/00-base-templates.conf openssl-4.0.1/Configurations/00-base-templates.conf
+--- openssl-4.0.1.orig/Configurations/00-base-templates.conf	2026-06-09 07:36:41.000000000 -0400
++++ openssl-4.0.1/Configurations/00-base-templates.conf	2026-06-09 07:36:41.000000000 -0400
+@@ -30,7 +30,7 @@
+ 	AR		=> "(unused)",
+ 	ARFLAGS		=> "(unused)",
+ 	CC		=> "cc",
+-	HASHBANGPERL	=> "/usr/bin/env perl",
++	HASHBANGPERL	=> "/sw/perl/bin/perl",
+ 	RANLIB		=> sub { which("$config{cross_compile_prefix}ranlib")
+                                      ? "ranlib" : "" },
+ 	RC		=> "windres",
+@@ -118,7 +118,7 @@
+                 push(@libs, "-lzstd") if !defined($disabled{zstd}) && defined($disabled{"zstd-dynamic"});
+                 return join(" ", @libs);
+             },
+-        HASHBANGPERL    => "/usr/bin/env perl", # Only Unix actually cares
++        HASHBANGPERL    => "/sw/perl/bin/perl", # Only Unix actually cares
+         RANLIB          => sub { which("$config{cross_compile_prefix}ranlib")
+                                      ? "ranlib" : "" },
+         RC              => "windres",
 diff -Naur openssl-4.0.1.orig/Configurations/shared-info.pl openssl-4.0.1/Configurations/shared-info.pl
 --- openssl-4.0.1.orig/Configurations/shared-info.pl	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/Configurations/shared-info.pl	2026-06-09 07:36:41.000000000 -0400
