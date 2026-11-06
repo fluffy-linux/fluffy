@@ -1,0 +1,54 @@
+diff -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup sqlite-autoconf-3530400/autosetup/autosetup
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup	2026-07-24 15:28:58.000000000 -0400
++++ sqlite-autoconf-3530400/autosetup/autosetup	2026-07-24 15:28:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (c) 2006-2011 WorkWare Systems http://www.workware.net.au/
+ # All rights reserved
+ # vim:se syntax=tcl:
+diff -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup-config.guess sqlite-autoconf-3530400/autosetup/autosetup-config.guess
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup-config.guess	2026-07-24 15:28:58.000000000 -0400
++++ sqlite-autoconf-3530400/autosetup/autosetup-config.guess	2026-07-24 15:28:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+diff -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup-config.sub sqlite-autoconf-3530400/autosetup/autosetup-config.sub
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup-config.sub	2026-07-24 15:28:58.000000000 -0400
++++ sqlite-autoconf-3530400/autosetup/autosetup-config.sub	2026-07-24 15:28:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+diff -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup-find-tclsh sqlite-autoconf-3530400/autosetup/autosetup-find-tclsh
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup-find-tclsh	2026-07-24 15:28:58.000000000 -0400
++++ sqlite-autoconf-3530400/autosetup/autosetup-find-tclsh	2026-07-24 15:28:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Looks for a suitable tclsh or jimsh in the PATH
+ # If not found, builds a bootstrap jimsh in current dir from source
+ # Prefer $autosetup_tclsh if is set in the environment (unless ./jimsh0 works)
+diff -Naur sqlite-autoconf-3530400.orig/configure sqlite-autoconf-3530400/configure
+--- sqlite-autoconf-3530400.orig/configure	2026-07-24 15:28:36.000000000 -0400
++++ sqlite-autoconf-3530400/configure	2026-07-24 15:28:36.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ dir="`dirname "$0"`/autosetup"
+ #@@INITCHECK@@#
+ WRAPPER="$0"; export WRAPPER; exec "`"$dir/autosetup-find-tclsh"`" "$dir/autosetup" "$@"
+diff -Naur sqlite-autoconf-3530400.orig/tea/configure sqlite-autoconf-3530400/tea/configure
+--- sqlite-autoconf-3530400.orig/tea/configure	2026-07-24 15:28:58.000000000 -0400
++++ sqlite-autoconf-3530400/tea/configure	2026-07-24 15:28:58.000000000 -0400
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Look for and run autosetup...
+ dir0="`dirname "$0"`"
+ dirA="$dir0"

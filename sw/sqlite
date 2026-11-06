@@ -1,0 +1,86 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=3530400
+
+ARCHIVES=(
+    0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c https://sqlite.org/2026/sqlite-autoconf-$VERSION.tar.gz
+    1da8fe13035581754a118241dac61a44bad868c9cf8549e1d9d5138426e75cb7 file://sqlite-$VERSION-fluffy.patch
+)
+
+NEEDS=(
+    glibc
+    zlib
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed
+        tar-pass1
+        tcl
+        xz
+        zlib
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        tcl
+        xz
+        zlib
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i sqlite-$VERSION-fluffy.patch
+
+    CROSS="" ./configure \
+        --prefix=/sw/sqlite \
+        --disable-static \
+        --enable-fts4 \
+        --enable-fts5 \
+        --disable-rpath \
+        --soname=legacy \
+        CPPFLAGS="-D SQLITE_ENABLE_COLUMN_METADATA=1 \
+                  -D SQLITE_ENABLE_UNLOCK_NOTIFY=1   \
+                  -D SQLITE_ENABLE_DBSTAT_VTAB=1     \
+                  -D SQLITE_SECURE_DELETE=1"
+    make LDFLAGS.rpath=""
+}
+
+INSTALL() {
+    make install
+}
