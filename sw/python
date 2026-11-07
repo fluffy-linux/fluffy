@@ -46,6 +46,7 @@ then
         glibc
         grep
         gzip-pass1
+        iana-etc
         libffi
         libxcrypt
         linux-headers
@@ -77,6 +78,7 @@ else
         glibc
         grep
         gzip
+        iana-etc
         libffi
         libxcrypt
         linux-headers
@@ -108,7 +110,7 @@ MAKE() {
 
 CHECK() {
     unset SOURCE_DATE_EPOCH
-    make test TESTOPTS="--timeout 120 -x test_urllib2 -x test_urllibnet -x test_socket -x test_base_events"
+    make test TESTOPTS="--timeout 120 -x test_urllib2 -x test_urllibnet"
 }
 
 INSTALL() {
