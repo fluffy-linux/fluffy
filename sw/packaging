@@ -1,0 +1,41 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=26.3
+
+ARCHIVES=(
+    94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79 https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-$VERSION.tar.gz
+)
+
+NEEDS=(
+    python
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        coreutils-pass1
+        flit-core
+        python
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        coreutils
+        flit-core
+        python
+    )
+fi
+
+MAKE() {
+    pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+}
+
+INSTALL() {
+    pip3 install --no-index --find-links dist --no-cache-dir --no-build-isolation --root "$DESTDIR" --prefix /sw/packaging packaging
+}

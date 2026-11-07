@@ -392,6 +392,7 @@
   - 8.53 `mpdecimal` (4.0.1) verified and registered (`mpdecimal-4.0.1.squashfs`): configured with `--disable-static`, documentation installed; full C (`runtest_shared`) and C++ (`apitest_shared`, `runtest_shared`) test suites passing 100%.
   - 8.54 `python` (3.14.7) verified and registered (`python-3.14.7.squashfs`, 66M): configured with `--enable-shared --with-system-expat --without-static-libpython`; documentation and pip configuration installed; patched for Fluffy wildcard `PATH` in `shutil.which` and PyREPL `/sw/*/share/terminfo` discovery; `SOURCE_DATE_EPOCH` unset for `CHECK()`; full test suite passing 100% including `test_socket`, `test_base_events`, `test_subprocess`, `test_pyrepl`, `test_shutil`, `test_zipfile`, `test_importlib`.
   - 8.55 `flit-core` (4.0.2) verified and registered (`flit-core-4.0.2.squashfs`, 108K): pure Python package built with pip wheel and installed into `/sw/flit-core/lib/python3.14/site-packages` without build isolation.
+  - 8.56 `packaging` (26.3) verified and registered (`packaging-26.3.squashfs`, 304K): built with `flit_core` via Python `/sw/*/lib/python3.14/site-packages` late-bound discovery and `glibc` `glob(3)` (`GLOB_KEEP_SLASHES`) shim.
 
 - **`libstdcpp` Standalone Build & POSIX Gthreads Support**:
   - When `libstdc++-v3` is configured standalone outside of the full GCC build tree, its configure script checks for gthreads by compiling `#include "gthr.h"`.
