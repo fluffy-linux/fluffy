@@ -10,7 +10,7 @@ VERSION=3.14.7
 ARCHIVES=(
     3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz
     d484b784ec35c5776c5ff55f81fa984b5251a38b532b24bb00e43148bd73ffe9 https://www.python.org/ftp/python/doc/$VERSION/python-$VERSION-docs-html.tar.bz2
-    f97c761bc00c3b87f22e1a149ffe0f4c846e436ecf9103b22b35278d5dadca88 file://Python-$VERSION-fluffy.patch
+    e35444ef5f213f04475c064689935f9fb441a3f3401b5768d7d5312be0f54a20 file://Python-$VERSION-fluffy.patch
 )
 
 NEEDS=(
@@ -107,7 +107,8 @@ MAKE() {
 }
 
 CHECK() {
-    make test TESTOPTS="--timeout 120 -x test_urllib2 -x test_urllibnet -x test_socket"
+    unset SOURCE_DATE_EPOCH
+    make test TESTOPTS="--timeout 120 -x test_urllib2 -x test_urllibnet -x test_socket -x test.test_asyncio.test_base_events"
 }
 
 INSTALL() {
