@@ -394,6 +394,7 @@
   - 8.55 `flit-core` (4.0.2) verified and registered (`flit-core-4.0.2.squashfs`, 108K): pure Python package built with pip wheel and installed into `/sw/flit-core/lib/python3.14/site-packages` without build isolation.
   - 8.56 `packaging` (26.3) verified and registered (`packaging-26.3.squashfs`, 304K): built with `flit_core` via Python `/sw/*/lib/python3.14/site-packages` late-bound discovery and `glibc` `glob(3)` (`GLOB_KEEP_SLASHES`) shim.
   - 8.57 `wheel` (0.48.0) verified and registered (`wheel-0.48.0.squashfs`, 76K): built with `flit_core` and `packaging`.
+  - 8.58 `setuptools` (84.0.0) verified and registered (`setuptools-84.0.0.squashfs`, 1.7M): built with `wheel` and `packaging`.
 
 - **`libstdcpp` Standalone Build & POSIX Gthreads Support**:
   - When `libstdc++-v3` is configured standalone outside of the full GCC build tree, its configure script checks for gthreads by compiling `#include "gthr.h"`.
