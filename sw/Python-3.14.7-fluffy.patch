@@ -106,11 +106,12 @@ diff -Naur Python-3.14.7.orig/Apple/iOS/Resources/bin/x86_64-apple-ios-simulator
 diff -Naur Python-3.14.7.orig/Lib/_pyrepl/terminfo.py Python-3.14.7/Lib/_pyrepl/terminfo.py
 --- Python-3.14.7.orig/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
-@@ -99,8 +99,10 @@
+@@ -99,8 +99,11 @@
              if d:
                  dirs.append(d)
  
-+    dirs.extend(os.posix._glob("/sw/*/share/terminfo"))
++    import glob
++    dirs.extend(sorted(glob.glob("/sw/*/share/terminfo")))
      dirs.extend(
          [
 +            "/sw/ncurses/share/terminfo",
@@ -124,18 +125,171 @@ diff -Naur Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib Python-3.14.7/L
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  svn export --force http://svn.red-bean.com/bob/macholib/trunk/macholib/ .
+diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
+--- Python-3.14.7.orig/Lib/glob.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/glob.py	2026-08-05 10:29:49.000000000 +0000
+@@ -1,14 +1,9 @@
+ """Filename globbing utility."""
+ 
+-import contextlib
+ import os
+-import re
+-import fnmatch
+-import functools
+-import itertools
+-import operator
+ import stat
+ import sys
++import posix
+ 
+ 
+ __all__ = ["glob", "iglob", "escape", "translate"]
+@@ -40,6 +35,12 @@
+     If `recursive` is true, the pattern '**' will match any files and
+     zero or more directories and subdirectories.
+     """
++    if (root_dir is None and dir_fd is None and not recursive and not include_hidden
++            and isinstance(pathname, str) and not pathname.startswith('.') and '/.' not in pathname
++            and not pathname.endswith('//') and '\\' not in pathname):
++        sys.audit("glob.glob", pathname, recursive)
++        sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
++        return posix._glob(pathname)
+     return list(iglob(pathname, root_dir=root_dir, dir_fd=dir_fd, recursive=recursive,
+                       include_hidden=include_hidden))
+ 
+@@ -82,6 +83,7 @@
+         try:
+             s = next(it)  # skip empty string
+             if s:
++                import itertools
+                 it = itertools.chain((s,), it)
+         except StopIteration:
+             pass
+@@ -133,6 +135,7 @@
+ # takes a literal basename (so it only has to check for its existence).
+ 
+ def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
++    import fnmatch
+     names = _listdir(dirname, dir_fd, dironly)
+     if not (include_hidden or _ishidden(pattern)):
+         names = (x for x in names if not _ishidden(x))
+@@ -211,6 +214,7 @@
+         return
+ 
+ def _listdir(dirname, dir_fd, dironly):
++    import contextlib
+     with contextlib.closing(_iterdir(dirname, dir_fd, dironly)) as it:
+         return list(it)
+ 
+@@ -254,15 +258,11 @@
+         return dirname or basename
+     return os.path.join(dirname, basename)
+ 
+-magic_check = re.compile('([*?[])')
+-magic_check_bytes = re.compile(b'([*?[])')
+-
+ def has_magic(s):
+     if isinstance(s, bytes):
+-        match = magic_check_bytes.search(s)
++        return b'*' in s or b'?' in s or b'[' in s
+     else:
+-        match = magic_check.search(s)
+-    return match is not None
++        return '*' in s or '?' in s or '[' in s
+ 
+ def _ishidden(path):
+     return path[0] in ('.', b'.'[0])
+@@ -276,13 +276,14 @@
+ def escape(pathname):
+     """Escape all special characters.
+     """
++    import re
+     # Escaping is done by wrapping any of "*?[" between square brackets.
+     # Metacharacters do not work in the drive part and shouldn't be escaped.
+     drive, pathname = os.path.splitdrive(pathname)
+     if isinstance(pathname, bytes):
+-        pathname = magic_check_bytes.sub(br'[\1]', pathname)
++        pathname = re.sub(b'([*?[])', br'[\1]', pathname)
+     else:
+-        pathname = magic_check.sub(r'[\1]', pathname)
++        pathname = re.sub('([*?[])', r'[\1]', pathname)
+     return drive + pathname
+ 
+ 
+@@ -304,6 +305,8 @@
+     used to split the pattern into segments and match path separators.  If
+     not given, os.path.sep and os.path.altsep (where available) are used.
+     """
++    import re
++    import fnmatch
+     if not seps:
+         if os.path.altsep:
+             seps = (os.path.sep, os.path.altsep)
+@@ -346,13 +349,20 @@
+     return fr'(?s:{res})\z'
+ 
+ 
+-@functools.lru_cache(maxsize=512)
++_compile_pattern_cache = {}
+ def _compile_pattern(pat, seps, case_sensitive, recursive=True):
+     """Compile given glob pattern to a re.Pattern object (observing case
+     sensitivity)."""
++    key = (pat, seps, case_sensitive, recursive)
++    if key in _compile_pattern_cache:
++        return _compile_pattern_cache[key]
++    import re
+     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
+     regex = translate(pat, recursive=recursive, include_hidden=True, seps=seps)
+-    return re.compile(regex, flags=flags).match
++    res = re.compile(regex, flags=flags).match
++    if len(_compile_pattern_cache) < 512:
++        _compile_pattern_cache[key] = res
++    return res
+ 
+ 
+ class _GlobberBase:
+@@ -402,7 +412,7 @@
+             selector = self.recursive_selector
+         elif part in _special_parts:
+             selector = self.special_selector
+-        elif not self.case_pedantic and magic_check.search(part) is None:
++        elif not self.case_pedantic and not has_magic(part):
+             selector = self.literal_selector
+         else:
+             selector = self.wildcard_selector
+@@ -427,7 +437,7 @@
+         # Optimization: consume and join any subsequent literal parts here,
+         # rather than leaving them for the next selector. This reduces the
+         # number of string concatenation operations.
+-        while parts and magic_check.search(parts[-1]) is None:
++        while parts and not has_magic(parts[-1]):
+             part += self.sep + parts.pop()
+         if parts:
+             part += self.sep
+@@ -546,7 +556,9 @@
+     """Provides shell-style pattern matching and globbing for string paths.
+     """
+     lexists = staticmethod(os.path.lexists)
+-    concat_path = operator.add
++    @staticmethod
++    def concat_path(path, text):
++        return path + text
+ 
+     @staticmethod
+     def scandir(path):
 diff -Naur Python-3.14.7.orig/Lib/os.py Python-3.14.7/Lib/os.py
 --- Python-3.14.7.orig/Lib/os.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/os.py	2026-08-05 10:29:49.000000000 +0000
-@@ -687,6 +687,14 @@
+@@ -687,6 +687,15 @@
  
      if path_list is None:
          path_list = defpath
 +    if '*' in path_list or '?' in path_list:
++        import glob
 +        expanded = []
 +        for d in path_list.split(pathsep):
 +            if '*' in d or '?' in d:
-+                expanded.extend(posix._glob(d))
++                expanded.extend(sorted(glob.glob(d)))
 +            else:
 +                expanded.append(d)
 +        return expanded
@@ -145,7 +299,7 @@ diff -Naur Python-3.14.7.orig/Lib/os.py Python-3.14.7/Lib/os.py
 diff -Naur Python-3.14.7.orig/Lib/shutil.py Python-3.14.7/Lib/shutil.py
 --- Python-3.14.7.orig/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
-@@ -1595,11 +1595,27 @@
+@@ -1595,11 +1595,28 @@
  
          if use_bytes:
              path = os.fsencode(path)
@@ -157,11 +311,12 @@ diff -Naur Python-3.14.7.orig/Lib/shutil.py Python-3.14.7/Lib/shutil.py
              path = path.split(os.pathsep)
  
 +        if has_wildcard:
++            import glob
 +            expanded = []
 +            for d in path:
 +                d_str = os.fsdecode(d) if use_bytes else d
 +                if '*' in d_str or '?' in d_str:
-+                    matches = os.posix._glob(d_str)
++                    matches = sorted(glob.glob(d_str))
 +                    if use_bytes:
 +                        expanded.extend(os.fsencode(m) for m in matches)
 +                    else:
@@ -185,14 +340,15 @@ diff -Naur Python-3.14.7.orig/Lib/site.py Python-3.14.7/Lib/site.py
  # Enable per user site-packages directory
  # set it to False to disable the feature or True to force the feature
  ENABLE_USER_SITE = None
-@@ -394,6 +394,14 @@
+@@ -394,6 +394,15 @@
      if prefixes is None:
          prefixes = PREFIXES
  
 +    expanded_prefixes = []
 +    for prefix in prefixes:
 +        if prefix and ('*' in prefix or '?' in prefix):
-+            expanded_prefixes.extend(os.posix._glob(prefix))
++            import glob
++            expanded_prefixes.extend(sorted(glob.glob(prefix)))
 +        else:
 +            expanded_prefixes.append(prefix)
 +    prefixes = expanded_prefixes
