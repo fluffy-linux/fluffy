@@ -1,15 +1,51 @@
 #!/bin/bash
 set -euo pipefail
 
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <archive> [output-patch]" >&2
+    exit 1
+fi
+
 dir="$(mktemp -d)"
 trap 'rm -rf "$dir"' EXIT
 
 tar -xf "$1" -C "$dir"
-src="$(find "$dir" -mindepth 1 -maxdepth 1 -type d)"
+src="$(find "$dir" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+if [ -z "$src" ]; then
+    echo "Error: no directory extracted from $1" >&2
+    exit 1
+fi
 cp -a "$src" "$src.orig"
 
-find "$src" -type f -exec sed -E -i 's|/(usr/)?bin/(ba)?sh\b|/sw/bash/bin/bash|g' {} + 2>/dev/null || true
-(cd "$src.orig" && find . -type f -exec touch -r {} "$src/{}" \;)
+# Rule A: Line-1 shebangs across all text files
+# - Exclude binary extensions and non-text files (-I)
+# - Only updates line 1 shebang to #!/sw/bash/bin/bash
+while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    sed -E -i '1s@^#![[:space:]]*/(usr/)?bin/(ba)?sh\b@#!/sw/bash/bin/bash@' "$file"
+    rel="${file#$src/}"
+    touch -r "$src.orig/$rel" "$file"
+done < <(find "$src" -type f \
+    -not -name "*.png" -not -name "*.jpg" -not -name "*.gif" -not -name "*.ico" \
+    -not -name "*.zip" -not -name "*.gz" -not -name "*.bz2" -not -name "*.xz" -not -name "*.zst" \
+    -not -name "*.tar" -not -name "*.tar.*" -not -name "*.pdf" -not -name "*.whl" \
+    -not -name "*.o" -not -name "*.a" -not -name "*.so" -not -name "*.pyc" \
+    -exec grep -IlE '^#![[:space:]]*/(usr/)?bin/(ba)?sh\b' {} + 2>/dev/null || true)
+
+# Rule B: Build infrastructure and shell scripts
+# - Targets configure, Makefiles, config scripts, and shell scripts
+# - Negative lookbehind equivalent (^|[^a-zA-Z0-9_./]) prevents doubling existing /sw/bash paths
+while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    sed -E -i 's@(^|[^a-zA-Z0-9_./])/(usr/)?bin/(ba)?sh\b@\1/sw/bash/bin/bash@g' "$file"
+    rel="${file#$src/}"
+    touch -r "$src.orig/$rel" "$file"
+done < <(find "$src" -type f \( \
+    -name "configure" -o -name "config.guess" -o -name "config.sub" -o -name "config.rpath" \
+    -o -name "install-sh" -o -name "compile" -o -name "depcomp" -o -name "missing" \
+    -o -name "Makefile" -o -name "Makefile.*" -o -name "GNUmakefile" -o -name "*.m4" \
+    -o -name "*.sh" -o -name "*.shlib" -o -name "*.in" \
+    \) -exec grep -IlE '(^|[^a-zA-Z0-9_./])/(usr/)?bin/(ba)?sh\b' {} + 2>/dev/null || true)
 
 if [ $# -ge 2 ]; then
     (cd "$dir" && TZ=UTC0 LC_ALL=C diff -Naur "$(basename "$src").orig" "$(basename "$src")") > "$2" || true
