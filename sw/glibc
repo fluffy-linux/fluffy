@@ -9,8 +9,8 @@ ARCHIVES=(
     643552db030e2f2d7ffde4f558e0f5f83d3fabf34a2e0e56ebdb49750ac27b0d https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-fhs-1.patch
     500567ff0a22e295bfe3b55e9b397796f71a19f01e1ff7fb29c9189482ee1809 https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-$VERSION-upstream_fixes-1.patch
     aa7dc37d87cd1c3cd5edd70755415c3cc50c0165752cd519a58df225e9f66bdc file://glibc-$VERSION-fluffy-shell.patch
-    b88caff550f5406e4910aa0cd38d4e2fef437082c4a4ca788dc1c9155757f0c0 file://glibc-$VERSION-fluffy-source.patch
-    00c0f87b819b43ae62316ad847bbec8e437133a74e6c8f7730a327508c0af5ba file://glibc-$VERSION-fluffy-test.patch
+    17384de65595905190ee504990d15f24e00b969d5f160621f05f6c79688eb47a file://glibc-$VERSION-fluffy-source.patch
+    389817225d78677da0bfb7391ebbf9f6c856574b33da213c8198009bde983a5d file://glibc-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(

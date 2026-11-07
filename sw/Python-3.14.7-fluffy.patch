@@ -144,20 +144,19 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
  
  
  __all__ = ["glob", "iglob", "escape", "translate"]
-@@ -40,6 +35,12 @@
+@@ -40,6 +35,11 @@
      If `recursive` is true, the pattern '**' will match any files and
      zero or more directories and subdirectories.
      """
 +    if (root_dir is None and dir_fd is None and not recursive and not include_hidden
-+            and isinstance(pathname, str) and not pathname.startswith('.') and '/.' not in pathname
-+            and not pathname.endswith('//') and '\\' not in pathname):
++            and isinstance(pathname, str) and not pathname.startswith('.') and '/.' not in pathname):
 +        sys.audit("glob.glob", pathname, recursive)
 +        sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
 +        return posix._glob(pathname)
      return list(iglob(pathname, root_dir=root_dir, dir_fd=dir_fd, recursive=recursive,
                        include_hidden=include_hidden))
  
-@@ -82,6 +83,7 @@
+@@ -82,6 +82,7 @@
          try:
              s = next(it)  # skip empty string
              if s:
@@ -165,7 +164,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
                  it = itertools.chain((s,), it)
          except StopIteration:
              pass
-@@ -133,6 +135,7 @@
+@@ -133,6 +134,7 @@
  # takes a literal basename (so it only has to check for its existence).
  
  def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
@@ -173,7 +172,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
      names = _listdir(dirname, dir_fd, dironly)
      if not (include_hidden or _ishidden(pattern)):
          names = (x for x in names if not _ishidden(x))
-@@ -211,6 +214,7 @@
+@@ -211,6 +213,7 @@
          return
  
  def _listdir(dirname, dir_fd, dironly):
@@ -181,7 +180,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
      with contextlib.closing(_iterdir(dirname, dir_fd, dironly)) as it:
          return list(it)
  
-@@ -254,15 +258,11 @@
+@@ -254,15 +257,11 @@
          return dirname or basename
      return os.path.join(dirname, basename)
  
@@ -199,7 +198,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
  
  def _ishidden(path):
      return path[0] in ('.', b'.'[0])
-@@ -276,13 +276,14 @@
+@@ -276,13 +275,14 @@
  def escape(pathname):
      """Escape all special characters.
      """
@@ -216,7 +215,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
      return drive + pathname
  
  
-@@ -304,6 +305,8 @@
+@@ -304,6 +304,8 @@
      used to split the pattern into segments and match path separators.  If
      not given, os.path.sep and os.path.altsep (where available) are used.
      """
@@ -225,7 +224,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
      if not seps:
          if os.path.altsep:
              seps = (os.path.sep, os.path.altsep)
-@@ -346,13 +349,20 @@
+@@ -346,13 +348,20 @@
      return fr'(?s:{res})\z'
  
  
@@ -248,7 +247,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
  
  
  class _GlobberBase:
-@@ -402,7 +412,7 @@
+@@ -402,7 +411,7 @@
              selector = self.recursive_selector
          elif part in _special_parts:
              selector = self.special_selector
@@ -257,7 +256,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
              selector = self.literal_selector
          else:
              selector = self.wildcard_selector
-@@ -427,7 +437,7 @@
+@@ -427,7 +436,7 @@
          # Optimization: consume and join any subsequent literal parts here,
          # rather than leaving them for the next selector. This reduces the
          # number of string concatenation operations.
@@ -266,7 +265,7 @@ diff -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
              part += self.sep + parts.pop()
          if parts:
              part += self.sep
-@@ -546,7 +556,9 @@
+@@ -546,7 +555,9 @@
      """Provides shell-style pattern matching and globbing for string paths.
      """
      lexists = staticmethod(os.path.lexists)
@@ -1261,7 +1260,7 @@ diff -Naur Python-3.14.7.orig/Modules/makexp_aix Python-3.14.7/Modules/makexp_ai
 diff -Naur Python-3.14.7.orig/Modules/posixmodule.c Python-3.14.7/Modules/posixmodule.c
 --- Python-3.14.7.orig/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
-@@ -17113,6 +17113,40 @@
+@@ -17113,6 +17113,47 @@
  }
  #endif /* __EMSCRIPTEN__ */
  
@@ -1270,12 +1269,19 @@ diff -Naur Python-3.14.7.orig/Modules/posixmodule.c Python-3.14.7/Modules/posixm
 +static PyObject *
 +os__glob(PyObject *module, PyObject *arg)
 +{
-+    const char *pattern = PyUnicode_AsUTF8(arg);
-+    if (pattern == NULL) {
++    PyObject *bytes = PyUnicode_EncodeFSDefault(arg);
++    if (bytes == NULL) {
++        return NULL;
++    }
++    const char *pattern = PyBytes_AS_STRING(bytes);
++    if ((size_t)PyBytes_GET_SIZE(bytes) != strlen(pattern)) {
++        Py_DECREF(bytes);
++        PyErr_SetString(PyExc_ValueError, "embedded null character");
 +        return NULL;
 +    }
 +    glob_t g;
-+    int rc = glob(pattern, 0, NULL, &g);
++    int rc = glob(pattern, GLOB_NOESCAPE | GLOB_KEEP_SLASHES, NULL, &g);
++    Py_DECREF(bytes);
 +    PyObject *list = PyList_New(0);
 +    if (list == NULL) {
 +        if (rc == 0) {
@@ -1302,7 +1308,7 @@ diff -Naur Python-3.14.7.orig/Modules/posixmodule.c Python-3.14.7/Modules/posixm
  
  static PyMethodDef posix_methods[] = {
      OS_STAT_METHODDEF
-@@ -17331,6 +17365,7 @@
+@@ -17331,6 +17372,7 @@
      OS__CREATE_ENVIRON_METHODDEF
      OS__EMSCRIPTEN_DEBUGGER_METHODDEF
      OS__EMSCRIPTEN_LOG_METHODDEF
@@ -1504,3 +1510,22 @@ diff -Naur Python-3.14.7.orig/install-sh Python-3.14.7/install-sh
  # install - install a program, script, or datafile
  
  scriptversion=2023-11-23.18; # UTC
+diff -Naur Python-3.14.7.orig/Lib/test/test_site.py Python-3.14.7/Lib/test/test_site.py
+--- Python-3.14.7.orig/Lib/test/test_site.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/test/test_site.py	2026-08-05 10:29:49.000000000 +0000
+@@ -347,6 +347,15 @@
+             self.assertEqual(os.path.normcase(dirs[1]),
+                              os.path.normcase(wanted))
+ 
++    def test_getsitepackages_wildcard(self):
++        with tempfile.TemporaryDirectory() as tmpdir:
++            os.makedirs(os.path.join(tmpdir, 'pkg_b'))
++            os.makedirs(os.path.join(tmpdir, 'pkg_a'))
++            dirs = site.getsitepackages([os.path.join(tmpdir, '*')])
++            ver = f'python{sysconfig._get_python_version_abi()}'
++            self.assertIn(os.path.join(tmpdir, 'pkg_a', 'lib', ver, 'site-packages'), dirs)
++            self.assertIn(os.path.join(tmpdir, 'pkg_b', 'lib', ver, 'site-packages'), dirs)
++
+     @unittest.skipUnless(HAS_USER_SITE, 'need user site')
+     def test_no_home_directory(self):
+         # bpo-10496: getuserbase() and getusersitepackages() must not fail if

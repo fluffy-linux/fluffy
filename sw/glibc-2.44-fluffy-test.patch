@@ -197,3 +197,23 @@ diff -Naur glibc-2.44.patched/stdlib/tst-realpath-toolong.c glibc-2.44.test/stdl
  
    free (base);
    return 0;
+diff -Naur glibc-2.44.patched/posix/tst-gnuglob-skeleton.c glibc-2.44.test/posix/tst-gnuglob-skeleton.c
+--- glibc-2.44.patched/posix/tst-gnuglob-skeleton.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.test/posix/tst-gnuglob-skeleton.c	2026-07-24 13:16:45.000000000 +0000
+@@ -500,6 +500,16 @@
+ 
+   test ("", GLOB_NOCHECK, 0, "");
+ 
++  test ("file1lev1/", 0, GLOB_NOMATCH, NULL);
++
++  test ("dir1lev1//", 0, 0, "dir1lev1/");
++
++  test ("dir1lev1//", GLOB_KEEP_SLASHES, 0, "dir1lev1//");
++
++  test ("dir*lev1//", GLOB_KEEP_SLASHES, 0,
++	"dir1lev1/",
++	"dir2lev1/");
++
+   GLOBFREE_FUNC (&gl);
+ 
+   return result;

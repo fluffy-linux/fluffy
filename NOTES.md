@@ -87,7 +87,8 @@
        - Rather than maintaining subsystem-specific caches or scattering custom `getdents64` loops across tools, standard POSIX `glob()` in `glibc` is the single general-purpose primitive. Optimizing `glob()` directly inside `glibc` (and using `glob()` everywhere) makes `ld.so`, `execvpe`, `bash`, `tcl`, `gcc`, and every standard `glob()` caller fast automatically.
      - **Enriching `glibc` `glob()` with Bashisms & Delegating Bash, Tcl VFS, and Python Globbing to Glibc**:
        - **Enriching `glibc` `glob()`**:
-         - Extend `posix/glob.c` with new flags to match modern shell globbing:
+         - Extend `posix/glob.c` with new flags to match modern shell and language globbing, allocating custom Fluffy flag bits from the **high end** of the bit range (`(1 << 30)` downward) so they never collide with flags that upstream `glibc` may add in future releases:
+           - `GLOB_KEEP_SLASHES` (`1 << 30`): Preserve redundant trailing slashes on literal directory patterns (`"aaa//"` -> `"aaa//"`) while still normalizing wildcard directory matches (`"aa*//"` -> `"aaa/"`).
            - `GLOB_EXTMATCH`: Expose `FNM_EXTMATCH` (which `posix/fnmatch.c` in glibc already implements!) to enable ksh/bash extended pattern matching (`@(a|b)`, `!(x)`, `+(x)`, `*(x)`, `?(x)`).
            - `GLOB_STAR` / `GLOB_RECURSIVE`: Implement recursive `**` directory-tree traversal.
            - `GLOB_CASEFOLD`: Expose `FNM_CASEFOLD` for case-insensitive matching (`nocaseglob`).
@@ -321,6 +322,13 @@
     - **TODO: Universal Timestamp Preservation Across All Patches**:
       - All patches across all recipes must strictly preserve upstream file modification timestamps.
       - Applying patches must never shift file `mtime` values forward, ensuring that timestamp-sensitive dependencies (e.g. Makefile vs configure vs aclocal.m4) do not falsely trigger autotools regeneration or `help2man` rebuilds during compilation.
+    - **TODO: Maintain Git Repos for All Upstream Software (`git format-patch` Over Branches from Release Tags)**:
+      - Maintain dedicated git repositories for all patched upstream software packages and develop Fluffy changes as clean commits on a branch forked directly from the upstream release tag, generating patch series with `git format-patch` instead of doing the manual tar-untar-diff-patch-sha256 dance.
+      - Each logical change (mechanical shebang rewrites, `/sw/*` wildcard path discovery, upstream bugfixes) lives as its own atomic, self-documented commit that can be cherry-picked or rebased cleanly across upstream version upgrades.
+      - *Note on `sqlite`*: SQLite is tricky because upstream develops in Fossil rather than Git and distributes pre-generated amalgamation tarballs (`sqlite-autoconf-*`) whose directory layout differs from the raw Fossil repository tree.
+    - **Mandatory Test Coverage for All Patched Behavior & High-Bit Custom Flags**:
+      - Every behavior we patch or add in an upstream package (bugfixes, `/sw/*` wildcard expansion, custom flags) must be accompanied by unit/regression tests in that package's test suite so `CHECK()` continuously verifies our patched behavior.
+      - Whenever we introduce new bitflags into upstream headers (such as `GLOB_KEEP_SLASHES` in `glibc`'s `<glob.h>`), allocate bits starting from the high end of the bit range (e.g. `(1 << 30)` downward) to avoid colliding with flags upstream adds at the low end in future releases.
     - **TODO: Split Shebang / Path Patches from Logic / Bugfix Patches**:
       - Separate `/sw/bash/bin/bash` shebang and interpreter path rewrites from functional logic and bugfix patches.
       - Both types can use the `-fluffy` naming convention, e.g.:

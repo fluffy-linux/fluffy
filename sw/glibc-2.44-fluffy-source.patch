@@ -546,3 +546,81 @@ diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac
  
  if test $host = $build; then
    # If $prefix/include/{net,scsi} are symlinks, make install will
+diff -Naur --no-dereference glibc-2.44.orig/posix/glob.c glibc-2.44.source/posix/glob.c
+--- glibc-2.44.orig/posix/glob.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.source/posix/glob.c	2026-07-24 13:16:45.000000000 +0000
+@@ -597,13 +597,40 @@
+                 }
+             }
+           /* Prevent stack overflows with many trailing '/' characters.  */
++          size_t extra_slashes = 0;
+           for (char *p = &dirname[dirlen - 1];
+-               p > dirname && p[0] == '/' && p[-1] == '/'; --p)
+-            p[0] = '\0';
++               p > dirname && p[0] == '/'; --p)
++            {
++              ++extra_slashes;
++              p[0] = '\0';
++            }
+           int val = __glob (dirname, flags | GLOB_MARK, errfunc, pglob);
+           if (val == 0)
+-            pglob->gl_flags = ((pglob->gl_flags & ~GLOB_MARK)
+-                               | (flags & GLOB_MARK));
++            {
++              if ((flags & GLOB_KEEP_SLASHES) && !(flags & GLOB_MARK)
++                  && extra_slashes > 0 && !(pglob->gl_flags & GLOB_MAGCHAR))
++                {
++                  for (size_t i = oldcount;
++                       i < pglob->gl_pathc + pglob->gl_offs; ++i)
++                    {
++                      size_t len = strlen (pglob->gl_pathv[i]);
++                      char *newp = realloc (pglob->gl_pathv[i],
++                                            len + extra_slashes + 1);
++                      if (newp == NULL)
++                        {
++                          globfree (pglob);
++                          pglob->gl_pathc = 0;
++                          retval = GLOB_NOSPACE;
++                          goto out;
++                        }
++                      memset (newp + len, '/', extra_slashes);
++                      newp[len + extra_slashes] = '\0';
++                      pglob->gl_pathv[i] = newp;
++                    }
++                }
++              pglob->gl_flags = ((pglob->gl_flags & ~GLOB_MARK)
++                                 | (flags & GLOB_MARK));
++            }
+           else if (val == GLOB_NOMATCH && flags != orig_flags)
+             {
+               /* Make sure globfree (&dirs); is a nop.  */
+@@ -1339,8 +1366,10 @@
+       mempcpy (mempcpy (mempcpy (fullname, directory, dirlen),
+                         "/", 1),
+                pattern, patlen + 1);
+-      if (glob_lstat (pglob, flags, fullname) == 0
+-          || errno == EOVERFLOW)
++      if ((flags & GLOB_ONLYDIR)
++          ? is_dir (fullname, flags, pglob)
++          : (glob_lstat (pglob, flags, fullname) == 0
++             || errno == EOVERFLOW))
+         /* We found this file to be existing.  Now tell the rest
+            of the function to copy this name into the result.  */
+         flags |= GLOB_NOCHECK;
+diff -Naur --no-dereference glibc-2.44.orig/posix/glob.h glibc-2.44.source/posix/glob.h
+--- glibc-2.44.orig/posix/glob.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.source/posix/glob.h	2026-07-24 13:16:45.000000000 +0000
+@@ -54,10 +54,12 @@
+ # define GLOB_ONLYDIR	 (1 << 13)/* Match only directories.  */
+ # define GLOB_TILDE_CHECK (1 << 14)/* Like GLOB_TILDE but return an error
+ 				      if the user name is not available.  */
++# define GLOB_KEEP_SLASHES (1 << 30)/* Preserve redundant trailing slashes.  */
+ # define __GLOB_FLAGS	(GLOB_ERR|GLOB_MARK|GLOB_NOSORT|GLOB_DOOFFS  \
+ 			 |GLOB_NOESCAPE|GLOB_NOCHECK|GLOB_APPEND     \
+ 			 |GLOB_PERIOD|GLOB_ALTDIRFUNC|GLOB_BRACE     \
+-			 |GLOB_NOMAGIC|GLOB_TILDE|GLOB_ONLYDIR|GLOB_TILDE_CHECK)
++			 |GLOB_NOMAGIC|GLOB_TILDE|GLOB_ONLYDIR|GLOB_TILDE_CHECK \
++			 |GLOB_KEEP_SLASHES)
+ #else
+ # define __GLOB_FLAGS	(GLOB_ERR|GLOB_MARK|GLOB_NOSORT|GLOB_DOOFFS  \
+ 			 |GLOB_NOESCAPE|GLOB_NOCHECK|GLOB_APPEND     \
