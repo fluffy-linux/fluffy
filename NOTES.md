@@ -104,6 +104,9 @@
          - **Live In-Place Updates for Fresh Installs**: When a new package is installed, `swctl` writes new CoW tree nodes and atomically flips a single 64-bit root pointer in the header. Active shells and processes see new commands instantly without re-opening files or bouncing namespaces.
 
 5. **Hermetic, Unprivileged Builds & Unified Tooling (`swctl build`, `swctl install`)**
+   - **Developer Environment Convention (`direnv` & `sudo --preserve-env`)**:
+     - Developer environments export `CROSS=1` and `FLUFFY` variables via `direnv`.
+     - When invoking `swctl` under `sudo`, commands should use `sudo --preserve-env=CROSS,FLUFFY ./swctl build <pkg>` (or `swctl install <pkg>`) to preserve the caller's environment rather than prefixing `CROSS=1` manually.
    - **Folding `create` into `swctl` (`swctl build`)**:
      - All package building and recipe orchestration is unified under `swctl` (`swctl build <pkg...>` and `swctl install <pkg...>`), auto-prefixing `sw/` so package names are first-class identifiers (`swctl build glibc`, `swctl install gcc`).
      - **Registration as a Build Byproduct**: With `swctl build`, registration ceases to exist as a separate manual step. Upon completing `SQUASHFS`, `swctl build` automatically calculates the image SHA-256 checksum (`X-fluffy.image-checksum`), writes the `/sw/.build/fstab` entry (target `/sw/<pkg>`, `X-fluffy.needs`, `X-fluffy.recipe-checksum`, `X-fluffy.image-checksum`), and signs the `/sw/.build/fstab` manifest file in a single atomic transaction. The fstab file itself is the sole signed artifact.
