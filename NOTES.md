@@ -378,6 +378,7 @@
   - 8.51 `libffi` (3.8.0) verified and registered (`libffi-3.8.0.squashfs`): configured with `--disable-multi-os-directory --with-gcc-arch=native`, DejaGnu test suite passing.
   - 8.52 `sqlite` (3530400) verified and registered (`sqlite-3530400.squashfs`): configured with `--disable-static --enable-fts4 --enable-fts5 --disable-rpath --soname=legacy`; `autosetup` patched to expand wildcard `PATH` entries and avoid hardcoded `/bin/sh`.
   - 8.53 `mpdecimal` (4.0.1) verified and registered (`mpdecimal-4.0.1.squashfs`): configured with `--disable-static`, documentation installed; full C (`runtest_shared`) and C++ (`apitest_shared`, `runtest_shared`) test suites passing 100%.
+  - 8.54 `python` (3.14.7) verified and registered (`python-3.14.7.squashfs`, 66M): configured with `--enable-shared --with-system-expat --without-static-libpython`; documentation and pip configuration installed; patched for Fluffy wildcard `PATH` in `shutil.which` and PyREPL `/sw/*/share/terminfo` discovery; `SOURCE_DATE_EPOCH` unset for `CHECK()`; full test suite passing 100% including `test_socket`, `test_base_events`, `test_subprocess`, `test_pyrepl`, `test_shutil`, `test_zipfile`, `test_importlib`.
 
 - **`libstdcpp` Standalone Build & POSIX Gthreads Support**:
   - When `libstdc++-v3` is configured standalone outside of the full GCC build tree, its configure script checks for gthreads by compiling `#include "gthr.h"`.
