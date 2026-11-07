@@ -1,0 +1,75 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.13.2
+
+ARCHIVES=(
+    974d6b2f4eeefa25625d34da3cb36bdcebe7fbce40f4c16ac0835fd1c0cbae17 https://github.com/ninja-build/ninja/archive/v$VERSION/ninja-$VERSION.tar.gz
+    a54b8043038fcd174e6a61be750ad318b825837ec66f7d49cb53879832fee88b file://ninja-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    bash
+    libstdcpp
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        gcc
+        glibc
+        libstdcpp
+        linux-headers
+        patch-pass1
+        python
+        sed
+        util-linux-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        gcc
+        glibc
+        libstdcpp
+        linux-headers
+        patch
+        python
+        sed
+        util-linux
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i ninja-$VERSION-fluffy-shell.patch
+
+    sed -i '/int Guess/a \
+  int   j = 0;\
+  char* jobs = getenv( "NINJAJOBS" );\
+  if ( jobs != NULL ) j = atoi( jobs );\
+  if ( j > 0 ) return j;\
+' src/ninja.cc
+
+    python3 configure.py --bootstrap --verbose
+}
+
+CHECK() {
+    unset MAKEFLAGS
+    python3 misc/ninja_syntax_test.py
+    python3 misc/jobserver_pool_test.py
+    python3 misc/jobserver_test.py
+}
+
+INSTALL() {
+    install -vm755 -D ninja $DESTDIR/sw/ninja/bin/ninja
+    install -vDm644 misc/bash-completion $DESTDIR/sw/ninja/share/bash-completion/completions/ninja
+    install -vDm644 misc/zsh-completion  $DESTDIR/sw/ninja/share/zsh/site-functions/_ninja
+}

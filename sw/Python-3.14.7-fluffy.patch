@@ -1529,3 +1529,188 @@ diff -Naur Python-3.14.7.orig/Lib/test/test_site.py Python-3.14.7/Lib/test/test_
      @unittest.skipUnless(HAS_USER_SITE, 'need user site')
      def test_no_home_directory(self):
          # bpo-10496: getuserbase() and getusersitepackages() must not fail if
+diff -Naur Python-3.14.7.orig/Lib/test/test_getpath.py Python-3.14.7/Lib/test/test_getpath.py
+--- Python-3.14.7.orig/Lib/test/test_getpath.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/test/test_getpath.py	2026-08-05 10:29:49.000000000 +0000
+@@ -1,4 +1,5 @@
+ import copy
++import fnmatch
+ import ntpath
+ import pathlib
+ import posixpath
+@@ -839,6 +840,31 @@
+         actual = getpath(ns, expected)
+         self.assertEqual(expected, actual)
+ 
++    def test_wildcard_env_path_posix(self):
++        "Test resolving executable via wildcard ENV_PATH on POSIX."
++        ns = MockPosixNamespace(
++            PREFIX="/sw/python",
++            argv0="python3",
++            ENV_PATH="/sw/*/bin",
++        )
++        ns.add_known_xfile("/sw/python/bin/python3")
++        ns.add_known_file("/sw/python/lib/python9.8/os.py")
++        ns.add_known_dir("/sw/python/lib/python9.8/lib-dynload")
++        expected = dict(
++            executable="/sw/python/bin/python3",
++            base_executable="/sw/python/bin/python3",
++            prefix="/sw/python",
++            exec_prefix="/sw/python",
++            module_search_paths_set=1,
++            module_search_paths=[
++                "/sw/python/lib/python98.zip",
++                "/sw/python/lib/python9.8",
++                "/sw/python/lib/python9.8/lib-dynload",
++            ],
++        )
++        actual = getpath(ns, expected)
++        self.assertEqual(expected, actual)
++
+     def test_explicitly_set_stdlib_dir(self):
+         """Test the explicitly set stdlib_dir in the config is respected."""
+         ns = MockPosixNamespace(
+@@ -1187,6 +1213,9 @@
+             print("Check if", path, "is a module")
+         return path in self._files and path.rpartition(".")[2] == "py"
+ 
++    def glob(self, pattern):
++        return sorted(f for f in self._files if fnmatch.fnmatchcase(f, pattern))
++
+     def isxfile(self, path):
+         if verbose:
+             print("Check if", path, "is an xfile")
+diff -Naur Python-3.14.7.orig/Lib/test/test_os.py Python-3.14.7/Lib/test/test_os.py
+--- Python-3.14.7.orig/Lib/test/test_os.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/test/test_os.py	2026-08-05 10:29:49.000000000 +0000
+@@ -1228,6 +1228,15 @@
+         # Supplied PATH environment variable
+         self.assertSequenceEqual(test_path, os.get_exec_path(test_env))
+ 
++        with tempfile.TemporaryDirectory() as tmpdir:
++            dir_a = os.path.join(tmpdir, 'pkg_a', 'bin')
++            dir_b = os.path.join(tmpdir, 'pkg_b', 'bin')
++            os.makedirs(dir_b)
++            os.makedirs(dir_a)
++            wildcard_path = os.path.join(tmpdir, '*', 'bin')
++            self.assertSequenceEqual([dir_a, dir_b],
++                                     os.get_exec_path({'PATH': wildcard_path}))
++
+         if os.supports_bytes_environ:
+             # env cannot contain 'PATH' and b'PATH' keys
+             try:
+diff -Naur Python-3.14.7.orig/Lib/test/test_shutil.py Python-3.14.7/Lib/test/test_shutil.py
+--- Python-3.14.7.orig/Lib/test/test_shutil.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/test/test_shutil.py	2026-08-05 10:29:49.000000000 +0000
+@@ -2404,6 +2404,11 @@
+         rv = shutil.which(self.file, path=self.dir)
+         self.assertEqual(rv, self.filepath)
+ 
++    def test_wildcard_path(self):
++        wildcard = os.path.join(os.path.dirname(self.dir), self.to_text_type('*'))
++        rv = shutil.which(self.file, path=wildcard)
++        self.assertEqual(rv, self.filepath)
++
+     def test_absolute_cmd(self):
+         # When given the fully qualified path to an executable that exists,
+         # it should be returned.
+diff -Naur Python-3.14.7.orig/Modules/getpath.c Python-3.14.7/Modules/getpath.c
+--- Python-3.14.7.orig/Modules/getpath.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/getpath.c	2026-08-05 10:29:49.000000000 +0000
+@@ -24,6 +24,10 @@
+ #  include <dlfcn.h>
+ #endif
+ 
++#ifndef MS_WINDOWS
++#  include <glob.h>
++#endif
++
+ /* Reference the precompiled getpath.py */
+ #include "Python/frozen_modules/getpath.h"
+ 
+@@ -563,10 +567,66 @@
+ }
+ 
+ 
++static PyObject *
++getpath_glob(PyObject *Py_UNUSED(self), PyObject *args)
++{
++    PyObject *pathobj;
++    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
++        return NULL;
++    }
++    wchar_t *wpath = PyUnicode_AsWideCharString(pathobj, NULL);
++    if (!wpath) {
++        return NULL;
++    }
++    char *pattern = Py_EncodeLocale(wpath, NULL);
++    PyMem_Free(wpath);
++    if (!pattern) {
++        PyErr_NoMemory();
++        return NULL;
++    }
++    PyObject *list = PyList_New(0);
++    if (!list) {
++        PyMem_Free(pattern);
++        return NULL;
++    }
++#ifndef MS_WINDOWS
++    glob_t g;
++    int rc = glob(pattern, GLOB_NOESCAPE | GLOB_KEEP_SLASHES, NULL, &g);
++    PyMem_Free(pattern);
++    if (rc == 0) {
++        for (size_t i = 0; i < g.gl_pathc; i++) {
++            size_t len;
++            wchar_t *w = Py_DecodeLocale(g.gl_pathv[i], &len);
++            if (!w) {
++                Py_DECREF(list);
++                globfree(&g);
++                PyErr_NoMemory();
++                return NULL;
++            }
++            PyObject *item = PyUnicode_FromWideChar(w, len);
++            PyMem_RawFree(w);
++            if (!item || PyList_Append(list, item) < 0) {
++                Py_XDECREF(item);
++                Py_DECREF(list);
++                globfree(&g);
++                return NULL;
++            }
++            Py_DECREF(item);
++        }
++        globfree(&g);
++    }
++#else
++    PyMem_Free(pattern);
++#endif
++    return list;
++}
++
++
+ static PyMethodDef getpath_methods[] = {
+     {"abspath", getpath_abspath, METH_VARARGS, NULL},
+     {"basename", getpath_basename, METH_VARARGS, NULL},
+     {"dirname", getpath_dirname, METH_VARARGS, NULL},
++    {"glob", getpath_glob, METH_VARARGS, NULL},
+     {"hassuffix", getpath_hassuffix, METH_VARARGS, NULL},
+     {"isabs", getpath_isabs, METH_VARARGS, NULL},
+     {"isdir", getpath_isdir, METH_VARARGS, NULL},
+diff -Naur Python-3.14.7.orig/Modules/getpath.py Python-3.14.7/Modules/getpath.py
+--- Python-3.14.7.orig/Modules/getpath.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/getpath.py	2026-08-05 10:29:49.000000000 +0000
+@@ -283,7 +283,14 @@
+     # To properly isolate, launch Python with a full path.
+     for p in ENV_PATH.split(DELIM):
+         p = joinpath(p, program_name)
+-        if isxfile(p):
++        if '*' in p or '?' in p:
++            for gp in glob(p):
++                if isxfile(gp):
++                    executable = gp
++                    break
++            if executable:
++                break
++        elif isxfile(p):
+             executable = p
+             break
+ 
