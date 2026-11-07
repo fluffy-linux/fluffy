@@ -10,7 +10,7 @@ VERSION=3.14.7
 ARCHIVES=(
     3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz
     d484b784ec35c5776c5ff55f81fa984b5251a38b532b24bb00e43148bd73ffe9 https://www.python.org/ftp/python/doc/$VERSION/python-$VERSION-docs-html.tar.bz2
-    e35444ef5f213f04475c064689935f9fb441a3f3401b5768d7d5312be0f54a20 file://Python-$VERSION-fluffy.patch
+    07e27b5caf32ed430c9aa75a1545449369a2678950bd06cf8ecf760d798621b5 file://Python-$VERSION-fluffy.patch
 )
 
 NEEDS=(

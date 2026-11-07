@@ -176,6 +176,34 @@ diff -Naur Python-3.14.7.orig/Lib/shutil.py Python-3.14.7/Lib/shutil.py
          if sys.platform == "win32" and _win_path_needs_curdir(cmd, mode):
              curdir = os.curdir
              if use_bytes:
+diff -Naur Python-3.14.7.orig/Lib/site.py Python-3.14.7/Lib/site.py
+--- Python-3.14.7.orig/Lib/site.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/site.py	2026-08-05 10:29:49.000000000 +0000
+@@ -78,7 +78,7 @@
+ import errno
+ 
+ # Prefixes for site-packages; add additional prefixes like /usr/local here
+-PREFIXES = [sys.prefix, sys.exec_prefix]
++PREFIXES = [sys.prefix, sys.exec_prefix, "/sw/*"]
+ # Enable per user site-packages directory
+ # set it to False to disable the feature or True to force the feature
+ ENABLE_USER_SITE = None
+@@ -394,6 +394,15 @@
+     if prefixes is None:
+         prefixes = PREFIXES
+ 
++    expanded_prefixes = []
++    for prefix in prefixes:
++        if prefix and ('*' in prefix or '?' in prefix):
++            import glob
++            expanded_prefixes.extend(sorted(glob.glob(prefix)))
++        else:
++            expanded_prefixes.append(prefix)
++    prefixes = expanded_prefixes
++
+     for prefix in prefixes:
+         if not prefix or prefix in seen:
+             continue
 diff -Naur Python-3.14.7.orig/Lib/subprocess.py Python-3.14.7/Lib/subprocess.py
 --- Python-3.14.7.orig/Lib/subprocess.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/subprocess.py	2026-08-05 10:29:49.000000000 +0000
