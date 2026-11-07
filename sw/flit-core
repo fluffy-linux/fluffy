@@ -1,0 +1,39 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=4.0.2
+
+ARCHIVES=(
+    b6929defd93884b584d7c87829e0e7b5c26ed6be17b0b873979019314aa841c8 https://files.pythonhosted.org/packages/46/ef/34533186e76c526d9ec17a1ad9a10c7354cbfb20f51583cc36dfe4bdccd0/flit_core-$VERSION.tar.gz
+)
+
+NEEDS=(
+    python
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        coreutils-pass1
+        python
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        coreutils
+        python
+    )
+fi
+
+MAKE() {
+    pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+}
+
+INSTALL() {
+    pip3 install --no-index --find-links dist --no-cache-dir --no-build-isolation --root "$DESTDIR" --prefix /sw/flit-core flit_core
+}
