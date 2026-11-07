@@ -702,10 +702,25 @@ build_single_pkg() {
                 else
                     call mount tmpfs "$FLUFFY/dev/shm" tmpfs $(( MS_NOSUID | MS_NODEV )) $NULL
                 fi
-                if test -f /etc/resolv.conf
+                for etc_file in resolv.conf services protocols hosts
+                do
+                    src=""
+                    if test -f "/etc/$etc_file"
+                    then
+                        src="/etc/$etc_file"
+                    elif test -f "/sw/iana-etc/etc/$etc_file"
+                    then
+                        src="/sw/iana-etc/etc/$etc_file"
+                    fi
+                    if test -n "$src"
+                    then
+                        touch "$FLUFFY/etc/$etc_file"
+                        call mount "$src" "$FLUFFY/etc/$etc_file" $NULL $MS_BIND $NULL
+                    fi
+                done
+                if test ! -f "$FLUFFY/etc/hosts"
                 then
-                    touch "$FLUFFY/etc/resolv.conf"
-                    call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
+                    printf "127.0.0.1 localhost\n::1 localhost\n" > "$FLUFFY/etc/hosts"
                 fi
 
                 call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
