@@ -70,3 +70,60 @@ ethers: files
 rpc: files
 NSS_EOF
 fi
+
+if test ! -f "$FLUFFY/etc/protocols"
+then
+    if test -f "$FLUFFY/sw/iana-etc/etc/protocols"
+    then
+        cp -v "$FLUFFY/sw/iana-etc/etc/protocols" "$FLUFFY/etc/protocols"
+    else
+        cat << "PROTO_EOF" > "$FLUFFY/etc/protocols"
+ip      0       IP
+icmp    1       ICMP
+tcp     6       TCP
+udp     17      UDP
+ipv6    41      IPv6
+PROTO_EOF
+    fi
+fi
+
+if test ! -f "$FLUFFY/etc/services"
+then
+    if test -f "$FLUFFY/sw/iana-etc/etc/services"
+    then
+        cp -v "$FLUFFY/sw/iana-etc/etc/services" "$FLUFFY/etc/services"
+    else
+        cat << "SERV_EOF" > "$FLUFFY/etc/services"
+echo            7/tcp
+echo            7/udp
+discard         9/tcp           sink null
+discard         9/udp           sink null
+daytime         13/tcp
+daytime         13/udp
+qotd            17/tcp          quote
+chargen         19/tcp          ttytst source
+chargen         19/udp          ttytst source
+ftp-data        20/tcp
+ftp             21/tcp
+ssh             22/tcp
+telnet          23/tcp
+smtp            25/tcp          mail
+time            37/tcp          timserver
+time            37/udp          timserver
+domain          53/tcp
+domain          53/udp
+http            80/tcp          www
+http            80/udp
+pop3            110/tcp         pop-3
+sunrpc          111/tcp         portmapper
+sunrpc          111/udp         portmapper
+auth            113/tcp         ident
+nntp            119/tcp         readnews
+ntp             123/udp
+imap            143/tcp         imap4
+snmp            161/udp
+https           443/tcp
+https           443/udp
+SERV_EOF
+    fi
+fi
