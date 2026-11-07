@@ -103,6 +103,21 @@ diff -Naur Python-3.14.7.orig/Apple/iOS/Resources/bin/x86_64-apple-ios-simulator
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  xcrun --sdk iphonesimulator${IOS_SDK_VERSION} strip -arch x86_64 "$@"
+diff -Naur Python-3.14.7.orig/Lib/_pyrepl/terminfo.py Python-3.14.7/Lib/_pyrepl/terminfo.py
+--- Python-3.14.7.orig/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
+@@ -99,8 +99,11 @@
+             if d:
+                 dirs.append(d)
+ 
++    import glob
++    dirs.extend(sorted(glob.glob("/sw/*/share/terminfo")))
+     dirs.extend(
+         [
++            "/sw/ncurses/share/terminfo",
+             "/etc/terminfo",
+             "/lib/terminfo",
+             "/usr/lib/terminfo",
 diff -Naur Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib Python-3.14.7/Lib/ctypes/macholib/fetch_macholib
 --- Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/ctypes/macholib/fetch_macholib	2026-08-05 10:29:49.000000000 +0000
@@ -132,16 +147,15 @@ diff -Naur Python-3.14.7.orig/Lib/os.py Python-3.14.7/Lib/os.py
 diff -Naur Python-3.14.7.orig/Lib/shutil.py Python-3.14.7/Lib/shutil.py
 --- Python-3.14.7.orig/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
-@@ -1594,12 +1594,29 @@
-             return None
+@@ -1595,11 +1595,28 @@
  
          if use_bytes:
-+            has_wildcard = b'*' in path or b'?' in path
              path = os.fsencode(path)
++            has_wildcard = b'*' in path or b'?' in path
              path = path.split(os.fsencode(os.pathsep))
          else:
-+            has_wildcard = '*' in path or '?' in path
              path = os.fsdecode(path)
++            has_wildcard = '*' in path or '?' in path
              path = path.split(os.pathsep)
  
 +        if has_wildcard:
@@ -174,6 +188,18 @@ diff -Naur Python-3.14.7.orig/Lib/subprocess.py Python-3.14.7/Lib/subprocess.py
                  args = [unix_shell, "-c"] + args
                  if executable:
                      args[0] = executable
+diff -Naur Python-3.14.7.orig/Lib/test/support/__init__.py Python-3.14.7/Lib/test/support/__init__.py
+--- Python-3.14.7.orig/Lib/test/support/__init__.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/test/support/__init__.py	2026-08-05 10:29:49.000000000 +0000
+@@ -587,7 +587,7 @@
+     )
+ 
+ if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
+-    unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
++    unix_shell = '/system/bin/sh' if is_android else '/sw/bash/bin/bash'
+ else:
+     unix_shell = None
+ 
 diff -Naur Python-3.14.7.orig/Lib/test/test_ssl.py Python-3.14.7/Lib/test/test_ssl.py
 --- Python-3.14.7.orig/Lib/test/test_ssl.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/test/test_ssl.py	2026-08-05 10:29:49.000000000 +0000
@@ -405,6 +431,18 @@ diff -Naur Python-3.14.7.orig/Lib/test/test_ssl.py Python-3.14.7/Lib/test/test_s
      def test_msg_callback_tls12(self):
          client_context, server_context, hostname = testing_context()
          client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+diff -Naur Python-3.14.7.orig/Lib/test/test_subprocess.py Python-3.14.7/Lib/test/test_subprocess.py
+--- Python-3.14.7.orig/Lib/test/test_subprocess.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/test/test_subprocess.py	2026-08-05 10:29:49.000000000 +0000
+@@ -2584,7 +2584,7 @@
+     def test_specific_shell(self):
+         # Issue #9265: Incorrect name passed as arg[0].
+         shells = []
+-        for prefix in ['/bin', '/usr/bin/', '/usr/local/bin']:
++        for prefix in ['/sw/bash/bin', '/bin', '/usr/bin/', '/usr/local/bin']:
+             for name in ['bash', 'ksh']:
+                 sh = os.path.join(prefix, name)
+                 if os.path.isfile(sh):
 diff -Naur Python-3.14.7.orig/Mac/BuildScript/resources/install_certificates.command Python-3.14.7/Mac/BuildScript/resources/install_certificates.command
 --- Python-3.14.7.orig/Mac/BuildScript/resources/install_certificates.command	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Mac/BuildScript/resources/install_certificates.command	2026-08-05 10:29:49.000000000 +0000
