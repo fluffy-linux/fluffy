@@ -85,7 +85,7 @@
      - **Deprecation of `ldconfig` / `ld.so.cache` & Optimizing `glob()` in `glibc` as the Universal Lookup Primitive**:
        - `ldconfig` and `USE_LDCONFIG` (`ld.so.cache`) are completely disabled (`use_ldconfig=no`) in `glibc`. In an FHS system, `ld.so.cache` is a single-purpose hack for one subsystem (`ld.so`), whereas in Fluffy, `ld.so` (`/sw/*/lib`), `execvpe` and `bash` (`/sw/*/bin`), `gcc`/`binutils` (`/sw/*/include`, `/sw/*/lib`), and `tcl` (`/sw/*/lib`) all share the exact same access pattern: wildcard path expansion over `/sw/*/...`.
        - Rather than maintaining subsystem-specific caches or scattering custom `getdents64` loops across tools, standard POSIX `glob()` in `glibc` is the single general-purpose primitive. Optimizing `glob()` directly inside `glibc` (and using `glob()` everywhere) makes `ld.so`, `execvpe`, `bash`, `tcl`, `gcc`, and every standard `glob()` caller fast automatically.
-     - **Enriching `glibc` `glob()` with Bashisms & Delegating Bash / Tcl VFS to Glibc**:
+     - **Enriching `glibc` `glob()` with Bashisms & Delegating Bash, Tcl VFS, and Python Globbing to Glibc**:
        - **Enriching `glibc` `glob()`**:
          - Extend `posix/glob.c` with new flags to match modern shell globbing:
            - `GLOB_EXTMATCH`: Expose `FNM_EXTMATCH` (which `posix/fnmatch.c` in glibc already implements!) to enable ksh/bash extended pattern matching (`@(a|b)`, `!(x)`, `+(x)`, `*(x)`, `?(x)`).
@@ -96,6 +96,10 @@
          - In Tcl's Virtual File System (`generic/tclFileName.c` and `generic/tclIOUtil.c`), `Tcl_FSMatchInDirectory` delegates native filesystem queries to `TclpMatchFiles`.
          - Patch Tcl's native filesystem driver so that OS-level path and glob queries route directly through `glibc`'s `glob()` (translating Tcl `-types` or using `GLOB_ALTDIRFUNC`).
          - For non-native virtual mounts (zip/starkit), Tcl retains its in-memory VFS handlers, while all real OS-level filesystem queries shell out to `glibc`'s unified `glob()`, ensuring that `/sw/*/bin`, `/sw/*/lib`, and user wildcard paths behave 100% identically across Bash, C binaries, and Tcl.
+       - **Delegating Python `glob` / `pathlib` to `glibc` `glob()`**:
+         - Python's standard `Lib/glob.py` and `Lib/pathlib` implement pattern matching in pure Python (`os.scandir` + `fnmatch` regex translation), which both incurs interpreter overhead and bypasses `glibc`'s native `glob()` (and any `/run/fluffy/index.db` acceleration).
+         - Furthermore, `site.py` (which runs at interpreter startup before full stdlib initialization) currently has to `import glob` to expand `/sw/*` in `PREFIXES`.
+         - Expose `glibc`'s `glob(3)` directly in Python's built-in `posix` (`os`) C extension module (`Modules/posixmodule.c`) and delegate `Lib/glob.py` (when `dir_fd is None` and on the native OS filesystem) directly to `posix.glob()`. This makes `site.py`, `os.get_exec_path()`, `shutil.which()`, and general Python `glob.glob()` calls fast, zero-import, and 100% consistent with `glibc`'s unified `glob()`.
      - **LMDB-Style Copy-on-Write `mmap` Index (`/run/fluffy/index.db`)**:
        - **Problem**: Cold traversal of `/sw/*/bin` across thousands of configure checks (e.g. 15,000 forks during Gnulib/Coreutils) performs repeated `getdents64` and `stat` calls on the filesystem.
        - **Single-Writer Multi-Reader (SWMR) CoW Architecture**:
