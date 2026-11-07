@@ -106,12 +106,11 @@ diff -Naur Python-3.14.7.orig/Apple/iOS/Resources/bin/x86_64-apple-ios-simulator
 diff -Naur Python-3.14.7.orig/Lib/_pyrepl/terminfo.py Python-3.14.7/Lib/_pyrepl/terminfo.py
 --- Python-3.14.7.orig/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
-@@ -99,8 +99,11 @@
+@@ -99,8 +99,10 @@
              if d:
                  dirs.append(d)
  
-+    import glob
-+    dirs.extend(sorted(glob.glob("/sw/*/share/terminfo")))
++    dirs.extend(os.posix._glob("/sw/*/share/terminfo"))
      dirs.extend(
          [
 +            "/sw/ncurses/share/terminfo",
@@ -128,16 +127,15 @@ diff -Naur Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib Python-3.14.7/L
 diff -Naur Python-3.14.7.orig/Lib/os.py Python-3.14.7/Lib/os.py
 --- Python-3.14.7.orig/Lib/os.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/os.py	2026-08-05 10:29:49.000000000 +0000
-@@ -687,6 +687,15 @@
+@@ -687,6 +687,14 @@
  
      if path_list is None:
          path_list = defpath
 +    if '*' in path_list or '?' in path_list:
-+        import glob
 +        expanded = []
 +        for d in path_list.split(pathsep):
 +            if '*' in d or '?' in d:
-+                expanded.extend(sorted(glob.glob(d)))
++                expanded.extend(posix._glob(d))
 +            else:
 +                expanded.append(d)
 +        return expanded
@@ -147,7 +145,7 @@ diff -Naur Python-3.14.7.orig/Lib/os.py Python-3.14.7/Lib/os.py
 diff -Naur Python-3.14.7.orig/Lib/shutil.py Python-3.14.7/Lib/shutil.py
 --- Python-3.14.7.orig/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
-@@ -1595,11 +1595,28 @@
+@@ -1595,11 +1595,27 @@
  
          if use_bytes:
              path = os.fsencode(path)
@@ -159,12 +157,11 @@ diff -Naur Python-3.14.7.orig/Lib/shutil.py Python-3.14.7/Lib/shutil.py
              path = path.split(os.pathsep)
  
 +        if has_wildcard:
-+            import glob
 +            expanded = []
 +            for d in path:
 +                d_str = os.fsdecode(d) if use_bytes else d
 +                if '*' in d_str or '?' in d_str:
-+                    matches = sorted(glob.glob(d_str))
++                    matches = os.posix._glob(d_str)
 +                    if use_bytes:
 +                        expanded.extend(os.fsencode(m) for m in matches)
 +                    else:
@@ -188,15 +185,14 @@ diff -Naur Python-3.14.7.orig/Lib/site.py Python-3.14.7/Lib/site.py
  # Enable per user site-packages directory
  # set it to False to disable the feature or True to force the feature
  ENABLE_USER_SITE = None
-@@ -394,6 +394,15 @@
+@@ -394,6 +394,14 @@
      if prefixes is None:
          prefixes = PREFIXES
  
 +    expanded_prefixes = []
 +    for prefix in prefixes:
 +        if prefix and ('*' in prefix or '?' in prefix):
-+            import glob
-+            expanded_prefixes.extend(sorted(glob.glob(prefix)))
++            expanded_prefixes.extend(os.posix._glob(prefix))
 +        else:
 +            expanded_prefixes.append(prefix)
 +    prefixes = expanded_prefixes
@@ -1106,6 +1102,58 @@ diff -Naur Python-3.14.7.orig/Modules/makexp_aix Python-3.14.7/Modules/makexp_ai
  #
  # ===========================================================================
  # FILE:         makexp_aix
+diff -Naur Python-3.14.7.orig/Modules/posixmodule.c Python-3.14.7/Modules/posixmodule.c
+--- Python-3.14.7.orig/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
+@@ -17113,6 +17113,40 @@
+ }
+ #endif /* __EMSCRIPTEN__ */
+ 
++#include <glob.h>
++
++static PyObject *
++os__glob(PyObject *module, PyObject *arg)
++{
++    const char *pattern = PyUnicode_AsUTF8(arg);
++    if (pattern == NULL) {
++        return NULL;
++    }
++    glob_t g;
++    int rc = glob(pattern, 0, NULL, &g);
++    PyObject *list = PyList_New(0);
++    if (list == NULL) {
++        if (rc == 0) {
++            globfree(&g);
++        }
++        return NULL;
++    }
++    if (rc == 0) {
++        for (size_t i = 0; i < g.gl_pathc; i++) {
++            PyObject *item = PyUnicode_DecodeFSDefault(g.gl_pathv[i]);
++            if (item == NULL || PyList_Append(list, item) < 0) {
++                Py_XDECREF(item);
++                Py_DECREF(list);
++                globfree(&g);
++                return NULL;
++            }
++            Py_DECREF(item);
++        }
++        globfree(&g);
++    }
++    return list;
++}
++
+ 
+ static PyMethodDef posix_methods[] = {
+     OS_STAT_METHODDEF
+@@ -17331,6 +17365,7 @@
+     OS__CREATE_ENVIRON_METHODDEF
+     OS__EMSCRIPTEN_DEBUGGER_METHODDEF
+     OS__EMSCRIPTEN_LOG_METHODDEF
++    {"_glob", os__glob, METH_O, NULL},
+     {NULL,              NULL}            /* Sentinel */
+ };
+ 
 diff -Naur Python-3.14.7.orig/Tools/ssl/multissltests.py Python-3.14.7/Tools/ssl/multissltests.py
 --- Python-3.14.7.orig/Tools/ssl/multissltests.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Tools/ssl/multissltests.py	2026-08-05 10:29:49.000000000 +0000
