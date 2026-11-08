@@ -7,6 +7,8 @@ fi
 
 VERSION=1.26
 
+HAS_LDFLAGS=-lgdbm
+
 ARCHIVES=(
     6a24504a14de4a744103dcb936be976df6fbe88ccff26065e54c1c47946f4a5e https://ftpmirror.gnu.org/gdbm/gdbm-$VERSION.tar.gz
     79ccd7b729fb1081e6ff12ba0388e439ea0ddf04d08a2d9957c8bcc20830005a file://gdbm-$VERSION-fluffy-shell.patch
@@ -14,6 +16,8 @@ ARCHIVES=(
 
 NEEDS=(
     glibc
+    ncurses
+    readline
 )
 
 if test -v CROSS
@@ -32,7 +36,9 @@ then
         libgcc
         linux-headers
         make-pass1
+        ncurses
         patch-pass1
+        readline
         sed
         tar-pass1
         xz
@@ -52,7 +58,9 @@ else
         libgcc
         linux-headers
         make
+        ncurses
         patch
+        readline
         sed
         tar
         xz

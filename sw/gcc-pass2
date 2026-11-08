@@ -23,6 +23,8 @@ NEEDS=(
 
 BUILD_NEEDS=(
     gcc-pass1
+    glibc-pass1
+    libgcc-pass1
     libstdcpp-pass1
     linux-headers
 )

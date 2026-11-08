@@ -2,6 +2,8 @@ ON=cross-build
 
 VERSION=4.2.2
 
+HAS_LDFLAGS=-lmpfr
+
 ARCHIVES=(
     b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$VERSION.tar.xz
     d6e5b7179a943a375757600a250b15e572d713ba12873126524bd25b692ad6be file://mpfr-$VERSION-fluffy-shell.patch

@@ -1,0 +1,74 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.12.0
+
+ARCHIVES=(
+    88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c https://github.com/mesonbuild/meson/releases/download/$VERSION/meson-$VERSION.tar.gz
+    4a5b09876438317044eb6ee85c71aa1504c2abc4774f43594f22e4b2c0d14546 file://meson-$VERSION-fluffy.patch
+)
+
+NEEDS=(
+    ninja
+    python
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        gcc
+        glibc
+        libgcc
+        linux-headers
+        ninja
+        packaging
+        patch-pass1
+        python
+        setuptools
+        wheel
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        gcc
+        glibc
+        libgcc
+        linux-headers
+        ninja
+        packaging
+        patch
+        python
+        setuptools
+        wheel
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i meson-$VERSION-fluffy.patch
+    pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+}
+
+CHECK() {
+    python3 -B -m unittest \
+        unittests/internaltests.py \
+        unittests/optiontests.py \
+        unittests/taptests.py \
+        unittests/versiontests.py \
+        unittests/cargotests.py \
+        unittests/datatests.py
+}
+
+INSTALL() {
+    pip3 install --no-index --find-links dist --no-cache-dir --no-build-isolation --root "$DESTDIR" --prefix /sw/meson meson
+    install -vDm644 data/shell-completions/bash/meson "$DESTDIR/sw/meson/share/bash-completion/completions/meson"
+    install -vDm644 data/shell-completions/zsh/_meson "$DESTDIR/sw/meson/share/zsh/site-functions/_meson"
+}

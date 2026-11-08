@@ -1,0 +1,103 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=34.2
+
+HAS_LDFLAGS=-lkmod
+
+ARCHIVES=(
+    5a5d5073070cc7e0c7a7a3c6ec2a0e1780850c8b47b3e3892226b93ffcb9cb54 https://www.kernel.org/pub/linux/utils/kernel/kmod/kmod-$VERSION.tar.xz
+    e4f5738c5decec4fd4ef73ea3b36c66359515b4893e4edb7b8ed7cf03b702bbc file://kmod-$VERSION-fluffy-shell.patch
+    65d23f3fdf7662394b855990952c337079f82d01776156bf161e8c95e94ced6b file://kmod-$VERSION-fluffy.patch
+)
+
+NEEDS=(
+    glibc
+    openssl
+    xz
+    zlib
+    zstd
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        meson
+        ninja
+        openssl
+        patch-pass1
+        python
+        sed
+        xz
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        meson
+        ninja
+        openssl
+        patch
+        python
+        sed
+        xz
+        zlib
+        zstd
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i kmod-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i kmod-$VERSION-fluffy.patch
+
+    mkdir -p build
+    cd build
+    meson setup --prefix=/sw/kmod \
+        --buildtype=release \
+        --sysconfdir=/sw/kmod/etc \
+        --sbindir=/sw/kmod/bin \
+        --libdir=/sw/kmod/lib \
+        -Dmoduledir=/sw/linux/lib/modules \
+        -Dmanpages=false \
+        -Dbuild-tests=true \
+        ..
+    ninja
+}
+
+CHECK() {
+    meson test -C build --print-errorlogs
+}
+
+INSTALL() {
+    DESTDIR=$DESTDIR ninja -C build install
+}

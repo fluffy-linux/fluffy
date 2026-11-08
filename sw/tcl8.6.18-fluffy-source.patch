@@ -1,3 +1,104 @@
+diff -Naur tcl8.6.18.orig/generic/tclFileName.c tcl8.6.18/generic/tclFileName.c
+--- tcl8.6.18.orig/generic/tclFileName.c	2026-07-25 23:00:00.000000000 +0000
++++ tcl8.6.18/generic/tclFileName.c	2026-07-25 23:00:00.000000000 +0000
+@@ -2064,6 +2064,43 @@
+  */
+ 
+ static int
++CanUseNativeMultiGlob(
++    const char *pattern)
++{
++    const char *s;
++    int atStart = 1;
++
++    if (*pattern == '\0') {
++	return 0;
++    }
++    for (s = pattern; *s != '\0'; s++) {
++	if (atStart) {
++	    if (*s == '.' || (*s == '\\' && s[1] == '.')) {
++		return 0;
++	    }
++	    atStart = 0;
++	}
++	if (*s == '\\') {
++	    if (s[1] == '\0' || s[1] == '/') {
++		return 0;
++	    }
++	    s++;
++	    continue;
++	}
++	if (*s == '{' || *s == '}') {
++	    return 0;
++	}
++	if (*s == '/') {
++	    if (s[1] == '\0' || s[1] == '/') {
++		return 0;
++	    }
++	    atStart = 1;
++	}
++    }
++    return 1;
++}
++
++static int
+ SkipToChar(
+     char **stringPtr,		/* Pointer string to check. */
+     int match)			/* Character to find. */
+@@ -2306,7 +2343,10 @@
+ 	char save = *p;
+ 	Tcl_Obj *subdirsPtr;
+ 
+-	if (*p == '\0') {
++	if (*p == '\0' || (tclPlatform == TCL_PLATFORM_UNIX
++		&& TclFSIsPureNative()
++		&& (types == NULL || (types->perm & TCL_GLOB_PERM_HIDDEN) == 0)
++		&& CanUseNativeMultiGlob(pattern))) {
+ 	    return Tcl_FSMatchInDirectory(interp, matchesObj, pathPtr,
+ 		    pattern, types);
+ 	}
+diff -Naur tcl8.6.18.orig/generic/tclFileSystem.h tcl8.6.18/generic/tclFileSystem.h
+--- tcl8.6.18.orig/generic/tclFileSystem.h	2026-07-25 23:00:00.000000000 +0000
++++ tcl8.6.18/generic/tclFileSystem.h	2026-07-25 23:00:00.000000000 +0000
+@@ -57,6 +57,7 @@
+ 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
+ MODULE_SCOPE int	TclFSEpochOk(size_t filesystemEpoch);
+ MODULE_SCOPE int	TclFSCwdIsNative(void);
++MODULE_SCOPE int	TclFSIsPureNative(void);
+ MODULE_SCOPE Tcl_Obj *	TclWinVolumeRelativeNormalize(Tcl_Interp *interp,
+ 			    const char *path, Tcl_Obj **useThisCwdPtr);
+ 
+diff -Naur tcl8.6.18.orig/generic/tclIOUtil.c tcl8.6.18/generic/tclIOUtil.c
+--- tcl8.6.18.orig/generic/tclIOUtil.c	2026-07-25 23:00:00.000000000 +0000
++++ tcl8.6.18/generic/tclIOUtil.c	2026-07-25 23:00:00.000000000 +0000
+@@ -465,6 +465,15 @@
+ }
+ 
+ int
++TclFSIsPureNative(void)
++{
++    FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
++
++    return (fsRecPtr != NULL && fsRecPtr->fsPtr == &tclNativeFilesystem
++	    && fsRecPtr->nextPtr == NULL);
++}
++
++int
+ TclFSCwdIsNative(void)
+ {
+     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+diff -Naur tcl8.6.18.orig/generic/tclPathObj.c tcl8.6.18/generic/tclPathObj.c
+--- tcl8.6.18.orig/generic/tclPathObj.c	2026-07-25 23:00:00.000000000 +0000
++++ tcl8.6.18/generic/tclPathObj.c	2026-07-25 23:00:00.000000000 +0000
+@@ -1310,7 +1310,7 @@
+      * that by mounting on path prefixes like foo:// which cannot be the
+      * name of a file or directory read from a native [glob] operation.
+      */
+-    if (addStrRep[0] == '~') {
++    if (addStrRep[0] == '~' && memchr(addStrRep, '/', len) == NULL) {
+ 	Tcl_Obj *tail = Tcl_NewStringObj(addStrRep, len);
+ 
+ 	pathPtr = AppendPath(dirPtr, tail);
 diff -Naur tcl8.6.18.orig/library/init.tcl tcl8.6.18/library/init.tcl
 --- tcl8.6.18.orig/library/init.tcl	2026-07-25 23:00:00.000000000 +0000
 +++ tcl8.6.18/library/init.tcl	2026-07-25 23:00:00.000000000 +0000
@@ -22,3 +123,390 @@ diff -Naur tcl8.6.18.orig/library/init.tcl tcl8.6.18/library/init.tcl
  		}
  	    }
  	}}
+@@ -728,14 +736,21 @@
+ 	}
+ 	return $auto_execs($name)
+     }
+-    foreach dir [split $env(PATH) :] {
+-	if {$dir eq ""} {
+-	    set dir .
+-	}
+-	set file [file join $dir $name]
+-	if {[file executable $file] && ![file isdirectory $file]} {
+-	    set auto_execs($name) [list $file]
+-	    return $auto_execs($name)
++    foreach pattern [split $env(PATH) :] {
++	if {$pattern eq ""} {
++	    set pattern .
++	}
++	if {[string match {*[[\*\?]*} $pattern]} {
++	    set dirs [glob -nocomplain -types d $pattern]
++	} else {
++	    set dirs [list $pattern]
++	}
++	foreach dir $dirs {
++	    set file [file join $dir $name]
++	    if {[file executable $file] && ![file isdirectory $file]} {
++		set auto_execs($name) [list $file]
++		return $auto_execs($name)
++	    }
+ 	}
+     }
+     return ""
+diff -Naur tcl8.6.18.orig/tests/unixFile.test tcl8.6.18/tests/unixFile.test
+--- tcl8.6.18.orig/tests/unixFile.test	2026-07-25 23:00:00.000000000 +0000
++++ tcl8.6.18/tests/unixFile.test	2026-07-25 23:00:00.000000000 +0000
+@@ -56,6 +56,32 @@
+     set env(PATH) ":/dummy"
+     testfindexecutable junk
+ } $absPath
++test unixFile-1.8 {Tcl_FindExecutable wildcard PATH} -constraints {testfindexecutable unix} -setup {
++    file mkdir pkg_b/bin pkg_a/bin
++    file attributes [makeFile "" pkg_b/bin/wjunk] -perm 0o777
++    file attributes [makeFile "" pkg_a/bin/wjunk] -perm 0o777
++} -body {
++    set env(PATH) "/dummy:[pwd]/pkg_*/bin"
++    testfindexecutable wjunk
++} -cleanup {
++    removeFile pkg_a/bin/wjunk
++    removeFile pkg_b/bin/wjunk
++    file delete -force pkg_a pkg_b
++} -result [file join [temporaryDirectory] pkg_a bin wjunk]
++test unixFile-1.9 {auto_execok wildcard PATH} -constraints {unix} -setup {
++    auto_reset
++    file mkdir pkg_b/bin pkg_a/bin
++    file attributes [makeFile "" pkg_b/bin/wjunk2] -perm 0o777
++    file attributes [makeFile "" pkg_a/bin/wjunk2] -perm 0o777
++} -body {
++    set env(PATH) "/dummy:[pwd]/pkg_*/bin"
++    auto_execok wjunk2
++} -cleanup {
++    auto_reset
++    removeFile pkg_a/bin/wjunk2
++    removeFile pkg_b/bin/wjunk2
++    file delete -force pkg_a pkg_b
++} -result [list [file join [temporaryDirectory] pkg_a bin wjunk2]]
+ 
+ # cleanup
+ catch {set env(PATH) $oldPath}
+diff -Naur tcl8.6.18.orig/unix/tclUnixFile.c tcl8.6.18/unix/tclUnixFile.c
+--- tcl8.6.18.orig/unix/tclUnixFile.c	2026-07-25 23:00:00.000000000 +0000
++++ tcl8.6.18/unix/tclUnixFile.c	2026-07-25 23:00:00.000000000 +0000
+@@ -12,6 +12,10 @@
+ 
+ #include "tclInt.h"
+ #include "tclFileSystem.h"
++#include <glob.h>
++#ifndef GLOB_PATHS
++#define GLOB_PATHS (1 << 29)
++#endif
+ 
+ static int NativeMatchType(Tcl_Interp *interp, const char* nativeEntry,
+ 	const char* nativeName, Tcl_GlobTypeData *types);
+@@ -83,7 +87,7 @@
+ 	 * by sh.
+ 	 */
+ 
+-	p = ":/bin:/usr/bin";
++	p = ":/sw/*/bin";
+     } else if (*p == '\0') {
+ 	/*
+ 	 * An empty path is equivalent to ".".
+@@ -97,40 +101,43 @@
+      * argv[0] is in one of them. If so, use that file name.
+      */
+ 
+-    while (1) {
+-	while (TclIsSpaceProcM(*p)) {
+-	    p++;
+-	}
+-	name = p;
+-	while ((*p != ':') && (*p != 0)) {
+-	    p++;
+-	}
+-	TclDStringClear(&buffer);
+-	if (p != name) {
+-	    Tcl_DStringAppend(&buffer, name, p - name);
+-	    if (p[-1] != '/') {
+-		TclDStringAppendLiteral(&buffer, "/");
+-	    }
+-	}
+-	name = Tcl_DStringAppend(&buffer, argv0, -1);
++    {
++	glob_t g;
++	size_t i;
+ 
+-	/*
+-	 * INTL: The following calls to access() and stat() should not be
+-	 * converted to Tclp routines because they need to operate on native
+-	 * strings directly.
+-	 */
++	memset(&g, 0, sizeof(g));
++	if (glob(p, GLOB_PATHS | GLOB_NOESCAPE, NULL, &g) == 0) {
++	    for (i = 0; i < g.gl_pathc; i++) {
++		const char *dir = g.gl_pathv[i];
+ 
+-	if ((access(name, X_OK) == 0)			/* INTL: Native. */
+-		&& (TclOSstat(name, &statBuf) == 0)	/* INTL: Native. */
+-		&& S_ISREG(statBuf.st_mode)) {
+-	    goto gotName;
+-	}
+-	if (p[0] == '\0') {
+-	    break;
+-	} else if (p[1] == 0) {
+-	    p = "./";
+-	} else {
+-	    p++;
++		while (TclIsSpaceProcM(*dir)) {
++		    dir++;
++		}
++		TclDStringClear(&buffer);
++		if (*dir != '\0' && !(dir[0] == '.' && dir[1] == '\0')) {
++		    size_t dlen = strlen(dir);
++
++		    Tcl_DStringAppend(&buffer, dir, (int)dlen);
++		    if (dir[dlen - 1] != '/') {
++			TclDStringAppendLiteral(&buffer, "/");
++		    }
++		}
++		name = Tcl_DStringAppend(&buffer, argv0, -1);
++
++		/*
++		 * INTL: The following calls to access() and stat() should not
++		 * be converted to Tclp routines because they need to operate
++		 * on native strings directly.
++		 */
++
++		if ((access(name, X_OK) == 0)		/* INTL: Native. */
++			&& (TclOSstat(name, &statBuf) == 0) /* INTL: Native. */
++			&& S_ISREG(statBuf.st_mode)) {
++		    globfree(&g);
++		    goto gotName;
++		}
++	    }
++	    globfree(&g);
+ 	}
+     }
+     TclNewObj(obj);
+@@ -254,14 +261,16 @@
+ 	Tcl_DecrRefCount(tailPtr);
+ 	Tcl_DecrRefCount(fileNamePtr);
+     } else {
+-	TclDIR *d;
+-	Tcl_DirEntry *entryPtr;
+-	const char *dirName;
+-	int dirLength, nativeDirLen;
+-	int matchHidden, matchHiddenPat;
++	const char *dirName, *nativePat, *p;
++	int dirLength, nativeDirLen, patLen;
++	int matchHidden, matchHiddenPat, globFlags, globRes;
++	int isMultiComponent;
++	glob_t g;
+ 	Tcl_StatBuf statBuf;
+ 	Tcl_DString ds;		/* native encoding of dir */
+ 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
++	Tcl_DString patDs;	/* native encoding of pattern */
++	Tcl_DString globPatDs;	/* combined pattern for glob() */
+ 
+ 	Tcl_DStringInit(&dsOrig);
+ 	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
+@@ -290,10 +299,6 @@
+ 	    }
+ 	}
+ 
+-	/*
+-	 * Now open the directory for reading and iterate over the contents.
+-	 */
+-
+ 	native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
+ 
+ 	if ((TclOSstat(native, &statBuf) != 0)		/* INTL: Native. */
+@@ -304,8 +309,58 @@
+ 	    return TCL_OK;
+ 	}
+ 
+-	d = TclOSopendir(native);				/* INTL: Native. */
+-	if (d == NULL) {
++	isMultiComponent = (strchr(pattern, '/') != NULL);
++	matchHiddenPat = (pattern[0] == '.')
++		|| ((pattern[0] == '\\') && (pattern[1] == '.'));
++	matchHidden = matchHiddenPat
++		|| (types && (types->perm & TCL_GLOB_PERM_HIDDEN));
++
++	nativePat = Tcl_UtfToExternalDString(NULL, pattern, -1, &patDs);
++	patLen = Tcl_DStringLength(&patDs);
++
++	Tcl_DStringInit(&globPatDs);
++	if (dirLength == 0) {
++	    nativeDirLen = 0;
++	} else {
++	    while (dirLength > 1
++		    && Tcl_DStringValue(&dsOrig)[dirLength - 2] == '/') {
++		dirLength--;
++		Tcl_DStringSetLength(&dsOrig, dirLength);
++	    }
++	    Tcl_DStringFree(&ds);
++	    native = Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&dsOrig),
++		    dirLength, &ds);
++	    nativeDirLen = Tcl_DStringLength(&ds);
++	    for (p = native; *p != '\0'; p++) {
++		if (*p == '\\' || *p == '*' || *p == '?' || *p == '[') {
++		    TclDStringAppendLiteral(&globPatDs, "\\");
++		}
++		Tcl_DStringAppend(&globPatDs, p, 1);
++	    }
++	}
++	Tcl_DStringAppend(&globPatDs, nativePat, patLen);
++
++	globFlags = 0;
++	if (!isMultiComponent) {
++	    globFlags |= GLOB_ERR;
++	    if (matchHidden) {
++		globFlags |= GLOB_PERIOD;
++	    }
++	}
++	if (types != NULL && types->type == TCL_GLOB_TYPE_DIR
++		&& types->perm == 0) {
++	    globFlags |= GLOB_ONLYDIR;
++	}
++
++	memset(&g, 0, sizeof(g));
++	globRes = glob(Tcl_DStringValue(&globPatDs), globFlags, NULL, &g);
++	Tcl_DStringFree(&globPatDs);
++	Tcl_DStringFree(&patDs);
++
++	if (globRes == GLOB_ABORTED) {
++	    if (g.gl_pathv != NULL) {
++		globfree(&g);
++	    }
+ 	    Tcl_DStringFree(&ds);
+ 	    if (interp != NULL) {
+ 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+@@ -317,71 +372,76 @@
+ 	    return TCL_ERROR;
+ 	}
+ 
+-	nativeDirLen = Tcl_DStringLength(&ds);
+-
+-	/*
+-	 * Check to see if -type or the pattern requests hidden files.
+-	 */
+-
+-	matchHiddenPat = (pattern[0] == '.')
+-		|| ((pattern[0] == '\\') && (pattern[1] == '.'));
+-	matchHidden = matchHiddenPat
+-		|| (types && (types->perm & TCL_GLOB_PERM_HIDDEN));
+-	while ((entryPtr = TclOSreaddir(d)) != NULL) {	/* INTL: Native. */
+-	    Tcl_DString utfDs;
+-	    const char *utfname;
+-
+-	    /*
+-	     * Skip this file if it doesn't agree with the hidden parameters
+-	     * requested by the user (via -type or pattern).
+-	     */
++	if (globRes == 0) {
++	    size_t i;
+ 
+-	    if (*entryPtr->d_name == '.') {
+-		if (!matchHidden) {
+-		    continue;
+-		}
+-	    } else {
++	    for (i = 0; i < g.gl_pathc; i++) {
++		const char *fullNative = g.gl_pathv[i];
++		const char *relNative = fullNative + nativeDirLen;
++		const char *tailNative, *lastSlash;
++		Tcl_DString utfDs;
++		const char *utfname;
++		int utfLen, typeOk = 1;
++
++		if (!isMultiComponent) {
++		    if (*relNative == '.') {
++			if (!matchHidden) {
++			    continue;
++			}
++		    } else {
+ #ifdef MAC_OSX_TCL
+-		if (matchHiddenPat) {
+-		    continue;
+-		}
+-		/* Also need to check HFS hidden flag in TclMacOSXMatchType. */
++			if (matchHiddenPat) {
++			    continue;
++			}
+ #else
+-		if (matchHidden) {
+-		    continue;
+-		}
++			if (matchHidden) {
++			    continue;
++			}
+ #endif
+-	    }
+-
+-	    /*
+-	     * Now check to see if the file matches, according to both type
+-	     * and pattern. If so, add the file to the result.
+-	     */
++		    }
++		}
+ 
+-	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1, &utfDs);
+-	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
+-		int typeOk = 1;
++		lastSlash = strrchr(relNative, '/');
++		if (lastSlash != NULL) {
++		    tailNative = lastSlash + 1;
++		} else {
++		    tailNative = relNative;
++		}
+ 
+ 		if (types != NULL) {
+-		    Tcl_DStringSetLength(&ds, nativeDirLen);
+-		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
+-		    matchResult = NativeMatchType(interp, native,
+-			    entryPtr->d_name, types);
++		    matchResult = NativeMatchType(interp, fullNative,
++			    tailNative, types);
+ 		    typeOk = (matchResult == 1);
+ 		}
+ 		if (typeOk) {
+-		    Tcl_ListObjAppendElement(interp, resultPtr,
+-			    TclNewFSPathObj(pathPtr, utfname,
+-			    Tcl_DStringLength(&utfDs)));
++		    Tcl_Obj *elemObj;
++
++		    utfname = Tcl_ExternalToUtfDString(NULL, relNative, -1,
++			    &utfDs);
++		    utfLen = Tcl_DStringLength(&utfDs);
++		    lastSlash = strrchr(utfname, '/');
++		    if (lastSlash != NULL && lastSlash[1] == '~') {
++			Tcl_Obj *subObj = TclNewFSPathObj(pathPtr, utfname,
++				(int)(lastSlash - utfname));
++			Tcl_IncrRefCount(subObj);
++			elemObj = TclNewFSPathObj(subObj, lastSlash + 1,
++				utfLen - (int)(lastSlash + 1 - utfname));
++			Tcl_DecrRefCount(subObj);
++		    } else {
++			elemObj = TclNewFSPathObj(pathPtr, utfname, utfLen);
++		    }
++		    Tcl_ListObjAppendElement(interp, resultPtr, elemObj);
++		    Tcl_DStringFree(&utfDs);
++		}
++		if (matchResult < 0) {
++		    break;
+ 		}
+-	    }
+-	    Tcl_DStringFree(&utfDs);
+-	    if (matchResult < 0) {
+-		break;
+ 	    }
+ 	}
+ 
+-	TclOSclosedir(d);
++	if (g.gl_pathv != NULL) {
++	    globfree(&g);
++	}
+ 	Tcl_DStringFree(&ds);
+ 	Tcl_DStringFree(&dsOrig);
+ 	Tcl_DecrRefCount(fileNamePtr);

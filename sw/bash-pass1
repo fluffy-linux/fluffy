@@ -4,15 +4,17 @@ VERSION=5.3
 
 ARCHIVES=(
     0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz
-    9dd1e607089d21baff2db33932059035482948d5b21fa30bd671dc4cfff6f294 file://bash-$VERSION-fluffy-source.patch
+    145952bdaf6b917ee467e92ab668d2cb6588a7062ebcd046dcf79a587428db6b file://bash-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
+    glibc-pass1
     ncurses-pass1
 )
 
 BUILD_NEEDS=(
     gcc-pass1
+    glibc-pass1
     linux-headers
     ncurses-pass1
 )

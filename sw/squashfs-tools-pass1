@@ -7,6 +7,7 @@ ARCHIVES=(
 )
 
 NEEDS=(
+    glibc-pass1
     libgcc-pass1
     zstd-pass1
 )
@@ -14,6 +15,7 @@ NEEDS=(
 BUILD_NEEDS=(
     gcc-pass1
     glibc-pass1
+    libgcc-pass1
     linux-headers
     zstd-pass1
 )

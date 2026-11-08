@@ -264,9 +264,9 @@ register_entry() {
         get_fs_opt "$mnt_fs" "X-fluffy.image-checksum" old_img_chk || true
     fi
 
-    if test -n "$old_src" && test -f "$old_src" && test -n "$old_img_chk" && cmp -s "$old_src" "$squashfs.new"
+    img_chk="$(sha256sum "$squashfs.new" | cut -d' ' -f1)"
+    if test -n "$old_src" && test -f "$old_src" && test "$img_chk" == "$old_img_chk"
     then
-        img_chk="$old_img_chk"
         if test "$old_src" == "$squashfs"
         then
             rm -f "$squashfs.new"
@@ -280,7 +280,6 @@ register_entry() {
         then
             rm -f "$old_src"
         fi
-        img_chk="$(sha256sum "$squashfs" | cut -d' ' -f1)"
     fi
 
     if test "$mnt_fs" == "$NULL"
@@ -291,6 +290,14 @@ register_entry() {
     fi
 
     local options="X-fluffy.image-checksum=$img_chk"
+    if test -n "${HAS_CFLAGS:-}"
+    then
+        options="$options,X-fluffy.cflags=\"$HAS_CFLAGS\""
+    fi
+    if test -n "${HAS_LDFLAGS:-}"
+    then
+        options="$options,X-fluffy.ldflags=\"$HAS_LDFLAGS\""
+    fi
     if test -n "$needs"
     then
         options="$options,X-fluffy.needs=\"$needs\""
@@ -603,6 +610,32 @@ lockdown_exec() {
             export DESTDIR=/sw/.build/destdir MAKEFLAGS="$MAKEFLAGS DESTDIR=/sw/.build/destdir" PATH="/sw/.build/destdir/sw/$mount_pkg/bin:$PATH"
         fi
 
+        if test "$1" != SQUASHFS
+        then
+            local dep dep_fs dep_cflags dep_ldflags canon_dep env_prefix
+            for dep in "${BUILD_NEEDS[@]}"
+            do
+                dep_fs="$NULL"
+                find_fs_by_pkg "$dep" dep_fs
+                if test "$dep_fs" != "$NULL"
+                then
+                    dep_cflags=""
+                    dep_ldflags=""
+                    get_fs_opt "$dep_fs" "X-fluffy.cflags" dep_cflags || true
+                    get_fs_opt "$dep_fs" "X-fluffy.ldflags" dep_ldflags || true
+                    if test -n "$dep_cflags" || test -n "$dep_ldflags"
+                    then
+                        canon_dep="${dep%-pass*}"
+                        env_prefix="${canon_dep^^}"
+                        env_prefix="${env_prefix//[^A-Z0-9_]/_}"
+                        export "${env_prefix}_CFLAGS=${dep_cflags:- }"
+                        export "${env_prefix}_LDFLAGS=${dep_ldflags:- }"
+                        export "${env_prefix}_LIBS=${dep_ldflags:- }"
+                    fi
+                fi
+            done
+        fi
+
         "$1"
     )
 }
@@ -637,7 +670,7 @@ build_single_pkg() {
         mount_pkg="${pkg%-pass*}"
 
         unset -f MAKE CHECK INSTALL
-        unset VERSION
+        unset VERSION HAS_CFLAGS HAS_LDFLAGS
         declare -ga ARCHIVES=() archives=() NEEDS=() BUILD_NEEDS=()
 
         SQUASHFS() {
@@ -874,7 +907,7 @@ plan_pkgs() {
     tmp_plan="$(mktemp)"
     (
         declare -a order=()
-        declare -A pkg_ver=() pkg_needs=() pkg_deps=() pkg_bneeds=() pkg_includes=()
+        declare -A pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_needs=() pkg_deps=() pkg_bneeds=() pkg_includes=()
 
         build_step() {
             local pkg_name="$1" recipe_file="sw/$1"
@@ -891,6 +924,8 @@ plan_pkgs() {
                 ON=fluffy-build
             fi
             VERSION=""
+            HAS_CFLAGS=""
+            HAS_LDFLAGS=""
             ARCHIVES=()
             NEEDS=()
             BUILD_NEEDS=()
@@ -901,6 +936,8 @@ plan_pkgs() {
             unset -f MAKE CHECK INSTALL
 
             pkg_ver["$pkg_name"]="$VERSION"
+            pkg_cflags["$pkg_name"]="${HAS_CFLAGS:-}"
+            pkg_ldflags["$pkg_name"]="${HAS_LDFLAGS:-}"
             pkg_needs["$pkg_name"]="${NEEDS[*]}"
 
             local -a direct_bneeds=()
@@ -914,7 +951,7 @@ plan_pkgs() {
             pkg_deps["$pkg_name"]="${step_deps[*]}"
             pkg_bneeds["$pkg_name"]="${direct_bneeds[*]}"
 
-            unset ON VERSION ARCHIVES NEEDS BUILD_NEEDS
+            unset ON VERSION HAS_CFLAGS HAS_LDFLAGS ARCHIVES NEEDS BUILD_NEEDS
         }
 
         dfs build_step "$@"
@@ -922,22 +959,26 @@ plan_pkgs() {
         local pkg
         for pkg in "${order[@]}"
         do
-            printf '%s\t%s\t%s\t%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}"
+            printf '%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}" "${pkg_cflags[$pkg]:-}" "${pkg_ldflags[$pkg]:-}"
         done
     ) > "$tmp_plan"
 
     order=()
     pkg_ver=()
+    pkg_cflags=()
+    pkg_ldflags=()
     pkg_bneeds=()
     pkg_img_chk=()
     pkg_includes=()
-    local p v b inc
-    while IFS=$'\t' read -r p v b inc
+    local p v b inc cf lf
+    while IFS=$'\x1f' read -r p v b inc cf lf
     do
         order+=("$p")
         pkg_ver["$p"]="$v"
         pkg_bneeds["$p"]="$b"
         pkg_includes["$p"]="$inc"
+        pkg_cflags["$p"]="$cf"
+        pkg_ldflags["$p"]="$lf"
     done < "$tmp_plan"
     rm -f "$tmp_plan"
 }
@@ -964,7 +1005,7 @@ build_pkgs() {
     fi
 
     local -a order=()
-    local -A pkg_ver=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
     plan_pkgs "$@"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1058,7 +1099,7 @@ refresh_recipe_checksums() {
     fi
 
     local -a order=()
-    local -A pkg_ver=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
     plan_pkgs "${target_pkgs[@]}"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1088,6 +1129,14 @@ refresh_recipe_checksums() {
         if test "$fs" != "$NULL"
         then
             local options="X-fluffy.image-checksum=$img_chk"
+            if test -n "${pkg_cflags[$pkg]:-}"
+            then
+                options="$options,X-fluffy.cflags=\"${pkg_cflags[$pkg]}\""
+            fi
+            if test -n "${pkg_ldflags[$pkg]:-}"
+            then
+                options="$options,X-fluffy.ldflags=\"${pkg_ldflags[$pkg]}\""
+            fi
             if test -n "$needs_str"
             then
                 options="$options,X-fluffy.needs=\"$needs_str\""

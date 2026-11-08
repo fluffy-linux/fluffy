@@ -48,7 +48,7 @@ done < <(find "$src" -type f \( \
     \) -exec grep -IlE '(^|[^a-zA-Z0-9_./])/(usr/)?bin/(ba)?sh\b' {} + 2>/dev/null || true)
 
 if [ $# -ge 2 ]; then
-    (cd "$dir" && TZ=UTC0 LC_ALL=C diff -Naur "$(basename "$src").orig" "$(basename "$src")") > "$2" || true
+    (cd "$dir" && TZ=UTC0 LC_ALL=C diff --no-dereference -Naur "$(basename "$src").orig" "$(basename "$src")") > "$2" || true
 else
-    (cd "$dir" && TZ=UTC0 LC_ALL=C diff -Naur "$(basename "$src").orig" "$(basename "$src")") || true
+    (cd "$dir" && TZ=UTC0 LC_ALL=C diff --no-dereference -Naur "$(basename "$src").orig" "$(basename "$src")") || true
 fi

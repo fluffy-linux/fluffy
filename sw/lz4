@@ -2,6 +2,8 @@ ON=cross-build
 
 VERSION=1.10.0
 
+HAS_LDFLAGS=-llz4
+
 ARCHIVES=(
     537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b https://github.com/lz4/lz4/releases/download/v$VERSION/lz4-$VERSION.tar.gz
     31046072217f8f540b7a493d9bf1407865eeaa310399c913f71714d608ef143e file://lz4-$VERSION-fluffy-shell.patch

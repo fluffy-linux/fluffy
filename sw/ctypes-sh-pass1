@@ -8,12 +8,14 @@ ARCHIVES=(
 
 NEEDS=(
     bash-pass1
+    glibc-pass1
     libffi-pass1
 )
 
 BUILD_NEEDS=(
     bash-pass1
     gcc-pass1
+    glibc-pass1
     libffi-pass1
     linux-headers
 )

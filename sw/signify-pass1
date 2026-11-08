@@ -13,6 +13,7 @@ NEEDS=(
 BUILD_NEEDS=(
     coreutils-pass1
     gcc-pass1
+    glibc-pass1
     linux-headers
     make-pass1
 )

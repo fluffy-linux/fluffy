@@ -7,6 +7,8 @@ fi
 
 VERSION=2.8.3
 
+HAS_LDFLAGS=-lexpat
+
 ARCHIVES=(
     f6256df90c906773d344da084402b7d3e4f22ed41b1a59c989098a83d3ea0c85 https://github.com/libexpat/libexpat/releases/download/R_2_8_3/expat-$VERSION.tar.xz
     3c8d4d7076a4547e7a9ca1a2ca86d3a74942cefdac3809617fc2a2d2a5896059 file://expat-$VERSION-fluffy-shell.patch

@@ -2,6 +2,8 @@ ON=cross-build
 
 VERSION=6.3.0
 
+HAS_LDFLAGS=-lgmp
+
 ARCHIVES=(
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$VERSION.tar.xz
     f771fd5ba22d4f88f767694508ef19a99e649e3c60a0ebef7aa894055b9704b3 file://gmp-$VERSION-fluffy-shell.patch

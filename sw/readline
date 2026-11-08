@@ -2,10 +2,12 @@ ON=cross-build
 
 VERSION=8.3
 
+HAS_LDFLAGS=-lreadline
+
 ARCHIVES=(
     fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc https://ftpmirror.gnu.org/readline/readline-$VERSION.tar.gz
     90cc647d032e2b0a5e1656fefa02c58e50c445f976949beef15ad76b3d6d0e96 file://readline-$VERSION-fluffy-shell.patch
-    687c2f6e8e5077e1738bf20a81693e811492b141f632158c1d2c462c85b2ebae file://readline-$VERSION-fluffy-source.patch
+    ad168a38184511c918dd3390d208dca6044b24bcbb9fd1cc87a7571d0e873234 file://readline-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -39,7 +41,7 @@ MAKE() {
         --disable-static \
         --with-curses \
         --docdir=/sw/readline/share/doc/readline-$VERSION
-    make SHLIB_LIBS="-lncursesw"
+    make
 }
 
 INSTALL() {

@@ -1,0 +1,12 @@
+diff --no-dereference -Naur grep-3.12.orig/configure grep-3.12/configure
+--- grep-3.12.orig/configure	2025-04-10 16:02:07.000000000 +0000
++++ grep-3.12/configure	2025-04-10 16:02:07.000000000 +0000
+@@ -61136,6 +61136,8 @@
+ 
+   if test $test_pcre != no; then
+ 
++    : "${PCRE_CFLAGS:=${PCRE2_CFLAGS:-}}"
++    : "${PCRE_LIBS:=${PCRE2_LIBS:-}}"
+     if test -z "${PCRE_CFLAGS+set}" && test -z "${PCRE_LIBS+set}"; then
+ 
+ pkg_failed=no

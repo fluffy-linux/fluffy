@@ -19,6 +19,7 @@ BUILD_NEEDS=(
     findutils-pass1
     gawk-pass1
     gcc-pass2
+    glibc-pass1
     grep-pass1
     gzip-pass1
     linux-headers

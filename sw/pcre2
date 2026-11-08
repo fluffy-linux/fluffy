@@ -2,6 +2,8 @@ ON=cross-build
 
 VERSION=10.47
 
+HAS_LDFLAGS=-lpcre2-8
+
 ARCHIVES=(
     47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7 https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$VERSION/pcre2-$VERSION.tar.bz2
     14c4174e09eee2a481213a1475ca234431cb3fa12571ee1e64ccf38c6b242772 file://pcre2-$VERSION-fluffy-shell.patch

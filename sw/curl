@@ -1,5 +1,7 @@
 VERSION=8.23.0
 
+HAS_LDFLAGS=-lcurl
+
 ARCHIVES=(
     8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5 https://curl.se/download/curl-$VERSION.tar.xz
     b1fc8dfae54424bea6a546125d59d1a5a293c4aa79b0978179bd50e225bd5d3e file://curl-$VERSION-fluffy-shell.patch

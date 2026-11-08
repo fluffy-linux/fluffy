@@ -1,4 +1,18 @@
-diff -Naur readline-8.3.orig/input.c readline-8.3/input.c
+diff --no-dereference -Naur readline-8.3.orig/Makefile.in readline-8.3/Makefile.in
+--- readline-8.3.orig/Makefile.in	2025-06-02 20:10:34.000000000 +0000
++++ readline-8.3/Makefile.in	2025-06-02 20:10:34.000000000 +0000
+@@ -258,10 +258,8 @@
+ maybe-uninstall-pc: uninstall-pc
+ 
+ install-static: installdirs $(STATIC_LIBS) install-headers install-doc ${install_examples} install-pc
+-	-$(MV) $(DESTDIR)$(libdir)/libreadline.a $(DESTDIR)$(libdir)/libreadline.old
+ 	$(INSTALL_DATA) libreadline.a $(DESTDIR)$(libdir)/libreadline.a
+ 	-test -n "$(RANLIB)" && $(RANLIB) $(DESTDIR)$(libdir)/libreadline.a
+-	-$(MV) $(DESTDIR)$(libdir)/libhistory.a $(DESTDIR)$(libdir)/libhistory.old
+ 	$(INSTALL_DATA) libhistory.a $(DESTDIR)$(libdir)/libhistory.a
+ 	-test -n "$(RANLIB)" && $(RANLIB) $(DESTDIR)$(libdir)/libhistory.a
+ 
+diff --no-dereference -Naur readline-8.3.orig/input.c readline-8.3/input.c
 --- readline-8.3.orig/input.c	2025-05-02 13:29:05.000000000 +0000
 +++ readline-8.3/input.c	2025-05-02 13:29:05.000000000 +0000
 @@ -268,6 +268,8 @@
@@ -18,21 +32,7 @@ diff -Naur readline-8.3.orig/input.c readline-8.3/input.c
      }
  #endif
  
-diff -Naur readline-8.3.orig/Makefile.in readline-8.3/Makefile.in
---- readline-8.3.orig/Makefile.in	2025-06-02 20:10:34.000000000 +0000
-+++ readline-8.3/Makefile.in	2025-06-02 20:10:34.000000000 +0000
-@@ -258,10 +258,8 @@
- maybe-uninstall-pc: uninstall-pc
- 
- install-static: installdirs $(STATIC_LIBS) install-headers install-doc ${install_examples} install-pc
--	-$(MV) $(DESTDIR)$(libdir)/libreadline.a $(DESTDIR)$(libdir)/libreadline.old
- 	$(INSTALL_DATA) libreadline.a $(DESTDIR)$(libdir)/libreadline.a
- 	-test -n "$(RANLIB)" && $(RANLIB) $(DESTDIR)$(libdir)/libreadline.a
--	-$(MV) $(DESTDIR)$(libdir)/libhistory.a $(DESTDIR)$(libdir)/libhistory.old
- 	$(INSTALL_DATA) libhistory.a $(DESTDIR)$(libdir)/libhistory.a
- 	-test -n "$(RANLIB)" && $(RANLIB) $(DESTDIR)$(libdir)/libhistory.a
- 
-diff -Naur readline-8.3.orig/support/shlib-install readline-8.3/support/shlib-install
+diff --no-dereference -Naur readline-8.3.orig/support/shlib-install readline-8.3/support/shlib-install
 --- readline-8.3.orig/support/shlib-install	2019-12-13 14:46:13.000000000 +0000
 +++ readline-8.3/support/shlib-install	2019-12-13 14:46:13.000000000 +0000
 @@ -49,9 +49,9 @@
@@ -59,19 +59,21 @@ diff -Naur readline-8.3.orig/support/shlib-install readline-8.3/support/shlib-in
  		fi
  		${echo} $MV ${INSTALLDIR}/${LIBNAME} ${BINDIR}/${LIBNAME}
  		${echo} chmod a+x ${BINDIR}/${LIBNAME}
-diff -Naur readline-8.3.orig/support/shobj-conf readline-8.3/support/shobj-conf
+diff --no-dereference -Naur readline-8.3.orig/support/shobj-conf readline-8.3/support/shobj-conf
 --- readline-8.3.orig/support/shobj-conf	2024-02-14 15:42:57.000000000 +0000
 +++ readline-8.3/support/shobj-conf	2024-02-14 15:42:57.000000000 +0000
-@@ -128,7 +128,7 @@
+@@ -128,8 +128,9 @@
  	SHOBJ_LD='${CC}'
  	SHOBJ_LDFLAGS='-shared -Wl,-soname,$@'
  
 -	SHLIB_XLDFLAGS='-Wl,-rpath,$(libdir) -Wl,-soname,`basename $@ $(SHLIB_MINOR)`'
 +	SHLIB_XLDFLAGS='-Wl,-soname,`basename $@ $(SHLIB_MINOR)`'
  	SHLIB_LIBVERSION='$(SHLIB_LIBSUFF).$(SHLIB_MAJOR)$(SHLIB_MINOR)'
++	SHLIB_LIBS='$(TERMCAP_LIB)'
  	;;
  
-@@ -269,7 +269,7 @@
+ # Darwin/MacOS X
+@@ -269,7 +270,7 @@
  	SHOBJ_LD='${CC}'
  	SHOBJ_LDFLAGS='-shared -Wl,-soname,$@'
  

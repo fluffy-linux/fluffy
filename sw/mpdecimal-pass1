@@ -2,6 +2,8 @@ ON=cross-build
 
 VERSION=4.0.1
 
+HAS_LDFLAGS=-lmpdec
+
 ARCHIVES=(
     96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8 https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-$VERSION.tar.gz
     fa764141dcd8cc3c933f378f44e2ffaf3c99024606896ede316be5d80d26ea59 file://mpdecimal-$VERSION-fluffy-shell.patch
@@ -11,6 +13,8 @@ ARCHIVES=(
 
 NEEDS=(
     glibc-pass1
+    libgcc-pass1
+    libstdcpp-pass1
 )
 
 BUILD_NEEDS=(
@@ -21,8 +25,11 @@ BUILD_NEEDS=(
     findutils-pass1
     gawk-pass1
     gcc-pass2
+    glibc-pass1
     grep-pass1
     gzip-pass1
+    libgcc-pass1
+    libstdcpp-pass1
     linux-headers
     make-pass1
     patch-pass1

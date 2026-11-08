@@ -1,17 +1,9 @@
 ON=host-build
 
 VERSION=16.2.0
-MPFR_VERSION=4.2.2
-MPC_VERSION=1.4.1
-GMP_VERSION=6.3.0
 
 ARCHIVES=(
     e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
-    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$MPFR_VERSION.tar.xz
-    91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$MPC_VERSION.tar.xz
-    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$GMP_VERSION.tar.xz
-    14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    56d4923478beb3abdd92be03416c40eff9da6427995642cf77b2f20c9fa012cb file://gcc-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -22,44 +14,49 @@ BUILD_NEEDS=(
     binutils-pass1
     gcc-pass1
     glibc-pass1
-    libstdcpp-pass1
     linux-headers
 )
 
 MAKE() {
-    patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i gcc-$VERSION-fluffy-source.patch
-
-    mv -v mpfr-$MPFR_VERSION mpfr
-    mv -v mpc-$MPC_VERSION mpc
-    mv -v gmp-$GMP_VERSION gmp
-
     sed '/thread_header =/s/@.*@/gthr-posix.h/' \
         -i libgcc/Makefile.in libgcc/configure
+    sed 's|^gcc_objdir =.*|gcc_objdir = ./gcc|' \
+        -i libgcc/Makefile.in
 
     mkdir -v build
     cd build
 
-    ../configure \
+    mkdir -pv gcc/include
+    ln -sv "$($FLUFFY_TGT-gcc -print-file-name=plugin)"/include/* gcc/
+    cat > gcc/tconfig.h << 'END'
+#ifndef GCC_TCONFIG_H
+#define GCC_TCONFIG_H
+#ifndef USED_FOR_TARGET
+# define USED_FOR_TARGET
+#endif
+#include "auto-host.h"
+#ifdef IN_GCC
+# include "ansidecl.h"
+#endif
+#endif /* GCC_TCONFIG_H */
+END
+    cat > gcc/libgcc.mvars << 'END'
+GCC_CFLAGS = -g -O2 -DIN_GCC -W -Wall -Wno-narrowing -Wwrite-strings -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition -isystem ./include
+INHIBIT_LIBC_CFLAGS =
+END
+
+    CC=$FLUFFY_TGT-gcc ../libgcc/configure \
         --build=$(../config.guess) \
         --host=$FLUFFY_TGT \
         --target=$FLUFFY_TGT \
         --prefix=/sw/libgcc \
         --enable-shared \
         --disable-multilib \
-        --disable-bootstrap \
-        --disable-libatomic \
-        --disable-libgomp \
-        --disable-libquadmath \
-        --disable-libsanitizer \
-        --disable-libssp \
-        --disable-libvtv \
-        --enable-languages=c \
-        target_configargs=gcc_cv_target_thread_file=posix
-    make all-target-libgcc
+        gcc_cv_target_thread_file=posix
+    make
 }
 
 INSTALL() {
     cd build
-    make install-target-libgcc
+    make install
 }

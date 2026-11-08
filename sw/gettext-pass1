@@ -9,6 +9,7 @@ ARCHIVES=(
 
 NEEDS=(
     glibc-pass1
+    ncurses-pass1
 )
 
 BUILD_NEEDS=(
@@ -18,10 +19,12 @@ BUILD_NEEDS=(
     findutils-pass1
     gawk-pass1
     gcc-pass2
+    glibc-pass1
     grep-pass1
     gzip-pass1
     linux-headers
     make-pass1
+    ncurses-pass1
     patch-pass1
     sed-pass1
     tar-pass1

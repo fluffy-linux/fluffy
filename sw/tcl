@@ -2,11 +2,13 @@ ON=cross-build
 
 VERSION=8.6.18
 
+HAS_LDFLAGS=-ltcl8.6
+
 ARCHIVES=(
     14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://downloads.sourceforge.net/tcl/tcl$VERSION-src.tar.gz
     bee2d83a19ce50624eeae951be29fe5f654b171357a6391123caf18107cec543 https://downloads.sourceforge.net/tcl/tcl$VERSION-html.tar.gz
     9832123f0ff7fe7280e7419eab14079a6b65665a89976513a5d3323f114a769d file://tcl$VERSION-fluffy-shell.patch
-    cdd34e7cc4cf85421d19169a1c5d3cd830af8b2193d6ad80e8b5635014071e89 file://tcl$VERSION-fluffy-source.patch
+    46486532085ad55d2fd944f403bde27c29d212596beedc7796961668e7448b85 file://tcl$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
