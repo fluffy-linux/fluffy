@@ -131,6 +131,7 @@
             1. **In-process `glob()` microbenchmark**: Tight loop of `glob("/sw/*/bin/bash", GLOB_PATHS, ...)` and `glob("/sw/*/bin", GLOB_PATHS | GLOB_ONLYDIR, ...)` (latency per call and syscall count via `strace -c`).
             2. **Cross-process short-lived process microbenchmark**: Spawning $N=1{,}000$ short-lived child processes (`fork`+`execvp` and `/sw/bash/bin/bash -c 'true'` / external command lookup with `PATH=/sw/*/bin`), measuring wall-clock time, system CPU time, and total VFS syscalls (`openat`, `getdents64`, `fstatat`).
             3. **Real-world build / configure macrobenchmark**: Wall-clock time and `sys` CPU time of a `configure` script run (e.g. `bash` or `coreutils` `./configure`) inside the Fluffy build sandbox.
+            4. **End-to-end `glibc` build & `make check` regression benchmark vs. flat-FHS system build**: Time the full final `glibc-2.44` build (and `make check`) inside Fluffy (`/sw/*/bin`, `/sw/*/include`, `/sw/*/lib` with the `/dev/shm` SquashFS cache active) against a standard flat-FHS system `glibc-2.44` build (`/usr/bin`, `/usr/include`, `/usr/lib` with no wildcard expansion) as well as an uncached Fluffy `glibc` build, verifying that there is no build performance regression compared to a traditional flat-directory system.
 
 5. **Hermetic, Unprivileged Builds & Unified Tooling (`swctl build`, `swctl install`)**
    - **Developer Environment Convention (`direnv` & `sudo --preserve-env`)**:

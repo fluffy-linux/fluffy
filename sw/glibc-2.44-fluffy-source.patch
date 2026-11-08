@@ -864,7 +864,7 @@
 +#undef SDOT_OR_DOTDOT
 +#undef PDOT_OR_DOTDOT
 --- glibc-2.44.orig/posix/glob.c	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/posix/glob.c	2026-11-07 19:35:25.751640612 -0500
++++ glibc-2.44/posix/glob.c	2026-11-07 22:17:26.953910907 -0500
 @@ -95,6 +95,8 @@
  
  #include <flexmember.h>
@@ -874,7 +874,7 @@
  #include <scratch_buffer.h>
  
  static const char *next_brace_sub (const char *begin, int flags) __THROWNL;
-@@ -285,6 +287,760 @@
+@@ -285,6 +287,766 @@
    return *cp != '\0' ? cp : NULL;
  }
  
@@ -1395,7 +1395,13 @@
 +    }
 +
 +  /* Case B: prefix / * / sub1 / sub2 */
-+  const char *last_slash = memrchr (dirname, '/', dirlen);
++  const char *last_slash = NULL;
++  for (size_t k = dirlen; k > 0; --k)
++    if (dirname[k - 1] == '/')
++      {
++        last_slash = dirname + (k - 1);
++        break;
++      }
 +  if (last_slash != NULL && last_slash >= dirname + 2
 +      && last_slash[-1] == '*' && last_slash[-2] == '/')
 +    {
@@ -1635,7 +1641,7 @@
  #ifndef GLOB_ATTRIBUTE
  # define GLOB_ATTRIBUTE
  #endif
-@@ -320,11 +1076,6 @@
+@@ -320,11 +1082,6 @@
        return -1;
      }
  
@@ -1647,7 +1653,7 @@
    if (!(flags & GLOB_DOOFFS))
      /* Have to do this so 'globfree' knows where to start freeing.  It
         also makes all the code that uses gl_offs simpler. */
-@@ -352,6 +1103,89 @@
+@@ -352,6 +1109,89 @@
          }
      }
  
@@ -1737,7 +1743,7 @@
    if (flags & GLOB_BRACE)
      {
        const char *begin;
-@@ -486,7 +1320,9 @@
+@@ -486,7 +1326,9 @@
    oldcount = pglob->gl_pathc + pglob->gl_offs;
  
    /* Find the filename.  */
@@ -1748,7 +1754,7 @@
  
  #if defined __MSDOS__ || defined WINDOWS32
    /* The case of "d:pattern".  Since ':' is not allowed in
-@@ -597,13 +1433,40 @@
+@@ -597,13 +1439,40 @@
                  }
              }
            /* Prevent stack overflows with many trailing '/' characters.  */
@@ -1793,7 +1799,7 @@
            else if (val == GLOB_NOMATCH && flags != orig_flags)
              {
                /* Make sure globfree (&dirs); is a nop.  */
-@@ -965,7 +1828,12 @@
+@@ -965,7 +1834,12 @@
        return 0;
      }
  
@@ -1807,7 +1813,7 @@
    /* meta is 1 if correct glob pattern containing metacharacters.
       If meta has bit (1 << 2) set, it means there was an unterminated
       [ which we handle the same, using fnmatch.  Broken unterminated
-@@ -977,8 +1845,12 @@
+@@ -977,8 +1851,12 @@
           have to glob for the directory, and then glob for
           the pattern in each directory found.  */
        size_t i;
@@ -1821,7 +1827,7 @@
          {
            /* "foo\\/bar".  Remove the final backslash from dirname
               if it has not been quoted.  */
-@@ -989,6 +1861,114 @@
+@@ -989,6 +1867,114 @@
              *(char *) &dirname[--dirlen] = '\0';
          }
  
@@ -1936,7 +1942,7 @@
        if (__glibc_unlikely ((flags & GLOB_ALTDIRFUNC) != 0))
          {
            /* Use the alternative access functions also in the recursive
-@@ -1000,10 +1980,30 @@
+@@ -1000,10 +1986,30 @@
            dirs.gl_lstat = pglob->gl_lstat;
          }
  
@@ -1971,7 +1977,7 @@
        if (status != 0)
          {
            if ((flags & GLOB_NOCHECK) == 0 || status != GLOB_NOMATCH)
-@@ -1019,10 +2019,45 @@
+@@ -1019,10 +2025,45 @@
           appending the results to PGLOB.  */
        for (i = 0; i < dirs.gl_pathc; ++i)
          {
@@ -2020,7 +2026,7 @@
                                  ((flags | GLOB_APPEND)
                                   & ~(GLOB_NOCHECK | GLOB_NOMAGIC)),
                                  errfunc, pglob, alloca_used);
-@@ -1039,16 +2074,19 @@
+@@ -1039,16 +2080,19 @@
                goto out;
              }
  
@@ -2049,7 +2055,7 @@
              }
          }
  
-@@ -1108,15 +2146,14 @@
+@@ -1108,15 +2152,14 @@
      }
    else
      {
@@ -2067,7 +2073,7 @@
            q = p;
            do
              {
-@@ -1134,34 +2171,86 @@
+@@ -1134,34 +2177,86 @@
          }
        if (dirname_modified)
          flags &= ~(GLOB_NOCHECK | GLOB_NOMAGIC);
@@ -2175,7 +2181,7 @@
          }
      }
  
-@@ -1171,9 +2260,13 @@
+@@ -1171,9 +2266,13 @@
        size_t i;
  
        for (i = oldcount; i < pglob->gl_pathc + pglob->gl_offs; ++i)
@@ -2192,7 +2198,7 @@
              char *new = realloc (pglob->gl_pathv[i], len);
              if (new == NULL)
                {
-@@ -1184,10 +2277,12 @@
+@@ -1184,10 +2283,12 @@
                }
              strcpy (&new[len - 2], "/");
              pglob->gl_pathv[i] = new;
@@ -2207,7 +2213,7 @@
      {
        /* Sort the vector.  */
        qsort (&pglob->gl_pathv[oldcount],
-@@ -1220,7 +2315,8 @@
+@@ -1220,7 +2321,8 @@
      return 1;
    if (s2 == NULL)
      return -1;
@@ -2217,7 +2223,7 @@
  }
  
  
-@@ -1311,7 +2407,12 @@
+@@ -1311,7 +2413,12 @@
                          - offsetof (struct globnames, name))
                         / sizeof init_names->name[0]);
  
@@ -2231,7 +2237,7 @@
    if (meta == GLOBPAT_NONE && (flags & (GLOB_NOCHECK|GLOB_NOMAGIC)))
      {
        /* We need not do any tests.  The PATTERN contains no meta
-@@ -1319,9 +2420,34 @@
+@@ -1319,9 +2426,34 @@
           result will always contain exactly one name.  */
        flags |= GLOB_NOCHECK;
      }
@@ -2267,7 +2273,7 @@
        size_t fullsize;
        bool alloca_fullname
          = (! size_add_wrapv (dirlen + 1, patlen + 1, &fullsize)
-@@ -1333,20 +2459,40 @@
+@@ -1333,20 +2465,40 @@
          {
            fullname = malloc (fullsize);
            if (fullname == NULL)
@@ -2315,7 +2321,7 @@
      }
    else
      {
-@@ -1363,8 +2509,13 @@
+@@ -1363,8 +2515,13 @@
        else
          {
            int dfd = dirfd (stream);
@@ -2331,7 +2337,7 @@
            flags |= GLOB_MAGCHAR;
  
            while (1)
-@@ -1385,6 +2536,9 @@
+@@ -1385,6 +2542,9 @@
                if (d.name == NULL)
                  break;
  
@@ -2342,8 +2348,8 @@
                   provided by the dirent call if possible.  */
                if (flags & GLOB_ONLYDIR)
 --- glibc-2.44.orig/posix/glob_fluffy_cache.h	1969-12-31 19:00:00.000000000 -0500
-+++ glibc-2.44/posix/glob_fluffy_cache.h	2026-11-07 19:53:19.474346415 -0500
-@@ -0,0 +1,1316 @@
++++ glibc-2.44/posix/glob_fluffy_cache.h	2026-11-07 22:17:26.954094635 -0500
+@@ -0,0 +1,1317 @@
 +/* Cross-process SquashFS-aware glob and PATH cache for Fluffy Linux.
 +   Copyright (C) 2026 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.  */
@@ -3452,7 +3458,8 @@
 +{
 +  size_t nfound = 0;
 +  for (size_t w = 0; w < FC_MAX_PKGS / 64; ++w)
-+    nfound += (size_t) __builtin_popcountll (mask->bits[w]);
++    for (uint64_t tmp = mask->bits[w]; tmp != 0; tmp &= tmp - 1)
++      ++nfound;
 +  if (nfound == 0)
 +    return 0;
 +
