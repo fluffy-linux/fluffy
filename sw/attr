@@ -7,6 +7,8 @@ fi
 
 VERSION=2.6.0
 
+HAS_LDFLAGS=-lattr
+
 ARCHIVES=(
     d42fa374513180bb48cb11a46696f488240e5124ff1e6ad88b0abff706985612 https://download.savannah.gnu.org/releases/attr/attr-$VERSION.tar.gz
     b0a3eaaa98754244076f5fa821b5749de1041a743d0f7fb16f60c1142c988540 file://attr-$VERSION-fluffy-shell.patch

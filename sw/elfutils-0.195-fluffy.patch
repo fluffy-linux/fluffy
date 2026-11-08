@@ -1,114 +1,126 @@
-diff -Naur elfutils-0.195.orig/config/ar-lib elfutils-0.195/config/ar-lib
---- elfutils-0.195.orig/config/ar-lib	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/ar-lib	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/ar-lib elfutils-0.195/config/ar-lib
+--- elfutils-0.195.orig/config/ar-lib	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/ar-lib	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Wrapper for Microsoft lib.exe
  
  me=ar-lib
-diff -Naur elfutils-0.195.orig/config/compile elfutils-0.195/config/compile
---- elfutils-0.195.orig/config/compile	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/compile	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/compile elfutils-0.195/config/compile
+--- elfutils-0.195.orig/config/compile	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/compile	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Wrapper for compilers which do not understand '-c -o'.
  
  scriptversion=2025-06-18.21; # UTC
-diff -Naur elfutils-0.195.orig/config/config.guess elfutils-0.195/config/config.guess
---- elfutils-0.195.orig/config/config.guess	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/config.guess	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/config.guess elfutils-0.195/config/config.guess
+--- elfutils-0.195.orig/config/config.guess	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/config.guess	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/sh
 +#!/sw/bash/bin/bash
  # Attempt to guess a canonical system name.
  #   Copyright 1992-2024 Free Software Foundation, Inc.
  
-diff -Naur elfutils-0.195.orig/config/config.rpath elfutils-0.195/config/config.rpath
---- elfutils-0.195.orig/config/config.rpath	2026-04-15 18:29:53.000000000 -0400
-+++ elfutils-0.195/config/config.rpath	2026-04-15 18:29:53.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/config.rpath elfutils-0.195/config/config.rpath
+--- elfutils-0.195.orig/config/config.rpath	2026-04-15 22:29:53.000000000 +0000
++++ elfutils-0.195/config/config.rpath	2026-04-15 22:29:53.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Output a system dependent set of variables, describing how to set the
  # run time search path of shared libraries in a binary (executable or
  # shared library).
-diff -Naur elfutils-0.195.orig/config/config.sub elfutils-0.195/config/config.sub
---- elfutils-0.195.orig/config/config.sub	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/config.sub	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/config.sub elfutils-0.195/config/config.sub
+--- elfutils-0.195.orig/config/config.sub	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/config.sub	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/sh
 +#!/sw/bash/bin/bash
  # Configuration validation subroutine script.
  #   Copyright 1992-2024 Free Software Foundation, Inc.
  
-diff -Naur elfutils-0.195.orig/config/depcomp elfutils-0.195/config/depcomp
---- elfutils-0.195.orig/config/depcomp	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/depcomp	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/depcomp elfutils-0.195/config/depcomp
+--- elfutils-0.195.orig/config/depcomp	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/depcomp	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # depcomp - compile a program generating dependencies as side-effects
  
  scriptversion=2025-06-18.21; # UTC
-diff -Naur elfutils-0.195.orig/config/install-sh elfutils-0.195/config/install-sh
---- elfutils-0.195.orig/config/install-sh	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/install-sh	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/install-sh elfutils-0.195/config/install-sh
+--- elfutils-0.195.orig/config/install-sh	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/install-sh	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  # install - install a program, script, or datafile
  
  scriptversion=2025-06-18.21; # UTC
-diff -Naur elfutils-0.195.orig/config/known-dwarf.awk elfutils-0.195/config/known-dwarf.awk
---- elfutils-0.195.orig/config/known-dwarf.awk	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/config/known-dwarf.awk	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/known-dwarf.awk elfutils-0.195/config/known-dwarf.awk
+--- elfutils-0.195.orig/config/known-dwarf.awk	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/config/known-dwarf.awk	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/gawk -f
 +#!/sw/gawk/bin/gawk -f
  
  ## Copyright (C) 2012, 2015 Red Hat, Inc.
  ## Copyright (C) 2025 Mark J. Wielaard <mark@klomp.org>
-diff -Naur elfutils-0.195.orig/config/missing elfutils-0.195/config/missing
---- elfutils-0.195.orig/config/missing	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/missing	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/missing elfutils-0.195/config/missing
+--- elfutils-0.195.orig/config/missing	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/missing	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Common wrapper for a few potentially missing GNU and other programs.
  
  scriptversion=2025-06-18.21; # UTC
-diff -Naur elfutils-0.195.orig/config/test-driver elfutils-0.195/config/test-driver
---- elfutils-0.195.orig/config/test-driver	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/test-driver	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/test-driver elfutils-0.195/config/test-driver
+--- elfutils-0.195.orig/config/test-driver	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/test-driver	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # test-driver - basic testsuite driver script.
  
  scriptversion=2025-06-18.21; # UTC
-diff -Naur elfutils-0.195.orig/config/ylwrap elfutils-0.195/config/ylwrap
---- elfutils-0.195.orig/config/ylwrap	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/config/ylwrap	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/config/ylwrap elfutils-0.195/config/ylwrap
+--- elfutils-0.195.orig/config/ylwrap	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/config/ylwrap	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # ylwrap - wrapper for lex/yacc invocations.
  
  scriptversion=2025-06-18.21; # UTC
-diff -Naur elfutils-0.195.orig/configure elfutils-0.195/configure
---- elfutils-0.195.orig/configure	2026-04-15 18:29:55.000000000 -0400
-+++ elfutils-0.195/configure	2026-04-15 18:29:55.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/configure elfutils-0.195/configure
+--- elfutils-0.195.orig/configure	2026-04-15 22:29:55.000000000 +0000
++++ elfutils-0.195/configure	2026-04-15 22:29:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Guess values for system-dependent variables and create Makefiles.
  # Generated by GNU Autoconf 2.72 for elfutils 0.195.
  #
-diff -Naur elfutils-0.195.orig/src/make-debug-archive.in elfutils-0.195/src/make-debug-archive.in
---- elfutils-0.195.orig/src/make-debug-archive.in	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/src/make-debug-archive.in	2026-04-15 18:29:52.000000000 -0400
+@@ -8898,9 +8898,8 @@
+ 		PKG_CONFIG=""
+ 	fi
+ fi
+-if test -z "$PKG_CONFIG"; then
+-	as_fn_error $? "pkg-config not found" "$LINENO" 5
+-fi
++: "${ZSTD_COMPRESS_CFLAGS:=${ZSTD_CFLAGS:-}}"
++: "${ZSTD_COMPRESS_LIBS:=${ZSTD_LIBS:-}}"
+ 
+ pkg_failed=no
+ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libzstd >= 1.4.0" >&5
+diff --no-dereference -Naur elfutils-0.195.orig/src/make-debug-archive.in elfutils-0.195/src/make-debug-archive.in
+--- elfutils-0.195.orig/src/make-debug-archive.in	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/src/make-debug-archive.in	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -141,2196 +153,2196 @@ diff -Naur elfutils-0.195.orig/src/make-debug-archive.in elfutils-0.195/src/make
  esac
  
  if [ -z "$sudo" ]; then
-diff -Naur elfutils-0.195.orig/tests/coverage.sh elfutils-0.195/tests/coverage.sh
---- elfutils-0.195.orig/tests/coverage.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/coverage.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/coverage.sh elfutils-0.195/tests/coverage.sh
+--- elfutils-0.195.orig/tests/coverage.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/coverage.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  
  if [ "x$1" = "x-v" ]; then
    verbose=yes
-diff -Naur elfutils-0.195.orig/tests/run-addr2line-alt-debugpath.sh elfutils-0.195/tests/run-addr2line-alt-debugpath.sh
---- elfutils-0.195.orig/tests/run-addr2line-alt-debugpath.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addr2line-alt-debugpath.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2015 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-addr2line-C-test.sh elfutils-0.195/tests/run-addr2line-C-test.sh
---- elfutils-0.195.orig/tests/run-addr2line-C-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addr2line-C-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addr2line-C-test.sh elfutils-0.195/tests/run-addr2line-C-test.sh
+--- elfutils-0.195.orig/tests/run-addr2line-C-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addr2line-C-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # Copyright (C) 2023 Mark J. Wielaard <mark@klomp.org>
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-addr2line-i-demangle-test.sh elfutils-0.195/tests/run-addr2line-i-demangle-test.sh
---- elfutils-0.195.orig/tests/run-addr2line-i-demangle-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addr2line-i-demangle-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addr2line-alt-debugpath.sh elfutils-0.195/tests/run-addr2line-alt-debugpath.sh
+--- elfutils-0.195.orig/tests/run-addr2line-alt-debugpath.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addr2line-alt-debugpath.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-addr2line-i-lex-test.sh elfutils-0.195/tests/run-addr2line-i-lex-test.sh
---- elfutils-0.195.orig/tests/run-addr2line-i-lex-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addr2line-i-lex-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addr2line-i-demangle-test.sh elfutils-0.195/tests/run-addr2line-i-demangle-test.sh
+--- elfutils-0.195.orig/tests/run-addr2line-i-demangle-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addr2line-i-demangle-test.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addr2line-i-lex-test.sh elfutils-0.195/tests/run-addr2line-i-lex-test.sh
+--- elfutils-0.195.orig/tests/run-addr2line-i-lex-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addr2line-i-lex-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-addr2line-i-test.sh elfutils-0.195/tests/run-addr2line-i-test.sh
---- elfutils-0.195.orig/tests/run-addr2line-i-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addr2line-i-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addr2line-i-test.sh elfutils-0.195/tests/run-addr2line-i-test.sh
+--- elfutils-0.195.orig/tests/run-addr2line-i-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addr2line-i-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-addr2line-test.sh elfutils-0.195/tests/run-addr2line-test.sh
---- elfutils-0.195.orig/tests/run-addr2line-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addr2line-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addr2line-test.sh elfutils-0.195/tests/run-addr2line-test.sh
+--- elfutils-0.195.orig/tests/run-addr2line-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addr2line-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-addrcfi.sh elfutils-0.195/tests/run-addrcfi.sh
---- elfutils-0.195.orig/tests/run-addrcfi.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addrcfi.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addrcfi.sh elfutils-0.195/tests/run-addrcfi.sh
+--- elfutils-0.195.orig/tests/run-addrcfi.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addrcfi.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013
  # Copyright (C) H.J. Lu <hjl.tools@gmail.com>, 2015.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-addrname-test.sh elfutils-0.195/tests/run-addrname-test.sh
---- elfutils-0.195.orig/tests/run-addrname-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addrname-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addrname-test.sh elfutils-0.195/tests/run-addrname-test.sh
+--- elfutils-0.195.orig/tests/run-addrname-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addrname-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007, 2008 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-addrscopes.sh elfutils-0.195/tests/run-addrscopes.sh
---- elfutils-0.195.orig/tests/run-addrscopes.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-addrscopes.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-addrscopes.sh elfutils-0.195/tests/run-addrscopes.sh
+--- elfutils-0.195.orig/tests/run-addrscopes.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-addrscopes.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-aggregate-size.sh elfutils-0.195/tests/run-aggregate-size.sh
---- elfutils-0.195.orig/tests/run-aggregate-size.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-aggregate-size.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-aggregate-size.sh elfutils-0.195/tests/run-aggregate-size.sh
+--- elfutils-0.195.orig/tests/run-aggregate-size.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-aggregate-size.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-alldts.sh elfutils-0.195/tests/run-alldts.sh
---- elfutils-0.195.orig/tests/run-alldts.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-alldts.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2011 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-all-dwarf-ranges.sh elfutils-0.195/tests/run-all-dwarf-ranges.sh
---- elfutils-0.195.orig/tests/run-all-dwarf-ranges.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-all-dwarf-ranges.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-all-dwarf-ranges.sh elfutils-0.195/tests/run-all-dwarf-ranges.sh
+--- elfutils-0.195.orig/tests/run-all-dwarf-ranges.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-all-dwarf-ranges.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-allfcts-multi.sh elfutils-0.195/tests/run-allfcts-multi.sh
---- elfutils-0.195.orig/tests/run-allfcts-multi.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-allfcts-multi.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-alldts.sh elfutils-0.195/tests/run-alldts.sh
+--- elfutils-0.195.orig/tests/run-alldts.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-alldts.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2011 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-allfcts-multi.sh elfutils-0.195/tests/run-allfcts-multi.sh
+--- elfutils-0.195.orig/tests/run-allfcts-multi.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-allfcts-multi.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-allfcts.sh elfutils-0.195/tests/run-allfcts.sh
---- elfutils-0.195.orig/tests/run-allfcts.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-allfcts.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-allfcts.sh elfutils-0.195/tests/run-allfcts.sh
+--- elfutils-0.195.orig/tests/run-allfcts.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-allfcts.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2013 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-allregs.sh elfutils-0.195/tests/run-allregs.sh
---- elfutils-0.195.orig/tests/run-allregs.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-allregs.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-allregs.sh elfutils-0.195/tests/run-allregs.sh
+--- elfutils-0.195.orig/tests/run-allregs.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-allregs.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2006, 2007, 2012, 2013 Red Hat, Inc.
  # Copyright (C) H.J. Lu <hjl.tools@gmail.com>, 2015.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-annobingroup.sh elfutils-0.195/tests/run-annobingroup.sh
---- elfutils-0.195.orig/tests/run-annobingroup.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-annobingroup.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-annobingroup.sh elfutils-0.195/tests/run-annobingroup.sh
+--- elfutils-0.195.orig/tests/run-annobingroup.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-annobingroup.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-arextract.sh elfutils-0.195/tests/run-arextract.sh
---- elfutils-0.195.orig/tests/run-arextract.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-arextract.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-ar-N.sh elfutils-0.195/tests/run-ar-N.sh
+--- elfutils-0.195.orig/tests/run-ar-N.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-ar-N.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env bash
++#!/sw/bash/bin/bash
+ # Copyright (C) 2022 Mark J. Wielaard <mark@klomp.org>
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-ar.sh elfutils-0.195/tests/run-ar.sh
+--- elfutils-0.195.orig/tests/run-ar.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-ar.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env bash
++#!/sw/bash/bin/bash
+ # Copyright (C) 2017 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-arextract.sh elfutils-0.195/tests/run-arextract.sh
+--- elfutils-0.195.orig/tests/run-arextract.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-arextract.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 1999, 2000, 2002, 2005, 2006 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-ar-N.sh elfutils-0.195/tests/run-ar-N.sh
---- elfutils-0.195.orig/tests/run-ar-N.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-ar-N.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /usr/bin/env bash
-+#!/sw/bash/bin/bash
- # Copyright (C) 2022 Mark J. Wielaard <mark@klomp.org>
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-ar.sh elfutils-0.195/tests/run-ar.sh
---- elfutils-0.195.orig/tests/run-ar.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-ar.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /usr/bin/env bash
-+#!/sw/bash/bin/bash
- # Copyright (C) 2017 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-arsymtest.sh elfutils-0.195/tests/run-arsymtest.sh
---- elfutils-0.195.orig/tests/run-arsymtest.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-arsymtest.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-arsymtest.sh elfutils-0.195/tests/run-arsymtest.sh
+--- elfutils-0.195.orig/tests/run-arsymtest.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-arsymtest.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 1999, 2000, 2002, 2006 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-attr-integrate-skel.sh elfutils-0.195/tests/run-attr-integrate-skel.sh
---- elfutils-0.195.orig/tests/run-attr-integrate-skel.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-attr-integrate-skel.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-attr-integrate-skel.sh elfutils-0.195/tests/run-attr-integrate-skel.sh
+--- elfutils-0.195.orig/tests/run-attr-integrate-skel.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-attr-integrate-skel.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-core-aarch64.sh elfutils-0.195/tests/run-backtrace-core-aarch64.sh
---- elfutils-0.195.orig/tests/run-backtrace-core-aarch64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-core-aarch64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-core-aarch64.sh elfutils-0.195/tests/run-backtrace-core-aarch64.sh
+--- elfutils-0.195.orig/tests/run-backtrace-core-aarch64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-core-aarch64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-core-i386.sh elfutils-0.195/tests/run-backtrace-core-i386.sh
---- elfutils-0.195.orig/tests/run-backtrace-core-i386.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-core-i386.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-core-i386.sh elfutils-0.195/tests/run-backtrace-core-i386.sh
+--- elfutils-0.195.orig/tests/run-backtrace-core-i386.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-core-i386.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-core-ppc.sh elfutils-0.195/tests/run-backtrace-core-ppc.sh
---- elfutils-0.195.orig/tests/run-backtrace-core-ppc.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-core-ppc.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-core-ppc.sh elfutils-0.195/tests/run-backtrace-core-ppc.sh
+--- elfutils-0.195.orig/tests/run-backtrace-core-ppc.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-core-ppc.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-core-s390.sh elfutils-0.195/tests/run-backtrace-core-s390.sh
---- elfutils-0.195.orig/tests/run-backtrace-core-s390.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-core-s390.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-core-s390.sh elfutils-0.195/tests/run-backtrace-core-s390.sh
+--- elfutils-0.195.orig/tests/run-backtrace-core-s390.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-core-s390.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-core-s390x.sh elfutils-0.195/tests/run-backtrace-core-s390x.sh
---- elfutils-0.195.orig/tests/run-backtrace-core-s390x.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-core-s390x.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-core-s390x.sh elfutils-0.195/tests/run-backtrace-core-s390x.sh
+--- elfutils-0.195.orig/tests/run-backtrace-core-s390x.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-core-s390x.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-core-sparc.sh elfutils-0.195/tests/run-backtrace-core-sparc.sh
---- elfutils-0.195.orig/tests/run-backtrace-core-sparc.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-core-sparc.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-core-sparc.sh elfutils-0.195/tests/run-backtrace-core-sparc.sh
+--- elfutils-0.195.orig/tests/run-backtrace-core-sparc.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-core-sparc.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Oracle, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-core-x32.sh elfutils-0.195/tests/run-backtrace-core-x32.sh
---- elfutils-0.195.orig/tests/run-backtrace-core-x32.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-core-x32.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-core-x32.sh elfutils-0.195/tests/run-backtrace-core-x32.sh
+--- elfutils-0.195.orig/tests/run-backtrace-core-x32.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-core-x32.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) H.J. Lu <hjl.tools@gmail.com>, 2015.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-core-x86_64.sh elfutils-0.195/tests/run-backtrace-core-x86_64.sh
---- elfutils-0.195.orig/tests/run-backtrace-core-x86_64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-core-x86_64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-core-x86_64.sh elfutils-0.195/tests/run-backtrace-core-x86_64.sh
+--- elfutils-0.195.orig/tests/run-backtrace-core-x86_64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-core-x86_64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-data.sh elfutils-0.195/tests/run-backtrace-data.sh
---- elfutils-0.195.orig/tests/run-backtrace-data.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-data.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-data.sh elfutils-0.195/tests/run-backtrace-data.sh
+--- elfutils-0.195.orig/tests/run-backtrace-data.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-data.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-demangle.sh elfutils-0.195/tests/run-backtrace-demangle.sh
---- elfutils-0.195.orig/tests/run-backtrace-demangle.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-demangle.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-demangle.sh elfutils-0.195/tests/run-backtrace-demangle.sh
+--- elfutils-0.195.orig/tests/run-backtrace-demangle.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-demangle.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014, 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-dwarf.sh elfutils-0.195/tests/run-backtrace-dwarf.sh
---- elfutils-0.195.orig/tests/run-backtrace-dwarf.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-dwarf.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-dwarf.sh elfutils-0.195/tests/run-backtrace-dwarf.sh
+--- elfutils-0.195.orig/tests/run-backtrace-dwarf.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-dwarf.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-fp-core-aarch64.sh elfutils-0.195/tests/run-backtrace-fp-core-aarch64.sh
---- elfutils-0.195.orig/tests/run-backtrace-fp-core-aarch64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-fp-core-aarch64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-fp-core-aarch64.sh elfutils-0.195/tests/run-backtrace-fp-core-aarch64.sh
+--- elfutils-0.195.orig/tests/run-backtrace-fp-core-aarch64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-fp-core-aarch64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 The Qt Company
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-fp-core-i386.sh elfutils-0.195/tests/run-backtrace-fp-core-i386.sh
---- elfutils-0.195.orig/tests/run-backtrace-fp-core-i386.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-fp-core-i386.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-fp-core-i386.sh elfutils-0.195/tests/run-backtrace-fp-core-i386.sh
+--- elfutils-0.195.orig/tests/run-backtrace-fp-core-i386.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-fp-core-i386.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-fp-core-ppc64le.sh elfutils-0.195/tests/run-backtrace-fp-core-ppc64le.sh
---- elfutils-0.195.orig/tests/run-backtrace-fp-core-ppc64le.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-fp-core-ppc64le.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-fp-core-ppc64le.sh elfutils-0.195/tests/run-backtrace-fp-core-ppc64le.sh
+--- elfutils-0.195.orig/tests/run-backtrace-fp-core-ppc64le.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-fp-core-ppc64le.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-fp-core-x86_64.sh elfutils-0.195/tests/run-backtrace-fp-core-x86_64.sh
---- elfutils-0.195.orig/tests/run-backtrace-fp-core-x86_64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-fp-core-x86_64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-fp-core-x86_64.sh elfutils-0.195/tests/run-backtrace-fp-core-x86_64.sh
+--- elfutils-0.195.orig/tests/run-backtrace-fp-core-x86_64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-fp-core-x86_64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 The Qt Company
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-native-biarch.sh elfutils-0.195/tests/run-backtrace-native-biarch.sh
---- elfutils-0.195.orig/tests/run-backtrace-native-biarch.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-native-biarch.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-native-biarch.sh elfutils-0.195/tests/run-backtrace-native-biarch.sh
+--- elfutils-0.195.orig/tests/run-backtrace-native-biarch.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-native-biarch.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013, 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-native-core-biarch.sh elfutils-0.195/tests/run-backtrace-native-core-biarch.sh
---- elfutils-0.195.orig/tests/run-backtrace-native-core-biarch.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-native-core-biarch.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-native-core-biarch.sh elfutils-0.195/tests/run-backtrace-native-core-biarch.sh
+--- elfutils-0.195.orig/tests/run-backtrace-native-core-biarch.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-native-core-biarch.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013, 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-native-core.sh elfutils-0.195/tests/run-backtrace-native-core.sh
---- elfutils-0.195.orig/tests/run-backtrace-native-core.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-native-core.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-native-core.sh elfutils-0.195/tests/run-backtrace-native-core.sh
+--- elfutils-0.195.orig/tests/run-backtrace-native-core.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-native-core.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-backtrace-native.sh elfutils-0.195/tests/run-backtrace-native.sh
---- elfutils-0.195.orig/tests/run-backtrace-native.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-backtrace-native.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-backtrace-native.sh elfutils-0.195/tests/run-backtrace-native.sh
+--- elfutils-0.195.orig/tests/run-backtrace-native.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-backtrace-native.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-bug1-test.sh elfutils-0.195/tests/run-bug1-test.sh
---- elfutils-0.195.orig/tests/run-bug1-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-bug1-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-bug1-test.sh elfutils-0.195/tests/run-bug1-test.sh
+--- elfutils-0.195.orig/tests/run-bug1-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-bug1-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2006 Red Hat, Inc.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2006.
  #
-diff -Naur elfutils-0.195.orig/tests/run-buildid.sh elfutils-0.195/tests/run-buildid.sh
---- elfutils-0.195.orig/tests/run-buildid.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-buildid.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-buildid.sh elfutils-0.195/tests/run-buildid.sh
+--- elfutils-0.195.orig/tests/run-buildid.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-buildid.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-compress-test.sh elfutils-0.195/tests/run-compress-test.sh
---- elfutils-0.195.orig/tests/run-compress-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-compress-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-compress-test.sh elfutils-0.195/tests/run-compress-test.sh
+--- elfutils-0.195.orig/tests/run-compress-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-compress-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-copyadd-sections.sh elfutils-0.195/tests/run-copyadd-sections.sh
---- elfutils-0.195.orig/tests/run-copyadd-sections.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-copyadd-sections.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-copyadd-sections.sh elfutils-0.195/tests/run-copyadd-sections.sh
+--- elfutils-0.195.orig/tests/run-copyadd-sections.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-copyadd-sections.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-copymany-be32.sh elfutils-0.195/tests/run-copymany-be32.sh
---- elfutils-0.195.orig/tests/run-copymany-be32.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-copymany-be32.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-copymany-be32.sh elfutils-0.195/tests/run-copymany-be32.sh
+--- elfutils-0.195.orig/tests/run-copymany-be32.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-copymany-be32.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  
  . $srcdir/test-copymany-subr.sh
  
-diff -Naur elfutils-0.195.orig/tests/run-copymany-be64.sh elfutils-0.195/tests/run-copymany-be64.sh
---- elfutils-0.195.orig/tests/run-copymany-be64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-copymany-be64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-copymany-be64.sh elfutils-0.195/tests/run-copymany-be64.sh
+--- elfutils-0.195.orig/tests/run-copymany-be64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-copymany-be64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  
  . $srcdir/test-copymany-subr.sh
  
-diff -Naur elfutils-0.195.orig/tests/run-copymany-le32.sh elfutils-0.195/tests/run-copymany-le32.sh
---- elfutils-0.195.orig/tests/run-copymany-le32.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-copymany-le32.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-copymany-le32.sh elfutils-0.195/tests/run-copymany-le32.sh
+--- elfutils-0.195.orig/tests/run-copymany-le32.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-copymany-le32.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  
  . $srcdir/test-copymany-subr.sh
  
-diff -Naur elfutils-0.195.orig/tests/run-copymany-le64.sh elfutils-0.195/tests/run-copymany-le64.sh
---- elfutils-0.195.orig/tests/run-copymany-le64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-copymany-le64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-copymany-le64.sh elfutils-0.195/tests/run-copymany-le64.sh
+--- elfutils-0.195.orig/tests/run-copymany-le64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-copymany-le64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  
  . $srcdir/test-copymany-subr.sh
  
-diff -Naur elfutils-0.195.orig/tests/run-cu-dwp-section-info.sh elfutils-0.195/tests/run-cu-dwp-section-info.sh
---- elfutils-0.195.orig/tests/run-cu-dwp-section-info.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-cu-dwp-section-info.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-cu-dwp-section-info.sh elfutils-0.195/tests/run-cu-dwp-section-info.sh
+--- elfutils-0.195.orig/tests/run-cu-dwp-section-info.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-cu-dwp-section-info.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (c) 2023 Meta Platforms, Inc. and affiliates.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-debugaltlink.sh elfutils-0.195/tests/run-debugaltlink.sh
---- elfutils-0.195.orig/tests/run-debugaltlink.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debugaltlink.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debugaltlink.sh elfutils-0.195/tests/run-debugaltlink.sh
+--- elfutils-0.195.orig/tests/run-debugaltlink.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debugaltlink.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-archive-groom.sh elfutils-0.195/tests/run-debuginfod-archive-groom.sh
---- elfutils-0.195.orig/tests/run-debuginfod-archive-groom.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-archive-groom.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-archive-rename.sh elfutils-0.195/tests/run-debuginfod-archive-rename.sh
---- elfutils-0.195.orig/tests/run-debuginfod-archive-rename.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-archive-rename.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-archive-test.sh elfutils-0.195/tests/run-debuginfod-archive-test.sh
---- elfutils-0.195.orig/tests/run-debuginfod-archive-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-archive-test.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-artifact-running.sh elfutils-0.195/tests/run-debuginfod-artifact-running.sh
---- elfutils-0.195.orig/tests/run-debuginfod-artifact-running.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-artifact-running.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-client-profile.sh elfutils-0.195/tests/run-debuginfod-client-profile.sh
---- elfutils-0.195.orig/tests/run-debuginfod-client-profile.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-client-profile.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /usr/bin/env bash
-+#!/sw/bash/bin/bash
- # Copyright (C) 2024 Mark J. Wielaard
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-dlopen.sh elfutils-0.195/tests/run-debuginfod-dlopen.sh
---- elfutils-0.195.orig/tests/run-debuginfod-dlopen.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-dlopen.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-duplicate-urls.sh elfutils-0.195/tests/run-debuginfod-duplicate-urls.sh
---- elfutils-0.195.orig/tests/run-debuginfod-duplicate-urls.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-duplicate-urls.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-extraction-passive.sh elfutils-0.195/tests/run-debuginfod-extraction-passive.sh
---- elfutils-0.195.orig/tests/run-debuginfod-extraction-passive.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-extraction-passive.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-extraction.sh elfutils-0.195/tests/run-debuginfod-extraction.sh
---- elfutils-0.195.orig/tests/run-debuginfod-extraction.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-extraction.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-fd-prefetch-caches.sh elfutils-0.195/tests/run-debuginfod-fd-prefetch-caches.sh
---- elfutils-0.195.orig/tests/run-debuginfod-fd-prefetch-caches.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-fd-prefetch-caches.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-federation-link.sh elfutils-0.195/tests/run-debuginfod-federation-link.sh
---- elfutils-0.195.orig/tests/run-debuginfod-federation-link.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-federation-link.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-federation-metrics.sh elfutils-0.195/tests/run-debuginfod-federation-metrics.sh
---- elfutils-0.195.orig/tests/run-debuginfod-federation-metrics.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-federation-metrics.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-federation-sqlite.sh elfutils-0.195/tests/run-debuginfod-federation-sqlite.sh
---- elfutils-0.195.orig/tests/run-debuginfod-federation-sqlite.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-federation-sqlite.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-file.sh elfutils-0.195/tests/run-debuginfod-file.sh
---- elfutils-0.195.orig/tests/run-debuginfod-file.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-file.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2019-2021 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-find-metadata.sh elfutils-0.195/tests/run-debuginfod-find-metadata.sh
---- elfutils-0.195.orig/tests/run-debuginfod-find-metadata.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-find-metadata.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2022-2024 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-homesite.sh elfutils-0.195/tests/run-debuginfod-homesite.sh
---- elfutils-0.195.orig/tests/run-debuginfod-homesite.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-homesite.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2022 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-ima-verification.sh elfutils-0.195/tests/run-debuginfod-ima-verification.sh
---- elfutils-0.195.orig/tests/run-debuginfod-ima-verification.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-ima-verification.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2023-2024 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-IXr.sh elfutils-0.195/tests/run-debuginfod-IXr.sh
---- elfutils-0.195.orig/tests/run-debuginfod-IXr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-IXr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-IXr.sh elfutils-0.195/tests/run-debuginfod-IXr.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-IXr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-IXr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2023 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-longsource.sh elfutils-0.195/tests/run-debuginfod-longsource.sh
---- elfutils-0.195.orig/tests/run-debuginfod-longsource.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-longsource.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/usr/bin/env bash
-+#!/sw/bash/bin/bash
- #
- # Copyright (C) 2024 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-malformed.sh elfutils-0.195/tests/run-debuginfod-malformed.sh
---- elfutils-0.195.orig/tests/run-debuginfod-malformed.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-malformed.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-archive-groom.sh elfutils-0.195/tests/run-debuginfod-archive-groom.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-archive-groom.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-archive-groom.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-negative-cache.sh elfutils-0.195/tests/run-debuginfod-negative-cache.sh
---- elfutils-0.195.orig/tests/run-debuginfod-negative-cache.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-negative-cache.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-archive-rename.sh elfutils-0.195/tests/run-debuginfod-archive-rename.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-archive-rename.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-archive-rename.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-no-urls.sh elfutils-0.195/tests/run-debuginfod-no-urls.sh
---- elfutils-0.195.orig/tests/run-debuginfod-no-urls.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-no-urls.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-archive-test.sh elfutils-0.195/tests/run-debuginfod-archive-test.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-archive-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-archive-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-percent-escape.sh elfutils-0.195/tests/run-debuginfod-percent-escape.sh
---- elfutils-0.195.orig/tests/run-debuginfod-percent-escape.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-percent-escape.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-artifact-running.sh elfutils-0.195/tests/run-debuginfod-artifact-running.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-artifact-running.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-artifact-running.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-query-retry.sh elfutils-0.195/tests/run-debuginfod-query-retry.sh
---- elfutils-0.195.orig/tests/run-debuginfod-query-retry.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-query-retry.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-client-profile.sh elfutils-0.195/tests/run-debuginfod-client-profile.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-client-profile.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-client-profile.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env bash
++#!/sw/bash/bin/bash
+ # Copyright (C) 2024 Mark J. Wielaard
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-dlopen.sh elfutils-0.195/tests/run-debuginfod-dlopen.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-dlopen.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-dlopen.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-regex.sh elfutils-0.195/tests/run-debuginfod-regex.sh
---- elfutils-0.195.orig/tests/run-debuginfod-regex.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-regex.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-duplicate-urls.sh elfutils-0.195/tests/run-debuginfod-duplicate-urls.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-duplicate-urls.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-duplicate-urls.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-response-headers.sh elfutils-0.195/tests/run-debuginfod-response-headers.sh
---- elfutils-0.195.orig/tests/run-debuginfod-response-headers.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-response-headers.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-extraction-passive.sh elfutils-0.195/tests/run-debuginfod-extraction-passive.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-extraction-passive.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-extraction-passive.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-extraction.sh elfutils-0.195/tests/run-debuginfod-extraction.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-extraction.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-extraction.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-fd-prefetch-caches.sh elfutils-0.195/tests/run-debuginfod-fd-prefetch-caches.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-fd-prefetch-caches.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-fd-prefetch-caches.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-federation-link.sh elfutils-0.195/tests/run-debuginfod-federation-link.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-federation-link.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-federation-link.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-federation-metrics.sh elfutils-0.195/tests/run-debuginfod-federation-metrics.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-federation-metrics.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-federation-metrics.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-federation-sqlite.sh elfutils-0.195/tests/run-debuginfod-federation-sqlite.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-federation-sqlite.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-federation-sqlite.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-file.sh elfutils-0.195/tests/run-debuginfod-file.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-file.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-file.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-find-metadata.sh elfutils-0.195/tests/run-debuginfod-find-metadata.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-find-metadata.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-find-metadata.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2022-2024 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-homesite.sh elfutils-0.195/tests/run-debuginfod-homesite.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-homesite.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-homesite.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2022 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-section.sh elfutils-0.195/tests/run-debuginfod-section.sh
---- elfutils-0.195.orig/tests/run-debuginfod-section.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-section.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-ima-verification.sh elfutils-0.195/tests/run-debuginfod-ima-verification.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-ima-verification.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-ima-verification.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2023-2024 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-longsource.sh elfutils-0.195/tests/run-debuginfod-longsource.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-longsource.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-longsource.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2024 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-malformed.sh elfutils-0.195/tests/run-debuginfod-malformed.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-malformed.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-malformed.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-seekable.sh elfutils-0.195/tests/run-debuginfod-seekable.sh
---- elfutils-0.195.orig/tests/run-debuginfod-seekable.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-seekable.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-negative-cache.sh elfutils-0.195/tests/run-debuginfod-negative-cache.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-negative-cache.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-negative-cache.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-no-urls.sh elfutils-0.195/tests/run-debuginfod-no-urls.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-no-urls.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-no-urls.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-percent-escape.sh elfutils-0.195/tests/run-debuginfod-percent-escape.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-percent-escape.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-percent-escape.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-query-retry.sh elfutils-0.195/tests/run-debuginfod-query-retry.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-query-retry.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-query-retry.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-regex.sh elfutils-0.195/tests/run-debuginfod-regex.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-regex.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-regex.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-response-headers.sh elfutils-0.195/tests/run-debuginfod-response-headers.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-response-headers.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-response-headers.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2022 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-section.sh elfutils-0.195/tests/run-debuginfod-section.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-section.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-section.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2019-2021 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-seekable.sh elfutils-0.195/tests/run-debuginfod-seekable.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-seekable.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-seekable.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  
  . $srcdir/debuginfod-subr.sh
  
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-sizetime.sh elfutils-0.195/tests/run-debuginfod-sizetime.sh
---- elfutils-0.195.orig/tests/run-debuginfod-sizetime.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-sizetime.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-sizetime.sh elfutils-0.195/tests/run-debuginfod-sizetime.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-sizetime.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-sizetime.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-tmp-home.sh elfutils-0.195/tests/run-debuginfod-tmp-home.sh
---- elfutils-0.195.orig/tests/run-debuginfod-tmp-home.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-tmp-home.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-tmp-home.sh elfutils-0.195/tests/run-debuginfod-tmp-home.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-tmp-home.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-tmp-home.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-webapi-concurrency.sh elfutils-0.195/tests/run-debuginfod-webapi-concurrency.sh
---- elfutils-0.195.orig/tests/run-debuginfod-webapi-concurrency.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-webapi-concurrency.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-webapi-concurrency.sh elfutils-0.195/tests/run-debuginfod-webapi-concurrency.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-webapi-concurrency.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-webapi-concurrency.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-writable.sh elfutils-0.195/tests/run-debuginfod-writable.sh
---- elfutils-0.195.orig/tests/run-debuginfod-writable.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-writable.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-writable.sh elfutils-0.195/tests/run-debuginfod-writable.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-writable.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-writable.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2019-2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuginfod-x-forwarded-for.sh elfutils-0.195/tests/run-debuginfod-x-forwarded-for.sh
---- elfutils-0.195.orig/tests/run-debuginfod-x-forwarded-for.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuginfod-x-forwarded-for.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuginfod-x-forwarded-for.sh elfutils-0.195/tests/run-debuginfod-x-forwarded-for.sh
+--- elfutils-0.195.orig/tests/run-debuginfod-x-forwarded-for.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuginfod-x-forwarded-for.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env bash
 +#!/sw/bash/bin/bash
  #
  # Copyright (C) 2021 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-debuglink.sh elfutils-0.195/tests/run-debuglink.sh
---- elfutils-0.195.orig/tests/run-debuglink.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-debuglink.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-debuglink.sh elfutils-0.195/tests/run-debuglink.sh
+--- elfutils-0.195.orig/tests/run-debuglink.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-debuglink.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-declfiles.sh elfutils-0.195/tests/run-declfiles.sh
---- elfutils-0.195.orig/tests/run-declfiles.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-declfiles.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-declfiles.sh elfutils-0.195/tests/run-declfiles.sh
+--- elfutils-0.195.orig/tests/run-declfiles.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-declfiles.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (c) 2024 Meta Platforms, Inc. and affiliates.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-deleted.sh elfutils-0.195/tests/run-deleted.sh
---- elfutils-0.195.orig/tests/run-deleted.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-deleted.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-deleted.sh elfutils-0.195/tests/run-deleted.sh
+--- elfutils-0.195.orig/tests/run-deleted.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-deleted.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-disasm-bpf.sh elfutils-0.195/tests/run-disasm-bpf.sh
---- elfutils-0.195.orig/tests/run-disasm-bpf.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-disasm-bpf.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-disasm-bpf.sh elfutils-0.195/tests/run-disasm-bpf.sh
+--- elfutils-0.195.orig/tests/run-disasm-bpf.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-disasm-bpf.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2016 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-disasm-riscv64.sh elfutils-0.195/tests/run-disasm-riscv64.sh
---- elfutils-0.195.orig/tests/run-disasm-riscv64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-disasm-riscv64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-disasm-riscv64.sh elfutils-0.195/tests/run-disasm-riscv64.sh
+--- elfutils-0.195.orig/tests/run-disasm-riscv64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-disasm-riscv64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2019 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-disasm-x86-64.sh elfutils-0.195/tests/run-disasm-x86-64.sh
---- elfutils-0.195.orig/tests/run-disasm-x86-64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-disasm-x86-64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-disasm-x86-64.sh elfutils-0.195/tests/run-disasm-x86-64.sh
+--- elfutils-0.195.orig/tests/run-disasm-x86-64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-disasm-x86-64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007, 2008 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-disasm-x86.sh elfutils-0.195/tests/run-disasm-x86.sh
---- elfutils-0.195.orig/tests/run-disasm-x86.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-disasm-x86.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-disasm-x86.sh elfutils-0.195/tests/run-disasm-x86.sh
+--- elfutils-0.195.orig/tests/run-disasm-x86.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-disasm-x86.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007, 2008 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwarfcfi.sh elfutils-0.195/tests/run-dwarfcfi.sh
---- elfutils-0.195.orig/tests/run-dwarfcfi.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwarfcfi.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Test for dwarf_getcfi.
- # Copyright (C) 2018 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-dwarf-die-addr-die.sh elfutils-0.195/tests/run-dwarf-die-addr-die.sh
---- elfutils-0.195.orig/tests/run-dwarf-die-addr-die.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwarf-die-addr-die.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwarf-die-addr-die.sh elfutils-0.195/tests/run-dwarf-die-addr-die.sh
+--- elfutils-0.195.orig/tests/run-dwarf-die-addr-die.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwarf-die-addr-die.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012, 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwarf-getmacros.sh elfutils-0.195/tests/run-dwarf-getmacros.sh
---- elfutils-0.195.orig/tests/run-dwarf-getmacros.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwarf-getmacros.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwarf-getmacros.sh elfutils-0.195/tests/run-dwarf-getmacros.sh
+--- elfutils-0.195.orig/tests/run-dwarf-getmacros.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwarf-getmacros.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2009, 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwarf-getstring.sh elfutils-0.195/tests/run-dwarf-getstring.sh
---- elfutils-0.195.orig/tests/run-dwarf-getstring.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwarf-getstring.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwarf-getstring.sh elfutils-0.195/tests/run-dwarf-getstring.sh
+--- elfutils-0.195.orig/tests/run-dwarf-getstring.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwarf-getstring.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2011 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwarf-ranges.sh elfutils-0.195/tests/run-dwarf-ranges.sh
---- elfutils-0.195.orig/tests/run-dwarf-ranges.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwarf-ranges.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwarf-ranges.sh elfutils-0.195/tests/run-dwarf-ranges.sh
+--- elfutils-0.195.orig/tests/run-dwarf-ranges.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwarf-ranges.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015, 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwelf_elf_e_machine_string.sh elfutils-0.195/tests/run-dwelf_elf_e_machine_string.sh
---- elfutils-0.195.orig/tests/run-dwelf_elf_e_machine_string.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwelf_elf_e_machine_string.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwarfcfi.sh elfutils-0.195/tests/run-dwarfcfi.sh
+--- elfutils-0.195.orig/tests/run-dwarfcfi.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwarfcfi.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test for dwarf_getcfi.
+ # Copyright (C) 2018 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwelf_elf_e_machine_string.sh elfutils-0.195/tests/run-dwelf_elf_e_machine_string.sh
+--- elfutils-0.195.orig/tests/run-dwelf_elf_e_machine_string.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwelf_elf_e_machine_string.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Test to make sure all EM values in elf.h are recognized
  # Copyright (C) 2019 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-dwelfgnucompressed.sh elfutils-0.195/tests/run-dwelfgnucompressed.sh
---- elfutils-0.195.orig/tests/run-dwelfgnucompressed.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwelfgnucompressed.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwelfgnucompressed.sh elfutils-0.195/tests/run-dwelfgnucompressed.sh
+--- elfutils-0.195.orig/tests/run-dwelfgnucompressed.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwelfgnucompressed.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwfl-addr-sect.sh elfutils-0.195/tests/run-dwfl-addr-sect.sh
---- elfutils-0.195.orig/tests/run-dwfl-addr-sect.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwfl-addr-sect.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwfl-addr-sect.sh elfutils-0.195/tests/run-dwfl-addr-sect.sh
+--- elfutils-0.195.orig/tests/run-dwfl-addr-sect.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwfl-addr-sect.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007-2009 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwfl-bug-offline-rel.sh elfutils-0.195/tests/run-dwfl-bug-offline-rel.sh
---- elfutils-0.195.orig/tests/run-dwfl-bug-offline-rel.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwfl-bug-offline-rel.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwfl-bug-offline-rel.sh elfutils-0.195/tests/run-dwfl-bug-offline-rel.sh
+--- elfutils-0.195.orig/tests/run-dwfl-bug-offline-rel.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwfl-bug-offline-rel.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwfl-core-noncontig.sh elfutils-0.195/tests/run-dwfl-core-noncontig.sh
---- elfutils-0.195.orig/tests/run-dwfl-core-noncontig.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwfl-core-noncontig.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwfl-core-noncontig.sh elfutils-0.195/tests/run-dwfl-core-noncontig.sh
+--- elfutils-0.195.orig/tests/run-dwfl-core-noncontig.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwfl-core-noncontig.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2023 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwfllines.sh elfutils-0.195/tests/run-dwfllines.sh
---- elfutils-0.195.orig/tests/run-dwfllines.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwfllines.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwfl-report-elf-align.sh elfutils-0.195/tests/run-dwfl-report-elf-align.sh
+--- elfutils-0.195.orig/tests/run-dwfl-report-elf-align.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwfl-report-elf-align.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwfl-report-elf-align.sh elfutils-0.195/tests/run-dwfl-report-elf-align.sh
---- elfutils-0.195.orig/tests/run-dwfl-report-elf-align.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwfl-report-elf-align.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2013 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-dwfl-report-offline-memory.sh elfutils-0.195/tests/run-dwfl-report-offline-memory.sh
---- elfutils-0.195.orig/tests/run-dwfl-report-offline-memory.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwfl-report-offline-memory.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwfl-report-offline-memory.sh elfutils-0.195/tests/run-dwfl-report-offline-memory.sh
+--- elfutils-0.195.orig/tests/run-dwfl-report-offline-memory.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwfl-report-offline-memory.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2022 Google LLC
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-dwflsyms.sh elfutils-0.195/tests/run-dwflsyms.sh
---- elfutils-0.195.orig/tests/run-dwflsyms.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-dwflsyms.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwfllines.sh elfutils-0.195/tests/run-dwfllines.sh
+--- elfutils-0.195.orig/tests/run-dwfllines.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwfllines.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-early-offscn.sh elfutils-0.195/tests/run-early-offscn.sh
---- elfutils-0.195.orig/tests/run-early-offscn.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-early-offscn.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-dwflsyms.sh elfutils-0.195/tests/run-dwflsyms.sh
+--- elfutils-0.195.orig/tests/run-dwflsyms.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-dwflsyms.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2013 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-early-offscn.sh elfutils-0.195/tests/run-early-offscn.sh
+--- elfutils-0.195.orig/tests/run-early-offscn.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-early-offscn.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2008 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-ecp-test2.sh elfutils-0.195/tests/run-ecp-test2.sh
---- elfutils-0.195.orig/tests/run-ecp-test2.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-ecp-test2.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-ecp-test.sh elfutils-0.195/tests/run-ecp-test.sh
+--- elfutils-0.195.orig/tests/run-ecp-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-ecp-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2002, 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Jakub Jelinek <jakub@redhat.com>, 2002.
-diff -Naur elfutils-0.195.orig/tests/run-ecp-test.sh elfutils-0.195/tests/run-ecp-test.sh
---- elfutils-0.195.orig/tests/run-ecp-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-ecp-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-ecp-test2.sh elfutils-0.195/tests/run-ecp-test2.sh
+--- elfutils-0.195.orig/tests/run-ecp-test2.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-ecp-test2.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2002, 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Jakub Jelinek <jakub@redhat.com>, 2002.
-diff -Naur elfutils-0.195.orig/tests/run-elfclassify-self.sh elfutils-0.195/tests/run-elfclassify-self.sh
---- elfutils-0.195.orig/tests/run-elfclassify-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elfclassify-self.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2019 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-elfclassify.sh elfutils-0.195/tests/run-elfclassify.sh
---- elfutils-0.195.orig/tests/run-elfclassify.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elfclassify.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2019 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-elf_cntl_gelf_getshdr.sh elfutils-0.195/tests/run-elf_cntl_gelf_getshdr.sh
---- elfutils-0.195.orig/tests/run-elf_cntl_gelf_getshdr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elf_cntl_gelf_getshdr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elf_cntl_gelf_getshdr.sh elfutils-0.195/tests/run-elf_cntl_gelf_getshdr.sh
+--- elfutils-0.195.orig/tests/run-elf_cntl_gelf_getshdr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elf_cntl_gelf_getshdr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-elfgetchdr.sh elfutils-0.195/tests/run-elfgetchdr.sh
---- elfutils-0.195.orig/tests/run-elfgetchdr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elfgetchdr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elfclassify-self.sh elfutils-0.195/tests/run-elfclassify-self.sh
+--- elfutils-0.195.orig/tests/run-elfclassify-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elfclassify-self.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2019 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elfclassify.sh elfutils-0.195/tests/run-elfclassify.sh
+--- elfutils-0.195.orig/tests/run-elfclassify.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elfclassify.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2019 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elfgetchdr.sh elfutils-0.195/tests/run-elfgetchdr.sh
+--- elfutils-0.195.orig/tests/run-elfgetchdr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elfgetchdr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-elfgetzdata.sh elfutils-0.195/tests/run-elfgetzdata.sh
---- elfutils-0.195.orig/tests/run-elfgetzdata.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elfgetzdata.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elfgetzdata.sh elfutils-0.195/tests/run-elfgetzdata.sh
+--- elfutils-0.195.orig/tests/run-elfgetzdata.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elfgetzdata.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-elflint-self.sh elfutils-0.195/tests/run-elflint-self.sh
---- elfutils-0.195.orig/tests/run-elflint-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elflint-self.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elflint-self.sh elfutils-0.195/tests/run-elflint-self.sh
+--- elfutils-0.195.orig/tests/run-elflint-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elflint-self.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2007, 2017 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-elflint-test.sh elfutils-0.195/tests/run-elflint-test.sh
---- elfutils-0.195.orig/tests/run-elflint-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elflint-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elflint-test.sh elfutils-0.195/tests/run-elflint-test.sh
+--- elfutils-0.195.orig/tests/run-elflint-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elflint-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2007, 2008, 2015 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-elfputzdata.sh elfutils-0.195/tests/run-elfputzdata.sh
---- elfutils-0.195.orig/tests/run-elfputzdata.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elfputzdata.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elfputzdata.sh elfutils-0.195/tests/run-elfputzdata.sh
+--- elfutils-0.195.orig/tests/run-elfputzdata.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elfputzdata.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-elfstrmerge-test.sh elfutils-0.195/tests/run-elfstrmerge-test.sh
---- elfutils-0.195.orig/tests/run-elfstrmerge-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-elfstrmerge-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-elfstrmerge-test.sh elfutils-0.195/tests/run-elfstrmerge-test.sh
+--- elfutils-0.195.orig/tests/run-elfstrmerge-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-elfstrmerge-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-eu-search-cfi.sh elfutils-0.195/tests/run-eu-search-cfi.sh
---- elfutils-0.195.orig/tests/run-eu-search-cfi.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-eu-search-cfi.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-eu-search-cfi.sh elfutils-0.195/tests/run-eu-search-cfi.sh
+--- elfutils-0.195.orig/tests/run-eu-search-cfi.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-eu-search-cfi.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Data race test for parallelized next_cfi
  # Copyright (C) 2015, 2018 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-eu-search-die.sh elfutils-0.195/tests/run-eu-search-die.sh
---- elfutils-0.195.orig/tests/run-eu-search-die.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-eu-search-die.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-eu-search-die.sh elfutils-0.195/tests/run-eu-search-die.sh
+--- elfutils-0.195.orig/tests/run-eu-search-die.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-eu-search-die.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Data race test for parallelized dwarf-die-addr-die
  # Copyright (C) 2015, 2018 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-eu-search-lines.sh elfutils-0.195/tests/run-eu-search-lines.sh
---- elfutils-0.195.orig/tests/run-eu-search-lines.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-eu-search-lines.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-eu-search-lines.sh elfutils-0.195/tests/run-eu-search-lines.sh
+--- elfutils-0.195.orig/tests/run-eu-search-lines.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-eu-search-lines.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Data race test for parallelized get-lines
  # Copyright (C) 2015, 2018 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-eu-search-macros.sh elfutils-0.195/tests/run-eu-search-macros.sh
---- elfutils-0.195.orig/tests/run-eu-search-macros.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-eu-search-macros.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-eu-search-macros.sh elfutils-0.195/tests/run-eu-search-macros.sh
+--- elfutils-0.195.orig/tests/run-eu-search-macros.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-eu-search-macros.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Data race test for parallelizd dwarf-getmacros
  # Copyright (C) 2015, 2018 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-exprlocs-self.sh elfutils-0.195/tests/run-exprlocs-self.sh
---- elfutils-0.195.orig/tests/run-exprlocs-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-exprlocs-self.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-exprlocs-self.sh elfutils-0.195/tests/run-exprlocs-self.sh
+--- elfutils-0.195.orig/tests/run-exprlocs-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-exprlocs-self.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-exprlocs.sh elfutils-0.195/tests/run-exprlocs.sh
---- elfutils-0.195.orig/tests/run-exprlocs.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-exprlocs.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-exprlocs.sh elfutils-0.195/tests/run-exprlocs.sh
+--- elfutils-0.195.orig/tests/run-exprlocs.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-exprlocs.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-find-prologues.sh elfutils-0.195/tests/run-find-prologues.sh
---- elfutils-0.195.orig/tests/run-find-prologues.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-find-prologues.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-find-prologues.sh elfutils-0.195/tests/run-find-prologues.sh
+--- elfutils-0.195.orig/tests/run-find-prologues.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-find-prologues.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-funcretval++11.sh elfutils-0.195/tests/run-funcretval++11.sh
---- elfutils-0.195.orig/tests/run-funcretval++11.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-funcretval++11.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-funcretval++11.sh elfutils-0.195/tests/run-funcretval++11.sh
+--- elfutils-0.195.orig/tests/run-funcretval++11.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-funcretval++11.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2023 IBM Corporation
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-funcretval.sh elfutils-0.195/tests/run-funcretval.sh
---- elfutils-0.195.orig/tests/run-funcretval.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-funcretval.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-funcretval-struct-native.sh elfutils-0.195/tests/run-funcretval-struct-native.sh
+--- elfutils-0.195.orig/tests/run-funcretval-struct-native.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-funcretval-struct-native.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2024 Mark J. Wielaard <mark@klomp.org>
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-funcretval-struct.sh elfutils-0.195/tests/run-funcretval-struct.sh
+--- elfutils-0.195.orig/tests/run-funcretval-struct.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-funcretval-struct.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2024 Mark J. Wielaard <mark@klomp.org>
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-funcretval.sh elfutils-0.195/tests/run-funcretval.sh
+--- elfutils-0.195.orig/tests/run-funcretval.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-funcretval.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-funcretval-struct-native.sh elfutils-0.195/tests/run-funcretval-struct-native.sh
---- elfutils-0.195.orig/tests/run-funcretval-struct-native.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-funcretval-struct-native.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2024 Mark J. Wielaard <mark@klomp.org>
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-funcretval-struct.sh elfutils-0.195/tests/run-funcretval-struct.sh
---- elfutils-0.195.orig/tests/run-funcretval-struct.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-funcretval-struct.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2024 Mark J. Wielaard <mark@klomp.org>
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-funcscopes.sh elfutils-0.195/tests/run-funcscopes.sh
---- elfutils-0.195.orig/tests/run-funcscopes.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-funcscopes.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-funcscopes.sh elfutils-0.195/tests/run-funcscopes.sh
+--- elfutils-0.195.orig/tests/run-funcscopes.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-funcscopes.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-get-aranges.sh elfutils-0.195/tests/run-get-aranges.sh
---- elfutils-0.195.orig/tests/run-get-aranges.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-get-aranges.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-get-aranges.sh elfutils-0.195/tests/run-get-aranges.sh
+--- elfutils-0.195.orig/tests/run-get-aranges.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-get-aranges.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 1999, 2000, 2002, 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-get-files.sh elfutils-0.195/tests/run-get-files.sh
---- elfutils-0.195.orig/tests/run-get-files.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-get-files.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-get-files.sh elfutils-0.195/tests/run-get-files.sh
+--- elfutils-0.195.orig/tests/run-get-files.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-get-files.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 1999, 2000, 2002, 2004, 2005, 2007 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-get-lines.sh elfutils-0.195/tests/run-get-lines.sh
---- elfutils-0.195.orig/tests/run-get-lines.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-get-lines.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-get-lines.sh elfutils-0.195/tests/run-get-lines.sh
+--- elfutils-0.195.orig/tests/run-get-lines.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-get-lines.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 1999, 2000, 2002, 2004, 2005, 2013 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-getphdrnum.sh elfutils-0.195/tests/run-getphdrnum.sh
---- elfutils-0.195.orig/tests/run-getphdrnum.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-getphdrnum.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-get-pubnames.sh elfutils-0.195/tests/run-get-pubnames.sh
+--- elfutils-0.195.orig/tests/run-get-pubnames.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-get-pubnames.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 1999, 2000, 2002, 2003, 2005 Red Hat, Inc.
+ # This file is part of elfutils.
+ # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-get-units-invalid.sh elfutils-0.195/tests/run-get-units-invalid.sh
+--- elfutils-0.195.orig/tests/run-get-units-invalid.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-get-units-invalid.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2018 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-get-units-split.sh elfutils-0.195/tests/run-get-units-split.sh
+--- elfutils-0.195.orig/tests/run-get-units-split.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-get-units-split.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2018 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-getphdrnum.sh elfutils-0.195/tests/run-getphdrnum.sh
+--- elfutils-0.195.orig/tests/run-getphdrnum.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-getphdrnum.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  
  # testfile-phdrs.elf generated with python3 script
  # import struct
-diff -Naur elfutils-0.195.orig/tests/run-get-pubnames.sh elfutils-0.195/tests/run-get-pubnames.sh
---- elfutils-0.195.orig/tests/run-get-pubnames.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-get-pubnames.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 1999, 2000, 2002, 2003, 2005 Red Hat, Inc.
- # This file is part of elfutils.
- # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-getsrc-die.sh elfutils-0.195/tests/run-getsrc-die.sh
---- elfutils-0.195.orig/tests/run-getsrc-die.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-getsrc-die.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-getsrc-die.sh elfutils-0.195/tests/run-getsrc-die.sh
+--- elfutils-0.195.orig/tests/run-getsrc-die.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-getsrc-die.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-get-units-invalid.sh elfutils-0.195/tests/run-get-units-invalid.sh
---- elfutils-0.195.orig/tests/run-get-units-invalid.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-get-units-invalid.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2018 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-get-units-split.sh elfutils-0.195/tests/run-get-units-split.sh
---- elfutils-0.195.orig/tests/run-get-units-split.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-get-units-split.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2018 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-large-elf-file.sh elfutils-0.195/tests/run-large-elf-file.sh
---- elfutils-0.195.orig/tests/run-large-elf-file.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-large-elf-file.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-large-elf-file.sh elfutils-0.195/tests/run-large-elf-file.sh
+--- elfutils-0.195.orig/tests/run-large-elf-file.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-large-elf-file.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2019 Red Hat, Inc.
  # Copyright (C) 2022 Mark J. Wielaard <mark@klomp.org>
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-lfs-symbols.sh elfutils-0.195/tests/run-lfs-symbols.sh
---- elfutils-0.195.orig/tests/run-lfs-symbols.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-lfs-symbols.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-lfs-symbols.sh elfutils-0.195/tests/run-lfs-symbols.sh
+--- elfutils-0.195.orig/tests/run-lfs-symbols.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-lfs-symbols.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-line2addr.sh elfutils-0.195/tests/run-line2addr.sh
---- elfutils-0.195.orig/tests/run-line2addr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-line2addr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-line2addr.sh elfutils-0.195/tests/run-line2addr.sh
+--- elfutils-0.195.orig/tests/run-line2addr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-line2addr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-linkmap-cut.sh elfutils-0.195/tests/run-linkmap-cut.sh
---- elfutils-0.195.orig/tests/run-linkmap-cut.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-linkmap-cut.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-linkmap-cut.sh elfutils-0.195/tests/run-linkmap-cut.sh
+--- elfutils-0.195.orig/tests/run-linkmap-cut.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-linkmap-cut.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-low_high_pc-dw-form-indirect.sh elfutils-0.195/tests/run-low_high_pc-dw-form-indirect.sh
---- elfutils-0.195.orig/tests/run-low_high_pc-dw-form-indirect.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-low_high_pc-dw-form-indirect.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-low_high_pc-dw-form-indirect.sh elfutils-0.195/tests/run-low_high_pc-dw-form-indirect.sh
+--- elfutils-0.195.orig/tests/run-low_high_pc-dw-form-indirect.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-low_high_pc-dw-form-indirect.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2021 Facebook
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-low_high_pc.sh elfutils-0.195/tests/run-low_high_pc.sh
---- elfutils-0.195.orig/tests/run-low_high_pc.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-low_high_pc.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-low_high_pc.sh elfutils-0.195/tests/run-low_high_pc.sh
+--- elfutils-0.195.orig/tests/run-low_high_pc.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-low_high_pc.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-macro-test.sh elfutils-0.195/tests/run-macro-test.sh
---- elfutils-0.195.orig/tests/run-macro-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-macro-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-macro-test.sh elfutils-0.195/tests/run-macro-test.sh
+--- elfutils-0.195.orig/tests/run-macro-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-macro-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-native-test.sh elfutils-0.195/tests/run-native-test.sh
---- elfutils-0.195.orig/tests/run-native-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-native-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-native-test.sh elfutils-0.195/tests/run-native-test.sh
+--- elfutils-0.195.orig/tests/run-native-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-native-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2006, 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-next-cfi-self.sh elfutils-0.195/tests/run-next-cfi-self.sh
---- elfutils-0.195.orig/tests/run-next-cfi-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-next-cfi-self.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-next-cfi-self.sh elfutils-0.195/tests/run-next-cfi-self.sh
+--- elfutils-0.195.orig/tests/run-next-cfi-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-next-cfi-self.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-next-cfi.sh elfutils-0.195/tests/run-next-cfi.sh
---- elfutils-0.195.orig/tests/run-next-cfi.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-next-cfi.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-next-cfi.sh elfutils-0.195/tests/run-next-cfi.sh
+--- elfutils-0.195.orig/tests/run-next-cfi.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-next-cfi.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Test for dwarf_next_cfi.
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-next-files.sh elfutils-0.195/tests/run-next-files.sh
---- elfutils-0.195.orig/tests/run-next-files.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-next-files.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-next-files.sh elfutils-0.195/tests/run-next-files.sh
+--- elfutils-0.195.orig/tests/run-next-files.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-next-files.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Variant of run-get-files that uses dwarf_next_lines.
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-next-lines.sh elfutils-0.195/tests/run-next-lines.sh
---- elfutils-0.195.orig/tests/run-next-lines.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-next-lines.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-next-lines.sh elfutils-0.195/tests/run-next-lines.sh
+--- elfutils-0.195.orig/tests/run-next-lines.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-next-lines.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Variant of run-get-lines that uses dwarf_next_lines.
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-nm-self.sh elfutils-0.195/tests/run-nm-self.sh
---- elfutils-0.195.orig/tests/run-nm-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-nm-self.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-nm-self.sh elfutils-0.195/tests/run-nm-self.sh
+--- elfutils-0.195.orig/tests/run-nm-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-nm-self.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012, 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-nm-syms.sh elfutils-0.195/tests/run-nm-syms.sh
---- elfutils-0.195.orig/tests/run-nm-syms.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-nm-syms.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-nm-syms.sh elfutils-0.195/tests/run-nm-syms.sh
+--- elfutils-0.195.orig/tests/run-nm-syms.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-nm-syms.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2020 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-peel-type.sh elfutils-0.195/tests/run-peel-type.sh
---- elfutils-0.195.orig/tests/run-peel-type.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-peel-type.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-peel-type.sh elfutils-0.195/tests/run-peel-type.sh
+--- elfutils-0.195.orig/tests/run-peel-type.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-peel-type.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-prelink-addr-test.sh elfutils-0.195/tests/run-prelink-addr-test.sh
---- elfutils-0.195.orig/tests/run-prelink-addr-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-prelink-addr-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-prelink-addr-test.sh elfutils-0.195/tests/run-prelink-addr-test.sh
+--- elfutils-0.195.orig/tests/run-prelink-addr-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-prelink-addr-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2011-2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-pt_gnu_prop-tests.sh elfutils-0.195/tests/run-pt_gnu_prop-tests.sh
---- elfutils-0.195.orig/tests/run-pt_gnu_prop-tests.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-pt_gnu_prop-tests.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-pt_gnu_prop-tests.sh elfutils-0.195/tests/run-pt_gnu_prop-tests.sh
+--- elfutils-0.195.orig/tests/run-pt_gnu_prop-tests.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-pt_gnu_prop-tests.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2020 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-ranlib-test2.sh elfutils-0.195/tests/run-ranlib-test2.sh
---- elfutils-0.195.orig/tests/run-ranlib-test2.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-ranlib-test2.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-ranlib-test.sh elfutils-0.195/tests/run-ranlib-test.sh
+--- elfutils-0.195.orig/tests/run-ranlib-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-ranlib-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-ranlib-test3.sh elfutils-0.195/tests/run-ranlib-test3.sh
---- elfutils-0.195.orig/tests/run-ranlib-test3.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-ranlib-test3.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-ranlib-test2.sh elfutils-0.195/tests/run-ranlib-test2.sh
+--- elfutils-0.195.orig/tests/run-ranlib-test2.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-ranlib-test2.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-ranlib-test4.sh elfutils-0.195/tests/run-ranlib-test4.sh
---- elfutils-0.195.orig/tests/run-ranlib-test4.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-ranlib-test4.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-ranlib-test3.sh elfutils-0.195/tests/run-ranlib-test3.sh
+--- elfutils-0.195.orig/tests/run-ranlib-test3.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-ranlib-test3.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-ranlib-test.sh elfutils-0.195/tests/run-ranlib-test.sh
---- elfutils-0.195.orig/tests/run-ranlib-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-ranlib-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-ranlib-test4.sh elfutils-0.195/tests/run-ranlib-test4.sh
+--- elfutils-0.195.orig/tests/run-ranlib-test4.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-ranlib-test4.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-readelf-addr.sh elfutils-0.195/tests/run-readelf-addr.sh
---- elfutils-0.195.orig/tests/run-readelf-addr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-addr.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2018 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-aranges.sh elfutils-0.195/tests/run-readelf-aranges.sh
---- elfutils-0.195.orig/tests/run-readelf-aranges.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-aranges.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2013 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-arm-flags.sh elfutils-0.195/tests/run-readelf-arm-flags.sh
---- elfutils-0.195.orig/tests/run-readelf-arm-flags.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-arm-flags.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- 
- . $srcdir/test-subr.sh
- 
-diff -Naur elfutils-0.195.orig/tests/run-readelf-A.sh elfutils-0.195/tests/run-readelf-A.sh
---- elfutils-0.195.orig/tests/run-readelf-A.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-A.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-A.sh elfutils-0.195/tests/run-readelf-A.sh
+--- elfutils-0.195.orig/tests/run-readelf-A.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-A.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # Copyright (C) 2016 Oracle, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-readelf-compressed.sh elfutils-0.195/tests/run-readelf-compressed.sh
---- elfutils-0.195.orig/tests/run-readelf-compressed.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-compressed.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2018 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-compressed-zstd.sh elfutils-0.195/tests/run-readelf-compressed-zstd.sh
---- elfutils-0.195.orig/tests/run-readelf-compressed-zstd.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-compressed-zstd.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2018 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-const-values.sh elfutils-0.195/tests/run-readelf-const-values.sh
---- elfutils-0.195.orig/tests/run-readelf-const-values.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-const-values.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Test for displaying DW_AT_const_types with the "correct" sign.
- # Copyright (C) 2018 Red Hat, Inc.
- # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-readelf-cu-index.sh elfutils-0.195/tests/run-readelf-cu-index.sh
---- elfutils-0.195.orig/tests/run-readelf-cu-index.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-cu-index.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2026 Mark J. Wielaard <mark@klomp.org>
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-Dd.sh elfutils-0.195/tests/run-readelf-Dd.sh
---- elfutils-0.195.orig/tests/run-readelf-Dd.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-Dd.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-Dd.sh elfutils-0.195/tests/run-readelf-Dd.sh
+--- elfutils-0.195.orig/tests/run-readelf-Dd.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-Dd.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2022 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-discr.sh elfutils-0.195/tests/run-readelf-discr.sh
---- elfutils-0.195.orig/tests/run-readelf-discr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-discr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-addr.sh elfutils-0.195/tests/run-readelf-addr.sh
+--- elfutils-0.195.orig/tests/run-readelf-addr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-addr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
- # Copyright (C) 2019 Red Hat, Inc.
+ # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-d.sh elfutils-0.195/tests/run-readelf-d.sh
---- elfutils-0.195.orig/tests/run-readelf-d.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-d.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-aranges.sh elfutils-0.195/tests/run-readelf-aranges.sh
+--- elfutils-0.195.orig/tests/run-readelf-aranges.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-aranges.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2013 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-arm-flags.sh elfutils-0.195/tests/run-readelf-arm-flags.sh
+--- elfutils-0.195.orig/tests/run-readelf-arm-flags.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-arm-flags.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ . $srcdir/test-subr.sh
+ 
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-compressed-zstd.sh elfutils-0.195/tests/run-readelf-compressed-zstd.sh
+--- elfutils-0.195.orig/tests/run-readelf-compressed-zstd.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-compressed-zstd.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2018 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-compressed.sh elfutils-0.195/tests/run-readelf-compressed.sh
+--- elfutils-0.195.orig/tests/run-readelf-compressed.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-compressed.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2018 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-const-values.sh elfutils-0.195/tests/run-readelf-const-values.sh
+--- elfutils-0.195.orig/tests/run-readelf-const-values.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-const-values.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test for displaying DW_AT_const_types with the "correct" sign.
+ # Copyright (C) 2018 Red Hat, Inc.
+ # This file is part of elfutils.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-cu-index.sh elfutils-0.195/tests/run-readelf-cu-index.sh
+--- elfutils-0.195.orig/tests/run-readelf-cu-index.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-cu-index.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2026 Mark J. Wielaard <mark@klomp.org>
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-d.sh elfutils-0.195/tests/run-readelf-d.sh
+--- elfutils-0.195.orig/tests/run-readelf-d.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-d.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-dw-form-indirect.sh elfutils-0.195/tests/run-readelf-dw-form-indirect.sh
---- elfutils-0.195.orig/tests/run-readelf-dw-form-indirect.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-dw-form-indirect.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-discr.sh elfutils-0.195/tests/run-readelf-discr.sh
+--- elfutils-0.195.orig/tests/run-readelf-discr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-discr.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2019 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-dw-form-indirect.sh elfutils-0.195/tests/run-readelf-dw-form-indirect.sh
+--- elfutils-0.195.orig/tests/run-readelf-dw-form-indirect.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-dw-form-indirect.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2021 Facebook
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-dwz-multi.sh elfutils-0.195/tests/run-readelf-dwz-multi.sh
---- elfutils-0.195.orig/tests/run-readelf-dwz-multi.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-dwz-multi.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-dwz-multi.sh elfutils-0.195/tests/run-readelf-dwz-multi.sh
+--- elfutils-0.195.orig/tests/run-readelf-dwz-multi.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-dwz-multi.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012, 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-frames.sh elfutils-0.195/tests/run-readelf-frames.sh
---- elfutils-0.195.orig/tests/run-readelf-frames.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-frames.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-frames.sh elfutils-0.195/tests/run-readelf-frames.sh
+--- elfutils-0.195.orig/tests/run-readelf-frames.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-frames.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2020 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-gdb_index.sh elfutils-0.195/tests/run-readelf-gdb_index.sh
---- elfutils-0.195.orig/tests/run-readelf-gdb_index.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-gdb_index.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-gdb_index.sh elfutils-0.195/tests/run-readelf-gdb_index.sh
+--- elfutils-0.195.orig/tests/run-readelf-gdb_index.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-gdb_index.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-info-plus.sh elfutils-0.195/tests/run-readelf-info-plus.sh
---- elfutils-0.195.orig/tests/run-readelf-info-plus.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-info-plus.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-info-plus.sh elfutils-0.195/tests/run-readelf-info-plus.sh
+--- elfutils-0.195.orig/tests/run-readelf-info-plus.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-info-plus.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Test for --debug-dump=info+ and finding split unit (in wrong file).
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-readelf-line.sh elfutils-0.195/tests/run-readelf-line.sh
---- elfutils-0.195.orig/tests/run-readelf-line.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-line.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-line.sh elfutils-0.195/tests/run-readelf-line.sh
+--- elfutils-0.195.orig/tests/run-readelf-line.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-line.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013, 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-lnames.sh elfutils-0.195/tests/run-readelf-lnames.sh
---- elfutils-0.195.orig/tests/run-readelf-lnames.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-lnames.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-lnames.sh elfutils-0.195/tests/run-readelf-lnames.sh
+--- elfutils-0.195.orig/tests/run-readelf-lnames.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-lnames.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2025 Mark J. Wielaard <mark@klomp.org>
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-loc.sh elfutils-0.195/tests/run-readelf-loc.sh
---- elfutils-0.195.orig/tests/run-readelf-loc.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-loc.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-loc.sh elfutils-0.195/tests/run-readelf-loc.sh
+--- elfutils-0.195.orig/tests/run-readelf-loc.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-loc.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-macro.sh elfutils-0.195/tests/run-readelf-macro.sh
---- elfutils-0.195.orig/tests/run-readelf-macro.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-macro.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-macro.sh elfutils-0.195/tests/run-readelf-macro.sh
+--- elfutils-0.195.orig/tests/run-readelf-macro.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-macro.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-mixed-corenote.sh elfutils-0.195/tests/run-readelf-mixed-corenote.sh
---- elfutils-0.195.orig/tests/run-readelf-mixed-corenote.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-mixed-corenote.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-mixed-corenote.sh elfutils-0.195/tests/run-readelf-mixed-corenote.sh
+--- elfutils-0.195.orig/tests/run-readelf-mixed-corenote.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-mixed-corenote.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012, 2013, 2014 Red Hat, Inc.
  # Copyright (C) H.J. Lu <hjl.tools@gmail.com>, 2015.
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-readelf-multi-noline.sh elfutils-0.195/tests/run-readelf-multi-noline.sh
---- elfutils-0.195.orig/tests/run-readelf-multi-noline.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-multi-noline.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-multi-noline.sh elfutils-0.195/tests/run-readelf-multi-noline.sh
+--- elfutils-0.195.orig/tests/run-readelf-multi-noline.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-multi-noline.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2021 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-ranges.sh elfutils-0.195/tests/run-readelf-ranges.sh
---- elfutils-0.195.orig/tests/run-readelf-ranges.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-ranges.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2018 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-r-manyfuncs.sh elfutils-0.195/tests/run-readelf-r-manyfuncs.sh
---- elfutils-0.195.orig/tests/run-readelf-r-manyfuncs.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-r-manyfuncs.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-r-manyfuncs.sh elfutils-0.195/tests/run-readelf-r-manyfuncs.sh
+--- elfutils-0.195.orig/tests/run-readelf-r-manyfuncs.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-r-manyfuncs.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Test readelf -r on file containing 64K+ functions and sections
  # Copyright (C) 2025 Mark J. Wielaard <mark@klomp.org>
  # This file is part of elfutils.
-diff -Naur elfutils-0.195.orig/tests/run-readelf-self.sh elfutils-0.195/tests/run-readelf-self.sh
---- elfutils-0.195.orig/tests/run-readelf-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-self.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2012 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-s.sh elfutils-0.195/tests/run-readelf-s.sh
---- elfutils-0.195.orig/tests/run-readelf-s.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-s.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2013 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-str.sh elfutils-0.195/tests/run-readelf-str.sh
---- elfutils-0.195.orig/tests/run-readelf-str.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-str.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-ranges.sh elfutils-0.195/tests/run-readelf-ranges.sh
+--- elfutils-0.195.orig/tests/run-readelf-ranges.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-ranges.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-test1.sh elfutils-0.195/tests/run-readelf-test1.sh
---- elfutils-0.195.orig/tests/run-readelf-test1.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-test1.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-s.sh elfutils-0.195/tests/run-readelf-s.sh
+--- elfutils-0.195.orig/tests/run-readelf-s.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-s.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2013 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-self.sh elfutils-0.195/tests/run-readelf-self.sh
+--- elfutils-0.195.orig/tests/run-readelf-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-self.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2012 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-str.sh elfutils-0.195/tests/run-readelf-str.sh
+--- elfutils-0.195.orig/tests/run-readelf-str.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-str.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2018 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-test1.sh elfutils-0.195/tests/run-readelf-test1.sh
+--- elfutils-0.195.orig/tests/run-readelf-test1.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-test1.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-readelf-test2.sh elfutils-0.195/tests/run-readelf-test2.sh
---- elfutils-0.195.orig/tests/run-readelf-test2.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-test2.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-test2.sh elfutils-0.195/tests/run-readelf-test2.sh
+--- elfutils-0.195.orig/tests/run-readelf-test2.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-test2.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-test3.sh elfutils-0.195/tests/run-readelf-test3.sh
---- elfutils-0.195.orig/tests/run-readelf-test3.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-test3.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-test3.sh elfutils-0.195/tests/run-readelf-test3.sh
+--- elfutils-0.195.orig/tests/run-readelf-test3.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-test3.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-test4.sh elfutils-0.195/tests/run-readelf-test4.sh
---- elfutils-0.195.orig/tests/run-readelf-test4.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-test4.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-test4.sh elfutils-0.195/tests/run-readelf-test4.sh
+--- elfutils-0.195.orig/tests/run-readelf-test4.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-test4.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-twofiles.sh elfutils-0.195/tests/run-readelf-twofiles.sh
---- elfutils-0.195.orig/tests/run-readelf-twofiles.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-twofiles.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-twofiles.sh elfutils-0.195/tests/run-readelf-twofiles.sh
+--- elfutils-0.195.orig/tests/run-readelf-twofiles.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-twofiles.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2011, 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-types.sh elfutils-0.195/tests/run-readelf-types.sh
---- elfutils-0.195.orig/tests/run-readelf-types.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-types.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-types.sh elfutils-0.195/tests/run-readelf-types.sh
+--- elfutils-0.195.orig/tests/run-readelf-types.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-types.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-variant.sh elfutils-0.195/tests/run-readelf-variant.sh
---- elfutils-0.195.orig/tests/run-readelf-variant.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-variant.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-variant.sh elfutils-0.195/tests/run-readelf-variant.sh
+--- elfutils-0.195.orig/tests/run-readelf-variant.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-variant.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-vmcoreinfo.sh elfutils-0.195/tests/run-readelf-vmcoreinfo.sh
---- elfutils-0.195.orig/tests/run-readelf-vmcoreinfo.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-vmcoreinfo.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-vmcoreinfo.sh elfutils-0.195/tests/run-readelf-vmcoreinfo.sh
+--- elfutils-0.195.orig/tests/run-readelf-vmcoreinfo.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-vmcoreinfo.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-zdebug-rel.sh elfutils-0.195/tests/run-readelf-zdebug-rel.sh
---- elfutils-0.195.orig/tests/run-readelf-zdebug-rel.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-zdebug-rel.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-z.sh elfutils-0.195/tests/run-readelf-z.sh
+--- elfutils-0.195.orig/tests/run-readelf-z.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-z.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-zdebug.sh elfutils-0.195/tests/run-readelf-zdebug.sh
---- elfutils-0.195.orig/tests/run-readelf-zdebug.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-zdebug.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-zdebug-rel.sh elfutils-0.195/tests/run-readelf-zdebug-rel.sh
+--- elfutils-0.195.orig/tests/run-readelf-zdebug-rel.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-zdebug-rel.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2015 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-zdebug.sh elfutils-0.195/tests/run-readelf-zdebug.sh
+--- elfutils-0.195.orig/tests/run-readelf-zdebug.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-zdebug.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-zp.sh elfutils-0.195/tests/run-readelf-zp.sh
---- elfutils-0.195.orig/tests/run-readelf-zp.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-zp.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-zp.sh elfutils-0.195/tests/run-readelf-zp.sh
+--- elfutils-0.195.orig/tests/run-readelf-zp.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-zp.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-z.sh elfutils-0.195/tests/run-readelf-z.sh
---- elfutils-0.195.orig/tests/run-readelf-z.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-z.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-readelf-zx.sh elfutils-0.195/tests/run-readelf-zx.sh
+--- elfutils-0.195.orig/tests/run-readelf-zx.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-readelf-zx.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-readelf-zx.sh elfutils-0.195/tests/run-readelf-zx.sh
---- elfutils-0.195.orig/tests/run-readelf-zx.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-readelf-zx.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2015 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-reloc-bpf.sh elfutils-0.195/tests/run-reloc-bpf.sh
---- elfutils-0.195.orig/tests/run-reloc-bpf.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-reloc-bpf.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-reloc-bpf.sh elfutils-0.195/tests/run-reloc-bpf.sh
+--- elfutils-0.195.orig/tests/run-reloc-bpf.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-reloc-bpf.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Facebook, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-rerequest_tag.sh elfutils-0.195/tests/run-rerequest_tag.sh
---- elfutils-0.195.orig/tests/run-rerequest_tag.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-rerequest_tag.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-rerequest_tag.sh elfutils-0.195/tests/run-rerequest_tag.sh
+--- elfutils-0.195.orig/tests/run-rerequest_tag.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-rerequest_tag.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2011 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-reverse-sections-self.sh elfutils-0.195/tests/run-reverse-sections-self.sh
---- elfutils-0.195.orig/tests/run-reverse-sections-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-reverse-sections-self.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-reverse-sections-self.sh elfutils-0.195/tests/run-reverse-sections-self.sh
+--- elfutils-0.195.orig/tests/run-reverse-sections-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-reverse-sections-self.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2019 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-reverse-sections.sh elfutils-0.195/tests/run-reverse-sections.sh
---- elfutils-0.195.orig/tests/run-reverse-sections.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-reverse-sections.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-reverse-sections.sh elfutils-0.195/tests/run-reverse-sections.sh
+--- elfutils-0.195.orig/tests/run-reverse-sections.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-reverse-sections.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2019 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-show-abbrev.sh elfutils-0.195/tests/run-show-abbrev.sh
---- elfutils-0.195.orig/tests/run-show-abbrev.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-show-abbrev.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-show-abbrev.sh elfutils-0.195/tests/run-show-abbrev.sh
+--- elfutils-0.195.orig/tests/run-show-abbrev.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-show-abbrev.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 1999, 2000, 2002, 2003, 2004, 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-show-die-info.sh elfutils-0.195/tests/run-show-die-info.sh
---- elfutils-0.195.orig/tests/run-show-die-info.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-show-die-info.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-show-die-info.sh elfutils-0.195/tests/run-show-die-info.sh
+--- elfutils-0.195.orig/tests/run-show-die-info.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-show-die-info.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 1999, 2000, 2002, 2003, 2004, 2005 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-srcfiles-self.sh elfutils-0.195/tests/run-srcfiles-self.sh
---- elfutils-0.195.orig/tests/run-srcfiles-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-srcfiles-self.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-srcfiles-self.sh elfutils-0.195/tests/run-srcfiles-self.sh
+--- elfutils-0.195.orig/tests/run-srcfiles-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-srcfiles-self.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2023 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-stack-demangled-test.sh elfutils-0.195/tests/run-stack-demangled-test.sh
---- elfutils-0.195.orig/tests/run-stack-demangled-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-stack-demangled-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-stack-d-test.sh elfutils-0.195/tests/run-stack-d-test.sh
+--- elfutils-0.195.orig/tests/run-stack-d-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-stack-d-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014, 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-stack-d-test.sh elfutils-0.195/tests/run-stack-d-test.sh
---- elfutils-0.195.orig/tests/run-stack-d-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-stack-d-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-stack-demangled-test.sh elfutils-0.195/tests/run-stack-demangled-test.sh
+--- elfutils-0.195.orig/tests/run-stack-demangled-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-stack-demangled-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014, 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-stack-i-test.sh elfutils-0.195/tests/run-stack-i-test.sh
---- elfutils-0.195.orig/tests/run-stack-i-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-stack-i-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-stack-i-test.sh elfutils-0.195/tests/run-stack-i-test.sh
+--- elfutils-0.195.orig/tests/run-stack-i-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-stack-i-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2014, 2015, 2024 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strings-test.sh elfutils-0.195/tests/run-strings-test.sh
---- elfutils-0.195.orig/tests/run-strings-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strings-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strings-test.sh elfutils-0.195/tests/run-strings-test.sh
+--- elfutils-0.195.orig/tests/run-strings-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strings-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005, 2006, 2008 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 2005.
-diff -Naur elfutils-0.195.orig/tests/run-strip-groups.sh elfutils-0.195/tests/run-strip-groups.sh
---- elfutils-0.195.orig/tests/run-strip-groups.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-groups.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-g.sh elfutils-0.195/tests/run-strip-g.sh
+--- elfutils-0.195.orig/tests/run-strip-g.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-g.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2017 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-groups.sh elfutils-0.195/tests/run-strip-groups.sh
+--- elfutils-0.195.orig/tests/run-strip-groups.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-groups.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2011 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strip-g.sh elfutils-0.195/tests/run-strip-g.sh
---- elfutils-0.195.orig/tests/run-strip-g.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-g.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2017 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-strip-largealign.sh elfutils-0.195/tests/run-strip-largealign.sh
---- elfutils-0.195.orig/tests/run-strip-largealign.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-largealign.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-largealign.sh elfutils-0.195/tests/run-strip-largealign.sh
+--- elfutils-0.195.orig/tests/run-strip-largealign.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-largealign.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2021 Runsafe Security, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strip-nobitsalign.sh elfutils-0.195/tests/run-strip-nobitsalign.sh
---- elfutils-0.195.orig/tests/run-strip-nobitsalign.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-nobitsalign.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-nobitsalign.sh elfutils-0.195/tests/run-strip-nobitsalign.sh
+--- elfutils-0.195.orig/tests/run-strip-nobitsalign.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-nobitsalign.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) Red Hat, Inc., 2016.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strip-nothing.sh elfutils-0.195/tests/run-strip-nothing.sh
---- elfutils-0.195.orig/tests/run-strip-nothing.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-nothing.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-nothing.sh elfutils-0.195/tests/run-strip-nothing.sh
+--- elfutils-0.195.orig/tests/run-strip-nothing.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-nothing.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strip-reloc-ko.sh elfutils-0.195/tests/run-strip-reloc-ko.sh
---- elfutils-0.195.orig/tests/run-strip-reloc-ko.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-reloc-ko.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-reloc-ko.sh elfutils-0.195/tests/run-strip-reloc-ko.sh
+--- elfutils-0.195.orig/tests/run-strip-reloc-ko.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-reloc-ko.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  
  . $srcdir/strip-reloc-subr.sh
  
-diff -Naur elfutils-0.195.orig/tests/run-strip-reloc-ppc64.sh elfutils-0.195/tests/run-strip-reloc-ppc64.sh
---- elfutils-0.195.orig/tests/run-strip-reloc-ppc64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-reloc-ppc64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-reloc-ppc64.sh elfutils-0.195/tests/run-strip-reloc-ppc64.sh
+--- elfutils-0.195.orig/tests/run-strip-reloc-ppc64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-reloc-ppc64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  
  . $srcdir/strip-reloc-subr.sh
  
-diff -Naur elfutils-0.195.orig/tests/run-strip-reloc-self.sh elfutils-0.195/tests/run-strip-reloc-self.sh
---- elfutils-0.195.orig/tests/run-strip-reloc-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-reloc-self.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-reloc-self.sh elfutils-0.195/tests/run-strip-reloc-self.sh
+--- elfutils-0.195.orig/tests/run-strip-reloc-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-reloc-self.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  
  . $srcdir/strip-reloc-subr.sh
  
-diff -Naur elfutils-0.195.orig/tests/run-strip-remove-keep.sh elfutils-0.195/tests/run-strip-remove-keep.sh
---- elfutils-0.195.orig/tests/run-strip-remove-keep.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-remove-keep.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-remove-keep.sh elfutils-0.195/tests/run-strip-remove-keep.sh
+--- elfutils-0.195.orig/tests/run-strip-remove-keep.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-remove-keep.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strip-strmerge.sh elfutils-0.195/tests/run-strip-strmerge.sh
---- elfutils-0.195.orig/tests/run-strip-strmerge.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-strmerge.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-strmerge.sh elfutils-0.195/tests/run-strip-strmerge.sh
+--- elfutils-0.195.orig/tests/run-strip-strmerge.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-strmerge.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strip-test10.sh elfutils-0.195/tests/run-strip-test10.sh
---- elfutils-0.195.orig/tests/run-strip-test10.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-test10.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) H.J. Lu <hjl.tools@gmail.com>, 2015.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-strip-test2.sh elfutils-0.195/tests/run-strip-test2.sh
---- elfutils-0.195.orig/tests/run-strip-test2.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-test2.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 1999, 2000, 2002, 2005 Red Hat, Inc.
- # This file is part of elfutils.
- # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-strip-test3.sh elfutils-0.195/tests/run-strip-test3.sh
---- elfutils-0.195.orig/tests/run-strip-test3.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-test3.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 1999, 2000, 2002, 2003, 2005 Red Hat, Inc.
- # This file is part of elfutils.
- # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-strip-test9.sh elfutils-0.195/tests/run-strip-test9.sh
---- elfutils-0.195.orig/tests/run-strip-test9.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-test9.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) H.J. Lu <hjl.tools@gmail.com>, 2015.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-strip-test-many.sh elfutils-0.195/tests/run-strip-test-many.sh
---- elfutils-0.195.orig/tests/run-strip-test-many.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-test-many.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-test-many.sh elfutils-0.195/tests/run-strip-test-many.sh
+--- elfutils-0.195.orig/tests/run-strip-test-many.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-test-many.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strip-test.sh elfutils-0.195/tests/run-strip-test.sh
---- elfutils-0.195.orig/tests/run-strip-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-test.sh elfutils-0.195/tests/run-strip-test.sh
+--- elfutils-0.195.orig/tests/run-strip-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 1999, 2000, 2002, 2003, 2005, 2007, 2008 Red Hat, Inc.
  # This file is part of elfutils.
  # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
-diff -Naur elfutils-0.195.orig/tests/run-strip-version.sh elfutils-0.195/tests/run-strip-version.sh
---- elfutils-0.195.orig/tests/run-strip-version.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strip-version.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-test10.sh elfutils-0.195/tests/run-strip-test10.sh
+--- elfutils-0.195.orig/tests/run-strip-test10.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-test10.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) H.J. Lu <hjl.tools@gmail.com>, 2015.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-test2.sh elfutils-0.195/tests/run-strip-test2.sh
+--- elfutils-0.195.orig/tests/run-strip-test2.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-test2.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 1999, 2000, 2002, 2005 Red Hat, Inc.
+ # This file is part of elfutils.
+ # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-test3.sh elfutils-0.195/tests/run-strip-test3.sh
+--- elfutils-0.195.orig/tests/run-strip-test3.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-test3.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 1999, 2000, 2002, 2003, 2005 Red Hat, Inc.
+ # This file is part of elfutils.
+ # Written by Ulrich Drepper <drepper@redhat.com>, 1999.
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-test9.sh elfutils-0.195/tests/run-strip-test9.sh
+--- elfutils-0.195.orig/tests/run-strip-test9.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-test9.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) H.J. Lu <hjl.tools@gmail.com>, 2015.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strip-version.sh elfutils-0.195/tests/run-strip-version.sh
+--- elfutils-0.195.orig/tests/run-strip-version.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strip-version.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-strptr.sh elfutils-0.195/tests/run-strptr.sh
---- elfutils-0.195.orig/tests/run-strptr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-strptr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-strptr.sh elfutils-0.195/tests/run-strptr.sh
+--- elfutils-0.195.orig/tests/run-strptr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-strptr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-sysroot.sh elfutils-0.195/tests/run-sysroot.sh
---- elfutils-0.195.orig/tests/run-sysroot.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-sysroot.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-sysroot.sh elfutils-0.195/tests/run-sysroot.sh
+--- elfutils-0.195.orig/tests/run-sysroot.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-sysroot.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env bash
 +#!/sw/bash/bin/bash
  # Copyright (C) 2024 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-test-archive64.sh elfutils-0.195/tests/run-test-archive64.sh
---- elfutils-0.195.orig/tests/run-test-archive64.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-test-archive64.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-test-archive64.sh elfutils-0.195/tests/run-test-archive64.sh
+--- elfutils-0.195.orig/tests/run-test-archive64.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-test-archive64.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012, 2014 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-test-flag-nobits.sh elfutils-0.195/tests/run-test-flag-nobits.sh
---- elfutils-0.195.orig/tests/run-test-flag-nobits.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-test-flag-nobits.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-test-flag-nobits.sh elfutils-0.195/tests/run-test-flag-nobits.sh
+--- elfutils-0.195.orig/tests/run-test-flag-nobits.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-test-flag-nobits.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2010 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-test-manyfuncs.sh elfutils-0.195/tests/run-test-manyfuncs.sh
---- elfutils-0.195.orig/tests/run-test-manyfuncs.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-test-manyfuncs.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-test-manyfuncs.sh elfutils-0.195/tests/run-test-manyfuncs.sh
+--- elfutils-0.195.orig/tests/run-test-manyfuncs.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-test-manyfuncs.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2025 Mark J. Wielaard <mark@klomp.org>
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-typeiter-many.sh elfutils-0.195/tests/run-typeiter-many.sh
---- elfutils-0.195.orig/tests/run-typeiter-many.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-typeiter-many.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-typeiter-many.sh elfutils-0.195/tests/run-typeiter-many.sh
+--- elfutils-0.195.orig/tests/run-typeiter-many.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-typeiter-many.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-typeiter.sh elfutils-0.195/tests/run-typeiter.sh
---- elfutils-0.195.orig/tests/run-typeiter.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-typeiter.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-typeiter.sh elfutils-0.195/tests/run-typeiter.sh
+--- elfutils-0.195.orig/tests/run-typeiter.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-typeiter.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012, 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-unit-info.sh elfutils-0.195/tests/run-unit-info.sh
---- elfutils-0.195.orig/tests/run-unit-info.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-unit-info.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-unit-info.sh elfutils-0.195/tests/run-unit-info.sh
+--- elfutils-0.195.orig/tests/run-unit-info.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-unit-info.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-unstrip-M.sh elfutils-0.195/tests/run-unstrip-M.sh
---- elfutils-0.195.orig/tests/run-unstrip-M.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-unstrip-M.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-unstrip-M.sh elfutils-0.195/tests/run-unstrip-M.sh
+--- elfutils-0.195.orig/tests/run-unstrip-M.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-unstrip-M.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-unstrip-n.sh elfutils-0.195/tests/run-unstrip-n.sh
---- elfutils-0.195.orig/tests/run-unstrip-n.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-unstrip-n.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-unstrip-n.sh elfutils-0.195/tests/run-unstrip-n.sh
+--- elfutils-0.195.orig/tests/run-unstrip-n.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-unstrip-n.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-unstrip-test.sh elfutils-0.195/tests/run-unstrip-test.sh
---- elfutils-0.195.orig/tests/run-unstrip-test.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-unstrip-test.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-unstrip-test.sh elfutils-0.195/tests/run-unstrip-test.sh
+--- elfutils-0.195.orig/tests/run-unstrip-test.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-unstrip-test.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2007-2010 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-varlocs-self.sh elfutils-0.195/tests/run-varlocs-self.sh
---- elfutils-0.195.orig/tests/run-varlocs-self.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-varlocs-self.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-varlocs-self.sh elfutils-0.195/tests/run-varlocs-self.sh
+--- elfutils-0.195.orig/tests/run-varlocs-self.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-varlocs-self.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2017 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-varlocs.sh elfutils-0.195/tests/run-varlocs.sh
---- elfutils-0.195.orig/tests/run-varlocs.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-varlocs.sh	2026-04-15 18:29:52.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright (C) 2013 Red Hat, Inc.
- # This file is part of elfutils.
- #
-diff -Naur elfutils-0.195.orig/tests/run-varlocs-vars.sh elfutils-0.195/tests/run-varlocs-vars.sh
---- elfutils-0.195.orig/tests/run-varlocs-vars.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-varlocs-vars.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-varlocs-vars.sh elfutils-0.195/tests/run-varlocs-vars.sh
+--- elfutils-0.195.orig/tests/run-varlocs-vars.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-varlocs-vars.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2013, 2021 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/run-zstrptr.sh elfutils-0.195/tests/run-zstrptr.sh
---- elfutils-0.195.orig/tests/run-zstrptr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/run-zstrptr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-varlocs.sh elfutils-0.195/tests/run-varlocs.sh
+--- elfutils-0.195.orig/tests/run-varlocs.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-varlocs.sh	2026-04-15 22:29:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2013 Red Hat, Inc.
+ # This file is part of elfutils.
+ #
+diff --no-dereference -Naur elfutils-0.195.orig/tests/run-zstrptr.sh elfutils-0.195/tests/run-zstrptr.sh
+--- elfutils-0.195.orig/tests/run-zstrptr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/run-zstrptr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2015 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/strip-reloc-subr.sh elfutils-0.195/tests/strip-reloc-subr.sh
---- elfutils-0.195.orig/tests/strip-reloc-subr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/strip-reloc-subr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/strip-reloc-subr.sh elfutils-0.195/tests/strip-reloc-subr.sh
+--- elfutils-0.195.orig/tests/strip-reloc-subr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/strip-reloc-subr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2011, 2013 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/test-copymany-subr.sh elfutils-0.195/tests/test-copymany-subr.sh
---- elfutils-0.195.orig/tests/test-copymany-subr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/test-copymany-subr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/test-copymany-subr.sh elfutils-0.195/tests/test-copymany-subr.sh
+--- elfutils-0.195.orig/tests/test-copymany-subr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/test-copymany-subr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2018 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/test-subr.sh elfutils-0.195/tests/test-subr.sh
---- elfutils-0.195.orig/tests/test-subr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/test-subr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/test-subr.sh elfutils-0.195/tests/test-subr.sh
+--- elfutils-0.195.orig/tests/test-subr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/test-subr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -2346,18 +2358,18 @@ diff -Naur elfutils-0.195.orig/tests/test-subr.sh elfutils-0.195/tests/test-subr
  mkdir -p "$test_dir"
  orig_dir="${PWD}"
  cd "$test_dir"
-diff -Naur elfutils-0.195.orig/tests/test-wrapper.sh elfutils-0.195/tests/test-wrapper.sh
---- elfutils-0.195.orig/tests/test-wrapper.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/test-wrapper.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/test-wrapper.sh elfutils-0.195/tests/test-wrapper.sh
+--- elfutils-0.195.orig/tests/test-wrapper.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/test-wrapper.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Copyright (C) 2005-2012 Red Hat, Inc.
  # This file is part of elfutils.
  #
-diff -Naur elfutils-0.195.orig/tests/thread-safety-subr.sh elfutils-0.195/tests/thread-safety-subr.sh
---- elfutils-0.195.orig/tests/thread-safety-subr.sh	2026-04-15 18:29:52.000000000 -0400
-+++ elfutils-0.195/tests/thread-safety-subr.sh	2026-04-15 18:29:52.000000000 -0400
+diff --no-dereference -Naur elfutils-0.195.orig/tests/thread-safety-subr.sh elfutils-0.195/tests/thread-safety-subr.sh
+--- elfutils-0.195.orig/tests/thread-safety-subr.sh	2026-04-15 22:29:52.000000000 +0000
++++ elfutils-0.195/tests/thread-safety-subr.sh	2026-04-15 22:29:52.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash

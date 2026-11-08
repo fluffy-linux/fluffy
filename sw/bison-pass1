@@ -4,11 +4,12 @@ VERSION=3.8.2
 
 ARCHIVES=(
     9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2 https://ftpmirror.gnu.org/bison/bison-$VERSION.tar.xz
-    54ba9d1e700e52524054f50f360247cf11bf2e241d4772a4bc52bbdd2d300385 file://bison-$VERSION-fluffy-shell.patch
-    9c342a8ae8e198ec885986126813c221f84cf0b9854ec65795945ac8433fa16d file://bison-$VERSION-fluffy-test.patch
+    10b3c52bcffc7b4c3ca8bcb8c43070232c098a33d90e034179ff6763e643a969 file://bison-$VERSION-fluffy-shell.patch
+    2d66c392b5ea54ecccd46ad01d20238b087d165b4ad7d46fd2af1ae1a0e6d51c file://bison-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
+    glibc-pass1
     m4-pass1
 )
 
@@ -20,6 +21,7 @@ BUILD_NEEDS=(
     findutils-pass1
     gawk-pass1
     gcc-pass2
+    glibc-pass1
     grep-pass1
     gzip-pass1
     linux-headers

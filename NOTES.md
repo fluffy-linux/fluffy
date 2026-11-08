@@ -85,33 +85,52 @@
      - **Deprecation of `ldconfig` / `ld.so.cache` & Optimizing `glob()` in `glibc` as the Universal Lookup Primitive**:
        - `ldconfig` and `USE_LDCONFIG` (`ld.so.cache`) are completely disabled (`use_ldconfig=no`) in `glibc`. In an FHS system, `ld.so.cache` is a single-purpose hack for one subsystem (`ld.so`), whereas in Fluffy, `ld.so` (`/sw/*/lib`), `execvpe` and `bash` (`/sw/*/bin`), `gcc`/`binutils` (`/sw/*/include`, `/sw/*/lib`), and `tcl` (`/sw/*/lib`) all share the exact same access pattern: wildcard path expansion over `/sw/*/...`.
        - Rather than maintaining subsystem-specific caches or scattering custom `getdents64` loops across tools, standard POSIX `glob()` in `glibc` is the single general-purpose primitive. Optimizing `glob()` directly inside `glibc` (and using `glob()` everywhere) makes `ld.so`, `execvpe`, `bash`, `tcl`, `gcc`, and every standard `glob()` caller fast automatically.
-     - **Enriching `glibc` `glob()` with Bashisms & Delegating Bash, Tcl VFS, and Python Globbing to Glibc**:
-       - **Enriching `glibc` `glob()`**:
-         - Extend `posix/glob.c` with new flags to match modern shell and language globbing, allocating custom Fluffy flag bits from the **high end** of the bit range (`(1 << 30)` downward) so they never collide with flags that upstream `glibc` may add in future releases:
-           - `GLOB_KEEP_SLASHES` (`1 << 30`): Preserve redundant trailing slashes on literal directory patterns (`"aaa//"` -> `"aaa//"`) while still normalizing wildcard directory matches (`"aa*//"` -> `"aaa/"`).
-           - `GLOB_EXTMATCH`: Expose `FNM_EXTMATCH` (which `posix/fnmatch.c` in glibc already implements!) to enable ksh/bash extended pattern matching (`@(a|b)`, `!(x)`, `+(x)`, `*(x)`, `?(x)`).
-           - `GLOB_STAR` / `GLOB_RECURSIVE`: Implement recursive `**` directory-tree traversal.
-           - `GLOB_CASEFOLD`: Expose `FNM_CASEFOLD` for case-insensitive matching (`nocaseglob`).
-         - This eliminates the historical reason GNU Bash bundled its own `lib/glob` (cross-UNIX portability to non-glibc OSes), allowing Fluffy's `bash` to eliminate its bundled glob engine and delegate directly to `glibc` `glob()`.
-       - **Delegating Tcl VFS Glob to `glibc` `glob()`**:
-         - In Tcl's Virtual File System (`generic/tclFileName.c` and `generic/tclIOUtil.c`), `Tcl_FSMatchInDirectory` delegates native filesystem queries to `TclpMatchFiles`.
-         - Patch Tcl's native filesystem driver so that OS-level path and glob queries route directly through `glibc`'s `glob()` (translating Tcl `-types` or using `GLOB_ALTDIRFUNC`).
-         - For non-native virtual mounts (zip/starkit), Tcl retains its in-memory VFS handlers, while all real OS-level filesystem queries shell out to `glibc`'s unified `glob()`, ensuring that `/sw/*/bin`, `/sw/*/lib`, and user wildcard paths behave 100% identically across Bash, C binaries, and Tcl.
-       - **Colon (`:`) as a First-Class `glob(3)` Construct (Unbraced Alternation)**:
-         - `glibc` `posix/glob.c` already implements `GLOB_BRACE` (`{a,b,c}`), which splits alternatives and recursively invokes `glob(..., flags | GLOB_APPEND, ...)` on each branch in order. A colon-delimited path list (`a:b:c`) is simply unbraced alternation with `:` as the delimiter.
-         - By introducing a high-bit `glob(3)` flag (e.g. `GLOB_COLON` / `GLOB_PATH` at `(1 << 29)`), `glob()` treats `:` as an alternation operator:
-           - **Directory-list expansion** (`os.get_exec_path`, `File::Spec::Unix::path`, `LD_LIBRARY_PATH`, `MANPATH`, `INFOPATH`): `glob(path, GLOB_COLON | GLOB_NOCHECK | GLOB_NOESCAPE, NULL, &g)` splits on `:`, expands wildcard branches (`/sw/*/bin` -> `/sw/acl/bin`, `/sw/attr/bin`, ...) in place, and preserves literal or empty (`""`) branches in order.
-           - **Executable / file lookup across a path list** (`execvpe`, `getpath.c`, `shutil.which`, `find_in_given_path`, `bash` `findcmd`, `ld` `SEARCH_DIR`, `gcc` `incpath`): a colon-delimited prefix or pattern expands and matches across all `:`-separated branches in a single `glob()` call, causing a myriad of hand-rolled `:`-splitting and directory-scanning functions across C, Python, Perl, Tcl, Gnulib, and Bash to fall away.
-       - **Making Python's `glob` Module a Thin C Shim Around `glibc` `glob()`**:
-         - Upstream Python's `Lib/glob.py` implements pattern matching in pure Python (`os.scandir` + `fnmatch` + `re` regex compilation), which pulls `re`, `fnmatch`, `collections`, and `functools` into `sys.modules` whenever `import glob` runs (breaking `test_site.test_startup_imports` if imported in `site.py`) and bypasses `glibc`'s native `glob()` (and `/run/fluffy/index.db` acceleration).
-         - Replace Python's pure-Python `glob` engine so `Lib/glob.py` (or a built-in `_glob` / `glob` C module) is a thin, zero-dependency shim directly over `glibc`'s `glob(3)` (using `GLOB_STAR` / `GLOB_PERIOD` / `GLOB_ALTDIRFUNC` as needed for `recursive=True`, `include_hidden=True`, `root_dir`, and `dir_fd`).
-         - Because a C-backed `glob` module has zero dependency on `re`, `fnmatch`, `collections`, or `functools`, `import glob` and `glob.glob()` become lightweight enough to use unconditionally everywhere—including inside `site.py` during early interpreter startup—without polluting `sys.modules` or duplicating globbing logic across languages.
-     - **LMDB-Style Copy-on-Write `mmap` Index (`/run/fluffy/index.db`)**:
-       - **Problem**: Cold traversal of `/sw/*/bin` across thousands of configure checks (e.g. 15,000 forks during Gnulib/Coreutils) performs repeated `getdents64` and `stat` calls on the filesystem.
-       - **Single-Writer Multi-Reader (SWMR) CoW Architecture**:
-         - `swctl` maintains an LMDB-style B+ tree index stored in a shared memory-mapped file at `/run/fluffy/index.db`.
-         - **Zero-Lock, Zero-Malloc Client Traversal**: Clients (glibc `execvpe`, bash `findcmd`, ld.so) map the index read-only (`PROT_READ | MAP_SHARED`). Lookups are simple pointer traversals in memory ($O(\log N)$ or $O(1)$) with **zero mutexes, zero syscalls, and zero heap allocations**, making it 100% `vfork`/`CLONE_VM`-safe.
-         - **Live In-Place Updates for Fresh Installs**: When a new package is installed, `swctl` writes new CoW tree nodes and atomically flips a single 64-bit root pointer in the header. Active shells and processes see new commands instantly without re-opening files or bouncing namespaces.
+      - **Enriching `glibc` `glob()` with Bashisms & Delegating Bash, Tcl VFS, and Python Globbing to Glibc**:
+        - **Enriching `glibc` `glob()` & `fnmatch()`**:
+          - Extend `posix/glob.h`, `posix/glob.c`, `posix/glob_internal.h`, `posix/fnmatch.h`, and `posix/fnmatch_loop.c` with new flags to match modern shell and language globbing, allocating custom Fluffy flag bits from the **high end** of the bit range (`(1 << 30)` downward) so they never collide with flags that upstream `glibc` may add in future releases:
+            - `FNM_DOTDOT` (`1 << 30`): Leading `.` or `..` matched only explicitly (never by `*`, `?`, `[...]`, or `!(...)`).
+            - `GLOB_KEEP_SLASHES` (`1 << 30`): Preserve redundant trailing slashes on literal directory patterns (`"aaa//"` -> `"aaa//"`) while still normalizing wildcard directory matches (`"aa*//"` -> `"aaa/"`).
+            - `GLOB_PATHS` (`1 << 29`): Expand colon-separated `PATH` elements as ordered alternation, where empty segments (`""`) normalize to `"."` and alphabetical sorting applies strictly **within** each colon-delimited segment (never reordering across `:` boundaries).
+            - `GLOB_EXTMATCH` (`1 << 28`): Expose `FNM_EXTMATCH` in `glob()` and `glob_dirscan`/`__glob_pattern_type_ext` to enable ksh/bash extended pattern matching (`@(a|b)`, `!(x)`, `+(x)`, `*(x)`, `?(x)`).
+            - `GLOB_CASEFOLD` (`1 << 27`): Expose `FNM_CASEFOLD` for case-insensitive matching (`nocaseglob`).
+            - `GLOB_SKIPDOTS` (`1 << 26`): Never match `.` or `..` even when `GLOB_PERIOD` or explicit `.*` is used (`globskipdots`).
+            - `GLOB_GLOBSTAR` (`1 << 25`): Recursive `**` directory-tree traversal (`globstar`, following symlinks only for the pattern `"**"` itself and not descending into symlinked directories for `"**/..."`).
+            - `GLOB_DOTDOT` (`1 << 24`): Skip `.` and `..` unless the pattern explicitly begins with `.` (used with `GLOB_PERIOD` for Bash `dotglob`).
+          - This eliminates the historical reason GNU Bash bundled its own `lib/glob` (cross-UNIX portability to non-glibc OSes), allowing Fluffy's `bash` to completely delete `lib/glob/glob.c`, `lib/glob/glob_loop.c`, `glob_dirscan` (`lib/glob/gmisc.c`), `get_next_path_element` (`findcmd.c`), and `extract_colon_unit`/`bash_tilde_expand` in `command_word_completion_function` (`bashline.c`), delegating 100% of filesystem globbing and `PATH` expansion to `glibc` `glob()`.
+        - **Delegating Tcl VFS Glob to `glibc` `glob()`**:
+          - In Tcl's Virtual File System (`generic/tclFileName.c` and `generic/tclIOUtil.c`), `Tcl_FSMatchInDirectory` delegates native filesystem queries to `TclpMatchFiles`.
+          - Patch Tcl's globbing so both native OS queries and VFS mounts route through `glibc`'s `glob()` (using `GLOB_ALTDIRFUNC` to bridge Tcl's VFS `opendir`/`readdir`/`closedir`/`stat`/`lstat` callbacks), ensuring `/sw/*/bin`, `/sw/*/lib`, and user wildcard paths behave 100% identically across Bash, C binaries, and Tcl.
+        - **Colon (`:`) as a First-Class `glob(3)` Construct (`GLOB_PATHS`)**:
+          - `GLOB_PATHS` (`1 << 29`) treats top-level `:` (outside `[...]` and `extglob(...)`) as an ordered alternation operator:
+            - **Strict Segment Ordering**: A `PATH` like `"/x:/y/*/z:/w"` always resolves `/x` first, then alphabetically sorted matches of `/y/*/z`, then `/w`, even when alphabetical sorting is enabled (since `__glob` sorts only the slice `[oldcount, gl_pathc)` appended by each segment).
+            - **Directory-list expansion & Executable lookup**: `glob(path, GLOB_PATHS | ..., NULL, &g)` replaces hand-rolled `:`-splitting, tilde-expansion, and directory-scanning loops across C, Python, Perl, Tcl, Gnulib, and Bash.
+        - **Making Python's `glob` Module a Thin C Shim Around `glibc` `glob()`**:
+          - Upstream Python's `Lib/glob.py` implements pattern matching in pure Python (`os.scandir` + `fnmatch` + `re` regex compilation), which pulls `re`, `fnmatch`, `collections`, and `functools` into `sys.modules` whenever `import glob` runs (breaking `test_site.test_startup_imports` if imported in `site.py`) and bypasses `glibc`'s native `glob()`.
+          - Python's `posix._glob` and `_getpath.glob` delegate directly to `glibc`'s `glob(3)` (`GLOB_NOESCAPE | GLOB_KEEP_SLASHES`), keeping `import glob` and `site.py` zero-dependency and fast.
+      - **Two-Layer SquashFS-Aware Cross-Process `glob()` Cache Architecture in `glibc`**:
+        - **Problem**: Linux build workloads (`configure`, `make`, shell scripts) spawn thousands of short-lived processes (`fork`+`exec`), and 99%+ of `glob()` calls resolve `/sw/*/bin/<cmd>` (or `/sw/*/bin`, `/sw/*/lib`, `/sw/*/include`), which returns the exact same result within a mount namespace.
+        - **Design Principle**: "Get it right, then get it fast" — once `glibc` + `bash` and `glibc` + `tcl` glob unification are verified, accelerate `glob()` transparently inside `glibc`:
+        - **1. Literal-Suffix Fast Path in `glob()`**:
+          - When `glob()` expands a multi-component pattern ending in a literal suffix (e.g. `/sw/*/bin/bash` or `/sw/*/bin` with `GLOB_ONLYDIR`), avoid recursive intermediate `glob_t` heap allocations and intermediate `fstatat` calls; probe `<dir>/<literal-suffix>` directly.
+        - **2. SquashFS On-Disk Sorted Order (`SQUASHFS_MAGIC`)**:
+          - `mksquashfs` (`unsquash-4.c` / `sort_directory`) sorts all directory entries in byte (`strcmp`) order on disk, and the Linux kernel's `squashfs_readdir` yields `getdents64` entries in that exact on-disk order.
+          - On a SquashFS mount (`f_type == SQUASHFS_MAGIC`, `0x73717368`) in the `C` / `POSIX` locale (`_NL_CURRENT_WORD (LC_COLLATE, _NL_COLLATE_NRULES) == 0`), `getdents64` already streams entries in sorted order with zero `qsort` needed.
+        - **3. Layer 1 — Per-SquashFS-Mount Immutability (`/sw/<pkg>`)**:
+          - Because every mounted SquashFS image at `/sw/<pkg>` is 100% read-only and immutable, any lookup within `/sw/foo/bin` for `baz` (both positive and negative) will return the exact same result for the lifetime of that mount.
+          - Identified by its kernel mount/superblock identity (`STATX_MNT_ID_UNIQUE` `stx_mnt_id` or `(st_dev, st_ino, st_mtim)` with `f_type == SQUASHFS_MAGIC`), cached directory entry tables for `/sw/<pkg>/bin` (and `/sw/<pkg>/lib`, `/sw/<pkg>/include`) never expire while mounted and can be reused across processes and even across different build namespaces that mount the same `.squashfs` image.
+        - **4. Layer 2 — Whole-`/sw` Mount-Set Snapshot & $O(1)$ Inverted Index for `/sw/*/bin/<cmd>`**:
+          - For `/sw/*/bin/<literal>` queries, an **inverted hash table** keyed on `<cmd>` maps `"bash"` directly to `"/sw/bash/bin/bash"` (or the pre-sorted list of matching `/sw/<pkg>/bin/<cmd>` paths) in **$O(1)$ time** without iterating over the 60+ `/sw/<pkg>` directories on each call.
+          - Detecting whether `/sw/` mounts have changed in the current mount namespace is also $O(1)$:
+            - Via Linux 6.8+ `listmount()` (returning the array of 64-bit `mnt_id_unique`s under `/sw` in a single syscall with zero `/proc` or string parsing), and/or
+            - Checking `(mnt_ns_id, /sw st_dev, /sw st_ino, /sw st_ctim)` via `stat("/sw")` (since `swctl` creates/updates mountpoints under `/sw` whenever mounts change, and within a `swctl build` sandbox `/sw` mounts never change after `pivot_root`).
+        - **5. Cross-Process Persistence & Permission / Namespace Safety**:
+          - Because in-memory per-process caching doesn't help across `fork`+`exec` of short-lived processes, the cache lives in a cross-process shared memory / `mmap` segment (`PROT_READ | MAP_SHARED`).
+          - Keyed by mount namespace (`/proc/self/ns/mnt` + root `/` `(st_dev, st_ino)` for `chroot` safety) and effective credentials (`euid`, `egid`), with a fast-path `all_world_rx` bit when all traversed `/sw/<pkg>` and `/sw/<pkg>/bin` directories have `0755` (`S_IROTH | S_IXOTH`) permissions (the 99.99% case in Fluffy SquashFS images built with `-all-root`), allowing a single namespace cache entry to serve all UIDs safely.
+        - **6. Benchmarking Plan (Before vs. After)**:
+          - Measure and compare baseline (uncached `glibc` `glob()`) vs. optimized (literal-suffix fast path + two-layer SquashFS cross-process cache) across:
+            1. **In-process `glob()` microbenchmark**: Tight loop of `glob("/sw/*/bin/bash", GLOB_PATHS, ...)` and `glob("/sw/*/bin", GLOB_PATHS | GLOB_ONLYDIR, ...)` (latency per call and syscall count via `strace -c`).
+            2. **Cross-process short-lived process microbenchmark**: Spawning $N=1{,}000$ short-lived child processes (`fork`+`execvp` and `/sw/bash/bin/bash -c 'true'` / external command lookup with `PATH=/sw/*/bin`), measuring wall-clock time, system CPU time, and total VFS syscalls (`openat`, `getdents64`, `fstatat`).
+            3. **Real-world build / configure macrobenchmark**: Wall-clock time and `sys` CPU time of a `configure` script run (e.g. `bash` or `coreutils` `./configure`) inside the Fluffy build sandbox.
 
 5. **Hermetic, Unprivileged Builds & Unified Tooling (`swctl build`, `swctl install`)**
    - **Developer Environment Convention (`direnv` & `sudo --preserve-env`)**:
@@ -211,6 +230,7 @@
        - `X-fluffy.image-checksum=<sha256>`: package image SHA-256 checksum (preserved across rebuilds when `cmp -s` confirms the new `.squashfs` is byte-identical).
        - `X-fluffy.needs="<dep1>,<dep2>"`: comma-separated list of runtime dependency packages.
        - `X-fluffy.recipe-checksum=<sha256>`: sha256 checksum of the package recipe in `sw/<pkg>` (and any included files) combined with the sorted `<canon_pkg>:<X-fluffy.image-checksum>` pairs of its transitive mounted dependency closure (`compute_from`), recording both recipe and dependency provenance without mutating recipe files on disk.
+        - `X-fluffy.cflags="..."` / `X-fluffy.ldflags="..."`: Package compile and link metadata declared via `HAS_CFLAGS=` and `HAS_LDFLAGS=` in library recipes (e.g. `HAS_LDFLAGS=-lzstd` in `sw/zstd`, `HAS_LDFLAGS="-lssl -lcrypto"` in `sw/openssl`). During `lockdown_exec`, `swctl` inspects `X-fluffy.cflags` and `X-fluffy.ldflags` for every dependency in `BUILD_NEEDS` and automatically exports `<DEP>_CFLAGS`, `<DEP>_LDFLAGS`, and `<DEP>_LIBS` (defaulting `<DEP>_CFLAGS` to `" "` when only `X-fluffy.ldflags` is set so Autoconf `pkg.m4` accepts the override without `pkg-config`), so consuming a library never requires manually specifying `pkg-config`, `CFLAGS`, `LDFLAGS`, or `LIBS`.
      - **Compact Ed25519 signatures**: Raw Ed25519 signatures are exactly 64 bytes (88 base64 characters; 100 characters in OpenBSD signify format)—no massive ASCII armor blocks or multi-kilobyte RSA blobs.
      - **Single-file verification**: The signature on line 1 covers lines 2 through EOF. Verifying line 1 against the trusted public key validates the entire repository index in one shot (all package filenames, mountpoints, squashfs image checksums, and dependency closures) without needing separate detached `.sig` files or per-package signatures:
        ```bash
@@ -401,6 +421,8 @@
   - 8.56 `packaging` (26.3) verified and registered (`packaging-26.3.squashfs`, 304K): built with `flit_core` via Python `/sw/*/lib/python3.14/site-packages` late-bound discovery and `glibc` `glob(3)` (`GLOB_KEEP_SLASHES`) shim.
   - 8.57 `wheel` (0.48.0) verified and registered (`wheel-0.48.0.squashfs`, 76K): built with `flit_core` and `packaging`.
   - 8.58 `setuptools` (84.0.0) verified and registered (`setuptools-84.0.0.squashfs`, 1.7M): built with `wheel` and `packaging`.
+  - 8.59 `meson` (1.12.0) verified and registered (`meson-1.12.0.squashfs`, 3.0M): patched with environment-driven `SystemLibraryDependency` (`<DEP>_CFLAGS` and `<DEP>_LDFLAGS` / `<DEP>_LIBS` like Autoconf `pkg.m4`), missing-shebang script invocation rewrite, wildcard `PATH` expansion via `os.get_exec_path`, and unit tests (`test_fluffy_system_library_dependency`, `test_fluffy_shebang_rewrite`) passing (188 tests).
+  - 8.60 `kmod` (34.2) verified and registered (`kmod-34.2.squashfs`, 160K): built with Zstandard, XZ, Zlib, and OpenSSL PKCS7 signature support via `HAS_LDFLAGS` / `X-fluffy.ldflags` in `fstab` without hardcoded flags; patched `libkmod` and `depmod` to glob `/sw/*/{etc,lib}/{modprobe,depmod}.d` and `/etc/{modprobe,depmod}.d`; all 16/16 test suites passing (including `blacklist_fluffy_glob` and `depmod_search_order_fluffy_sw`).
 
 - **`libstdcpp` Standalone Build & POSIX Gthreads Support**:
   - When `libstdc++-v3` is configured standalone outside of the full GCC build tree, its configure script checks for gthreads by compiling `#include "gthr.h"`.

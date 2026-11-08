@@ -1,6 +1,5 @@
-diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/dl-load.c
---- glibc-2.44.orig/elf/dl-load.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/elf/dl-load.c	2026-07-24 13:16:45.000000000 +0000
+--- glibc-2.44.orig/elf/dl-load.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/elf/dl-load.c	2026-11-07 19:36:14.669196420 -0500
 @@ -19,6 +19,7 @@
  
  #include <elf.h>
@@ -9,7 +8,16 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
  #include <fcntl.h>
  #include <libintl.h>
  #include <stdbool.h>
-@@ -139,15 +140,37 @@
+@@ -52,6 +53,8 @@
+ #include <dl-machine-reject-phdr.h>
+ #include <dl-prop.h>
+ #include <not-cancel.h>
++#define FC_WITH_RTLD_HELPERS 1
++#include <posix/glob_fluffy_cache.h>
+ 
+ #include <endian.h>
+ #if BYTE_ORDER == BIG_ENDIAN
+@@ -139,15 +142,37 @@
  
    for (size_t idx = 0; idx < nsystem_dirs_len; ++idx)
      {
@@ -50,15 +58,20 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
      }
  
    dl_scratch_buffer_free (&scratch);
-@@ -691,8 +714,153 @@
+@@ -691,8 +716,265 @@
  #endif
  
    /* First set up the rest of the default search directory entries.  */
++  for (size_t k = 0; k < FC_MAX_PKGS; ++k)
++    fc_rtld_dir_pkg_idx[k] = 0xffff;
++
 +  struct expanded_dir
 +  {
 +    const char *dirname;
 +    size_t dirnamelen;
 +    bool existing;
++    bool no_hwcaps;
++    uint16_t pkg_idx;
 +  };
 +  struct expanded_dir *exp_dirs = NULL;
 +  size_t exp_count = 0;
@@ -80,81 +93,186 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
 +	  const char *suffix = next_slash != NULL ? next_slash : "/";
 +	  size_t suffix_len = next_slash != NULL ? (size_t) ((strp + dlen) - next_slash) : 1;
 +
-+	  char *parent_dir = malloc (parent_len + 1);
-+	  if (parent_dir != NULL)
++	  bool used_fc = false;
++	  if (parent_len < 256 && suffix_len >= 2 && suffix[0] == '/')
 +	    {
-+	      memcpy (parent_dir, strp, parent_len);
-+	      parent_dir[parent_len] = '\0';
-+	      int dir_fd = __open64_nocancel (parent_dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-+	      free (parent_dir);
-+	      if (dir_fd >= 0)
++	      const char *sub1 = suffix + 1;
++	      size_t sub1_len = (suffix[suffix_len - 1] == '/')
++				? (suffix_len - 2) : (suffix_len - 1);
++	      int sub1_id = fc_subdir_id (sub1, sub1_len);
++	      if (sub1_id >= 0)
 +		{
-+		  size_t batch_start = exp_count;
-+		  char dent_buf[4096];
-+		  ssize_t nread;
-+		  while ((nread = __getdents64 (dir_fd, dent_buf, sizeof (dent_buf))) > 0)
++		  char pbuf[256];
++		  memcpy (pbuf, strp, parent_len);
++		  pbuf[parent_len] = '\0';
++		  const struct fc_snapshot *snap
++		    = fc_rtld_get_snapshot (pbuf, parent_len);
++		  if (snap != NULL)
 +		    {
-+		      for (ssize_t bpos = 0; bpos < nread; )
++		      used_fc = true;
++		      const struct fc_top_bucket *tb
++			= fc_lookup_top (snap, sub1, sub1_len);
++		      const struct fc_sub_bucket *hw_sb
++			= (sub1_id == 1)
++			  ? fc_lookup_sub (snap, 1, "glibc-hwcaps", 12) : NULL;
++		      if (tb != NULL)
 +			{
-+			  struct dirent64 *d = (struct dirent64 *) (dent_buf + bpos);
-+			  bpos += d->d_reclen;
-+			  if (d->d_name[0] == '.')
-+			    continue;
-+			  size_t namelen = strlen (d->d_name);
-+			  size_t plen = prefix_len + namelen + suffix_len;
-+			  char *p = malloc (plen + 1);
-+			  if (p == NULL)
-+			    continue;
-+			  memcpy (p, strp, prefix_len);
-+			  memcpy (p + prefix_len, d->d_name, namelen);
-+			  memcpy (p + prefix_len + namelen, suffix, suffix_len);
-+			  p[plen] = '\0';
-+			  bool dup = false;
-+			  for (size_t k = 0; k < exp_count; ++k)
-+			    if (exp_dirs[k].dirnamelen == plen
-+				&& memcmp (exp_dirs[k].dirname, p, plen) == 0)
-+			      {
-+				dup = true;
-+				break;
-+			      }
-+			  struct __stat64_t64 st;
-+			  if (!dup && __stat64_time64 (p, &st) == 0 && S_ISDIR (st.st_mode))
++			  for (size_t w = 0; w < FC_MAX_PKGS / 64; ++w)
 +			    {
-+			      if (exp_count == exp_cap)
++			      uint64_t word = tb->dir_mask.bits[w];
++			      while (word != 0)
 +				{
-+				  size_t new_cap = exp_cap == 0 ? 32 : exp_cap * 2;
-+				  struct expanded_dir *new_dirs
-+				    = malloc (new_cap * sizeof (*new_dirs));
-+				  if (new_dirs == NULL)
++				  unsigned int bit
++				    = (unsigned int) __builtin_ctzll (word);
++				  word &= word - 1;
++				  uint32_t pkg_idx = (uint32_t) (w * 64 + bit);
++				  const char *pkg = snap->pkg_names[pkg_idx];
++				  size_t namelen = strlen (pkg);
++				  size_t plen = prefix_len + namelen + suffix_len;
++				  char *p = malloc (plen + 1);
++				  if (p == NULL)
++				    continue;
++				  memcpy (p, strp, prefix_len);
++				  memcpy (p + prefix_len, pkg, namelen);
++				  memcpy (p + prefix_len + namelen, suffix,
++					  suffix_len);
++				  p[plen] = '\0';
++				  bool dup = false;
++				  for (size_t k = 0; k < exp_count; ++k)
++				    if (exp_dirs[k].dirnamelen == plen
++					&& memcmp (exp_dirs[k].dirname, p,
++						   plen) == 0)
++				      {
++					dup = true;
++					break;
++				      }
++				  if (dup)
 +				    {
 +				      free (p);
 +				      continue;
 +				    }
-+				  if (exp_dirs != NULL)
++				  if (exp_count == exp_cap)
 +				    {
-+				      memcpy (new_dirs, exp_dirs, exp_count * sizeof (*new_dirs));
-+				      free (exp_dirs);
++				      size_t new_cap
++					= exp_cap == 0 ? 128 : exp_cap * 2;
++				      struct expanded_dir *new_dirs
++					= malloc (new_cap * sizeof (*new_dirs));
++				      if (new_dirs == NULL)
++					{
++					  free (p);
++					  continue;
++					}
++				      if (exp_dirs != NULL)
++					{
++					  memcpy (new_dirs, exp_dirs,
++						  exp_count * sizeof (*new_dirs));
++					  free (exp_dirs);
++					}
++				      exp_dirs = new_dirs;
++				      exp_cap = new_cap;
 +				    }
-+				  exp_dirs = new_dirs;
-+				  exp_cap = new_cap;
++				  exp_dirs[exp_count].dirname = p;
++				  exp_dirs[exp_count].dirnamelen = plen;
++				  exp_dirs[exp_count].existing = true;
++				  exp_dirs[exp_count].no_hwcaps
++				    = (sub1_id == 1
++				       && (hw_sb == NULL
++					   || !(hw_sb->dir_mask.bits[w]
++						& (1ULL << bit))));
++				  exp_dirs[exp_count].pkg_idx
++				    = (sub1_id == 1)
++				      ? (uint16_t) pkg_idx : 0xffff;
++				  ++exp_count;
 +				}
-+			      size_t pos = exp_count;
-+			      while (pos > batch_start
-+				     && strcmp (exp_dirs[pos - 1].dirname, p) > 0)
-+				{
-+				  exp_dirs[pos] = exp_dirs[pos - 1];
-+				  --pos;
-+				}
-+			      exp_dirs[pos].dirname = p;
-+			      exp_dirs[pos].dirnamelen = plen;
-+			      exp_dirs[pos].existing = true;
-+			      ++exp_count;
 +			    }
-+			  else
-+			    free (p);
 +			}
 +		    }
-+		  __close_nocancel_nostatus (dir_fd);
++		}
++	    }
++
++	  if (!used_fc)
++	    {
++	      char *parent_dir = malloc (parent_len + 1);
++	      if (parent_dir != NULL)
++		{
++		  memcpy (parent_dir, strp, parent_len);
++		  parent_dir[parent_len] = '\0';
++		  int dir_fd = __open64_nocancel (parent_dir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++		  free (parent_dir);
++		  if (dir_fd >= 0)
++		    {
++		      size_t batch_start = exp_count;
++		      char dent_buf[4096];
++		      ssize_t nread;
++		      while ((nread = __getdents64 (dir_fd, dent_buf, sizeof (dent_buf))) > 0)
++			{
++			  for (ssize_t bpos = 0; bpos < nread; )
++			    {
++			      struct dirent64 *d = (struct dirent64 *) (dent_buf + bpos);
++			      bpos += d->d_reclen;
++			      if (d->d_name[0] == '.')
++				continue;
++			      if (d->d_type != DT_DIR && d->d_type != DT_LNK
++				  && d->d_type != DT_UNKNOWN)
++				continue;
++			      size_t namelen = strlen (d->d_name);
++			      size_t plen = prefix_len + namelen + suffix_len;
++			      char *p = malloc (plen + 1);
++			      if (p == NULL)
++				continue;
++			      memcpy (p, strp, prefix_len);
++			      memcpy (p + prefix_len, d->d_name, namelen);
++			      memcpy (p + prefix_len + namelen, suffix, suffix_len);
++			      p[plen] = '\0';
++			      bool dup = false;
++			      for (size_t k = 0; k < exp_count; ++k)
++				if (exp_dirs[k].dirnamelen == plen
++				    && memcmp (exp_dirs[k].dirname, p, plen) == 0)
++				  {
++				    dup = true;
++				    break;
++				  }
++			      struct __stat64_t64 st;
++			      if (!dup && __stat64_time64 (p, &st) == 0 && S_ISDIR (st.st_mode))
++				{
++				  if (exp_count == exp_cap)
++				    {
++				      size_t new_cap = exp_cap == 0 ? 128 : exp_cap * 2;
++				      struct expanded_dir *new_dirs
++					= malloc (new_cap * sizeof (*new_dirs));
++				      if (new_dirs == NULL)
++					{
++					  free (p);
++					  continue;
++					}
++				      if (exp_dirs != NULL)
++					{
++					  memcpy (new_dirs, exp_dirs, exp_count * sizeof (*new_dirs));
++					  free (exp_dirs);
++					}
++				      exp_dirs = new_dirs;
++				      exp_cap = new_cap;
++				    }
++				  size_t pos = exp_count;
++				  while (pos > batch_start
++					 && strcmp (exp_dirs[pos - 1].dirname, p) > 0)
++				    {
++				      exp_dirs[pos] = exp_dirs[pos - 1];
++				      --pos;
++				    }
++				  exp_dirs[pos].dirname = p;
++				  exp_dirs[pos].dirnamelen = plen;
++				  exp_dirs[pos].existing = true;
++				  exp_dirs[pos].no_hwcaps = false;
++				  exp_dirs[pos].pkg_idx = 0xffff;
++				  ++exp_count;
++				}
++			      else
++				free (p);
++			    }
++			}
++		      __close_nocancel_nostatus (dir_fd);
++		    }
 +		}
 +	    }
 +	}
@@ -172,7 +290,7 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
 +	    {
 +	      if (exp_count == exp_cap)
 +		{
-+		  size_t new_cap = exp_cap == 0 ? 32 : exp_cap * 2;
++		  size_t new_cap = exp_cap == 0 ? 128 : exp_cap * 2;
 +		  struct expanded_dir *new_dirs
 +		    = malloc (new_cap * sizeof (*new_dirs));
 +		  if (new_dirs != NULL)
@@ -191,6 +309,8 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
 +		  exp_dirs[exp_count].dirname = strp;
 +		  exp_dirs[exp_count].dirnamelen = dlen;
 +		  exp_dirs[exp_count].existing = false;
++		  exp_dirs[exp_count].no_hwcaps = false;
++		  exp_dirs[exp_count].pkg_idx = 0xffff;
 +		  ++exp_count;
 +		}
 +	    }
@@ -205,7 +325,7 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
    if (__rtld_search_dirs.dirs == NULL)
      {
        errstring = N_("cannot create search path array");
-@@ -705,7 +873,7 @@
+@@ -705,7 +987,7 @@
  		/ sizeof (struct r_search_path_elem));
  
    __rtld_search_dirs.dirs[0]
@@ -214,7 +334,7 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
  	      * sizeof (*__rtld_search_dirs.dirs[0]));
    if (__rtld_search_dirs.dirs[0] == NULL)
      {
-@@ -715,6 +883,7 @@
+@@ -715,6 +997,7 @@
  
    __rtld_search_dirs.malloced = 0;
    pelem = GL(dl_all_dirs) = __rtld_search_dirs.dirs[0];
@@ -222,7 +342,7 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
    strp = system_dirs;
    idx = 0;
  
-@@ -727,22 +896,32 @@
+@@ -727,22 +1010,39 @@
        pelem->what = "system search path";
        pelem->where = NULL;
  
@@ -242,12 +362,19 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
 +	  pelem->dirnamelen = system_dirs_len[idx];
 +	  strp += system_dirs_len[idx] + 1;
 +	}
++
++      if (idx < FC_MAX_PKGS)
++	fc_rtld_dir_pkg_idx[idx] = (exp_count > 0) ? exp_dirs[idx].pkg_idx : 0xffff;
  
        /* System paths must be absolute.  */
        assert (pelem->dirname[0] == '/');
        for (cnt = 0; cnt < ncapstr; ++cnt)
 -	pelem->status[cnt] = unknown;
-+	pelem->status[cnt] = (exp_count > 0 && exp_dirs[idx].existing && cnt == ncapstr - 1) ? existing : unknown;
++	if (exp_count > 0 && exp_dirs[idx].existing)
++	  pelem->status[cnt] = (cnt == ncapstr - 1) ? existing
++			       : (exp_dirs[idx].no_hwcaps ? nonexisting : unknown);
++	else
++	  pelem->status[cnt] = unknown;
  
 -      pelem->next = (++idx == nsystem_dirs_len ? NULL : (pelem + round_size));
 +      pelem->next = (++idx == total_dirs ? NULL : (pelem + round_size));
@@ -262,10 +389,102 @@ diff -Naur --no-dereference glibc-2.44.orig/elf/dl-load.c glibc-2.44.source/elf/
    *aelem = NULL;
  
    /* This points to the map of the main object.  If there is no main
-diff -Naur --no-dereference glibc-2.44.orig/posix/execvpe.c glibc-2.44.source/posix/execvpe.c
---- glibc-2.44.orig/posix/execvpe.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/posix/execvpe.c	2026-10-30 04:01:45.513050900 +0000
-@@ -20,6 +20,9 @@
+@@ -1788,9 +2088,34 @@
+   struct dl_scratch_buffer scratch = dl_scratch_buffer_init ();
+   dl_scratch_buffer_allocate (&scratch, bufsize, 0);
+   char *buf = scratch.data;
++  const struct fc_sub_bucket *fc_sb = NULL;
++  bool use_fc_rtld = (sps == &__rtld_search_dirs
++		      && fc_rtld_snap != NULL
++		      && namelen > 1
++		      && !__glibc_unlikely (GLRO(dl_debug_mask) & DL_DEBUG_LIBS));
++  if (use_fc_rtld)
++    fc_sb = fc_lookup_sub (fc_rtld_snap, 1, name, namelen - 1);
++
+   do
+     {
+       struct r_search_path_elem *this_dir = *dirs;
++      if (use_fc_rtld)
++	{
++	  size_t dir_idx = (size_t) (dirs - sps->dirs);
++	  if (dir_idx < FC_MAX_PKGS)
++	    {
++	      uint16_t pkg_idx = fc_rtld_dir_pkg_idx[dir_idx];
++	      if (pkg_idx < FC_MAX_PKGS
++		  && (ncapstr == 1 || this_dir->status[0] == nonexisting)
++		  && (fc_sb == NULL
++		      || !(fc_sb->all_mask.bits[pkg_idx / 64]
++			   & (1ULL << (pkg_idx % 64)))))
++		{
++		  any = 1;
++		  continue;
++		}
++	    }
++	}
+       size_t buflen = 0;
+       size_t cnt;
+       char *edp;
+--- glibc-2.44.orig/elf/dl-usage.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/elf/dl-usage.c	2026-07-24 09:16:45.000000000 -0400
+@@ -98,8 +98,10 @@
+   if (map != NULL)
+     print_search_path_for_help_1 (map->l_runpath_dirs.dirs);
+ 
++#ifdef USE_LDCONFIG
+   if (!GLRO(dl_inhibit_cache))
+     _dl_printf ("  (libraries located via %s)\n", LD_SO_CACHE);
++#endif
+ 
+   print_search_path_for_help_1 (__rtld_search_dirs.dirs);
+ }
+--- glibc-2.44.orig/elf/Makefile	2026-11-07 19:12:06.488065767 -0500
++++ glibc-2.44/elf/Makefile	2026-11-07 19:11:57.007224624 -0500
+@@ -210,7 +210,8 @@
+ others-static   = sln
+ install-rootsbin = sln
+ sln-modules	:= static-stubs
+-extra-objs	+= $(sln-modules:=.o)
++extra-objs	+= $(sln-modules:=.o) xmalloc.o
++others-extras	+= xmalloc
+ 
+ ifeq (yes,$(use-ldconfig))
+ ifeq (yes,$(build-shared))
+@@ -230,7 +231,7 @@
+   xstrdup \
+   # ldconfig-modules
+ extra-objs	+= $(ldconfig-modules:=.o)
+-others-extras   = $(ldconfig-modules)
++others-extras   += $(ldconfig-modules)
+ endif
+ endif
+ 
+@@ -498,7 +499,6 @@
+   tst-rtld-no-malloc \
+   tst-rtld-no-malloc-audit \
+   tst-rtld-no-malloc-preload \
+-  tst-rtld-run-static \
+   tst-single_threaded \
+   tst-single_threaded-pthread \
+   tst-sonamemove-dlopen \
+@@ -725,11 +725,15 @@
+ tests-static+= $(tests-execstack-static-$(have-z-execstack))
+ tests-special += $(tests-execstack-special-$(have-z-execstack))
+ ifeq ($(run-built-tests),yes)
++ifeq (yes,$(use-ldconfig))
+ tests-special += \
+   $(objpfx)tst-ldconfig-X.out \
+   $(objpfx)tst-ldconfig-install.out \
+   $(objpfx)tst-ldconfig-p.out \
+   $(objpfx)tst-ldconfig-soname.out \
++  # tests-special
++endif
++tests-special += \
+   $(objpfx)tst-rtld-help.out \
+   # tests-special
+ ifeq (yes,$(build-shared))
+--- glibc-2.44.orig/posix/execvpe.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/execvpe.c	2026-11-07 19:35:25.751786582 -0500
+@@ -20,10 +20,15 @@
  #include <stdbool.h>
  #include <stdlib.h>
  #include <string.h>
@@ -275,7 +494,13 @@ diff -Naur --no-dereference glibc-2.44.orig/posix/execvpe.c glibc-2.44.source/po
  #include <errno.h>
  #include <paths.h>
  #include <confstr.h>
-@@ -128,6 +131,120 @@
+ #include <sys/param.h>
++#define FC_WITH_EXECVPE_HELPERS 1
++#include "glob_fluffy_cache.h"
+ 
+ #ifndef PATH_MAX
+ # ifdef MAXPATHLEN
+@@ -128,6 +133,183 @@
  	  continue;
  	}
  
@@ -306,6 +531,64 @@ diff -Naur --no-dereference glibc-2.44.orig/posix/execvpe.c glibc-2.44.source/po
 +	  const char *next_slash = memchr (star, '/', subp - star);
 +	  const char *suffix = next_slash ? next_slash : "";
 +	  size_t suffix_len = next_slash ? (subp - next_slash) : 0;
++
++	  if (star == p + ((last_slash == p && *last_slash != '/') ? 0 : (last_slash - p + 1))
++	      && (star + 1 == subp || star[1] == '/')
++	      && suffix_len > 1 && suffix[0] == '/'
++	      && memchr (suffix + 1, '/', suffix_len - 1) == NULL)
++	    {
++	      char matched_pkgs[FC_EXECVPE_MAX_MATCHES][FC_MAX_PKG_NAME];
++	      int fc_n = fc_execvpe_lookup (prefix_buf, prefix_len,
++	                                    suffix + 1, suffix_len - 1,
++	                                    file, file_len - 1, matched_pkgs);
++	      if (fc_n >= 0)
++	        {
++	          char exec_buf[PATH_MAX];
++	          for (int i = 0; i < fc_n; ++i)
++	            {
++	              size_t elen = strlen (matched_pkgs[i]);
++	              if (prefix_len + 1 + elen + suffix_len + 1 + file_len
++	                  > sizeof (exec_buf))
++	                continue;
++
++	              char *eb = exec_buf;
++	              memcpy (eb, prefix_buf, prefix_len);
++	              eb += prefix_len;
++	              if (eb > exec_buf && *(eb - 1) != '/')
++	                *eb++ = '/';
++	              memcpy (eb, matched_pkgs[i], elen);
++	              eb += elen;
++	              memcpy (eb, suffix, suffix_len);
++	              eb += suffix_len;
++	              if (eb > exec_buf && *(eb - 1) != '/')
++	                *eb++ = '/';
++	              memcpy (eb, file, file_len);
++
++	              __execve (exec_buf, argv, envp);
++
++	              if (errno == ENOEXEC && exec_script)
++	                maybe_script_execute (exec_buf, argv, envp);
++
++	              switch (errno)
++	                {
++	                  case EACCES:
++	                    got_eacces = true;
++	                    [[fallthrough]];
++	                  case ENOENT:
++	                  case ESTALE:
++	                  case ENOTDIR:
++	                  case ENAMETOOLONG:
++	                  case ENODEV:
++	                  case ETIMEDOUT:
++	                    break;
++
++	                  default:
++	                    return -1;
++	                }
++	            }
++	          goto next_elem;
++	        }
++	    }
 +
 +	  int dir_fd = __open64_nocancel (prefix_buf, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
 +	  if (dir_fd >= 0)
@@ -367,6 +650,11 @@ diff -Naur --no-dereference glibc-2.44.orig/posix/execvpe.c glibc-2.44.source/po
 +		    *eb++ = '/';
 +		  memcpy (eb, file, file_len);
 +
++		  struct statx stx;
++		  long sr = FC_SYSCALL (statx, AT_FDCWD, exec_buf, 0, STATX_TYPE, &stx);
++		  if (sr == -ENOENT || sr == -ENOTDIR)
++		    continue;
++
 +		  __execve (exec_buf, argv, envp);
 +
 +		  if (errno == ENOEXEC && exec_script)
@@ -396,7 +684,7 @@ diff -Naur --no-dereference glibc-2.44.orig/posix/execvpe.c glibc-2.44.source/po
        /* Use the current path entry, plus a '/' if nonempty, plus the file to
           execute.  */
        char *pend = mempcpy (buffer, p, subp - p);
-@@ -174,6 +291,7 @@
+@@ -174,6 +356,7 @@
  	    return -1;
  	}
  
@@ -404,152 +692,1063 @@ diff -Naur --no-dereference glibc-2.44.orig/posix/execvpe.c glibc-2.44.source/po
        if (*subp++ == '\0')
  	break;
      }
-diff -Naur --no-dereference glibc-2.44.orig/sysdeps/posix/system.c glibc-2.44.source/sysdeps/posix/system.c
---- glibc-2.44.orig/sysdeps/posix/system.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/sysdeps/posix/system.c	2026-10-30 04:01:45.514145351 +0000
-@@ -25,14 +25,15 @@
- #include <sys/types.h>
- #include <sys/wait.h>
- #include <stdio.h>
-+#include <paths.h>
+--- glibc-2.44.orig/posix/fnmatch.h	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/fnmatch.h	2026-11-07 19:11:57.007755544 -0500
+@@ -38,6 +38,7 @@
+ # define FNM_LEADING_DIR (1 << 3)	/* Ignore `/...' after a match.  */
+ # define FNM_CASEFOLD	 (1 << 4)	/* Compare without regard to case.  */
+ # define FNM_EXTMATCH	 (1 << 5)	/* Use ksh-like extended matching. */
++# define FNM_DOTDOT	 (1 << 30)	/* Leading `.' or `..' matched only explicitly.  */
+ #endif
  
- #include <libc-lock.h>
- #include <not-errno.h>
- #include <not-cancel.h>
- #include <internal-signals.h>
+ /* Value returned by `fnmatch' if STRING does not match PATTERN.  */
+--- glibc-2.44.orig/posix/fnmatch_loop.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/fnmatch_loop.c	2026-11-07 19:11:57.007894623 -0500
+@@ -19,6 +19,17 @@
+ # include <stdint.h>
+ #endif
  
--#define	SHELL_PATH	"/bin/sh"	/* Path of the shell.  */
--#define	SHELL_NAME	"sh"		/* Name to give it.  */
-+#define	SHELL_PATH	_PATH_BSHELL	/* Path of the shell.  */
-+#define	SHELL_NAME	"bash"		/* Name to give it.  */
++#define SDOT_OR_DOTDOT(s, se) \
++  ((s) < (se) && (s)[0] == L_('.') \
++   && ((s) + 1 == (se) \
++       || ((s)[1] == L_('.') && (s) + 2 == (se))))
++
++#define PDOT_OR_DOTDOT(s, se) \
++  ((s) < (se) && (s)[0] == L_('.') \
++   && ((s) + 1 == (se) || (s)[1] == L_('/') \
++       || ((s)[1] == L_('.') \
++           && ((s) + 2 == (se) || (s)[2] == L_('/')))))
++
+ struct STRUCT
+ {
+   const CHAR *pattern;
+@@ -61,7 +72,8 @@
+         case L_('?'):
+           if (__glibc_unlikely (flags & FNM_EXTMATCH) && *p == '(')
+             {
+-              int res = EXT (c, p, n, string_end, no_leading_period, flags);
++              int res = EXT (c, p, n, string_end, no_leading_period,
++                             n == string ? flags : (flags & ~FNM_DOTDOT));
+               if (res != -1)
+                 return res;
+             }
+@@ -72,6 +84,12 @@
+             return FNM_NOMATCH;
+           else if (*n == L_('.') && no_leading_period)
+             return FNM_NOMATCH;
++          else if (__glibc_unlikely (flags & FNM_DOTDOT)
++                   && ((n == string && SDOT_OR_DOTDOT (n, string_end))
++                       || ((flags & FNM_FILE_NAME) && n > string
++                           && n[-1] == L_('/')
++                           && PDOT_OR_DOTDOT (n, string_end))))
++            return FNM_NOMATCH;
+           break;
  
+         case L_('\\'):
+@@ -90,7 +108,8 @@
+         case L_('*'):
+           if (__glibc_unlikely (flags & FNM_EXTMATCH) && *p == '(')
+             {
+-              int res = EXT (c, p, n, string_end, no_leading_period, flags);
++              int res = EXT (c, p, n, string_end, no_leading_period,
++                             n == string ? flags : (flags & ~FNM_DOTDOT));
+               if (res != -1)
+                 return res;
+             }
+@@ -104,6 +123,12 @@
  
- /* This system implementation aims to be thread-safe, which requires to
-diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h glibc-2.44.source/sysdeps/unix/sysv/linux/paths.h
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h	2026-10-31 15:30:51.032176834 +0000
-+++ glibc-2.44.source/sysdeps/unix/sysv/linux/paths.h	2026-10-31 15:30:53.590764256 +0000
-@@ -33,12 +33,11 @@
- #define	_PATHS_H_
+           if (n != string_end && *n == L_('.') && no_leading_period)
+             return FNM_NOMATCH;
++          if (__glibc_unlikely (flags & FNM_DOTDOT)
++              && ((n == string && SDOT_OR_DOTDOT (n, string_end))
++                  || ((flags & FNM_FILE_NAME) && n > string
++                      && n[-1] == L_('/')
++                      && PDOT_OR_DOTDOT (n, string_end))))
++            return FNM_NOMATCH;
  
- /* Default search path. */
--#define	_PATH_DEFPATH	"/usr/bin:/bin"
-+#define	_PATH_DEFPATH	"/sw/*/bin"
- /* All standard utilities path. */
--#define	_PATH_STDPATH \
--	"/usr/bin:/bin:/usr/sbin:/sbin"
-+#define	_PATH_STDPATH	"/sw/*/bin"
+           for (c = *p++; c == L_('?') || c == L_('*'); c = *p++)
+             {
+@@ -175,9 +200,11 @@
+                       && *p == L_('(')))
+                 {
+                   int flags2 = ((flags & FNM_FILE_NAME)
+-                                ? flags : (flags & ~FNM_PERIOD));
++                                ? (flags & ~FNM_DOTDOT)
++                                : (flags & ~(FNM_PERIOD | FNM_DOTDOT)));
  
--#define	_PATH_BSHELL	"/bin/sh"
-+#define	_PATH_BSHELL	"/sw/bash/bin/bash"
- #define	_PATH_CONSOLE	"/dev/console"
- #define	_PATH_CSHELL	"/bin/csh"
- #define	_PATH_DEVDB	"/var/run/dev.db"
-diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist glibc-2.44.source/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-07-24 13:16:45.000000000 +0000
-@@ -540,7 +540,7 @@
- GLIBC_2.2.5 _longjmp F
- GLIBC_2.2.5 _mcleanup F
- GLIBC_2.2.5 _mcount F
--GLIBC_2.2.5 _nl_default_dirname D 0x12
-+GLIBC_2.2.5 _nl_default_dirname D 0x17
- GLIBC_2.2.5 _nl_domain_bindings D 0x8
- GLIBC_2.2.5 _nl_msg_cat_cntr D 0x4
- GLIBC_2.2.5 _null_auth D 0x18
-diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed glibc-2.44.source/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-10-30 04:01:45.514409221 +0000
-@@ -1 +1 @@
--s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\264\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_
-+s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\2\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_
-diff -Naur --no-dereference glibc-2.44.orig/elf/dl-usage.c glibc-2.44.source/elf/dl-usage.c
---- glibc-2.44.orig/elf/dl-usage.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/elf/dl-usage.c	2026-07-24 13:16:45.000000000 +0000
-@@ -98,8 +98,10 @@
-   if (map != NULL)
-     print_search_path_for_help_1 (map->l_runpath_dirs.dirs);
+-                  for (--p; n < endp; ++n, no_leading_period = false)
++                  const CHAR *lim = (c == L_('[')) ? endp : endp + 1;
++                  for (--p; n < lim; ++n, no_leading_period = false)
+                     if (FCT (p, n, string_end, no_leading_period, flags2,
+                              &end) == 0)
+                       goto found;
+@@ -194,7 +221,8 @@
+               else
+                 {
+                   int flags2 = ((flags & FNM_FILE_NAME)
+-                                ? flags : (flags & ~FNM_PERIOD));
++                                ? (flags & ~FNM_DOTDOT)
++                                : (flags & ~(FNM_PERIOD | FNM_DOTDOT)));
  
-+#ifdef USE_LDCONFIG
-   if (!GLRO(dl_inhibit_cache))
-     _dl_printf ("  (libraries located via %s)\n", LD_SO_CACHE);
-+#endif
+                   if (c == L_('\\') && !(flags & FNM_NOESCAPE))
+                     c = *p;
+@@ -244,6 +272,13 @@
+               /* '/' cannot be matched.  */
+               return FNM_NOMATCH;
  
-   print_search_path_for_help_1 (__rtld_search_dirs.dirs);
++            if (__glibc_unlikely (flags & FNM_DOTDOT)
++                && ((n == string && SDOT_OR_DOTDOT (n, string_end))
++                    || ((flags & FNM_FILE_NAME) && n > string
++                        && n[-1] == L_('/')
++                        && PDOT_OR_DOTDOT (n, string_end))))
++              return FNM_NOMATCH;
++
+             not = (*p == L_('!') || (posixly_correct < 0 && *p == L_('^')));
+             if (not)
+               ++p;
+@@ -925,7 +960,8 @@
+         case L_('!'):
+           if (__glibc_unlikely (flags & FNM_EXTMATCH) && *p == '(')
+             {
+-              int res = EXT (c, p, n, string_end, no_leading_period, flags);
++              int res = EXT (c, p, n, string_end, no_leading_period,
++                             n == string ? flags : (flags & ~FNM_DOTDOT));
+               if (res != -1)
+                 return res;
+             }
+@@ -1118,16 +1154,18 @@
+                          rs == string
+                          ? no_leading_period
+                          : rs[-1] == '/' && NO_LEADING_PERIOD (flags),
+-                         flags & FNM_FILE_NAME
+-                         ? flags : flags & ~FNM_PERIOD, NULL) == 0
++                         (flags & FNM_FILE_NAME
++                          ? flags : flags & ~FNM_PERIOD)
++                         & (rs == string ? ~0 : ~FNM_DOTDOT), NULL) == 0
+                     /* This didn't work.  Try the whole pattern.  */
+                     || (rs != string
+                         && FCT (pattern - 1, rs, string_end,
+                                 rs == string
+                                 ? no_leading_period
+                                 : rs[-1] == '/' && NO_LEADING_PERIOD (flags),
+-                                flags & FNM_FILE_NAME
+-                                ? flags : flags & ~FNM_PERIOD, NULL) == 0)))
++                                (flags & FNM_FILE_NAME
++                                 ? flags : flags & ~FNM_PERIOD)
++                                & ~FNM_DOTDOT, NULL) == 0)))
+               /* It worked.  Signal success.  */
+               goto success;
+         }
+@@ -1177,11 +1215,16 @@
+ 
+           /* If none of the patterns matched see whether the rest does.  */
+           if (runp_i == PASTE (PATTERN_PREFIX, _size) (&list)
++              && !(no_leading_period && string != string_end
++                   && string[0] == L_('.'))
++              && !(__glibc_unlikely (flags & FNM_DOTDOT)
++                   && SDOT_OR_DOTDOT (string, string_end))
+               && (FCT (p, rs, string_end,
+                        rs == string
+                        ? no_leading_period
+                        : rs[-1] == '/' && NO_LEADING_PERIOD (flags),
+-                       flags & FNM_FILE_NAME ? flags : flags & ~FNM_PERIOD,
++                       (flags & FNM_FILE_NAME ? flags : flags & ~FNM_PERIOD)
++                       & (rs == string ? ~0 : ~FNM_DOTDOT),
+                        NULL) == 0))
+             /* This is successful.  */
+             goto success;
+@@ -1225,3 +1268,5 @@
+ #undef BTOWC
+ #undef WIDE_CHAR_VERSION
+ #undef FINDIDX
++#undef SDOT_OR_DOTDOT
++#undef PDOT_OR_DOTDOT
+--- glibc-2.44.orig/posix/glob.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/glob.c	2026-11-07 19:35:25.751640612 -0500
+@@ -95,6 +95,8 @@
+ 
+ #include <flexmember.h>
+ #include <glob_internal.h>
++#define FC_WITH_GLOB_HELPERS 1
++#include "glob_fluffy_cache.h"
+ #include <scratch_buffer.h>
+ 
+ static const char *next_brace_sub (const char *begin, int flags) __THROWNL;
+@@ -285,6 +287,760 @@
+   return *cp != '\0' ? cp : NULL;
  }
-diff -Naur --no-dereference glibc-2.44.orig/elf/Makefile glibc-2.44.source/elf/Makefile
---- glibc-2.44.orig/elf/Makefile	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/elf/Makefile	2026-07-24 13:16:45.000000000 +0000
-@@ -210,7 +210,8 @@
- others-static   = sln
- install-rootsbin = sln
- sln-modules	:= static-stubs
--extra-objs	+= $(sln-modules:=.o)
-+extra-objs	+= $(sln-modules:=.o) xmalloc.o
-+others-extras	+= xmalloc
  
- ifeq (yes,$(use-ldconfig))
- ifeq (yes,$(build-shared))
-@@ -230,7 +231,7 @@
-   xstrdup \
-   # ldconfig-modules
- extra-objs	+= $(ldconfig-modules:=.o)
--others-extras   = $(ldconfig-modules)
-+others-extras   += $(ldconfig-modules)
- endif
- endif
++static const char *
++glob_patscan (const char *string, const char *end, int delim, bool quote)
++{
++  int pnest = 0;
++  int bnest = 0;
++  bool skip = false;
++  const char *bfirst = NULL;
++
++  if (string >= end)
++    return NULL;
++
++  for (const char *s = string; *s != '\0'; ++s)
++    {
++      if (s >= end)
++        return s;
++      if (skip)
++        {
++          skip = false;
++          continue;
++        }
++      switch (*s)
++        {
++        case '\\':
++          if (quote)
++            skip = true;
++          break;
++        case '[':
++          if (bnest == 0)
++            {
++              bfirst = s + 1;
++              if (*bfirst == '!' || *bfirst == '^')
++                ++bfirst;
++              ++bnest;
++            }
++          else if (s[1] == ':' || s[1] == '.' || s[1] == '=')
++            {
++              char type = s[1];
++              const char *t = s + 2;
++              while (*t != '\0' && (type == '.' || *t != ']'))
++                {
++                  if (*t == type && t[1] == ']')
++                    {
++                      s = t + 1;
++                      break;
++                    }
++                  ++t;
++                }
++            }
++          break;
++        case ']':
++          if (bnest > 0 && s != bfirst)
++            {
++              --bnest;
++              bfirst = NULL;
++            }
++          break;
++        case '(':
++          if (bnest == 0)
++            ++pnest;
++          break;
++        case ')':
++          if (bnest == 0 && pnest-- <= 0)
++            return s + 1;
++          break;
++        default:
++          if (bnest == 0 && pnest == 0 && delim != 0 && *s == delim)
++            return s + 1;
++          break;
++        }
++    }
++  return NULL;
++}
++
++static bool
++is_extglob (const char *p)
++{
++  return ((p[0] == '?' || p[0] == '*' || p[0] == '+' || p[0] == '@'
++           || p[0] == '!')
++          && p[1] == '(');
++}
++
++static const char *
++glob_dirscan (const char *pat, int dirsep, bool quote)
++{
++  const char *d = NULL;
++  const char *pe = pat + strlen (pat);
++
++  for (const char *p = pat; p && *p; ++p)
++    {
++      if (is_extglob (p))
++        {
++          const char *np = glob_patscan (p + 2, pe, 0, quote);
++          if (np == NULL || np == p + 2)
++            continue;
++          p = np - 1;
++        }
++      else if (*p == dirsep)
++        d = p;
++    }
++  return d;
++}
++
++/* Scan from CP up to END looking for the next top-level ':' (outside
++   brackets and extglob parens).  Returns pointer to ':' or END.  */
++static const char *
++next_colon_sub (const char *cp, const char *end, int flags)
++{
++  bool quote = !(flags & GLOB_NOESCAPE);
++  bool extmatch = (flags & GLOB_EXTMATCH) != 0;
++
++  while (cp < end && *cp != '\0')
++    {
++      if (quote && *cp == '\\')
++        {
++          ++cp;
++          if (cp < end && *cp != '\0')
++            ++cp;
++        }
++      else if (*cp == '[')
++        {
++          const char *p = cp + 1;
++          if (p < end && (*p == '!' || *p == '^'))
++            ++p;
++          if (p < end && *p == ']')
++            ++p;
++          while (p < end && *p != '\0' && *p != ']')
++            {
++              if (quote && *p == '\\' && p + 1 < end)
++                ++p;
++              else if (p[0] == '['
++                       && (p[1] == ':' || p[1] == '.' || p[1] == '='))
++                {
++                  char type = p[1];
++                  const char *t = p + 2;
++                  while (t < end && *t != '\0' && (type == '.' || *t != ']'))
++                    {
++                      if (*t == type && t + 1 < end && t[1] == ']')
++                        {
++                          p = t + 1;
++                          break;
++                        }
++                      ++t;
++                    }
++                }
++              ++p;
++            }
++          if (p < end && *p == ']')
++            cp = p + 1;
++          else
++            ++cp;
++        }
++      else if (extmatch && cp + 1 < end && is_extglob (cp))
++        {
++          const char *np = glob_patscan (cp + 2, end, 0, quote);
++          if (np != NULL && np > cp + 2)
++            cp = np;
++          else
++            ++cp;
++        }
++      else if (*cp == ':')
++        return cp;
++      else
++        ++cp;
++    }
++  return end;
++}
++
++static bool skipname (const char *pat, const char *pat_end, const char *dname,
++                      int flags);
++
++static bool
++extglob_skipname (const char *pat, const char *pat_end, const char *dname,
++                  int flags)
++{
++  bool quote = !(flags & GLOB_NOESCAPE);
++  bool wild = (*pat == '*' || *pat == '?');
++  const char *pp = pat + 2;
++  const char *pe = glob_patscan (pp, pat_end, 0, quote);
++  if (pe == NULL || pe > pat_end || pe[-1] != ')')
++    return false;
++
++  if (pe == pat_end && memchr (pp, '|', pe - pp - 1) == NULL)
++    return skipname (pp, pe - 1, dname, flags);
++
++  bool r = true;
++  const char *t;
++  while ((t = glob_patscan (pp, pe, '|', quote)) != NULL)
++    {
++      const char *sub_end = (is_extglob (pp) && t[-1] == ')') ? t : t - 1;
++      r = skipname (pp, sub_end, dname, flags);
++      if (!r)
++        return false;
++      pp = t;
++      if (pp == pe)
++        break;
++    }
++
++  if (pp == pat_end)
++    return r;
++
++  if (wild && pe < pat_end)
++    return skipname (pe, pat_end, dname, flags);
++
++  return true;
++}
++
++static bool
++skipname (const char *pat, const char *pat_end, const char *dname, int flags)
++{
++  bool quote = !(flags & GLOB_NOESCAPE);
++  if ((flags & GLOB_EXTMATCH) && pat + 2 <= pat_end && is_extglob (pat))
++    return extglob_skipname (pat, pat_end, dname, flags);
++
++  bool is_dot_or_dotdot = (dname[0] == '.'
++                           && (dname[1] == '\0'
++                               || (dname[1] == '.' && dname[2] == '\0')));
++  if ((flags & GLOB_SKIPDOTS) && is_dot_or_dotdot)
++    return true;
++
++  bool pat_starts_dot = (pat < pat_end
++                         && (pat[0] == '.'
++                             || (quote && pat + 1 < pat_end
++                                 && pat[0] == '\\' && pat[1] == '.')));
++
++  if ((flags & GLOB_PERIOD) && (flags & GLOB_DOTDOT) && !pat_starts_dot
++      && is_dot_or_dotdot)
++    return true;
++
++  if (!(flags & GLOB_PERIOD) && dname[0] == '.' && !pat_starts_dot)
++    return true;
++
++  return false;
++}
++
++/* Return 0 if DIR is a real directory, -2 if DIR is a symlink, -1 otherwise.  */
++static int
++glob_testdir (const char *dir, int flags, const glob_t *pglob, bool check_symlink)
++{
++  struct_stat st;
++  struct_stat64 st64;
++  if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++    {
++      int r = check_symlink ? pglob->GLOB_LSTAT (dir, &st)
++                            : pglob->gl_stat (dir, &st);
++      if (r < 0)
++        return -1;
++      if (check_symlink && S_ISLNK (st.st_mode))
++        return -2;
++      return S_ISDIR (st.st_mode) ? 0 : -1;
++    }
++  else
++    {
++      int r = GLOB_FSTATAT64 (AT_FDCWD, dir, &st64,
++                              check_symlink ? AT_SYMLINK_NOFOLLOW : 0);
++      if (r < 0)
++        return -1;
++      if (check_symlink && S_ISLNK (st64.st_mode))
++        return -2;
++      return S_ISDIR (st64.st_mode) ? 0 : -1;
++    }
++}
++
++/* Internal flags for globstar_scan.  */
++#define GS_ADDCURDIR 1
++#define GS_NULLDIR   2
++
++static int
++globstar_scan (const char *sdir, int flags, int gs_flags,
++               int (*errfunc) (const char *, int), glob_t *pglob)
++{
++  void *stream = (__builtin_expect (flags & GLOB_ALTDIRFUNC, 0)
++                  ? (*pglob->gl_opendir) (sdir)
++                  : opendir (sdir));
++  if (stream == NULL)
++    {
++      if (errno != ENOTDIR
++          && ((errfunc != NULL && (*errfunc) (sdir, errno))
++              || (flags & GLOB_ERR)))
++        return GLOB_ABORTED;
++      return 0;
++    }
++
++  if (gs_flags & GS_ADDCURDIR)
++    {
++      size_t newcount = pglob->gl_pathc + pglob->gl_offs;
++      if (newcount > SIZE_MAX / sizeof (char *) - 2)
++        {
++          if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++            (*pglob->gl_closedir) (stream);
++          else
++            closedir (stream);
++          return GLOB_NOSPACE;
++        }
++      char **new_gl_pathv = realloc (pglob->gl_pathv,
++                                     (newcount + 2) * sizeof (char *));
++      if (new_gl_pathv == NULL)
++        {
++          if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++            (*pglob->gl_closedir) (stream);
++          else
++            closedir (stream);
++          return GLOB_NOSPACE;
++        }
++      pglob->gl_pathv = new_gl_pathv;
++      pglob->gl_pathv[newcount] = strdup ((gs_flags & GS_NULLDIR) ? "" : sdir);
++      if (pglob->gl_pathv[newcount] == NULL)
++        {
++          if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++            (*pglob->gl_closedir) (stream);
++          else
++            closedir (stream);
++          return GLOB_NOSPACE;
++        }
++      pglob->gl_pathv[newcount + 1] = NULL;
++      ++pglob->gl_pathc;
++    }
++
++  size_t sdirlen = strlen (sdir);
++  bool ign_dot = (gs_flags & GS_NULLDIR) && sdirlen == 1 && sdir[0] == '.';
++  bool rm_dot = (sdirlen == 1 && sdir[0] == '.');
++
++  while (1)
++    {
++      struct readdir_result d;
++      if (__builtin_expect (flags & GLOB_ALTDIRFUNC, 0))
++        d = convert_dirent (GL_READDIR (pglob, stream));
++      else
++        {
++#ifdef COMPILE_GLOB64
++          d = convert_dirent (__readdir (stream));
++#else
++          d = convert_dirent64 (__readdir64 (stream));
++#endif
++        }
++      if (d.name == NULL)
++        break;
++
++      if (d.name[0] == '.'
++          && (d.name[1] == '\0' || (d.name[1] == '.' && d.name[2] == '\0')))
++        continue;
++
++      if (skipname ("**", "**" + 2, d.name, flags))
++        continue;
++
++      size_t namelen = strlen (d.name);
++      char *subdir;
++      if (ign_dot || rm_dot)
++        subdir = strdup (d.name);
++      else if (sdirlen > 0 && sdir[sdirlen - 1] == '/')
++        {
++          subdir = malloc (sdirlen + namelen + 1);
++          if (subdir != NULL)
++            mempcpy (mempcpy (subdir, sdir, sdirlen), d.name, namelen + 1);
++        }
++      else
++        {
++          subdir = malloc (sdirlen + 1 + namelen + 1);
++          if (subdir != NULL)
++            {
++              char *p = mempcpy (subdir, sdir, sdirlen);
++              *p++ = '/';
++              memcpy (p, d.name, namelen + 1);
++            }
++        }
++      if (subdir == NULL)
++        {
++          if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++            (*pglob->gl_closedir) (stream);
++          else
++            closedir (stream);
++          return GLOB_NOSPACE;
++        }
++
++      int isdir = glob_testdir (subdir, flags, pglob, true);
++      if ((flags & GLOB_ONLYDIR) && isdir < 0
++          && (isdir != -2 || glob_testdir (subdir, flags, pglob, false) < 0))
++        {
++          free (subdir);
++          continue;
++        }
++
++      size_t newcount = pglob->gl_pathc + pglob->gl_offs;
++      if (newcount > SIZE_MAX / sizeof (char *) - 2)
++        {
++          free (subdir);
++          if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++            (*pglob->gl_closedir) (stream);
++          else
++            closedir (stream);
++          return GLOB_NOSPACE;
++        }
++      char **new_gl_pathv = realloc (pglob->gl_pathv,
++                                     (newcount + 2) * sizeof (char *));
++      if (new_gl_pathv == NULL)
++        {
++          free (subdir);
++          if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++            (*pglob->gl_closedir) (stream);
++          else
++            closedir (stream);
++          return GLOB_NOSPACE;
++        }
++      pglob->gl_pathv = new_gl_pathv;
++      pglob->gl_pathv[newcount] = subdir;
++      pglob->gl_pathv[newcount + 1] = NULL;
++      ++pglob->gl_pathc;
++
++      if (isdir == 0)
++        {
++          int r = globstar_scan (subdir, flags, 0, errfunc, pglob);
++          if (r != 0)
++            {
++              if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++                (*pglob->gl_closedir) (stream);
++              else
++                closedir (stream);
++              return r;
++            }
++        }
++    }
++
++  int save = errno;
++  if (__glibc_unlikely (flags & GLOB_ALTDIRFUNC))
++    (*pglob->gl_closedir) (stream);
++  else
++    closedir (stream);
++  __set_errno (save);
++  return 0;
++}
++
++
++static bool
++fc_has_dot_component (const char *s)
++{
++  while (*s != '\0')
++    {
++      if (s[0] == '.'
++          && (s[1] == '\0' || s[1] == '/'
++              || (s[1] == '.' && (s[2] == '\0' || s[2] == '/'))))
++        return true;
++      const char *slash = strchr (s, '/');
++      if (slash == NULL)
++        break;
++      if (slash[1] == '/' || slash[1] == '\0')
++        return true;
++      s = slash + 1;
++    }
++  return false;
++}
++
++static int
++fc_glob_try (const char *dirname, size_t dirlen, const char *filename,
++             int flags, glob_t *pglob, int *out_err)
++{
++  if (flags & (GLOB_ERR | GLOB_ALTDIRFUNC | GLOB_CASEFOLD
++               | GLOB_GLOBSTAR | GLOB_PERIOD | GLOB_KEEP_SLASHES))
++    return 0;
++  if (filename == NULL || filename[0] == '\0')
++    return 0;
++
++  bool quote = !(flags & GLOB_NOESCAPE);
++  bool extmatch = (flags & GLOB_EXTMATCH) != 0;
++
++  /* Case A: prefix / * / sub1 */
++  if (dirlen >= 2 && dirname[dirlen - 2] == '/' && dirname[dirlen - 1] == '*'
++      && (dirlen == 2 || dirname[dirlen - 3] != '/'))
++    {
++      if (strcmp (filename, ".") != 0 && strcmp (filename, "..") != 0
++          && __glob_pattern_type_ext (filename, quote, extmatch) == GLOBPAT_NONE)
++        {
++          size_t prefix_len = (dirlen == 2) ? 1 : (dirlen - 2);
++          if (prefix_len < 256)
++            {
++              char pbuf[256];
++              memcpy (pbuf, dirname, prefix_len);
++              pbuf[prefix_len] = '\0';
++              if (__glob_pattern_type_ext (pbuf, quote, extmatch) == GLOBPAT_NONE)
++                {
++#ifdef _LIBC
++                  __libc_lock_lock (fc_lock);
++#endif
++                  const struct fc_snapshot *snap = fc_get_snapshot (pbuf, prefix_len);
++                  if (snap != NULL)
++                    {
++                      size_t fnlen = strlen (filename);
++                      const struct fc_top_bucket *tb
++                        = fc_lookup_top (snap, filename, fnlen);
++                      int err = 0;
++                      if (tb != NULL)
++                        {
++                          const struct fc_mask *mask
++                            = (flags & GLOB_ONLYDIR) ? &tb->dir_mask : &tb->all_mask;
++                          err = fc_emit_mask_matches (snap, mask, &tb->dir_mask,
++                                                      pbuf, prefix_len,
++                                                      filename, fnlen,
++                                                      NULL, 0, flags, pglob);
++                        }
++#ifdef _LIBC
++                      __libc_lock_unlock (fc_lock);
++#endif
++                      if (err != 0)
++                        {
++                          *out_err = err;
++                          return -1;
++                        }
++                      return 1;
++                    }
++#ifdef _LIBC
++                  __libc_lock_unlock (fc_lock);
++#endif
++                }
++            }
++        }
++      return 0;
++    }
++
++  /* Case B: prefix / * / sub1 / sub2 */
++  const char *last_slash = memrchr (dirname, '/', dirlen);
++  if (last_slash != NULL && last_slash >= dirname + 2
++      && last_slash[-1] == '*' && last_slash[-2] == '/')
++    {
++      const char *sub1 = last_slash + 1;
++      size_t sub1_len = (size_t) ((dirname + dirlen) - sub1);
++      int sub1_id = fc_subdir_id (sub1, sub1_len);
++      if (sub1_id >= 0)
++        {
++          size_t star_pos = (size_t) (last_slash - 2 - dirname);
++          if (star_pos == 0 || dirname[star_pos - 1] != '/')
++            {
++              size_t prefix_len = (star_pos == 0) ? 1 : star_pos;
++              if (prefix_len < 256)
++                {
++                  char pbuf[256];
++                  memcpy (pbuf, dirname, prefix_len);
++                  pbuf[prefix_len] = '\0';
++                  if (__glob_pattern_type_ext (pbuf, quote, extmatch) == GLOBPAT_NONE)
++                    {
++                      int fn_meta = __glob_pattern_type_ext (filename, quote, extmatch);
++#ifdef _LIBC
++                      __libc_lock_lock (fc_lock);
++#endif
++                      const struct fc_snapshot *snap = fc_get_snapshot (pbuf, prefix_len);
++                      if (snap != NULL)
++                        {
++                          int err = 0;
++                          if (fn_meta == GLOBPAT_NONE
++                              && strcmp (filename, ".") != 0
++                              && strcmp (filename, "..") != 0)
++                            {
++                              size_t fnlen = strlen (filename);
++                              const struct fc_sub_bucket *sb
++                                = fc_lookup_sub (snap, (uint8_t) sub1_id,
++                                                 filename, fnlen);
++                              if (sb != NULL)
++                                {
++                                  const struct fc_mask *mask
++                                    = ((flags & GLOB_ONLYDIR)
++                                       ? &sb->dir_mask : &sb->all_mask);
++                                  err = fc_emit_mask_matches (snap, mask,
++                                                              &sb->dir_mask,
++                                                              pbuf, prefix_len,
++                                                              sub1, sub1_len,
++                                                              filename, fnlen,
++                                                              flags, pglob);
++                                }
++                            }
++                          else if (fn_meta != GLOBPAT_NONE)
++                            {
++                              const struct fc_top_bucket *tb
++                                = fc_lookup_top (snap, sub1, sub1_len);
++                              if (tb != NULL)
++                                {
++                                  int fnm_flags
++                                    = (FNM_PATHNAME
++                                       | (!(flags & GLOB_PERIOD) ? FNM_PERIOD : 0)
++                                       | ((flags & GLOB_NOESCAPE) ? FNM_NOESCAPE : 0)
++                                       | ((flags & GLOB_EXTMATCH) ? FNM_EXTMATCH : 0)
++                                       | ((flags & GLOB_CASEFOLD) ? FNM_CASEFOLD : 0)
++                                       | ((flags & GLOB_DOTDOT) ? FNM_DOTDOT : 0));
++                                  const char *pat_end = filename + strlen (filename);
++                                  for (size_t w = 0; w < FC_MAX_PKGS / 64 && err == 0; ++w)
++                                    {
++                                      uint64_t word = tb->dir_mask.bits[w];
++                                      while (word != 0)
++                                        {
++                                          unsigned int bit = (unsigned int) __builtin_ctzll (word);
++                                          word &= word - 1;
++                                          uint32_t pkg_idx = (uint32_t) (w * 64 + bit);
++                                          const char *pkg = snap->pkg_names[pkg_idx];
++                                          size_t pkg_len = strlen (pkg);
++                                          const struct fc_pkg_meta *pm = &snap->pkg_meta[pkg_idx];
++                                          uint32_t st = pm->sub_start[sub1_id];
++                                          uint16_t cnt = pm->sub_count[sub1_id];
++                                          for (uint16_t k = 0; k < cnt; ++k)
++                                            {
++                                              const struct fc_dirent *de = &snap->dirents[st + k];
++                                              if ((flags & GLOB_ONLYDIR) && !de->is_dir)
++                                                continue;
++                                              const char *ename = snap->strtab + de->name_off;
++                                              if (skipname (filename, pat_end, ename, flags))
++                                                continue;
++                                              if (fnmatch (filename, ename, fnm_flags) == 0)
++                                                {
++                                                  bool add_slash = ((flags & GLOB_MARK) && de->is_dir);
++                                                  err = fc_append_match (pglob, pbuf, prefix_len,
++                                                                         pkg, pkg_len,
++                                                                         sub1, sub1_len,
++                                                                         ename, de->name_len,
++                                                                         add_slash);
++                                                  if (err != 0)
++                                                    break;
++                                                }
++                                            }
++                                          if (err != 0)
++                                            break;
++                                        }
++                                    }
++                                }
++                            }
++#ifdef _LIBC
++                          __libc_lock_unlock (fc_lock);
++#endif
++                          if (err != 0)
++                            {
++                              *out_err = err;
++                              return -1;
++                            }
++                          return 1;
++                        }
++#ifdef _LIBC
++                      __libc_lock_unlock (fc_lock);
++#endif
++                    }
++                }
++            }
++        }
++    }
++  return 0;
++}
++
++static int
++glob_literal_suffix_try (const char *dirname, size_t dirlen,
++                         const char *filename, int flags,
++                         glob_t *pglob, int *out_err)
++{
++  if (flags & (GLOB_ERR | GLOB_ALTDIRFUNC | GLOB_CASEFOLD
++               | GLOB_GLOBSTAR | GLOB_PERIOD | GLOB_KEEP_SLASHES))
++    return 0;
++  if (filename == NULL || filename[0] == '\0'
++      || strcmp (filename, ".") == 0 || strcmp (filename, "..") == 0)
++    return 0;
++
++  bool quote = !(flags & GLOB_NOESCAPE);
++  bool extmatch = (flags & GLOB_EXTMATCH) != 0;
++  if (__glob_pattern_type_ext (filename, quote, extmatch) != GLOBPAT_NONE)
++    return 0;
++
++  const char *star = strstr (dirname, "/*");
++  if (star == NULL || (star > dirname && star[-1] == '/'))
++    return 0;
++  if (star[2] != '\0' && (star[2] != '/' || star[3] == '\0' || star[3] == '/'))
++    return 0;
++
++  size_t prefix_len = (star == dirname) ? 1 : (size_t) (star - dirname);
++  if (prefix_len >= PATH_MAX)
++    return 0;
++
++  char pbuf[PATH_MAX];
++  memcpy (pbuf, dirname, prefix_len);
++  pbuf[prefix_len] = '\0';
++  if (__glob_pattern_type_ext (pbuf, quote, extmatch) != GLOBPAT_NONE)
++    return 0;
++
++  const char *mid = (star[2] == '/') ? (star + 3) : NULL;
++  size_t mid_len = (mid != NULL) ? (size_t) ((dirname + dirlen) - mid) : 0;
++  if (mid != NULL)
++    {
++      if (__glob_pattern_type_ext (mid, quote, extmatch) != GLOBPAT_NONE
++          || fc_has_dot_component (mid))
++        return 0;
++    }
++
++  size_t fnlen = strlen (filename);
++  DIR *stream = opendir (pbuf);
++  if (stream == NULL)
++    return 1;
++
++  int dfd = dirfd (stream);
++  while (1)
++    {
++      struct readdir_result d;
++#ifdef COMPILE_GLOB64
++      d = convert_dirent (__readdir (stream));
++#else
++      d = convert_dirent64 (__readdir64 (stream));
++#endif
++      if (d.name == NULL)
++        break;
++      if (d.name[0] == '.')
++        continue;
++      dirent_type dtype = readdir_result_type (d);
++      if (dtype != DT_DIR && dtype != DT_LNK && dtype != DT_UNKNOWN)
++        continue;
++
++      size_t dlen = strlen (d.name);
++      size_t rel_len = dlen + (mid != NULL ? 1 + mid_len : 0) + 1 + fnlen;
++      if (rel_len >= PATH_MAX)
++        continue;
++
++      char rel_path[PATH_MAX];
++      char *rp = mempcpy (rel_path, d.name, dlen);
++      if (mid != NULL)
++        {
++          *rp++ = '/';
++          rp = mempcpy (rp, mid, mid_len);
++        }
++      *rp++ = '/';
++      memcpy (rp, filename, fnlen + 1);
++
++      struct_stat64 st64;
++      int st_flags = (flags & GLOB_ONLYDIR) ? 0 : AT_SYMLINK_NOFOLLOW;
++      if (GLOB_FSTATAT64 (dfd, rel_path, &st64, st_flags) == 0
++          && (!(flags & GLOB_ONLYDIR) || S_ISDIR (st64.st_mode)))
++        {
++          bool add_slash = false;
++          if (flags & GLOB_MARK)
++            {
++              if (S_ISDIR (st64.st_mode))
++                add_slash = true;
++              else if (S_ISLNK (st64.st_mode)
++                       && GLOB_FSTATAT64 (dfd, rel_path, &st64, 0) == 0
++                       && S_ISDIR (st64.st_mode))
++                add_slash = true;
++            }
++          int err = fc_append_match (pglob, pbuf, prefix_len,
++                                     d.name, dlen,
++                                     mid != NULL ? mid : filename,
++                                     mid != NULL ? mid_len : fnlen,
++                                     mid != NULL ? filename : NULL,
++                                     mid != NULL ? fnlen : 0,
++                                     add_slash);
++          if (err != 0)
++            {
++              closedir (stream);
++              *out_err = err;
++              return -1;
++            }
++        }
++    }
++
++  closedir (stream);
++  return 1;
++}
++
+ #ifndef GLOB_ATTRIBUTE
+ # define GLOB_ATTRIBUTE
+ #endif
+@@ -320,11 +1076,6 @@
+       return -1;
+     }
  
-@@ -498,7 +499,6 @@
-   tst-rtld-no-malloc \
-   tst-rtld-no-malloc-audit \
-   tst-rtld-no-malloc-preload \
--  tst-rtld-run-static \
-   tst-single_threaded \
-   tst-single_threaded-pthread \
-   tst-sonamemove-dlopen \
-@@ -725,11 +725,15 @@
- tests-static+= $(tests-execstack-static-$(have-z-execstack))
- tests-special += $(tests-execstack-special-$(have-z-execstack))
- ifeq ($(run-built-tests),yes)
-+ifeq (yes,$(use-ldconfig))
- tests-special += \
-   $(objpfx)tst-ldconfig-X.out \
-   $(objpfx)tst-ldconfig-install.out \
-   $(objpfx)tst-ldconfig-p.out \
-   $(objpfx)tst-ldconfig-soname.out \
-+  # tests-special
-+endif
-+tests-special += \
-   $(objpfx)tst-rtld-help.out \
-   # tests-special
- ifeq (yes,$(build-shared))
-diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/configure glibc-2.44.source/sysdeps/unix/sysv/linux/configure
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/configure	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/sysdeps/unix/sysv/linux/configure	2026-07-24 13:16:45.000000000 +0000
-@@ -134,7 +134,7 @@
+-  /* POSIX requires all slashes to be matched.  This means that with
+-     a trailing slash we must match only directories.  */
+-  if (pattern[0] && pattern[strlen (pattern) - 1] == '/')
+-    flags |= GLOB_ONLYDIR;
+-
+   if (!(flags & GLOB_DOOFFS))
+     /* Have to do this so 'globfree' knows where to start freeing.  It
+        also makes all the code that uses gl_offs simpler. */
+@@ -352,6 +1103,89 @@
+         }
+     }
  
++  if (flags & GLOB_PATHS)
++    {
++      if (pattern[0] == '\0')
++        {
++          pattern = ".";
++          flags &= ~GLOB_PATHS;
++        }
++      else
++        {
++          const char *pat_end = pattern + strlen (pattern);
++          const char *first_colon = next_colon_sub (pattern, pat_end, flags);
++          if (first_colon < pat_end)
++            {
++              size_t firstc = pglob->gl_pathc;
++              size_t max_alt_len = (pat_end - pattern) + 2;
++              char *onealt;
++              int alloca_onealt = glob_use_alloca (alloca_used, max_alt_len);
++              if (alloca_onealt)
++                onealt = alloca_account (max_alt_len, alloca_used);
++              else
++                {
++                  onealt = malloc (max_alt_len);
++                  if (onealt == NULL)
++                    return GLOB_NOSPACE;
++                }
++
++              const char *seg_start = pattern;
++              const char *seg_end = first_colon;
++              while (1)
++                {
++                  if (seg_start == seg_end)
++                    {
++                      onealt[0] = '.';
++                      onealt[1] = '\0';
++                    }
++                  else
++                    *((char *) mempcpy (onealt, seg_start,
++                                        seg_end - seg_start)) = '\0';
++
++                  int result = __glob (onealt,
++                                       ((flags & ~(GLOB_NOCHECK | GLOB_NOMAGIC
++                                                   | GLOB_PATHS))
++                                        | GLOB_APPEND),
++                                       errfunc, pglob);
++                  if (result && result != GLOB_NOMATCH)
++                    {
++                      if (__glibc_unlikely (!alloca_onealt))
++                        free (onealt);
++                      if (!(flags & GLOB_APPEND))
++                        {
++                          globfree (pglob);
++                          pglob->gl_pathc = 0;
++                        }
++                      return result;
++                    }
++
++                  if (seg_end == pat_end)
++                    break;
++                  seg_start = seg_end + 1;
++                  seg_end = next_colon_sub (seg_start, pat_end, flags);
++                }
++
++              if (__glibc_unlikely (!alloca_onealt))
++                free (onealt);
++
++              if (pglob->gl_pathc != firstc)
++                return 0;
++              else if (!(flags & (GLOB_NOCHECK | GLOB_NOMAGIC)))
++                return GLOB_NOMATCH;
++
++              dirs.gl_pathv = NULL;
++              oldcount = pglob->gl_pathc + pglob->gl_offs;
++              goto no_matches;
++            }
++          flags &= ~GLOB_PATHS;
++        }
++    }
++
++  /* POSIX requires all slashes to be matched.  This means that with
++     a trailing slash we must match only directories.  */
++  if (pattern[0] && pattern[strlen (pattern) - 1] == '/')
++    flags |= GLOB_ONLYDIR;
++
+   if (flags & GLOB_BRACE)
+     {
+       const char *begin;
+@@ -486,7 +1320,9 @@
+   oldcount = pglob->gl_pathc + pglob->gl_offs;
  
- # One Linux we use ldconfig.
--use_ldconfig=yes
-+use_ldconfig=no
+   /* Find the filename.  */
+-  filename = strrchr (pattern, '/');
++  filename = ((flags & GLOB_EXTMATCH)
++              ? glob_dirscan (pattern, '/', !(flags & GLOB_NOESCAPE))
++              : strrchr (pattern, '/'));
  
- if test $host = $build; then
-   # If $prefix/include/{net,scsi} are symlinks, make install will
-diff -Naur --no-dereference glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac glibc-2.44.source/sysdeps/unix/sysv/linux/configure.ac
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/sysdeps/unix/sysv/linux/configure.ac	2026-07-24 13:16:45.000000000 +0000
-@@ -89,7 +89,7 @@
- 
- 
- # One Linux we use ldconfig.
--use_ldconfig=yes
-+use_ldconfig=no
- 
- if test $host = $build; then
-   # If $prefix/include/{net,scsi} are symlinks, make install will
-diff -Naur --no-dereference glibc-2.44.orig/posix/glob.c glibc-2.44.source/posix/glob.c
---- glibc-2.44.orig/posix/glob.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/posix/glob.c	2026-07-24 13:16:45.000000000 +0000
-@@ -597,13 +597,40 @@
+ #if defined __MSDOS__ || defined WINDOWS32
+   /* The case of "d:pattern".  Since ':' is not allowed in
+@@ -597,13 +1433,40 @@
                  }
              }
            /* Prevent stack overflows with many trailing '/' characters.  */
@@ -594,33 +1793,2006 @@ diff -Naur --no-dereference glibc-2.44.orig/posix/glob.c glibc-2.44.source/posix
            else if (val == GLOB_NOMATCH && flags != orig_flags)
              {
                /* Make sure globfree (&dirs); is a nop.  */
-@@ -1339,8 +1366,10 @@
+@@ -965,7 +1828,12 @@
+       return 0;
+     }
+ 
+-  meta = __glob_pattern_type (dirname, !(flags & GLOB_NOESCAPE));
++  meta = __glob_pattern_type_ext (dirname, !(flags & GLOB_NOESCAPE),
++                                  (flags & GLOB_EXTMATCH) != 0);
++  if ((flags & GLOB_CASEFOLD) && dirlen > 0
++      && !(dirlen == 1 && (dirname[0] == '.' || dirname[0] == '/'))
++      && !(dirlen == 2 && dirname[0] == '.' && dirname[1] == '.'))
++    meta |= GLOBPAT_SPECIAL;
+   /* meta is 1 if correct glob pattern containing metacharacters.
+      If meta has bit (1 << 2) set, it means there was an unterminated
+      [ which we handle the same, using fnmatch.  Broken unterminated
+@@ -977,8 +1845,12 @@
+          have to glob for the directory, and then glob for
+          the pattern in each directory found.  */
+       size_t i;
++      bool all_starstar = false;
++      bool last_starstar = false;
++      char *d = dirname;
+ 
+-      if (!(flags & GLOB_NOESCAPE) && dirlen > 0 && dirname[dirlen - 1] == '\\')
++      if (!(flags & (GLOB_NOESCAPE | GLOB_DOTDOT)) && dirlen > 0
++          && dirname[dirlen - 1] == '\\')
+         {
+           /* "foo\\/bar".  Remove the final backslash from dirname
+              if it has not been quoted.  */
+@@ -989,6 +1861,114 @@
+             *(char *) &dirname[--dirlen] = '\0';
+         }
+ 
++      if (errfunc == NULL)
++        {
++          int fc_err = 0;
++          int fc_res = fc_glob_try (dirname, dirlen, filename, flags,
++                                    pglob, &fc_err);
++          if (fc_res == 0)
++            fc_res = glob_literal_suffix_try (dirname, dirlen, filename,
++                                              flags, pglob, &fc_err);
++          if (fc_res < 0)
++            {
++              globfree (pglob);
++              pglob->gl_pathc = 0;
++              retval = fc_err;
++              goto out;
++            }
++          if (fc_res > 0)
++            {
++              flags |= GLOB_MAGCHAR;
++              pglob->gl_flags = flags;
++              if (pglob->gl_pathc + pglob->gl_offs == oldcount)
++                {
++                  dirs.gl_pathv = NULL;
++                  goto no_matches;
++                }
++              goto fast_done;
++            }
++        }
++
++      if (flags & GLOB_GLOBSTAR)
++        {
++          /* Collapse leading sequence of ** patterns separated by slashes.  */
++          if (d[0] == '*' && d[1] == '*' && (d[2] == '/' || d[2] == '\0'))
++            {
++              char *p = d;
++              while (d[0] == '*' && d[1] == '*'
++                     && (d[2] == '/' || d[2] == '\0'))
++                {
++                  p = d;
++                  if (d[2] != '\0')
++                    {
++                      d += 3;
++                      while (*d == '/')
++                        ++d;
++                      if (*d == '\0')
++                        break;
++                    }
++                  else
++                    break;
++                }
++              if (*d == '\0' || (d[0] == '*' && d[1] == '*' && d[2] == '\0'))
++                all_starstar = true;
++              d = p;
++              if (all_starstar)
++                {
++                  d[2] = '\0';
++                  dirlen = 2;
++                }
++              else
++                dirlen = strlen (d);
++            }
++
++          /* Collapse trailing sequences of / ** in dirname.  */
++          if (!all_starstar)
++            {
++              size_t dl = dirlen;
++              size_t prev = dl;
++              while (dl >= 3 && d[dl - 1] == '*' && d[dl - 2] == '*'
++                     && d[dl - 3] == '/')
++                {
++                  prev = dl;
++                  dl -= 3;
++                  while (dl > 0 && d[dl - 1] == '/')
++                    --dl;
++                  if (dl < 3 || d[dl - 1] != '*' || d[dl - 2] != '*'
++                      || d[dl - 3] != '/')
++                    break;
++                }
++              if (dl != dirlen)
++                last_starstar = true;
++              dirlen = prev;
++              d[dirlen] = '\0';
++            }
++
++          if (last_starstar && dirlen >= 4
++              && filename[0] == '*' && filename[1] == '*'
++              && filename[2] == '\0')
++            {
++              dirlen -= 3;
++              while (dirlen > 1 && d[dirlen - 1] == '/')
++                --dirlen;
++              d[dirlen] = '\0';
++            }
++
++          if (all_starstar
++              && filename[0] == '*' && filename[1] == '*'
++              && filename[2] == '\0')
++            {
++              if (__glibc_unlikely (malloc_dirname))
++                {
++                  free (dirname);
++                  malloc_dirname = 0;
++                }
++              dirname = (char *) ".";
++              dirlen = 0;
++              goto only_filename;
++            }
++        }
++
+       if (__glibc_unlikely ((flags & GLOB_ALTDIRFUNC) != 0))
+         {
+           /* Use the alternative access functions also in the recursive
+@@ -1000,10 +1980,30 @@
+           dirs.gl_lstat = pglob->gl_lstat;
+         }
+ 
+-      status = __glob (dirname,
+-                       ((flags & (GLOB_ERR | GLOB_NOESCAPE | GLOB_ALTDIRFUNC))
+-                        | GLOB_NOSORT | GLOB_ONLYDIR),
+-                       errfunc, &dirs);
++      if (all_starstar)
++        {
++          dirs.gl_pathc = 0;
++          dirs.gl_pathv = NULL;
++          dirs.gl_offs = 0;
++          dirs.gl_flags = 0;
++          status = globstar_scan (".", flags, GS_ADDCURDIR | GS_NULLDIR,
++                                  errfunc, &dirs);
++          if (status == 0 && dirs.gl_pathc == 0)
++            status = GLOB_NOMATCH;
++        }
++      else
++        {
++          status = __glob (d,
++                           ((flags & (GLOB_ERR | GLOB_NOESCAPE | GLOB_ALTDIRFUNC
++                                      | GLOB_EXTMATCH | GLOB_CASEFOLD
++                                      | GLOB_SKIPDOTS | GLOB_GLOBSTAR
++                                      | GLOB_DOTDOT | GLOB_TILDE
++                                      | GLOB_TILDE_CHECK
++                                      | ((flags & GLOB_DOTDOT)
++                                         ? GLOB_PERIOD : 0)))
++                            | GLOB_NOSORT | GLOB_ONLYDIR),
++                           errfunc, &dirs);
++        }
+       if (status != 0)
+         {
+           if ((flags & GLOB_NOCHECK) == 0 || status != GLOB_NOMATCH)
+@@ -1019,10 +2019,45 @@
+          appending the results to PGLOB.  */
+       for (i = 0; i < dirs.gl_pathc; ++i)
+         {
+-          size_t old_pathc;
++          size_t old_pathc = pglob->gl_pathc;
++          const char *dname = dirs.gl_pathv[i];
++          bool nulldir = (dname[0] == '\0');
++          if (nulldir)
++            dname = ".";
+ 
+-          old_pathc = pglob->gl_pathc;
+-          status = glob_in_dir (filename, dirs.gl_pathv[i],
++          if (all_starstar && !nulldir)
++            {
++              /* Do not descend into symlinked directories for ** /...  */
++              if (glob_testdir (dname, flags, pglob, true) < 0)
++                continue;
++            }
++          else if (!nulldir && (flags & GLOB_GLOBSTAR))
++            {
++              if (glob_testdir (dname, flags, pglob, false) < 0)
++                continue;
++            }
++
++          if ((flags & GLOB_GLOBSTAR)
++              && filename[0] == '*' && filename[1] == '*'
++              && filename[2] == '\0')
++            {
++              status = globstar_scan (dname, flags,
++                                      (nulldir ? GS_NULLDIR : GS_ADDCURDIR),
++                                      errfunc, pglob);
++              if (status != 0)
++                {
++                  globfree (&dirs);
++                  globfree (pglob);
++                  pglob->gl_pathc = 0;
++                  retval = status;
++                  goto out;
++                }
++              if (nulldir)
++                break;
++              continue;
++            }
++
++          status = glob_in_dir (filename, dname,
+                                 ((flags | GLOB_APPEND)
+                                  & ~(GLOB_NOCHECK | GLOB_NOMAGIC)),
+                                 errfunc, pglob, alloca_used);
+@@ -1039,16 +2074,19 @@
+               goto out;
+             }
+ 
+-          /* Stick the directory on the front of each name.  */
+-          if (prefix_array (dirs.gl_pathv[i],
+-                            &pglob->gl_pathv[old_pathc + pglob->gl_offs],
+-                            pglob->gl_pathc - old_pathc))
++          if (!nulldir)
+             {
+-              globfree (&dirs);
+-              globfree (pglob);
+-              pglob->gl_pathc = 0;
+-              retval = GLOB_NOSPACE;
+-              goto out;
++              /* Stick the directory on the front of each name.  */
++              if (prefix_array (dname,
++                                &pglob->gl_pathv[old_pathc + pglob->gl_offs],
++                                pglob->gl_pathc - old_pathc))
++                {
++                  globfree (&dirs);
++                  globfree (pglob);
++                  pglob->gl_pathc = 0;
++                  retval = GLOB_NOSPACE;
++                  goto out;
++                }
+             }
+         }
+ 
+@@ -1108,15 +2146,14 @@
+     }
+   else
+     {
++    only_filename:;
+       size_t old_pathc = pglob->gl_pathc;
+       int orig_flags = flags;
+ 
+       if (meta & GLOBPAT_BACKSLASH)
+         {
+           char *p = strchr (dirname, '\\'), *q;
+-          /* We need to unescape the dirname string.  It is certainly
+-             allocated by alloca, as otherwise filename would be NULL
+-             or dirname wouldn't contain backslashes.  */
++          /* We need to unescape the dirname string.  */
+           q = p;
+           do
+             {
+@@ -1134,34 +2171,86 @@
+         }
+       if (dirname_modified)
+         flags &= ~(GLOB_NOCHECK | GLOB_NOMAGIC);
+-      status = glob_in_dir (filename, dirname, flags, errfunc, pglob,
+-                            alloca_used);
+-      if (status != 0)
+-        {
+-          if (status == GLOB_NOMATCH && flags != orig_flags
+-              && pglob->gl_pathc + pglob->gl_offs == oldcount)
++      if ((flags & GLOB_GLOBSTAR)
++          && filename[0] == '*' && filename[1] == '*'
++          && filename[2] == '\0')
++        {
++          /* Expand dir/ ** or **.  */
++          if (dirlen > 0 && glob_testdir (dirname, flags, pglob, false) < 0)
++            status = GLOB_NOMATCH;
++          else
+             {
+-              /* Make sure globfree (&dirs); is a nop.  */
+-              dirs.gl_pathv = NULL;
+-              flags = orig_flags;
+-              goto no_matches;
++              int gs_flags = (dirlen == 0 ? GS_NULLDIR : GS_ADDCURDIR);
++              char *sdir = dirname;
++              bool free_sdir = false;
++              if (dirlen > 0 && dirname[dirlen - 1] != '/')
++                {
++                  sdir = malloc (dirlen + 2);
++                  if (sdir == NULL)
++                    {
++                      retval = GLOB_NOSPACE;
++                      goto out;
++                    }
++                  memcpy (sdir, dirname, dirlen);
++                  sdir[dirlen] = '/';
++                  sdir[dirlen + 1] = '\0';
++                  free_sdir = true;
++                }
++              status = globstar_scan (sdir, flags, gs_flags, errfunc, pglob);
++              if (free_sdir)
++                free (sdir);
++              if (status == 0)
++                {
++                  flags |= GLOB_MAGCHAR;
++                  pglob->gl_flags = flags;
++                  if (pglob->gl_pathc == old_pathc)
++                    status = GLOB_NOMATCH;
++                }
++            }
++          if (status != 0)
++            {
++              if ((orig_flags & GLOB_NOCHECK) && status == GLOB_NOMATCH
++                  && pglob->gl_pathc + pglob->gl_offs == oldcount)
++                {
++                  dirs.gl_pathv = NULL;
++                  flags = orig_flags;
++                  goto no_matches;
++                }
++              retval = status;
++              goto out;
+             }
+-          retval = status;
+-          goto out;
+         }
+-
+-      if (dirlen > 0)
++      else
+         {
+-          /* Stick the directory on the front of each name.  */
+-          if (prefix_array (dirname,
+-                            &pglob->gl_pathv[old_pathc + pglob->gl_offs],
+-                            pglob->gl_pathc - old_pathc))
++          status = glob_in_dir (filename, dirname, flags, errfunc, pglob,
++                                alloca_used);
++          if (status != 0)
+             {
+-              globfree (pglob);
+-              pglob->gl_pathc = 0;
+-              retval = GLOB_NOSPACE;
++              if (status == GLOB_NOMATCH && flags != orig_flags
++                  && pglob->gl_pathc + pglob->gl_offs == oldcount)
++                {
++                  /* Make sure globfree (&dirs); is a nop.  */
++                  dirs.gl_pathv = NULL;
++                  flags = orig_flags;
++                  goto no_matches;
++                }
++              retval = status;
+               goto out;
+             }
++
++          if (dirlen > 0)
++            {
++              /* Stick the directory on the front of each name.  */
++              if (prefix_array (dirname,
++                                &pglob->gl_pathv[old_pathc + pglob->gl_offs],
++                                pglob->gl_pathc - old_pathc))
++                {
++                  globfree (pglob);
++                  pglob->gl_pathc = 0;
++                  retval = GLOB_NOSPACE;
++                  goto out;
++                }
++            }
+         }
+     }
+ 
+@@ -1171,9 +2260,13 @@
+       size_t i;
+ 
+       for (i = oldcount; i < pglob->gl_pathc + pglob->gl_offs; ++i)
+-        if (is_dir (pglob->gl_pathv[i], flags, pglob))
+-          {
+-            size_t len = strlen (pglob->gl_pathv[i]) + 2;
++        {
++          size_t curlen = strlen (pglob->gl_pathv[i]);
++          if (curlen > 0 && pglob->gl_pathv[i][curlen - 1] == '/')
++            continue;
++          if (is_dir (pglob->gl_pathv[i], flags, pglob))
++            {
++            size_t len = curlen + 2;
+             char *new = realloc (pglob->gl_pathv[i], len);
+             if (new == NULL)
+               {
+@@ -1184,10 +2277,12 @@
+               }
+             strcpy (&new[len - 2], "/");
+             pglob->gl_pathv[i] = new;
+-          }
++            }
++        }
+     }
+ 
+-  if (!(flags & GLOB_NOSORT))
++ fast_done:
++  if (!(flags & GLOB_NOSORT) && pglob->gl_pathc + pglob->gl_offs - oldcount > 1)
+     {
+       /* Sort the vector.  */
+       qsort (&pglob->gl_pathv[oldcount],
+@@ -1220,7 +2315,8 @@
+     return 1;
+   if (s2 == NULL)
+     return -1;
+-  return strcoll (s1, s2);
++  int r = strcoll (s1, s2);
++  return r != 0 ? r : strcmp (s1, s2);
+ }
+ 
+ 
+@@ -1311,7 +2407,12 @@
+                         - offsetof (struct globnames, name))
+                        / sizeof init_names->name[0]);
+ 
+-  meta = __glob_pattern_type (pattern, !(flags & GLOB_NOESCAPE));
++  meta = __glob_pattern_type_ext (pattern, !(flags & GLOB_NOESCAPE),
++                                  (flags & GLOB_EXTMATCH) != 0);
++  if ((flags & GLOB_CASEFOLD) && pattern[0] != '\0'
++      && strcmp (pattern, ".") != 0 && strcmp (pattern, "..") != 0
++      && strcmp (pattern, "\\.") != 0 && strcmp (pattern, "\\..") != 0)
++    meta |= GLOBPAT_SPECIAL;
+   if (meta == GLOBPAT_NONE && (flags & (GLOB_NOCHECK|GLOB_NOMAGIC)))
+     {
+       /* We need not do any tests.  The PATTERN contains no meta
+@@ -1319,9 +2420,34 @@
+          result will always contain exactly one name.  */
+       flags |= GLOB_NOCHECK;
+     }
+-  else if (meta == GLOBPAT_NONE)
++  else if ((meta & (GLOBPAT_SPECIAL | GLOBPAT_BRACKET)) == 0)
+     {
+       size_t patlen = strlen (pattern);
++      char *unesc_pat = (char *) pattern;
++      bool alloca_unesc = false;
++      if (meta & GLOBPAT_BACKSLASH)
++        {
++          alloca_unesc = glob_use_alloca (alloca_used, patlen + 1);
++          if (alloca_unesc)
++            unesc_pat = alloca_account (patlen + 1, alloca_used);
++          else
++            {
++              unesc_pat = malloc (patlen + 1);
++              if (unesc_pat == NULL)
++                return GLOB_NOSPACE;
++            }
++          const char *p = pattern;
++          char *q = unesc_pat;
++          while (*p != '\0')
++            {
++              if (*p == '\\' && p[1] != '\0')
++                ++p;
++              *q++ = *p++;
++            }
++          *q = '\0';
++          patlen = q - unesc_pat;
++        }
++
+       size_t fullsize;
+       bool alloca_fullname
+         = (! size_add_wrapv (dirlen + 1, patlen + 1, &fullsize)
+@@ -1333,20 +2459,40 @@
+         {
+           fullname = malloc (fullsize);
+           if (fullname == NULL)
+-            return GLOB_NOSPACE;
++            {
++              if ((meta & GLOBPAT_BACKSLASH) && __glibc_unlikely (!alloca_unesc))
++                free (unesc_pat);
++              return GLOB_NOSPACE;
++            }
+         }
+ 
        mempcpy (mempcpy (mempcpy (fullname, directory, dirlen),
                          "/", 1),
-                pattern, patlen + 1);
+-               pattern, patlen + 1);
 -      if (glob_lstat (pglob, flags, fullname) == 0
 -          || errno == EOVERFLOW)
+-        /* We found this file to be existing.  Now tell the rest
+-           of the function to copy this name into the result.  */
+-        flags |= GLOB_NOCHECK;
++               unesc_pat, patlen + 1);
 +      if ((flags & GLOB_ONLYDIR)
 +          ? is_dir (fullname, flags, pglob)
 +          : (glob_lstat (pglob, flags, fullname) == 0
 +             || errno == EOVERFLOW))
-         /* We found this file to be existing.  Now tell the rest
-            of the function to copy this name into the result.  */
-         flags |= GLOB_NOCHECK;
-diff -Naur --no-dereference glibc-2.44.orig/posix/glob.h glibc-2.44.source/posix/glob.h
---- glibc-2.44.orig/posix/glob.h	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.source/posix/glob.h	2026-07-24 13:16:45.000000000 +0000
-@@ -54,10 +54,12 @@
++        {
++          /* We found this file to be existing.  Copy the unescaped name
++             into the result.  */
++          names->name[cur] = strdup (unesc_pat);
++          if (names->name[cur] == NULL)
++            {
++              if (__glibc_unlikely (!alloca_fullname))
++                free (fullname);
++              if ((meta & GLOBPAT_BACKSLASH) && __glibc_unlikely (!alloca_unesc))
++                free (unesc_pat);
++              goto memory_error;
++            }
++          ++cur;
++          ++nfound;
++        }
+ 
+       if (__glibc_unlikely (!alloca_fullname))
+         free (fullname);
++      if ((meta & GLOBPAT_BACKSLASH) && __glibc_unlikely (!alloca_unesc))
++        free (unesc_pat);
+     }
+   else
+     {
+@@ -1363,8 +2509,13 @@
+       else
+         {
+           int dfd = dirfd (stream);
+-          int fnm_flags = ((!(flags & GLOB_PERIOD) ? FNM_PERIOD : 0)
+-                           | ((flags & GLOB_NOESCAPE) ? FNM_NOESCAPE : 0));
++          int fnm_flags = (FNM_PATHNAME
++                           | (!(flags & GLOB_PERIOD) ? FNM_PERIOD : 0)
++                           | ((flags & GLOB_NOESCAPE) ? FNM_NOESCAPE : 0)
++                           | ((flags & GLOB_EXTMATCH) ? FNM_EXTMATCH : 0)
++                           | ((flags & GLOB_CASEFOLD) ? FNM_CASEFOLD : 0)
++                           | ((flags & GLOB_DOTDOT) ? FNM_DOTDOT : 0));
++          const char *pat_end = pattern + strlen (pattern);
+           flags |= GLOB_MAGCHAR;
+ 
+           while (1)
+@@ -1385,6 +2536,9 @@
+               if (d.name == NULL)
+                 break;
+ 
++              if (skipname (pattern, pat_end, d.name, flags))
++                continue;
++
+               /* If we shall match only directories use the information
+                  provided by the dirent call if possible.  */
+               if (flags & GLOB_ONLYDIR)
+--- glibc-2.44.orig/posix/glob_fluffy_cache.h	1969-12-31 19:00:00.000000000 -0500
++++ glibc-2.44/posix/glob_fluffy_cache.h	2026-11-07 19:53:19.474346415 -0500
+@@ -0,0 +1,1316 @@
++/* Cross-process SquashFS-aware glob and PATH cache for Fluffy Linux.
++   Copyright (C) 2026 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.  */
++
++#ifndef _GLOB_FLUFFY_CACHE_H
++#define _GLOB_FLUFFY_CACHE_H 1
++
++#include <stdint.h>
++#include <stdbool.h>
++#include <stddef.h>
++#include <string.h>
++#include <fcntl.h>
++#include <dirent.h>
++#include <sys/mman.h>
++#include <sys/stat.h>
++#include <sys/syscall.h>
++
++#ifdef _LIBC
++# include <sysdep.h>
++# define FC_SYSCALL(name, ...) INTERNAL_SYSCALL_CALL (name, __VA_ARGS__)
++# define FC_SYSCALL0(name)     INTERNAL_SYSCALL_CALL (name)
++#else
++# include <unistd.h>
++# include <errno.h>
++static inline long
++fc_raw_syscall (long nr, long a1, long a2, long a3, long a4, long a5, long a6)
++{
++  long ret;
++  register long r10 __asm__ ("r10") = a4;
++  register long r8 __asm__ ("r8") = a5;
++  register long r9 __asm__ ("r9") = a6;
++  __asm__ volatile ("syscall"
++                    : "=a" (ret)
++                    : "a" (nr), "D" (a1), "S" (a2), "d" (a3),
++                      "r" (r10), "r" (r8), "r" (r9)
++                    : "rcx", "r11", "memory");
++  return ret;
++}
++# define FC_SYSCALL_N(_1, _2, _3, _4, _5, _6, _7, NAME, ...) NAME
++# define FC_SYSCALL0(name) \
++  fc_raw_syscall (__NR_##name, 0, 0, 0, 0, 0, 0)
++# define FC_SC1(n, a) \
++  fc_raw_syscall (__NR_##n, (long)(a), 0, 0, 0, 0, 0)
++# define FC_SC2(n, a, b) \
++  fc_raw_syscall (__NR_##n, (long)(a), (long)(b), 0, 0, 0, 0)
++# define FC_SC3(n, a, b, c) \
++  fc_raw_syscall (__NR_##n, (long)(a), (long)(b), (long)(c), 0, 0, 0)
++# define FC_SC4(n, a, b, c, d) \
++  fc_raw_syscall (__NR_##n, (long)(a), (long)(b), (long)(c), (long)(d), 0, 0)
++# define FC_SC5(n, a, b, c, d, e) \
++  fc_raw_syscall (__NR_##n, (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), 0)
++# define FC_SC6(n, a, b, c, d, e, f) \
++  fc_raw_syscall (__NR_##n, (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
++# define FC_SYSCALL(name, ...) \
++  FC_SYSCALL_N (name, __VA_ARGS__, FC_SC6, FC_SC5, FC_SC4, FC_SC3, FC_SC2, FC_SC1) (name, __VA_ARGS__)
++#endif
++
++#ifndef __NR_statx
++# define __NR_statx 332
++#endif
++#ifndef __NR_listmount
++# define __NR_listmount 458
++#endif
++#ifndef STATX_MNT_ID_UNIQUE
++# define STATX_MNT_ID_UNIQUE 0x00004000U
++#endif
++
++#define FC_MAGIC          0x46474334U /* "FGC4" */
++#define FC_MAX_PKGS       256
++#define FC_MAX_PKG_NAME   64
++#define FC_NUM_SUBDIRS    5           /* 0:bin, 1:lib, 2:etc, 3:include, 4:libexec */
++#define FC_TOP_HT_SIZE    512
++#define FC_SUB_HT_SIZE    8192
++#define FC_MAX_DIRENTS    16384
++#define FC_STRTAB_SIZE    131072
++#define FC_SQUASHFS_MAGIC 0x73717368UL
++
++struct fc_mnt_id_req
++{
++  uint32_t size;
++  uint32_t spare;
++  uint64_t mnt_id;
++  uint64_t param;
++};
++
++struct fc_kernel_statfs
++{
++  unsigned long f_type;
++  unsigned long f_bsize;
++  unsigned long f_blocks;
++  unsigned long f_bfree;
++  unsigned long f_bavail;
++  unsigned long f_files;
++  unsigned long f_ffree;
++  int f_fsid[2];
++  unsigned long f_namelen;
++  unsigned long f_frsize;
++  unsigned long f_flags;
++  unsigned long f_spare[4];
++};
++
++struct fc_linux_dirent64
++{
++  uint64_t d_ino;
++  int64_t d_off;
++  unsigned short d_reclen;
++  unsigned char d_type;
++  char d_name[];
++};
++
++struct fc_mask
++{
++  uint64_t bits[FC_MAX_PKGS / 64];
++};
++
++struct fc_top_bucket
++{
++  uint32_t hash;
++  uint32_t name_off;
++  uint16_t name_len;
++  uint16_t reserved;
++  struct fc_mask all_mask;
++  struct fc_mask dir_mask;
++};
++
++struct fc_sub_bucket
++{
++  uint32_t hash;
++  uint32_t name_off;
++  uint16_t name_len;
++  uint8_t sub1_id;
++  uint8_t reserved;
++  struct fc_mask all_mask;
++  struct fc_mask dir_mask;
++};
++
++struct fc_dirent
++{
++  uint32_t name_off;
++  uint16_t name_len;
++  uint8_t is_dir;
++  uint8_t sub1_id;
++};
++
++struct fc_pkg_meta
++{
++  uint32_t dev_major;
++  uint32_t dev_minor;
++  uint64_t ino;
++  int64_t mtime_sec;
++  int64_t mtime_nsec;
++  uint8_t is_squashfs;
++  uint8_t pad[3];
++  uint32_t top_start;
++  uint16_t top_count;
++  uint16_t pad2;
++  uint32_t sub_start[FC_NUM_SUBDIRS];
++  uint16_t sub_count[FC_NUM_SUBDIRS];
++  uint16_t pad3;
++};
++
++struct fc_snapshot
++{
++  uint32_t magic;
++  uint32_t prefix_len;
++  char prefix[256];
++  uint64_t prefix_mnt_id;
++  uint32_t prefix_dev_major;
++  uint32_t prefix_dev_minor;
++  uint64_t prefix_ino;
++  int64_t prefix_ctime_sec;
++  int64_t prefix_ctime_nsec;
++  int64_t prefix_mtime_sec;
++  int64_t prefix_mtime_nsec;
++  uint32_t mnt_count;
++  uint32_t num_pkgs;
++  uint64_t mnt_hash1;
++  uint64_t mnt_hash2;
++
++  char pkg_names[FC_MAX_PKGS][FC_MAX_PKG_NAME];
++  struct fc_pkg_meta pkg_meta[FC_MAX_PKGS];
++  struct fc_top_bucket top_ht[FC_TOP_HT_SIZE];
++  struct fc_sub_bucket sub_ht[FC_SUB_HT_SIZE];
++  uint32_t num_dirents;
++  uint32_t strtab_used;
++  struct fc_dirent dirents[FC_MAX_DIRENTS];
++  char strtab[FC_STRTAB_SIZE];
++};
++
++static inline bool
++fc_syscall_err (long r)
++{
++  return (unsigned long) r >= (unsigned long) -4095L;
++}
++
++static inline uint32_t
++fc_hash_str (uint32_t seed, const char *s, size_t len)
++{
++  uint32_t h = seed ^ 2166136261U;
++  for (size_t i = 0; i < len; ++i)
++    {
++      h ^= (unsigned char) s[i];
++      h *= 16777619U;
++    }
++  return h == 0 ? 1 : h;
++}
++
++static inline uint64_t
++fc_mix64 (uint64_t x)
++{
++  x += 0x9e3779b97f4a7c15ULL;
++  x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
++  x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
++  return x ^ (x >> 31);
++}
++
++static const char *const fc_subdir_names[FC_NUM_SUBDIRS] =
++{
++  "bin", "lib", "etc", "include", "libexec"
++};
++
++static inline int
++fc_subdir_id (const char *name, size_t len)
++{
++  switch (len)
++    {
++    case 3:
++      if (memcmp (name, "bin", 3) == 0) return 0;
++      if (memcmp (name, "lib", 3) == 0) return 1;
++      if (memcmp (name, "etc", 3) == 0) return 2;
++      break;
++    case 7:
++      if (memcmp (name, "include", 7) == 0) return 3;
++      if (memcmp (name, "libexec", 7) == 0) return 4;
++      break;
++    }
++  return -1;
++}
++
++static char *
++fc_utoa (char *p, uint64_t v)
++{
++  char tmp[24];
++  int i = 0;
++  if (v == 0)
++    {
++      *p++ = '0';
++      return p;
++    }
++  while (v > 0)
++    {
++      tmp[i++] = (char) ('0' + (v % 10));
++      v /= 10;
++    }
++  while (i > 0)
++    *p++ = tmp[--i];
++  return p;
++}
++
++static void
++fc_format_shm_path (char *buf, const char *dir, uid_t euid, gid_t egid)
++{
++  size_t dlen = strlen (dir);
++  char *p = buf;
++  memcpy (p, dir, dlen);
++  p += dlen;
++  const char *base = "/.fluffy_glob_cache_v1_";
++  size_t blen = strlen (base);
++  memcpy (p, base, blen);
++  p += blen;
++  p = fc_utoa (p, (uint64_t) euid);
++  *p++ = '_';
++  p = fc_utoa (p, (uint64_t) egid);
++  *p = '\0';
++}
++
++static int
++fc_get_prefix_state (const char *prefix, struct statx *stx,
++                     uint32_t *out_mnt_count, uint64_t *out_h1, uint64_t *out_h2)
++{
++  long r = FC_SYSCALL (statx, AT_FDCWD, prefix, AT_STATX_SYNC_AS_STAT,
++                       STATX_BASIC_STATS | STATX_MNT_ID_UNIQUE, stx);
++  if (fc_syscall_err (r) || !S_ISDIR (stx->stx_mode)
++      || !(stx->stx_mask & STATX_MNT_ID_UNIQUE))
++    return -1;
++
++  struct fc_mnt_id_req req =
++    {
++      .size = 24,
++      .spare = 0,
++      .mnt_id = stx->stx_mnt_id,
++      .param = 0
++    };
++  uint64_t mnt_ids[512];
++  uint64_t h1 = 0, h2 = 0;
++  uint32_t total = 0;
++
++  while (1)
++    {
++      long n = FC_SYSCALL (listmount, &req, mnt_ids, 512, 0);
++      if (fc_syscall_err (n))
++        return -1;
++      for (long i = 0; i < n; ++i)
++        {
++          uint64_t m = fc_mix64 (mnt_ids[i]);
++          h1 += m;
++          h2 ^= (m << 19) | (m >> (64 - 19));
++        }
++      total += (uint32_t) n;
++      if (n < 512)
++        break;
++      req.param = mnt_ids[511];
++    }
++
++  *out_mnt_count = total;
++  *out_h1 = h1;
++  *out_h2 = h2;
++  return 0;
++}
++
++static bool
++fc_snapshot_matches (const struct fc_snapshot *snap, const char *prefix,
++                     size_t prefix_len, const struct statx *stx,
++                     uint32_t mnt_count, uint64_t h1, uint64_t h2)
++{
++  return (snap != NULL
++          && snap->magic == FC_MAGIC
++          && snap->prefix_len == prefix_len
++          && snap->prefix_mnt_id == stx->stx_mnt_id
++          && snap->mnt_count == mnt_count
++          && snap->mnt_hash1 == h1
++          && snap->mnt_hash2 == h2
++          && snap->prefix_dev_major == stx->stx_dev_major
++          && snap->prefix_dev_minor == stx->stx_dev_minor
++          && snap->prefix_ino == stx->stx_ino
++          && snap->prefix_ctime_sec == stx->stx_ctime.tv_sec
++          && snap->prefix_ctime_nsec == stx->stx_ctime.tv_nsec
++          && snap->prefix_mtime_sec == stx->stx_mtime.tv_sec
++          && snap->prefix_mtime_nsec == stx->stx_mtime.tv_nsec
++          && memcmp (snap->prefix, prefix, prefix_len) == 0);
++}
++
++static int
++fc_intern_str (struct fc_snapshot *snap, const char *s, size_t len,
++               uint32_t *out_off)
++{
++  if (snap->strtab_used + len + 1 > FC_STRTAB_SIZE)
++    return -1;
++  uint32_t off = snap->strtab_used;
++  memcpy (snap->strtab + off, s, len);
++  snap->strtab[off + len] = '\0';
++  snap->strtab_used += (uint32_t) (len + 1);
++  *out_off = off;
++  return 0;
++}
++
++static int
++fc_insert_top (struct fc_snapshot *snap, uint32_t pkg_idx,
++               const char *name, size_t len, uint8_t is_dir,
++               bool record_dirent)
++{
++  if (len == 0 || len > 0xffff)
++    return -1;
++  uint32_t h = fc_hash_str (0, name, len);
++  uint32_t idx = h & (FC_TOP_HT_SIZE - 1);
++  for (uint32_t step = 0; step < FC_TOP_HT_SIZE; ++step)
++    {
++      struct fc_top_bucket *b = &snap->top_ht[idx];
++      if (b->hash == 0)
++        {
++          uint32_t off;
++          if (fc_intern_str (snap, name, len, &off) < 0)
++            return -1;
++          b->hash = h;
++          b->name_off = off;
++          b->name_len = (uint16_t) len;
++          b->all_mask.bits[pkg_idx / 64] |= (1ULL << (pkg_idx % 64));
++          if (is_dir)
++            b->dir_mask.bits[pkg_idx / 64] |= (1ULL << (pkg_idx % 64));
++          if (record_dirent)
++            {
++              if (snap->num_dirents >= FC_MAX_DIRENTS)
++                return -1;
++              struct fc_dirent *de = &snap->dirents[snap->num_dirents++];
++              de->name_off = off;
++              de->name_len = (uint16_t) len;
++              de->is_dir = is_dir;
++              de->sub1_id = 0xff;
++            }
++          return 0;
++        }
++      if (b->hash == h && b->name_len == len
++          && b->name_off + len < FC_STRTAB_SIZE
++          && memcmp (snap->strtab + b->name_off, name, len) == 0)
++        {
++          b->all_mask.bits[pkg_idx / 64] |= (1ULL << (pkg_idx % 64));
++          if (is_dir)
++            b->dir_mask.bits[pkg_idx / 64] |= (1ULL << (pkg_idx % 64));
++          if (record_dirent)
++            {
++              if (snap->num_dirents >= FC_MAX_DIRENTS)
++                return -1;
++              struct fc_dirent *de = &snap->dirents[snap->num_dirents++];
++              de->name_off = b->name_off;
++              de->name_len = (uint16_t) len;
++              de->is_dir = is_dir;
++              de->sub1_id = 0xff;
++            }
++          return 0;
++        }
++      idx = (idx + 1) & (FC_TOP_HT_SIZE - 1);
++    }
++  return -1;
++}
++
++static int
++fc_insert_sub (struct fc_snapshot *snap, uint32_t pkg_idx, uint8_t sub1_id,
++               const char *name, size_t len, uint8_t is_dir,
++               bool record_dirent)
++{
++  if (len == 0 || len > 0xffff)
++    return -1;
++  uint32_t h = fc_hash_str ((uint32_t) sub1_id + 1, name, len);
++  uint32_t idx = h & (FC_SUB_HT_SIZE - 1);
++  for (uint32_t step = 0; step < FC_SUB_HT_SIZE; ++step)
++    {
++      struct fc_sub_bucket *b = &snap->sub_ht[idx];
++      if (b->hash == 0)
++        {
++          uint32_t off;
++          if (fc_intern_str (snap, name, len, &off) < 0)
++            return -1;
++          b->hash = h;
++          b->name_off = off;
++          b->name_len = (uint16_t) len;
++          b->sub1_id = sub1_id;
++          b->all_mask.bits[pkg_idx / 64] |= (1ULL << (pkg_idx % 64));
++          if (is_dir)
++            b->dir_mask.bits[pkg_idx / 64] |= (1ULL << (pkg_idx % 64));
++          if (record_dirent)
++            {
++              if (snap->num_dirents >= FC_MAX_DIRENTS)
++                return -1;
++              struct fc_dirent *de = &snap->dirents[snap->num_dirents++];
++              de->name_off = off;
++              de->name_len = (uint16_t) len;
++              de->is_dir = is_dir;
++              de->sub1_id = sub1_id;
++            }
++          return 0;
++        }
++      if (b->hash == h && b->sub1_id == sub1_id && b->name_len == len
++          && b->name_off + len < FC_STRTAB_SIZE
++          && memcmp (snap->strtab + b->name_off, name, len) == 0)
++        {
++          b->all_mask.bits[pkg_idx / 64] |= (1ULL << (pkg_idx % 64));
++          if (is_dir)
++            b->dir_mask.bits[pkg_idx / 64] |= (1ULL << (pkg_idx % 64));
++          if (record_dirent)
++            {
++              if (snap->num_dirents >= FC_MAX_DIRENTS)
++                return -1;
++              struct fc_dirent *de = &snap->dirents[snap->num_dirents++];
++              de->name_off = b->name_off;
++              de->name_len = (uint16_t) len;
++              de->is_dir = is_dir;
++              de->sub1_id = sub1_id;
++            }
++          return 0;
++        }
++      idx = (idx + 1) & (FC_SUB_HT_SIZE - 1);
++    }
++  return -1;
++}
++
++static inline const struct fc_top_bucket *
++fc_lookup_top (const struct fc_snapshot *snap, const char *name, size_t len)
++{
++  uint32_t h = fc_hash_str (0, name, len);
++  uint32_t idx = h & (FC_TOP_HT_SIZE - 1);
++  for (uint32_t step = 0; step < FC_TOP_HT_SIZE; ++step)
++    {
++      const struct fc_top_bucket *b = &snap->top_ht[idx];
++      if (b->hash == 0)
++        return NULL;
++      if (b->hash == h && b->name_len == len
++          && memcmp (snap->strtab + b->name_off, name, len) == 0)
++        return b;
++      idx = (idx + 1) & (FC_TOP_HT_SIZE - 1);
++    }
++  return NULL;
++}
++
++static inline const struct fc_sub_bucket *
++fc_lookup_sub (const struct fc_snapshot *snap, uint8_t sub1_id,
++               const char *name, size_t len)
++{
++  uint32_t h = fc_hash_str ((uint32_t) sub1_id + 1, name, len);
++  uint32_t idx = h & (FC_SUB_HT_SIZE - 1);
++  for (uint32_t step = 0; step < FC_SUB_HT_SIZE; ++step)
++    {
++      const struct fc_sub_bucket *b = &snap->sub_ht[idx];
++      if (b->hash == 0)
++        return NULL;
++      if (b->hash == h && b->sub1_id == sub1_id && b->name_len == len
++          && memcmp (snap->strtab + b->name_off, name, len) == 0)
++        return b;
++      idx = (idx + 1) & (FC_SUB_HT_SIZE - 1);
++    }
++  return NULL;
++}
++
++static uint8_t
++fc_dirent_is_dir (int dfd, const struct fc_linux_dirent64 *d)
++{
++  if (d->d_type == DT_DIR)
++    return 1;
++  if (d->d_type != DT_LNK && d->d_type != DT_UNKNOWN)
++    return 0;
++  struct statx stx;
++  long r = FC_SYSCALL (statx, dfd, d->d_name, 0, STATX_TYPE, &stx);
++  return (!fc_syscall_err (r) && S_ISDIR (stx.stx_mode)) ? 1 : 0;
++}
++
++static int
++fc_build_snapshot (struct fc_snapshot *snap,
++                   const struct fc_snapshot *old_snap,
++                   const char *prefix, size_t prefix_len,
++                   const struct statx *prefix_stx,
++                   uint32_t mnt_count, uint64_t h1, uint64_t h2)
++{
++  if (prefix_len == 0 || prefix_len >= sizeof (snap->prefix))
++    return -1;
++
++  memset (snap, 0, offsetof (struct fc_snapshot, dirents));
++  snap->magic = FC_MAGIC;
++  snap->prefix_len = (uint32_t) prefix_len;
++  memcpy (snap->prefix, prefix, prefix_len + 1);
++  snap->prefix_mnt_id = prefix_stx->stx_mnt_id;
++  snap->prefix_dev_major = prefix_stx->stx_dev_major;
++  snap->prefix_dev_minor = prefix_stx->stx_dev_minor;
++  snap->prefix_ino = prefix_stx->stx_ino;
++  snap->prefix_ctime_sec = prefix_stx->stx_ctime.tv_sec;
++  snap->prefix_ctime_nsec = prefix_stx->stx_ctime.tv_nsec;
++  snap->prefix_mtime_sec = prefix_stx->stx_mtime.tv_sec;
++  snap->prefix_mtime_nsec = prefix_stx->stx_mtime.tv_nsec;
++  snap->mnt_count = mnt_count;
++  snap->mnt_hash1 = h1;
++  snap->mnt_hash2 = h2;
++
++  long pfd_l = FC_SYSCALL (openat, AT_FDCWD, prefix,
++                           O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++  if (fc_syscall_err (pfd_l))
++    return -1;
++  int pfd = (int) pfd_l;
++
++  char dent_buf[8192];
++  uint32_t npkgs = 0;
++
++  while (1)
++    {
++      long nread = FC_SYSCALL (getdents64, pfd, dent_buf, sizeof (dent_buf));
++      if (fc_syscall_err (nread))
++        {
++          FC_SYSCALL (close, pfd);
++          return -1;
++        }
++      if (nread == 0)
++        break;
++
++      for (long bpos = 0; bpos < nread; )
++        {
++          struct fc_linux_dirent64 *d
++            = (struct fc_linux_dirent64 *) (dent_buf + bpos);
++          bpos += d->d_reclen;
++          if (d->d_name[0] == '.')
++            continue;
++          if (d->d_type != DT_DIR && d->d_type != DT_LNK
++              && d->d_type != DT_UNKNOWN)
++            continue;
++
++          size_t namelen = strlen (d->d_name);
++          if (namelen == 0 || namelen >= FC_MAX_PKG_NAME)
++            {
++              FC_SYSCALL (close, pfd);
++              return -1;
++            }
++          if (npkgs >= FC_MAX_PKGS)
++            {
++              FC_SYSCALL (close, pfd);
++              return -1;
++            }
++
++          uint32_t pos = npkgs;
++          while (pos > 0 && strcmp (snap->pkg_names[pos - 1], d->d_name) > 0)
++            {
++              memcpy (snap->pkg_names[pos], snap->pkg_names[pos - 1],
++                      FC_MAX_PKG_NAME);
++              --pos;
++            }
++          memcpy (snap->pkg_names[pos], d->d_name, namelen + 1);
++          ++npkgs;
++        }
++    }
++
++  uint32_t valid_pkgs = 0;
++  uint32_t num_squashfs = 0;
++
++  for (uint32_t i = 0; i < npkgs; ++i)
++    {
++      const char *pkg_name = snap->pkg_names[i];
++      struct statx cstx;
++      long sr = FC_SYSCALL (statx, pfd, pkg_name, 0,
++                            STATX_BASIC_STATS | STATX_MNT_ID_UNIQUE, &cstx);
++      if (fc_syscall_err (sr) || !S_ISDIR (cstx.stx_mode))
++        continue;
++
++      uint32_t pkg_idx = valid_pkgs;
++      if (pkg_idx != i)
++        memcpy (snap->pkg_names[pkg_idx], pkg_name, FC_MAX_PKG_NAME);
++      pkg_name = snap->pkg_names[pkg_idx];
++
++      struct fc_pkg_meta *meta = &snap->pkg_meta[pkg_idx];
++      memset (meta, 0, sizeof (*meta));
++      meta->dev_major = cstx.stx_dev_major;
++      meta->dev_minor = cstx.stx_dev_minor;
++      meta->ino = cstx.stx_ino;
++      meta->mtime_sec = cstx.stx_mtime.tv_sec;
++      meta->mtime_nsec = cstx.stx_mtime.tv_nsec;
++
++#ifndef FC_BENCH_ALLOW_TMPFS
++      if (cstx.stx_mnt_id == prefix_stx->stx_mnt_id
++          && cstx.stx_dev_major == prefix_stx->stx_dev_major
++          && cstx.stx_dev_minor == prefix_stx->stx_dev_minor)
++        {
++          /* Unmounted directory on prefix's filesystem.  If empty (size == 0 on
++             btrfs), record as empty mountpoint; otherwise verify via getdents64.  */
++          if (cstx.stx_size == 0)
++            {
++              meta->is_squashfs = 0;
++              ++valid_pkgs;
++              continue;
++            }
++          long cfd_l = FC_SYSCALL (openat, pfd, pkg_name,
++                                   O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++          if (fc_syscall_err (cfd_l))
++            {
++              FC_SYSCALL (close, pfd);
++              return -1;
++            }
++          int cfd = (int) cfd_l;
++          bool empty = true;
++          long nr = FC_SYSCALL (getdents64, cfd, dent_buf, sizeof (dent_buf));
++          if (!fc_syscall_err (nr) && nr > 0)
++            {
++              for (long bp = 0; bp < nr; )
++                {
++                  struct fc_linux_dirent64 *cd
++                    = (struct fc_linux_dirent64 *) (dent_buf + bp);
++                  bp += cd->d_reclen;
++                  if (cd->d_name[0] == '.'
++                      && (cd->d_name[1] == '\0'
++                          || (cd->d_name[1] == '.' && cd->d_name[2] == '\0')))
++                    continue;
++                  empty = false;
++                  break;
++                }
++            }
++          FC_SYSCALL (close, cfd);
++          if (!empty)
++            {
++              /* Non-empty non-mounted mutable child directory: do not cache.  */
++              FC_SYSCALL (close, pfd);
++              return -1;
++            }
++          meta->is_squashfs = 0;
++          ++valid_pkgs;
++          continue;
++        }
++#endif
++
++      if ((cstx.stx_mode & 0005) != 0005)
++        {
++          FC_SYSCALL (close, pfd);
++          return -1;
++        }
++
++      /* Layer 1 lookup: check if this SquashFS superblock is already cached
++         in old_snap.  */
++      bool reused_l1 = false;
++      if (old_snap != NULL && old_snap->magic == FC_MAGIC)
++        {
++          for (uint32_t oi = 0; oi < old_snap->num_pkgs; ++oi)
++            {
++              const struct fc_pkg_meta *om = &old_snap->pkg_meta[oi];
++              if (om->is_squashfs
++                  && om->dev_major == meta->dev_major
++                  && om->dev_minor == meta->dev_minor
++                  && om->ino == meta->ino
++                  && om->mtime_sec == meta->mtime_sec
++                  && om->mtime_nsec == meta->mtime_nsec
++#ifdef FC_BENCH_ALLOW_TMPFS
++                  && strcmp (old_snap->pkg_names[oi], pkg_name) == 0
++#endif
++                 )
++                {
++                  meta->is_squashfs = 1;
++                  meta->top_start = snap->num_dirents;
++                  meta->top_count = om->top_count;
++                  for (uint16_t k = 0; k < om->top_count; ++k)
++                    {
++                      const struct fc_dirent *ode
++                        = &old_snap->dirents[om->top_start + k];
++                      const char *ename = old_snap->strtab + ode->name_off;
++                      if (fc_insert_top (snap, pkg_idx, ename, ode->name_len,
++                                         ode->is_dir, true) < 0)
++                        {
++                          FC_SYSCALL (close, pfd);
++                          return -1;
++                        }
++                    }
++                  for (uint8_t s = 0; s < FC_NUM_SUBDIRS; ++s)
++                    {
++                      meta->sub_start[s] = snap->num_dirents;
++                      meta->sub_count[s] = om->sub_count[s];
++                      for (uint16_t k = 0; k < om->sub_count[s]; ++k)
++                        {
++                          const struct fc_dirent *ode
++                            = &old_snap->dirents[om->sub_start[s] + k];
++                          const char *ename = old_snap->strtab + ode->name_off;
++                          if (fc_insert_sub (snap, pkg_idx, s, ename,
++                                             ode->name_len, ode->is_dir,
++                                             true) < 0)
++                            {
++                              FC_SYSCALL (close, pfd);
++                              return -1;
++                            }
++                        }
++                    }
++                  reused_l1 = true;
++                  ++num_squashfs;
++                  break;
++                }
++            }
++        }
++
++      if (reused_l1)
++        {
++          ++valid_pkgs;
++          continue;
++        }
++
++      /* Layer 1 miss: open package mount, verify SQUASHFS_MAGIC, and scan.  */
++      long pkg_fd_l = FC_SYSCALL (openat, pfd, pkg_name,
++                                  O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++      if (fc_syscall_err (pkg_fd_l))
++        {
++          FC_SYSCALL (close, pfd);
++          return -1;
++        }
++      int pkg_fd = (int) pkg_fd_l;
++
++      struct fc_kernel_statfs sfs;
++      long sfr = FC_SYSCALL (fstatfs, pkg_fd, &sfs);
++      if (fc_syscall_err (sfr)
++#ifndef FC_BENCH_ALLOW_TMPFS
++          || (unsigned long) sfs.f_type != FC_SQUASHFS_MAGIC
++#endif
++         )
++        {
++          FC_SYSCALL (close, pkg_fd);
++          FC_SYSCALL (close, pfd);
++          return -1;
++        }
++
++      meta->is_squashfs = 1;
++      meta->top_start = snap->num_dirents;
++      uint16_t top_cnt = 0;
++      uint8_t has_sub_dir[FC_NUM_SUBDIRS] = { 0 };
++
++      while (1)
++        {
++          long nr = FC_SYSCALL (getdents64, pkg_fd, dent_buf, sizeof (dent_buf));
++          if (fc_syscall_err (nr))
++            {
++              FC_SYSCALL (close, pkg_fd);
++              FC_SYSCALL (close, pfd);
++              return -1;
++            }
++          if (nr == 0)
++            break;
++          for (long bp = 0; bp < nr; )
++            {
++              struct fc_linux_dirent64 *d
++                = (struct fc_linux_dirent64 *) (dent_buf + bp);
++              bp += d->d_reclen;
++              if (d->d_name[0] == '.'
++                  && (d->d_name[1] == '\0'
++                      || (d->d_name[1] == '.' && d->d_name[2] == '\0')))
++                continue;
++              size_t dlen = strlen (d->d_name);
++              uint8_t is_dir = fc_dirent_is_dir (pkg_fd, d);
++              if (fc_insert_top (snap, pkg_idx, d->d_name, dlen, is_dir, true) < 0)
++                {
++                  FC_SYSCALL (close, pkg_fd);
++                  FC_SYSCALL (close, pfd);
++                  return -1;
++                }
++              ++top_cnt;
++              if (is_dir)
++                {
++                  int sid = fc_subdir_id (d->d_name, dlen);
++                  if (sid >= 0)
++                    has_sub_dir[sid] = 1;
++                }
++            }
++        }
++      meta->top_count = top_cnt;
++
++      for (uint8_t s = 0; s < FC_NUM_SUBDIRS; ++s)
++        {
++          meta->sub_start[s] = snap->num_dirents;
++          meta->sub_count[s] = 0;
++          if (!has_sub_dir[s])
++            continue;
++
++          long sfd_l = FC_SYSCALL (openat, pkg_fd, fc_subdir_names[s],
++                                   O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++          if (fc_syscall_err (sfd_l))
++            continue;
++          int sfd = (int) sfd_l;
++          uint16_t scnt = 0;
++
++          while (1)
++            {
++              long nr = FC_SYSCALL (getdents64, sfd, dent_buf, sizeof (dent_buf));
++              if (fc_syscall_err (nr) || nr == 0)
++                break;
++              for (long bp = 0; bp < nr; )
++                {
++                  struct fc_linux_dirent64 *d
++                    = (struct fc_linux_dirent64 *) (dent_buf + bp);
++                  bp += d->d_reclen;
++                  if (d->d_name[0] == '.'
++                      && (d->d_name[1] == '\0'
++                          || (d->d_name[1] == '.' && d->d_name[2] == '\0')))
++                    continue;
++                  size_t dlen = strlen (d->d_name);
++                  uint8_t is_dir = fc_dirent_is_dir (sfd, d);
++                  if (fc_insert_sub (snap, pkg_idx, s, d->d_name, dlen,
++                                     is_dir, true) < 0)
++                    {
++                      FC_SYSCALL (close, sfd);
++                      FC_SYSCALL (close, pkg_fd);
++                      FC_SYSCALL (close, pfd);
++                      return -1;
++                    }
++                  ++scnt;
++                }
++            }
++          FC_SYSCALL (close, sfd);
++          meta->sub_count[s] = scnt;
++        }
++
++      FC_SYSCALL (close, pkg_fd);
++      ++num_squashfs;
++      ++valid_pkgs;
++    }
++
++  FC_SYSCALL (close, pfd);
++  if (num_squashfs == 0)
++    return -1;
++
++  snap->num_pkgs = valid_pkgs;
++  return 0;
++}
++
++static void
++fc_write_shm_snapshot (const struct fc_snapshot *snap, uid_t euid, gid_t egid)
++{
++  static const char *const dirs[2] = { "/dev/shm", "/tmp" };
++  long pid = FC_SYSCALL0 (getpid);
++  long tid = FC_SYSCALL0 (gettid);
++
++  for (int d = 0; d < 2; ++d)
++    {
++      char final_path[128];
++      char tmp_path[160];
++      fc_format_shm_path (final_path, dirs[d], euid, egid);
++      size_t flen = strlen (final_path);
++      memcpy (tmp_path, final_path, flen);
++      char *p = tmp_path + flen;
++      memcpy (p, ".tmp.", 5);
++      p += 5;
++      p = fc_utoa (p, (uint64_t) pid);
++      *p++ = '.';
++      p = fc_utoa (p, (uint64_t) tid);
++      *p = '\0';
++
++      long fd_l = FC_SYSCALL (openat, AT_FDCWD, tmp_path,
++                              O_RDWR | O_CREAT | O_TRUNC | O_CLOEXEC | O_NOFOLLOW,
++                              0600);
++      if (fc_syscall_err (fd_l))
++        continue;
++      int fd = (int) fd_l;
++
++      const char *buf = (const char *) snap;
++      size_t rem = sizeof (*snap);
++      bool ok = true;
++      while (rem > 0)
++        {
++          long nw = FC_SYSCALL (write, fd, buf, rem);
++          if (fc_syscall_err (nw) || nw == 0)
++            {
++              ok = false;
++              break;
++            }
++          buf += nw;
++          rem -= (size_t) nw;
++        }
++      FC_SYSCALL (close, fd);
++
++      if (ok)
++        {
++          long rr = FC_SYSCALL (renameat, AT_FDCWD, tmp_path,
++                                AT_FDCWD, final_path);
++          if (!fc_syscall_err (rr))
++            return;
++        }
++      FC_SYSCALL (unlinkat, AT_FDCWD, tmp_path, 0);
++    }
++}
++
++static struct fc_snapshot *
++fc_map_shm_snapshot (uid_t euid, gid_t egid)
++{
++  static const char *const dirs[2] = { "/dev/shm", "/tmp" };
++  for (int d = 0; d < 2; ++d)
++    {
++      char final_path[128];
++      fc_format_shm_path (final_path, dirs[d], euid, egid);
++      long fd_l = FC_SYSCALL (openat, AT_FDCWD, final_path,
++                              O_RDONLY | O_CLOEXEC | O_NOFOLLOW, 0);
++      if (fc_syscall_err (fd_l))
++        continue;
++      int fd = (int) fd_l;
++
++      struct statx stx;
++      long sr = FC_SYSCALL (statx, fd, "", AT_EMPTY_PATH,
++                            STATX_BASIC_STATS, &stx);
++      if (!fc_syscall_err (sr)
++          && stx.stx_uid == euid
++          && (stx.stx_mode & 0077) == 0
++          && stx.stx_size == sizeof (struct fc_snapshot))
++        {
++          long m = FC_SYSCALL (mmap, 0, sizeof (struct fc_snapshot),
++                               PROT_READ, MAP_SHARED, fd, 0);
++          FC_SYSCALL (close, fd);
++          if (!fc_syscall_err (m))
++            {
++              struct fc_snapshot *s = (struct fc_snapshot *) m;
++              if (s->magic == FC_MAGIC)
++                return s;
++              FC_SYSCALL (munmap, s, sizeof (struct fc_snapshot));
++            }
++        }
++      else
++        FC_SYSCALL (close, fd);
++    }
++  return NULL;
++}
++
++#ifdef FC_WITH_GLOB_HELPERS
++# ifdef _LIBC
++__libc_lock_define_initialized (static, fc_lock);
++# endif
++static struct fc_snapshot *fc_cur_snap = NULL;
++static uid_t fc_cur_euid = (uid_t) -1;
++static gid_t fc_cur_egid = (gid_t) -1;
++static uint64_t fc_non_sq_mnt_id = 0;
++static uint64_t fc_non_sq_ino = 0;
++
++static const struct fc_snapshot *
++fc_get_snapshot (const char *prefix, size_t prefix_len)
++{
++  if (prefix_len == 0 || prefix_len >= 256)
++    return NULL;
++
++  struct statx stx;
++  uint32_t mnt_count = 0;
++  uint64_t mnt_h1 = 0, mnt_h2 = 0;
++  if (fc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++    return NULL;
++
++  if (stx.stx_mnt_id == fc_non_sq_mnt_id && stx.stx_ino == fc_non_sq_ino)
++    return NULL;
++
++  uid_t euid = (uid_t) FC_SYSCALL0 (geteuid);
++  gid_t egid = (gid_t) FC_SYSCALL0 (getegid);
++
++  if (fc_cur_snap != NULL
++      && fc_cur_euid == euid
++      && fc_cur_egid == egid
++      && fc_snapshot_matches (fc_cur_snap, prefix, prefix_len, &stx,
++                              mnt_count, mnt_h1, mnt_h2))
++    return fc_cur_snap;
++
++  struct fc_snapshot *shm_snap = fc_map_shm_snapshot (euid, egid);
++  if (shm_snap != NULL)
++    {
++      if (fc_cur_snap != NULL)
++        FC_SYSCALL (munmap, fc_cur_snap, sizeof (struct fc_snapshot));
++      fc_cur_snap = shm_snap;
++      fc_cur_euid = euid;
++      fc_cur_egid = egid;
++      if (fc_snapshot_matches (fc_cur_snap, prefix, prefix_len, &stx,
++                              mnt_count, mnt_h1, mnt_h2))
++        return fc_cur_snap;
++    }
++
++  long m = FC_SYSCALL (mmap, 0, sizeof (struct fc_snapshot),
++                       PROT_READ | PROT_WRITE,
++                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++  if (fc_syscall_err (m))
++    return NULL;
++  struct fc_snapshot *new_snap = (struct fc_snapshot *) m;
++
++  if (fc_build_snapshot (new_snap, fc_cur_snap, prefix, prefix_len,
++                         &stx, mnt_count, mnt_h1, mnt_h2) < 0)
++    {
++      FC_SYSCALL (munmap, new_snap, sizeof (struct fc_snapshot));
++      fc_non_sq_mnt_id = stx.stx_mnt_id;
++      fc_non_sq_ino = stx.stx_ino;
++      return NULL;
++    }
++
++  fc_write_shm_snapshot (new_snap, euid, egid);
++  if (fc_cur_snap != NULL)
++    FC_SYSCALL (munmap, fc_cur_snap, sizeof (struct fc_snapshot));
++  fc_cur_snap = new_snap;
++  fc_cur_euid = euid;
++  fc_cur_egid = egid;
++  return fc_cur_snap;
++}
++
++static int
++fc_append_match (glob_t *pglob, const char *prefix, size_t prefix_len,
++                 const char *pkg, size_t pkg_len,
++                 const char *sub1, size_t sub1_len,
++                 const char *sub2, size_t sub2_len,
++                 bool add_slash)
++{
++  size_t newcount = pglob->gl_pathc + pglob->gl_offs;
++  if (newcount > SIZE_MAX / sizeof (char *) - 2)
++    return GLOB_NOSPACE;
++  char **new_pathv = realloc (pglob->gl_pathv,
++                              (newcount + 2) * sizeof (char *));
++  if (new_pathv == NULL)
++    return GLOB_NOSPACE;
++  pglob->gl_pathv = new_pathv;
++
++  size_t p_eff = (prefix_len == 1 && prefix[0] == '/') ? 0 : prefix_len;
++  size_t total_len = (p_eff + 1 + pkg_len + 1 + sub1_len
++                      + (sub2 != NULL ? 1 + sub2_len : 0)
++                      + (add_slash ? 1 : 0));
++  char *str = malloc (total_len + 1);
++  if (str == NULL)
++    return GLOB_NOSPACE;
++
++  char *q = str;
++  if (p_eff > 0)
++    {
++      memcpy (q, prefix, p_eff);
++      q += p_eff;
++    }
++  *q++ = '/';
++  memcpy (q, pkg, pkg_len);
++  q += pkg_len;
++  *q++ = '/';
++  memcpy (q, sub1, sub1_len);
++  q += sub1_len;
++  if (sub2 != NULL)
++    {
++      *q++ = '/';
++      memcpy (q, sub2, sub2_len);
++      q += sub2_len;
++    }
++  if (add_slash)
++    *q++ = '/';
++  *q = '\0';
++
++  pglob->gl_pathv[newcount] = str;
++  pglob->gl_pathv[newcount + 1] = NULL;
++  ++pglob->gl_pathc;
++  return 0;
++}
++
++static int
++fc_emit_mask_matches (const struct fc_snapshot *snap,
++                      const struct fc_mask *mask,
++                      const struct fc_mask *dmask,
++                      const char *prefix, size_t prefix_len,
++                      const char *sub1, size_t sub1_len,
++                      const char *sub2, size_t sub2_len,
++                      int flags, glob_t *pglob)
++{
++  size_t nfound = 0;
++  for (size_t w = 0; w < FC_MAX_PKGS / 64; ++w)
++    nfound += (size_t) __builtin_popcountll (mask->bits[w]);
++  if (nfound == 0)
++    return 0;
++
++  size_t cur_idx = pglob->gl_pathc + pglob->gl_offs;
++  if (cur_idx > SIZE_MAX / sizeof (char *) - nfound - 2)
++    return GLOB_NOSPACE;
++  char **new_pathv = realloc (pglob->gl_pathv,
++                              (cur_idx + nfound + 1) * sizeof (char *));
++  if (new_pathv == NULL)
++    return GLOB_NOSPACE;
++  pglob->gl_pathv = new_pathv;
++
++  size_t p_eff = (prefix_len == 1 && prefix[0] == '/') ? 0 : prefix_len;
++
++  for (size_t w = 0; w < FC_MAX_PKGS / 64; ++w)
++    {
++      uint64_t word = mask->bits[w];
++      while (word != 0)
++        {
++          unsigned int bit = (unsigned int) __builtin_ctzll (word);
++          word &= word - 1;
++          uint32_t pkg_idx = (uint32_t) (w * 64 + bit);
++          const char *pkg = snap->pkg_names[pkg_idx];
++          size_t pkg_len = strlen (pkg);
++          bool add_slash = ((flags & GLOB_MARK)
++                            && (dmask->bits[w] & (1ULL << bit)) != 0);
++          size_t total_len = (p_eff + 1 + pkg_len + 1 + sub1_len
++                              + (sub2 != NULL ? 1 + sub2_len : 0)
++                              + (add_slash ? 1 : 0));
++          char *str = malloc (total_len + 1);
++          if (str == NULL)
++            {
++              pglob->gl_pathv[pglob->gl_pathc + pglob->gl_offs] = NULL;
++              return GLOB_NOSPACE;
++            }
++          char *q = str;
++          if (p_eff > 0)
++            {
++              memcpy (q, prefix, p_eff);
++              q += p_eff;
++            }
++          *q++ = '/';
++          memcpy (q, pkg, pkg_len);
++          q += pkg_len;
++          *q++ = '/';
++          memcpy (q, sub1, sub1_len);
++          q += sub1_len;
++          if (sub2 != NULL)
++            {
++              *q++ = '/';
++              memcpy (q, sub2, sub2_len);
++              q += sub2_len;
++            }
++          if (add_slash)
++            *q++ = '/';
++          *q = '\0';
++
++          pglob->gl_pathv[pglob->gl_offs + pglob->gl_pathc++] = str;
++        }
++    }
++  pglob->gl_pathv[pglob->gl_offs + pglob->gl_pathc] = NULL;
++  return 0;
++}
++#endif /* FC_WITH_GLOB_HELPERS */
++
++#ifdef FC_WITH_EXECVPE_HELPERS
++# define FC_EXECVPE_MAX_MATCHES 8
++
++/* Lock-free, CLONE_VM/CLONE_VFORK-safe lookup for execvpe/posix_spawnp.
++   Always unmaps any temporary snapshot before returning so no mappings leak
++   into a CLONE_VM parent on execve.  */
++static int
++fc_execvpe_lookup (const char *prefix, size_t prefix_len,
++                   const char *sub1, size_t sub1_len,
++                   const char *file, size_t file_len_no_nul,
++                   char out_pkgs[FC_EXECVPE_MAX_MATCHES][FC_MAX_PKG_NAME])
++{
++  if (prefix_len == 0 || prefix_len >= 256 || file_len_no_nul == 0)
++    return -1;
++  int sub1_id = fc_subdir_id (sub1, sub1_len);
++  if (sub1_id < 0)
++    return -1;
++
++  struct statx stx;
++  uint32_t mnt_count = 0;
++  uint64_t mnt_h1 = 0, mnt_h2 = 0;
++  if (fc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++    return -1;
++
++  uid_t euid = (uid_t) FC_SYSCALL0 (geteuid);
++  gid_t egid = (gid_t) FC_SYSCALL0 (getegid);
++
++  struct fc_snapshot *snap = fc_map_shm_snapshot (euid, egid);
++  if (snap == NULL
++      || !fc_snapshot_matches (snap, prefix, prefix_len, &stx,
++                               mnt_count, mnt_h1, mnt_h2))
++    {
++      long m = FC_SYSCALL (mmap, 0, sizeof (struct fc_snapshot),
++                           PROT_READ | PROT_WRITE,
++                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++      if (fc_syscall_err (m))
++        {
++          if (snap != NULL)
++            FC_SYSCALL (munmap, snap, sizeof (struct fc_snapshot));
++          return -1;
++        }
++      struct fc_snapshot *new_snap = (struct fc_snapshot *) m;
++      int br = fc_build_snapshot (new_snap, snap, prefix, prefix_len,
++                                  &stx, mnt_count, mnt_h1, mnt_h2);
++      if (snap != NULL)
++        FC_SYSCALL (munmap, snap, sizeof (struct fc_snapshot));
++      if (br < 0)
++        {
++          FC_SYSCALL (munmap, new_snap, sizeof (struct fc_snapshot));
++          return -1;
++        }
++      fc_write_shm_snapshot (new_snap, euid, egid);
++      snap = new_snap;
++    }
++
++  const struct fc_sub_bucket *sb
++    = fc_lookup_sub (snap, (uint8_t) sub1_id, file, file_len_no_nul);
++  int count = 0;
++  if (sb != NULL)
++    {
++      for (size_t w = 0; w < FC_MAX_PKGS / 64; ++w)
++        {
++          uint64_t word = sb->all_mask.bits[w];
++          while (word != 0)
++            {
++              if (count >= FC_EXECVPE_MAX_MATCHES)
++                {
++                  FC_SYSCALL (munmap, snap, sizeof (struct fc_snapshot));
++                  return -1;
++                }
++              unsigned int bit = (unsigned int) __builtin_ctzll (word);
++              word &= word - 1;
++              uint32_t pkg_idx = (uint32_t) (w * 64 + bit);
++              memcpy (out_pkgs[count++], snap->pkg_names[pkg_idx],
++                      FC_MAX_PKG_NAME);
++            }
++        }
++    }
++
++  FC_SYSCALL (munmap, snap, sizeof (struct fc_snapshot));
++  return count;
++}
++#endif /* FC_WITH_EXECVPE_HELPERS */
++
++#ifdef FC_WITH_RTLD_HELPERS
++static struct fc_snapshot *fc_rtld_snap = NULL;
++static uint16_t fc_rtld_dir_pkg_idx[FC_MAX_PKGS];
++
++static const struct fc_snapshot *
++fc_rtld_get_snapshot (const char *prefix, size_t prefix_len)
++{
++  if (prefix_len == 0 || prefix_len >= 256)
++    return NULL;
++
++  struct statx stx;
++  uint32_t mnt_count = 0;
++  uint64_t mnt_h1 = 0, mnt_h2 = 0;
++  if (fc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++    return NULL;
++
++  if (fc_rtld_snap != NULL
++      && fc_snapshot_matches (fc_rtld_snap, prefix, prefix_len, &stx,
++                              mnt_count, mnt_h1, mnt_h2))
++    return fc_rtld_snap;
++
++  uid_t euid = (uid_t) FC_SYSCALL0 (geteuid);
++  gid_t egid = (gid_t) FC_SYSCALL0 (getegid);
++
++  struct fc_snapshot *shm_snap = fc_map_shm_snapshot (euid, egid);
++  if (shm_snap != NULL)
++    {
++      if (fc_rtld_snap != NULL)
++        FC_SYSCALL (munmap, fc_rtld_snap, sizeof (struct fc_snapshot));
++      fc_rtld_snap = shm_snap;
++      if (fc_snapshot_matches (fc_rtld_snap, prefix, prefix_len, &stx,
++                              mnt_count, mnt_h1, mnt_h2))
++        return fc_rtld_snap;
++    }
++
++  long m = FC_SYSCALL (mmap, 0, sizeof (struct fc_snapshot),
++                       PROT_READ | PROT_WRITE,
++                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++  if (fc_syscall_err (m))
++    return NULL;
++  struct fc_snapshot *new_snap = (struct fc_snapshot *) m;
++
++  if (fc_build_snapshot (new_snap, fc_rtld_snap, prefix, prefix_len,
++                         &stx, mnt_count, mnt_h1, mnt_h2) < 0)
++    {
++      FC_SYSCALL (munmap, new_snap, sizeof (struct fc_snapshot));
++      return NULL;
++    }
++
++  fc_write_shm_snapshot (new_snap, euid, egid);
++  if (fc_rtld_snap != NULL)
++    FC_SYSCALL (munmap, fc_rtld_snap, sizeof (struct fc_snapshot));
++  fc_rtld_snap = new_snap;
++  return fc_rtld_snap;
++}
++#endif /* FC_WITH_RTLD_HELPERS */
++
++#endif /* _GLOB_FLUFFY_CACHE_H */
+--- glibc-2.44.orig/posix/glob.h	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/glob.h	2026-11-07 19:11:57.008767644 -0500
+@@ -54,10 +54,20 @@
  # define GLOB_ONLYDIR	 (1 << 13)/* Match only directories.  */
  # define GLOB_TILDE_CHECK (1 << 14)/* Like GLOB_TILDE but return an error
  				      if the user name is not available.  */
++# define GLOB_DOTDOT	 (1 << 24)/* Skip `.' and `..' unless explicit `.'.  */
++# define GLOB_GLOBSTAR	 (1 << 25)/* Recursive `**' directory matching.  */
++# define GLOB_SKIPDOTS	 (1 << 26)/* Never match `.' or `..'.  */
++# define GLOB_CASEFOLD	 (1 << 27)/* Compare without regard to case.  */
++# define GLOB_EXTMATCH	 (1 << 28)/* Use ksh-like extended matching.  */
++# define GLOB_PATHS	 (1 << 29)/* Expand colon-separated PATH elements.  */
 +# define GLOB_KEEP_SLASHES (1 << 30)/* Preserve redundant trailing slashes.  */
  # define __GLOB_FLAGS	(GLOB_ERR|GLOB_MARK|GLOB_NOSORT|GLOB_DOOFFS  \
  			 |GLOB_NOESCAPE|GLOB_NOCHECK|GLOB_APPEND     \
  			 |GLOB_PERIOD|GLOB_ALTDIRFUNC|GLOB_BRACE     \
 -			 |GLOB_NOMAGIC|GLOB_TILDE|GLOB_ONLYDIR|GLOB_TILDE_CHECK)
 +			 |GLOB_NOMAGIC|GLOB_TILDE|GLOB_ONLYDIR|GLOB_TILDE_CHECK \
++			 |GLOB_DOTDOT|GLOB_GLOBSTAR|GLOB_SKIPDOTS    \
++			 |GLOB_CASEFOLD|GLOB_EXTMATCH|GLOB_PATHS     \
 +			 |GLOB_KEEP_SLASHES)
  #else
  # define __GLOB_FLAGS	(GLOB_ERR|GLOB_MARK|GLOB_NOSORT|GLOB_DOOFFS  \
  			 |GLOB_NOESCAPE|GLOB_NOCHECK|GLOB_APPEND     \
+--- glibc-2.44.orig/posix/glob_internal.h	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/glob_internal.h	2026-11-07 19:11:57.008908723 -0500
+@@ -28,7 +28,7 @@
+ };
+ 
+ static inline int
+-__glob_pattern_type (const char *pattern, int quote)
++__glob_pattern_type_ext (const char *pattern, int quote, int extmatch)
+ {
+   const char *p;
+   int ret = GLOBPAT_NONE;
+@@ -40,6 +40,13 @@
+       case '*':
+         return GLOBPAT_SPECIAL;
+ 
++      case '+':
++      case '@':
++      case '!':
++        if (extmatch && p[1] == '(')
++          return GLOBPAT_SPECIAL;
++        break;
++
+       case '\\':
+         if (quote)
+           {
+@@ -62,4 +69,10 @@
+   return ret;
+ }
+ 
++static inline int
++__glob_pattern_type (const char *pattern, int quote)
++{
++  return __glob_pattern_type_ext (pattern, quote, 1);
++}
++
+ #endif /* GLOB_INTERNAL_H  */
+--- glibc-2.44.orig/sysdeps/posix/system.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/sysdeps/posix/system.c	2026-10-30 00:01:45.514145351 -0400
+@@ -25,14 +25,15 @@
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <stdio.h>
++#include <paths.h>
+ 
+ #include <libc-lock.h>
+ #include <not-errno.h>
+ #include <not-cancel.h>
+ #include <internal-signals.h>
+ 
+-#define	SHELL_PATH	"/bin/sh"	/* Path of the shell.  */
+-#define	SHELL_NAME	"sh"		/* Name to give it.  */
++#define	SHELL_PATH	_PATH_BSHELL	/* Path of the shell.  */
++#define	SHELL_NAME	"bash"		/* Name to give it.  */
+ 
+ 
+ /* This system implementation aims to be thread-safe, which requires to
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/configure	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/sysdeps/unix/sysv/linux/configure	2026-07-24 09:16:45.000000000 -0400
+@@ -134,7 +134,7 @@
+ 
+ 
+ # One Linux we use ldconfig.
+-use_ldconfig=yes
++use_ldconfig=no
+ 
+ if test $host = $build; then
+   # If $prefix/include/{net,scsi} are symlinks, make install will
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/sysdeps/unix/sysv/linux/configure.ac	2026-07-24 09:16:45.000000000 -0400
+@@ -89,7 +89,7 @@
+ 
+ 
+ # One Linux we use ldconfig.
+-use_ldconfig=yes
++use_ldconfig=no
+ 
+ if test $host = $build; then
+   # If $prefix/include/{net,scsi} are symlinks, make install will
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h	2026-11-07 19:12:06.484494727 -0500
++++ glibc-2.44/sysdeps/unix/sysv/linux/paths.h	2026-11-07 19:11:57.006331518 -0500
+@@ -33,12 +33,11 @@
+ #define	_PATHS_H_
+ 
+ /* Default search path. */
+-#define	_PATH_DEFPATH	"/usr/bin:/bin"
++#define	_PATH_DEFPATH	"/sw/*/bin"
+ /* All standard utilities path. */
+-#define	_PATH_STDPATH \
+-	"/usr/bin:/bin:/usr/sbin:/sbin"
++#define	_PATH_STDPATH	"/sw/*/bin"
+ 
+-#define	_PATH_BSHELL	"/bin/sh"
++#define	_PATH_BSHELL	"/sw/bash/bin/bash"
+ #define	_PATH_CONSOLE	"/dev/console"
+ #define	_PATH_CSHELL	"/bin/csh"
+ #define	_PATH_DEVDB	"/var/run/dev.db"
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-07-24 09:16:45.000000000 -0400
+@@ -540,7 +540,7 @@
+ GLIBC_2.2.5 _longjmp F
+ GLIBC_2.2.5 _mcleanup F
+ GLIBC_2.2.5 _mcount F
+-GLIBC_2.2.5 _nl_default_dirname D 0x12
++GLIBC_2.2.5 _nl_default_dirname D 0x17
+ GLIBC_2.2.5 _nl_domain_bindings D 0x8
+ GLIBC_2.2.5 _nl_msg_cat_cntr D 0x4
+ GLIBC_2.2.5 _null_auth D 0x18
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-10-30 00:01:45.514409221 -0400
+@@ -1 +1 @@
+-s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\264\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_
++s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\2\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_

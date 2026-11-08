@@ -15,7 +15,10 @@ ARCHIVES=(
 NEEDS=(
     acl
     attr
+    gcc
     glibc
+    libgcc
+    libstdcpp
     ncurses
 )
 
@@ -37,6 +40,7 @@ then
         grep-pass1
         gzip-pass1
         libgcc
+        libstdcpp
         linux-headers
         make-pass1
         ncurses
@@ -63,6 +67,7 @@ else
         grep
         gzip
         libgcc
+        libstdcpp
         linux-headers
         make
         ncurses

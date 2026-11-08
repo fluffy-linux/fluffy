@@ -36,7 +36,6 @@ MAKE() {
     patch -Z -Np1 -i bc-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i bc-$VERSION-fluffy-test.patch
     CC='gcc -std=c99' \
-    LDFLAGS='-Wl,-rpath-link=/sw/ncurses/lib' \
     ./configure \
         --prefix=/sw/bc \
         -G \

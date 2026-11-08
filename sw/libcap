@@ -7,6 +7,8 @@ fi
 
 VERSION=2.78
 
+HAS_LDFLAGS=-lcap
+
 ARCHIVES=(
     0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11 https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-$VERSION.tar.xz
     362bae376e6c93e3fd27e0864ca38b1cc54561ca79155beb599a669340ad1da5 file://libcap-$VERSION-fluffy-shell.patch

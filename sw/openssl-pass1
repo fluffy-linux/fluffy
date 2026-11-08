@@ -2,6 +2,8 @@ ON=host-build
 
 VERSION=4.0.1
 
+HAS_LDFLAGS="-lssl -lcrypto"
+
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/openssl/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
     5b26ab2d703d911005c3edc9e8ed71f66b0fe46c399703dc75871a5296c11c21 file://openssl-$VERSION-fluffy-shell.patch
@@ -16,6 +18,7 @@ NEEDS=(
 BUILD_NEEDS=(
     coreutils-pass1
     gcc-pass1
+    glibc-pass1
     linux-headers
     make-pass1
     patch-pass1

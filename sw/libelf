@@ -7,9 +7,11 @@ fi
 
 VERSION=0.195
 
+HAS_LDFLAGS=-lelf
+
 ARCHIVES=(
     37629fdf7f1f3dc2818e138fca2b8094177d6c2d0f701d3bb650a561218dc026 https://sourceware.org/ftp/elfutils/$VERSION/elfutils-$VERSION.tar.bz2
-    00cc21817315ba515f3c72de3badfb7439a7935e1fb244ebdc41f08c600c121b file://elfutils-$VERSION-fluffy.patch
+    5cb6a586e62b5634d14bf5f0ffbe226fa6f223192415869f558d5976c5b385ee file://elfutils-$VERSION-fluffy.patch
 )
 
 NEEDS=(
@@ -86,10 +88,7 @@ MAKE() {
         --prefix=/sw/libelf \
         --disable-debuginfod \
         --enable-libdebuginfod=dummy \
-        --without-libarchive \
-        PKG_CONFIG=/sw/coreutils/bin/true \
-        ZSTD_COMPRESS_CFLAGS=" " \
-        ZSTD_COMPRESS_LIBS="-lzstd"
+        --without-libarchive
     make -C lib
     make -C libelf
 }

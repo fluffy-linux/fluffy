@@ -1,148 +1,2350 @@
---- bash-5.3.orig/findcmd.c	2023-05-31 16:30:31.000000000 -0400
-+++ bash-5.3/findcmd.c	2023-05-31 16:30:31.000000000 -0400
-@@ -485,6 +485,34 @@ user_command_matches (const char *name,
- 	  if (path_element == 0)
- 	    break;
- 
-+	  if (unquoted_glob_pattern_p (path_element))
-+	    {
-+	      char **dirs;
-+	      dirs = shell_glob_filename (path_element, 0);
-+	      if (dirs && GLOB_FAILED (dirs) == 0)
-+		{
-+		  int j;
-+		  for (j = 0; dirs[j]; j++)
-+		    {
-+		      match = find_in_path_element (name, dirs[j], flags, name_len, &dotinfo, (int *)0);
-+		      if (match == 0)
-+			continue;
-+		      if (match_index + 1 == match_list_size)
-+			{
-+			  match_list_size += 10;
-+			  match_list = strvec_resize (match_list, (match_list_size + 1));
-+			}
-+		      match_list[match_index++] = match;
-+		      match_list[match_index] = (char *)NULL;
-+		      FREE (file_to_lose_on);
-+		      file_to_lose_on = (char *)NULL;
-+		    }
-+		  strvec_dispose (dirs);
-+		}
-+	      free (path_element);
-+	      continue;
-+	    }
-+
- 	  match = find_in_path_element (name, path_element, flags, name_len, &dotinfo, (int *)0);
- 	  free (path_element);
- 
-@@ -658,6 +686,38 @@ find_user_command_in_path (const char *n
-       if (path == 0)
- 	break;
- 
-+      if (unquoted_glob_pattern_p (path))
-+	{
-+	  char **dirs;
-+	  dirs = shell_glob_filename (path, 0);
-+	  if (dirs && GLOB_FAILED (dirs) == 0)
-+	    {
-+	      int i;
-+	      for (i = 0; dirs[i]; i++)
-+		{
-+		  QUIT;
-+		  full_path = find_in_path_element (name, dirs[i], flags, name_len, &dotinfo, &rflags);
-+		  if (full_path && (rflags & FS_DIRECTORY))
-+		    {
-+		      free (full_path);
-+		      continue;
-+		    }
-+		  if (full_path)
-+		    {
-+		      if (rflagsp)
-+			*rflagsp = rflags;
-+		      FREE (file_to_lose_on);
-+		      strvec_dispose (dirs);
-+		      free (path);
-+		      return (full_path);
-+		    }
-+		}
-+	      strvec_dispose (dirs);
-+	    }
-+	  free (path);
-+	  continue;
-+	}
-+
-       /* Side effects: sets dot_found_in_search, possibly sets
- 	 file_to_lose_on. */
-       full_path = find_in_path_element (name, path, flags, name_len, &dotinfo, &rflags);
---- bash-5.3.orig/bashline.c	2025-06-25 15:53:44.000000000 -0400
-+++ bash-5.3/bashline.c	2025-06-25 15:53:44.000000000 -0400
-@@ -2012,6 +2012,8 @@ command_word_completion_function (const
+diff -a -u -N -r /tmp/bash-patch-test/orig/bashline.c /tmp/bash-patch-test/work/bashline.c
+--- bash-5.3.orig/bashline.c	2026-11-07 14:09:55.846604303 -0500
++++ bash-5.3/bashline.c	2026-11-07 14:49:35.639531635 -0500
+@@ -2012,6 +2012,7 @@
    static char *dequoted_hint = (char *)NULL;
    static char *directory_part = (char *)NULL;
    static char **glob_matches = (char **)NULL;
-+static char **glob_path_dirs = (char **)NULL;
-+static int glob_path_index = 0;
++  static char **path_dirs = (char **)NULL;
    static int path_index, istate, igncase;
    static size_t hint_len;
    static int mapping_over, local_index, searching_path, hint_is_dir;
-@@ -2050,6 +2052,13 @@ command_word_completion_function (const
+@@ -2050,6 +2051,12 @@
  	  glob_matches = (char **)NULL;
  	}
  
-+      if (glob_path_dirs)
++      if (path_dirs)
 +	{
-+	  strvec_dispose (glob_path_dirs);
-+	  glob_path_dirs = (char **)NULL;
++	  strvec_dispose (path_dirs);
++	  path_dirs = (char **)NULL;
 +	}
-+      glob_path_index = 0;
 +
        if (directory_part)
  	{
  	  free (directory_part);
-@@ -2301,11 +2310,41 @@ globword:
+@@ -2137,6 +2144,8 @@
+       orig_found_quote = rl_completion_found_quote;
  
-       rl_completion_found_quote = orig_found_quote;
+       path = path_value ("PATH", 0);
++      if (path)
++	path_dirs = shell_glob_path (path);
+       path_index = dot_in_path = 0;
  
--      /* Get the next directory from the path.  If there is none, then we
--	 are all done. */
+       /* Initialize the variables for each type of command word. */
+@@ -2303,25 +2312,10 @@
+ 
+       /* Get the next directory from the path.  If there is none, then we
+ 	 are all done. */
 -      if (path == 0 || path[path_index] == 0 ||
 -	  (current_path = extract_colon_unit (path, &path_index)) == 0)
--	return ((char *)NULL);
-+      if (glob_path_dirs && glob_path_dirs[glob_path_index])
-+	current_path = savestring (glob_path_dirs[glob_path_index++]);
-+      else
-+	{
-+	  if (glob_path_dirs)
-+	    {
-+	      strvec_dispose (glob_path_dirs);
-+	      glob_path_dirs = (char **)NULL;
-+	    }
-+	  glob_path_index = 0;
-+
-+	  /* Get the next directory from the path.  If there is none, then we
-+	     are all done. */
-+	  if (path == 0 || path[path_index] == 0 ||
-+	      (current_path = extract_colon_unit (path, &path_index)) == 0)
-+	    return ((char *)NULL);
-+
-+	  if (unquoted_glob_pattern_p (current_path))
-+	    {
-+	      glob_path_dirs = shell_glob_filename (current_path, 0);
-+	      free (current_path);
-+	      if (glob_path_dirs && GLOB_FAILED (glob_path_dirs) == 0 && glob_path_dirs[0])
-+		{
-+		  glob_path_index = 1;
-+		  current_path = savestring (glob_path_dirs[0]);
-+		}
-+	      else
-+		{
-+		  if (glob_path_dirs && GLOB_FAILED (glob_path_dirs) == 0)
-+		    strvec_dispose (glob_path_dirs);
-+		  glob_path_dirs = (char **)NULL;
-+		  goto outer;
-+		}
-+	    }
-+	}
++      if (path_dirs == 0 || (current_path = path_dirs[path_index++]) == 0)
+ 	return ((char *)NULL);
  
        searching_path = 1;
-       if (*current_path == 0)
+-      if (*current_path == 0)
+-	{
+-	  free (current_path);
+-	  current_path = savestring (".");
+-	}
+-
+-      if (*current_path == '~')
+-	{
+-	  char *t;
+-
+-	  t = bash_tilde_expand (current_path, 0);
+-	  free (current_path);
+-	  current_path = t;
+-	}
+ 
+       if (current_path[0] == '.' && current_path[1] == '\0')
+ 	dot_in_path = 1;
+@@ -2356,7 +2350,6 @@
+ 	}
+       else
+ 	fnhint = filename_hint;
+-      free (current_path);		/* XXX */
+     }
+ 
+  inner:
+@@ -3995,7 +3988,7 @@
+ static int
+ completion_glob_pattern (const char *string)
+ {
+-  return (glob_pattern_p (string) == 1);
++  return (glob_pattern_p (string, 1) == 1);
+ }
+ 
+ static char *globtext;
+diff -a -u -N -r /tmp/bash-patch-test/orig/builtins/help.def /tmp/bash-patch-test/work/builtins/help.def
+--- bash-5.3.orig/builtins/help.def	2026-11-07 14:09:55.925487258 -0500
++++ bash-5.3/builtins/help.def	2026-11-07 14:46:56.366363290 -0500
+@@ -128,7 +128,7 @@
+ 
+   /* We should consider making `help bash' do something. */
+ 
+-  if (glob_pattern_p (list->word->word) == 1)
++  if (glob_pattern_p (list->word->word, 1) == 1)
+     {
+       printf ("%s", ngettext ("Shell commands matching keyword `", "Shell commands matching keywords `", (list->next ? 2 : 1)));
+       print_word_list (list, ", ");
+diff -a -u -N -r /tmp/bash-patch-test/orig/findcmd.c /tmp/bash-patch-test/work/findcmd.c
+--- bash-5.3.orig/findcmd.c	2026-11-07 14:09:56.017162999 -0500
++++ bash-5.3/findcmd.c	2026-11-07 14:46:56.366866053 -0500
+@@ -314,29 +314,6 @@
+ #endif
+ }
+ 
+-/* Return the next element from PATH_LIST, a colon separated list of
+-   paths.  PATH_INDEX_POINTER is the address of an index into PATH_LIST;
+-   the index is modified by this function.
+-   Return the next element of PATH_LIST or NULL if there are no more. */
+-static char *
+-get_next_path_element (char *path_list, int *path_index_pointer)
+-{
+-  char *path;
+-
+-  path = extract_colon_unit (path_list, path_index_pointer);
+-
+-  if (path == 0)
+-    return (path);
+-
+-  if (*path == '\0')
+-    {
+-      free (path);
+-      path = savestring (".");
+-    }
+-
+-  return (path);
+-}
+-
+ /* Look for PATHNAME in $PATH.  Returns either the hashed command
+    corresponding to PATHNAME or the first instance of PATHNAME found
+    in $PATH.  If (FLAGS&CMDSRCH_HASH) is non-zero, insert the instance of
+@@ -478,29 +455,31 @@
+ 	  path_index = 0;
+ 	}
+ 
+-      while (path_list && path_list[path_index])
++      if (path_list)
+ 	{
+-	  path_element = get_next_path_element (path_list, &path_index);
++	  char **dirs;
+ 
+-	  if (path_element == 0)
+-	    break;
++	  dirs = shell_glob_path (path_list);
++	  for (path_index = 0; dirs && dirs[path_index]; path_index++)
++	    {
++	      match = find_in_path_element (name, dirs[path_index], flags, name_len, &dotinfo, (int *)0);
+ 
+-	  match = find_in_path_element (name, path_element, flags, name_len, &dotinfo, (int *)0);
+-	  free (path_element);
++	      if (match == 0)
++		continue;
+ 
+-	  if (match == 0)
+-	    continue;
++	      if (match_index + 1 == match_list_size)
++		{
++		  match_list_size += 10;
++		  match_list = strvec_resize (match_list, (match_list_size + 1));
++		}
+ 
+-	  if (match_index + 1 == match_list_size)
+-	    {
+-	      match_list_size += 10;
+-	      match_list = strvec_resize (match_list, (match_list_size + 1));
++	      match_list[match_index++] = match;
++	      match_list[match_index] = (char *)NULL;
++	      FREE (file_to_lose_on);
++	      file_to_lose_on = (char *)NULL;
+ 	    }
+-
+-	  match_list[match_index++] = match;
+-	  match_list[match_index] = (char *)NULL;
+-	  FREE (file_to_lose_on);
+-	  file_to_lose_on = (char *)NULL;
++	  if (dirs)
++	    strvec_dispose (dirs);
+ 	}
+ 
+       /* We haven't returned any strings yet. */
+@@ -622,7 +601,7 @@
+ static char *
+ find_user_command_in_path (const char *name, char *path_list, int flags, int *rflagsp)
+ {
+-  char *full_path, *path;
++  char *full_path, **dirs;
+   int path_index, rflags;
+   size_t name_len;
+   struct stat dotinfo;
+@@ -647,21 +626,16 @@
+   name_len = strlen (name);
+   if (stat (".", &dotinfo) < 0)
+     dotinfo.st_dev = dotinfo.st_ino = 0;
+-  path_index = 0;
+ 
+-  while (path_list[path_index])
++  dirs = shell_glob_path (path_list);
++  for (path_index = 0; dirs && dirs[path_index]; path_index++)
+     {
+       /* Allow the user to interrupt out of a lengthy path search. */
+       QUIT;
+ 
+-      path = get_next_path_element (path_list, &path_index);
+-      if (path == 0)
+-	break;
+-
+       /* Side effects: sets dot_found_in_search, possibly sets
+ 	 file_to_lose_on. */
+-      full_path = find_in_path_element (name, path, flags, name_len, &dotinfo, &rflags);
+-      free (path);
++      full_path = find_in_path_element (name, dirs[path_index], flags, name_len, &dotinfo, &rflags);
+ 
+       /* We use the file status flag bits to check whether full_path is a
+ 	 directory, which we reject here. */
+@@ -676,9 +650,12 @@
+ 	  if (rflagsp)
+ 	    *rflagsp = rflags;
+ 	  FREE (file_to_lose_on);
++	  strvec_dispose (dirs);
+ 	  return (full_path);
+ 	}
+     }
++  if (dirs)
++    strvec_dispose (dirs);
+ 
+   /* We didn't find exactly what the user was looking for.  Return
+      the contents of FILE_TO_LOSE_ON which is NULL when the search
+diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob.c /tmp/bash-patch-test/work/lib/glob/glob.c
+--- bash-5.3.orig/lib/glob/glob.c	2026-11-07 14:09:55.995211257 -0500
++++ bash-5.3/lib/glob/glob.c	1969-12-31 19:00:00.000000000 -0500
+@@ -1,1579 +0,0 @@
+-/* glob.c -- file-name wildcard pattern matching for Bash.
+-
+-   Copyright (C) 1985-2023 Free Software Foundation, Inc.
+-
+-   This file is part of GNU Bash, the Bourne-Again SHell.
+-   
+-   Bash is free software: you can redistribute it and/or modify
+-   it under the terms of the GNU General Public License as published by
+-   the Free Software Foundation, either version 3 of the License, or
+-   (at your option) any later version.
+-
+-   Bash is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-   GNU General Public License for more details.
+-
+-   You should have received a copy of the GNU General Public License
+-   along with Bash.  If not, see <http://www.gnu.org/licenses/>.
+-*/
+-
+-/* To whomever it may concern: I have never seen the code which most
+-   Unix programs use to perform this function.  I wrote this from scratch
+-   based on specifications for the pattern matching.  --RMS.  */
+-
+-#include <config.h>
+-
+-#if !defined (__GNUC__) && !defined (HAVE_ALLOCA_H) && defined (_AIX)
+-  #pragma alloca
+-#endif /* _AIX && RISC6000 && !__GNUC__ */
+-
+-#include "bashtypes.h"
+-
+-#if defined (HAVE_UNISTD_H)
+-#  include <unistd.h>
+-#endif
+-
+-#include "bashansi.h"
+-#include "posixdir.h"
+-#include "posixstat.h"
+-#include "shmbutil.h"
+-#include "xmalloc.h"
+-
+-#include "filecntl.h"
+-#if !defined (F_OK)
+-#  define F_OK 0
+-#endif
+-
+-#include "stdc.h"
+-#include "memalloc.h"
+-
+-#include <signal.h>
+-
+-#include "shell.h"
+-#include "general.h"
+-
+-#include "glob.h"
+-#include "strmatch.h"
+-
+-#if !defined (HAVE_BCOPY) && !defined (bcopy)
+-#  define bcopy(s, d, n) ((void) memcpy ((d), (s), (n)))
+-#endif /* !HAVE_BCOPY && !bcopy */
+-
+-#if !defined (FREE)
+-#  define FREE(x)	if (x) free (x)
+-#endif
+-
+-/* Don't try to alloca() more than this much memory for `struct globval'
+-   in glob_vector() */
+-#ifndef ALLOCA_MAX
+-#  define ALLOCA_MAX	100000
+-#endif
+-
+-struct globval
+-  {
+-    struct globval *next;
+-    char *name;
+-  };
+-
+-extern void throw_to_top_level (void);
+-extern int sh_eaccess (const char *, int);
+-extern char *sh_makepath (const char *, const char *, int);
+-extern int signal_is_pending (int);
+-extern void run_pending_traps (void);
+-
+-extern int extended_glob;
+-
+-/* Global variable which controls whether or not * matches .*.
+-   Non-zero means don't match .*.  */
+-int noglob_dot_filenames = 1;
+-
+-/* Global variable which controls whether or not filename globbing
+-   is done without regard to case. */
+-int glob_ignore_case = 0;
+-
+-/* Global variable controlling whether globbing ever returns . or ..
+-   regardless of the pattern. If set to 1, no glob pattern will ever
+-   match `.' or `..'. Disabled by default. */
+-int glob_always_skip_dot_and_dotdot = 1;
+-
+-/* Global variable to return to signify an error in globbing. */
+-char *glob_error_return;
+-
+-static struct globval finddirs_error_return;
+-
+-/* Some forward declarations. */
+-static int skipname (char *, char *, int);
+-#if HANDLE_MULTIBYTE
+-static int mbskipname (char *, char *, int);
+-#endif
+-void udequote_pathname (char *);
+-#if HANDLE_MULTIBYTE
+-void wcdequote_pathname (wchar_t *);
+-static void wdequote_pathname (char *);
+-static void dequote_pathname (char *);
+-#else
+-#  define dequote_pathname(p) udequote_pathname(p)
+-#endif
+-static int glob_testdir (char *, int);
+-static char **glob_dir_to_array (char *, char **, int);
+-
+-/* Make sure these names continue to agree with what's in smatch.c */
+-extern char *glob_patscan (char *, char *, int, int);
+-extern wchar_t *glob_patscan_wc (wchar_t *, wchar_t *, wint_t, int);
+-
+-/* And this from gmisc.c/gm_loop.c */
+-extern int wextglob_pattern_p (wchar_t *);
+-
+-extern char *glob_dirscan (char *, int);
+-
+-/* Compile `glob_loop.c' for single-byte characters. */
+-#define GCHAR	unsigned char
+-#define CHAR	char
+-#define INT	int
+-#define L(CS)	CS
+-#define INTERNAL_GLOB_PATTERN_P internal_glob_pattern_p
+-#include "glob_loop.c"
+-
+-/* Compile `glob_loop.c' again for multibyte characters. */
+-#if HANDLE_MULTIBYTE
+-
+-#define GCHAR	wchar_t
+-#define CHAR	wchar_t
+-#define INT	wint_t
+-#define L(CS)	L##CS
+-#define INTERNAL_GLOB_PATTERN_P internal_glob_wpattern_p
+-#include "glob_loop.c"
+-
+-#endif /* HANDLE_MULTIBYTE */
+-
+-/* And now a function that calls either the single-byte or multibyte version
+-   of internal_glob_pattern_p. */
+-int
+-glob_pattern_p (const char *pattern)
+-{
+-#if HANDLE_MULTIBYTE
+-  size_t n;
+-  wchar_t *wpattern;
+-  int r;
+-
+-  if (MB_CUR_MAX == 1 || mbsmbchar (pattern) == 0)
+-    return (internal_glob_pattern_p ((unsigned char *)pattern));
+-
+-  /* Convert strings to wide chars, and call the multibyte version. */
+-  n = xdupmbstowcs (&wpattern, NULL, pattern);
+-  if (n == (size_t)-1)
+-    /* Oops.  Invalid multibyte sequence.  Try it as single-byte sequence. */
+-    return (internal_glob_pattern_p ((unsigned char *)pattern));
+-
+-  r = internal_glob_wpattern_p (wpattern);
+-  free (wpattern);
+-
+-  return r;
+-#else
+-  return (internal_glob_pattern_p ((unsigned char *)pattern));
+-#endif
+-}
+-
+-#if EXTENDED_GLOB
+-
+-#if defined (HANDLE_MULTIBYTE)
+-#  define XSKIPNAME(p, d, f)	mbskipname(p, d, f)
+-#else
+-#  define XSKIPNAME(p, d, f)	skipname(p, d, f)
+-#endif
+-
+-/* Return 1 if all subpatterns in the extended globbing pattern PAT indicate
+-   that the name should be skipped.  XXX - doesn't handle pattern negation,
+-   not sure if it should */
+-static int
+-extglob_skipname (char *pat, char *dname, int flags)
+-{
+-  char *pp, *pe, *t, *se;
+-  int n, r, negate, wild, nullpat, xflags;
+-
+-  negate = *pat == '!';
+-  wild = *pat == '*' || *pat == '?';
+-  pp = pat + 2;
+-  se = pp + strlen (pp);		/* end of pattern string */
+-  pe = glob_patscan (pp, se, 0, 0);	/* end of extglob pattern */
+-
+-  /* if pe == 0, this is an invalid extglob pattern */
+-  if (pe == 0)
+-    return 0;
+-
+-  xflags = flags | ( negate ? GX_NEGATE : 0);
+-
+-  /* if pe != se we have more of the pattern at the end of the extglob
+-     pattern. Check the easy case first ( */
+-  if (pe == se && *pe == 0 && pe[-1] == ')' && (t = strchr (pp, '|')) == 0)
+-    {
+-      pe[-1] = '\0';
+-      /* This is where we check whether the pattern is being negated and
+-	 match all files beginning with `.' if the pattern begins with a
+-	 literal `.'. */
+-      r = XSKIPNAME (pp, dname, xflags); /*(*/
+-      pe[-1] = ')';
+-      return r;
+-    }
+-
+-  /* Is the extglob pattern between the parens the null pattern?  The null
+-     pattern can match nothing, so should we check any remaining portion of
+-     the pattern? */
+-  nullpat = pe >= (pat + 2) && pe[-2] == '(' && pe[-1] == ')';
+-
+-  /* check every subpattern */
+-  while (t = glob_patscan (pp, pe, '|', 0))
+-    {
+-      /* If T == PE and *T == 0 (&& PE[-1] == RPAREN), we have hit the end
+-	 of a pattern with no trailing characters. */
+-      n = t[-1];	/* ( */
+-      if (extglob_pattern_p (pp) && n == ')')		/* nested extglob? */
+-	t[-1] = n;	/* no-op for now */
+-      else
+-	t[-1] = '\0';
+-      r = XSKIPNAME (pp, dname, xflags);
+-      t[-1] = n;
+-      if (r == 0)	/* if any pattern says not skip, we don't skip */
+-        return r;
+-      pp = t;
+-      if (pp == pe)
+-	break;
+-    }
+-
+-  /* glob_patscan might find end of string */
+-  if (pp == se)
+-    return r;
+-
+-  /* but if it doesn't then we didn't match a leading dot */
+-  if (wild && *pe)	/* if we can match zero instances, check further */
+-    return (XSKIPNAME (pe, dname, flags));
+-
+-  return 1;
+-}
+-#endif
+-
+-/* Return 1 if DNAME should be skipped according to PAT.  Mostly concerned
+-   with matching leading `.'. */
+-static int
+-skipname (char *pat, char *dname, int flags)
+-{
+-#if EXTENDED_GLOB
+-  if (extglob_pattern_p (pat))		/* XXX */
+-    return (extglob_skipname (pat, dname, flags));
+-#endif
+-
+-  if (glob_always_skip_dot_and_dotdot && DOT_OR_DOTDOT (dname))
+-    return 1;
+-
+-  /* If a leading dot need not be explicitly matched, and the pattern
+-     doesn't start with a `.', don't match `.' or `..' */
+-  if (noglob_dot_filenames == 0 && pat[0] != '.' &&
+-	(pat[0] != '\\' || pat[1] != '.') &&
+-	DOT_OR_DOTDOT (dname))
+-    return 1;
+-
+-#if 0
+-  /* This is where we check whether the pattern is being negated and
+-     match all files beginning with `.' if the pattern begins with a
+-     literal `.'. This is the negation of the next clause. */
+-  else if ((flags & GX_NEGATE) && noglob_dot_filenames == 0 &&
+-	dname[0] == '.' &&
+-	(pat[0] == '.' || (pat[0] == '\\' && pat[1] == '.')))
+-    return 0;
+-#endif
+-
+-  /* If a dot must be explicitly matched, check to see if they do. */
+-  else if (noglob_dot_filenames && dname[0] == '.' &&
+- 	   pat[0] != '.' && (pat[0] != '\\' || pat[1] != '.'))
+-    return 1;
+-
+-  return 0;
+-}
+-
+-#if HANDLE_MULTIBYTE
+-
+-static int
+-wskipname (wchar_t *pat, wchar_t *dname, int flags)
+-{
+-  if (glob_always_skip_dot_and_dotdot && WDOT_OR_DOTDOT (dname))
+-    return 1;
+-
+-  /* If a leading dot need not be explicitly matched, and the
+-     pattern doesn't start with a `.', don't match `.' or `..' */
+-  if (noglob_dot_filenames == 0 && pat[0] != L'.' &&
+-	(pat[0] != L'\\' || pat[1] != L'.') &&
+-	WDOT_OR_DOTDOT (dname))
+-    return 1;
+-
+-#if 0
+-  /* This is where we check whether the pattern is being negated and
+-     match all files beginning with `.' if the pattern begins with a
+-     literal `.'. This is the negation of the next clause. */
+-  else if ((flags & GX_NEGATE) && noglob_dot_filenames == 0 &&
+-	dname[0] == L'.' &&
+-	(pat[0] == L'.' || (pat[0] == L'\\' && pat[1] == L'.')))
+-    return 0;
+-#endif
+-
+-  /* If a leading dot must be explicitly matched, check to see if the
+-     pattern and dirname both have one. */
+-  else if (noglob_dot_filenames && dname[0] == L'.' &&
+-	pat[0] != L'.' && (pat[0] != L'\\' || pat[1] != L'.'))
+-    return 1;
+-
+-  return 0;
+-}
+-
+-static int
+-wextglob_skipname (wchar_t *pat, wchar_t *dname, int flags)
+-{
+-#if EXTENDED_GLOB
+-  wchar_t *pp, *pe, *t, *se, n;
+-  int r, negate, wild, nullpat, xflags;
+-
+-  negate = *pat == L'!';
+-  wild = *pat == L'*' || *pat == L'?';
+-  pp = pat + 2;
+-  se = pp + wcslen (pp);
+-  pe = glob_patscan_wc (pp, se, 0, 0);
+-
+-  /* if pe == 0, this is an invalid extglob pattern */
+-  if (pe == 0)
+-    return 0;
+-
+-  xflags = flags | ( negate ? GX_NEGATE : 0);
+-
+-  /* if pe != se we have more of the pattern at the end of the extglob
+-     pattern. Check the easy case first ( */
+-  if (pe == se && *pe == L'\0' && pe[-1] == L')' && (t = wcschr (pp, L'|')) == 0)
+-    {
+-      pe[-1] = L'\0';
+-      r = wskipname (pp, dname, xflags); /*(*/
+-      pe[-1] = L')';
+-      return r;
+-    }
+-
+-  /* Is the extglob pattern between the parens the null pattern?  The null
+-     pattern can match nothing, so should we check any remaining portion of
+-     the pattern? */
+-  nullpat = pe >= (pat + 2) && pe[-2] == L'(' && pe[-1] == L')';
+-
+-  /* check every subpattern */
+-  while (t = glob_patscan_wc (pp, pe, '|', 0))
+-    {
+-      n = t[-1];	/* ( */
+-      if (wextglob_pattern_p (pp) && n == L')')		/* nested extglob? */
+-	t[-1] = n;	/* no-op for now */
+-      else
+-	t[-1] = L'\0';
+-      r = wskipname (pp, dname, xflags);
+-      t[-1] = n;
+-      if (r == 0)
+-	return 0;
+-      pp = t;
+-      if (pp == pe)
+-	break;
+-    }
+-
+-  /* glob_patscan_wc might find end of string */
+-  if (pp == se)
+-    return r;
+-
+-  /* but if it doesn't then we didn't match a leading dot */
+-  if (wild && *pe != L'\0')
+-    return (wskipname (pe, dname, flags));
+-
+-  return 1;
+-#else
+-  return (wskipname (pat, dname, flags));
+-#endif
+-}
+-
+-/* Return 1 if DNAME should be skipped according to PAT.  Handles multibyte
+-   characters in PAT and DNAME.  Mostly concerned with matching leading `.'. */
+-static int
+-mbskipname (char *pat, char *dname, int flags)
+-{
+-  int ret, ext;
+-  wchar_t *pat_wc, *dn_wc;
+-  size_t pat_n, dn_n;
+-
+-  if (mbsmbchar (dname) == 0 && mbsmbchar (pat) == 0)
+-    return (skipname (pat, dname, flags));
+-
+-  ext = 0;
+-#if EXTENDED_GLOB
+-  ext = extglob_pattern_p (pat);
+-#endif
+-
+-  pat_wc = dn_wc = (wchar_t *)NULL;
+-
+-  pat_n = xdupmbstowcs (&pat_wc, NULL, pat);
+-  if (pat_n != (size_t)-1)
+-    dn_n = xdupmbstowcs (&dn_wc, NULL, dname);
+-
+-  ret = 0;
+-  if (pat_n != (size_t)-1 && dn_n !=(size_t)-1)
+-    ret = ext ? wextglob_skipname (pat_wc, dn_wc, flags) : wskipname (pat_wc, dn_wc, flags);
+-  else
+-    ret = skipname (pat, dname, flags);
+-
+-  FREE (pat_wc);
+-  FREE (dn_wc);
+-
+-  return ret;
+-}
+-#endif /* HANDLE_MULTIBYTE */
+-
+-/* Remove backslashes quoting characters in PATHNAME by modifying PATHNAME. */
+-void
+-udequote_pathname (char *pathname)
+-{
+-  register int i, j;
+-
+-  for (i = j = 0; pathname && pathname[i]; )
+-    {
+-      if (pathname[i] == '\\')
+-	i++;
+-
+-      pathname[j++] = pathname[i++];
+-
+-      if (pathname[i - 1] == 0)
+-	break;
+-    }
+-  if (pathname)
+-    pathname[j] = '\0';
+-}
+-
+-#if HANDLE_MULTIBYTE
+-/* Remove backslashes quoting characters in PATHNAME by modifying PATHNAME. */
+-void
+-wcdequote_pathname (wchar_t *wpathname)
+-{
+-  int i, j;
+-
+-  for (i = j = 0; wpathname && wpathname[i]; )
+-    {
+-      if (wpathname[i] == L'\\')
+-	i++;
+-
+-      wpathname[j++] = wpathname[i++];
+-
+-      if (wpathname[i - 1] == L'\0')
+-	break;
+-    }
+-  if (wpathname)
+-    wpathname[j] = L'\0';
+-}
+-
+-static void
+-wdequote_pathname (char *pathname)
+-{
+-  mbstate_t ps;
+-  size_t len, n;
+-  wchar_t *wpathname;
+-  wchar_t *orig_wpathname;
+-
+-  if (mbsmbchar (pathname) == 0)
+-    {
+-      udequote_pathname (pathname);
+-      return;
+-    }
+-
+-  len = strlen (pathname);
+-  /* Convert the strings into wide characters.  */
+-  n = xdupmbstowcs (&wpathname, NULL, pathname);
+-  if (n == (size_t) -1)
+-    {
+-      /* Something wrong.  Fall back to single-byte */
+-      udequote_pathname (pathname);
+-      return;
+-    }
+-  orig_wpathname = wpathname;
+-
+-  wcdequote_pathname (wpathname);
+-
+-  /* Convert the wide character string into unibyte character set. */
+-  memset (&ps, '\0', sizeof(mbstate_t));
+-  n = wcsrtombs(pathname, (const wchar_t **)&wpathname, len, &ps);
+-  if (n == (size_t)-1 || (wpathname && *wpathname != 0))	/* what? now you tell me? */
+-    {
+-      wpathname = orig_wpathname;
+-      memset (&ps, '\0', sizeof(mbstate_t));
+-      n = xwcsrtombs (pathname, (const wchar_t **)&wpathname, len, &ps);
+-    }
+-  pathname[len] = '\0';
+-
+-  /* Can't just free wpathname here; wcsrtombs changes it in many cases. */
+-  free (orig_wpathname);
+-}
+-
+-static void
+-dequote_pathname (char *pathname)
+-{
+-  if (MB_CUR_MAX > 1)
+-    wdequote_pathname (pathname);
+-  else
+-    udequote_pathname (pathname);
+-}
+-#endif /* HANDLE_MULTIBYTE */
+-
+-/* Test whether NAME exists. */
+-
+-#if defined (HAVE_LSTAT)
+-#  define GLOB_TESTNAME(name)  (lstat (name, &finfo))
+-#else /* !HAVE_LSTAT */
+-#  if !defined (AFS)
+-#    define GLOB_TESTNAME(name)  (sh_eaccess (name, F_OK))
+-#  else /* AFS */
+-#    define GLOB_TESTNAME(name)  (access (name, F_OK))
+-#  endif /* AFS */
+-#endif /* !HAVE_LSTAT */
+-
+-/* Return 0 if DIR is a directory, -2 if DIR is a symlink,  -1 otherwise. */
+-static int
+-glob_testdir (char *dir, int flags)
+-{
+-  struct stat finfo;
+-  int r;
+-
+-/*itrace("glob_testdir: testing %s" flags = %d, dir, flags);*/
+-#if defined (HAVE_LSTAT)
+-  r = (flags & GX_ALLDIRS) ? lstat (dir, &finfo) : stat (dir, &finfo);
+-#else
+-  r = stat (dir, &finfo);
+-#endif
+-  if (r < 0)
+-    return (-1);
+-
+-#if defined (S_ISLNK)
+-  if (S_ISLNK (finfo.st_mode))
+-    return (-2);
+-#endif
+-
+-  if (S_ISDIR (finfo.st_mode) == 0)
+-    return (-1);
+-
+-  return (0);
+-}
+-
+-/* Recursively scan SDIR for directories matching PAT (PAT is always `**').
+-   FLAGS is simply passed down to the recursive call to glob_vector.  Returns
+-   a list of matching directory names.  EP, if non-null, is set to the last
+-   element of the returned list.  NP, if non-null, is set to the number of
+-   directories in the returned list.  These two variables exist for the
+-   convenience of the caller (always glob_vector). */
+-static struct globval *
+-finddirs (char *pat, char *sdir, int flags, struct globval **ep, int *np)
+-{
+-  char **r;
+-  int ndirs;
+-  struct globval *ret, *e, *g;
+-
+-/*itrace("finddirs: pat = `%s' sdir = `%s' flags = 0x%x", pat, sdir, flags);*/
+-  e = ret = 0;
+-  r = glob_vector (pat, sdir, flags);
+-  if (r == 0 || r[0] == 0)
+-    {
+-      if (np)
+-	*np = 0;
+-      if (ep)
+-        *ep = 0;
+-      if (r && r != &glob_error_return)
+-	free (r);
+-      return (struct globval *)0;
+-    }
+-  for (ndirs = 0; r[ndirs] != 0; ndirs++)
+-    {
+-      g = (struct globval *) malloc (sizeof (struct globval));
+-      if (g == 0)
+-	{
+-	  while (ret)		/* free list built so far */
+-	    {
+-	      g = ret->next;
+-	      free (ret);
+-	      ret = g;
+-	    }
+-
+-	  free (r);
+-	  if (np)
+-	    *np = 0;
+-	  if (ep)
+-	    *ep = 0;
+-	  return (&finddirs_error_return);
+-	}
+-      if (e == 0)
+-	e = g;
+-
+-      g->next = ret;
+-      ret = g;
+-
+-      g->name = r[ndirs];
+-    }
+-
+-  free (r);
+-  if (ep)
+-    *ep = e;
+-  if (np)
+-    *np = ndirs;
+-
+-  return ret;
+-}
+-     	
+-/* Return a vector of names of files in directory DIR
+-   whose names match glob pattern PAT.
+-   The names are not in any particular order.
+-   Wildcards at the beginning of PAT do not match an initial period.
+-
+-   The vector is terminated by an element that is a null pointer.
+-
+-   To free the space allocated, first free the vector's elements,
+-   then free the vector.
+-
+-   Return 0 if cannot get enough memory to hold the pointer
+-   and the names.
+-
+-   Return -1 if cannot access directory DIR.
+-   Look in errno for more information.  */
+-
+-char **
+-glob_vector (char *pat, char *dir, int flags)
+-{
+-  DIR *d;
+-  struct dirent *dp;
+-  struct globval *nextlink, *lastlink, *e, *dirlist;
+-  char *nextname, *npat, *subdir;
+-  unsigned int count, i;
+-  int lose, skip, ndirs, isdir, add_current;
+-  size_t patlen, sdlen;
+-  char **name_vector;
+-  int mflags;		/* Flags passed to strmatch (). */
+-  int pflags;		/* flags passed to sh_makepath () */
+-  int hasglob;		/* return value from glob_pattern_p */
+-  int nalloca;
+-  struct globval *firstmalloc, *tmplink;
+-  char *convfn, *convpat;
+-
+-  lastlink = 0;
+-  count = 0;
+-  lose = skip = add_current = 0;
+-
+-  firstmalloc = 0;
+-  nalloca = 0;
+-
+-  name_vector = NULL;
+-
+-/*itrace("glob_vector: pat = `%s' dir = `%s' flags = 0x%x", pat, dir, flags);*/
+-  /* If PAT is empty, skip the loop, but return one (empty) filename. */
+-  if (pat == 0 || *pat == '\0')
+-    {
+-      if (glob_testdir (dir, 0) < 0)
+-	return ((char **) &glob_error_return);
+-
+-      nextlink = (struct globval *)alloca (sizeof (struct globval));
+-      if (nextlink == NULL)
+-	return ((char **) NULL);
+-
+-      nextlink->next = (struct globval *)0;
+-      nextname = (char *) malloc (1);
+-      if (nextname == 0)
+-	lose = 1;
+-      else
+-	{
+-	  lastlink = nextlink;
+-	  nextlink->name = nextname;
+-	  nextname[0] = '\0';
+-	  count = 1;
+-	}
+-
+-      skip = 1;
+-    }
+-
+-  patlen = (pat && *pat) ? strlen (pat) : 0;
+-
+-  /* If the filename pattern (PAT) does not contain any globbing characters,
+-     or contains a pattern with only backslash escapes (hasglob == 2),
+-     we can dispense with reading the directory, and just see if there is
+-     a filename `DIR/PAT'.  If there is, and we can access it, just make the
+-     vector to return and bail immediately. */
+-  hasglob = 0;
+-  if (skip == 0 && ((hasglob = glob_pattern_p (pat)) == 0 || hasglob == 2))
+-    {
+-      size_t dirlen;
+-      struct stat finfo;
+-
+-      if (glob_testdir (dir, 0) < 0)
+-	return ((char **) &glob_error_return);
+-
+-      dirlen = strlen (dir);
+-      nextname = (char *)malloc (dirlen + patlen + 2);
+-      npat = (char *)malloc (patlen + 1);
+-      if (nextname == 0 || npat == 0)
+-	{
+-	  FREE (nextname);
+-	  FREE (npat);
+-	  lose = 1;
+-	}
+-      else
+-	{
+-	  strcpy (npat, pat);
+-	  dequote_pathname (npat);
+-
+-	  strcpy (nextname, dir);
+-	  nextname[dirlen++] = '/';
+-	  strcpy (nextname + dirlen, npat);
+-
+-	  if (GLOB_TESTNAME (nextname) >= 0)
+-	    {
+-	      free (nextname);
+-	      nextlink = (struct globval *)alloca (sizeof (struct globval));
+-	      if (nextlink)
+-		{
+-		  nextlink->next = (struct globval *)0;
+-		  lastlink = nextlink;
+-		  nextlink->name = npat;
+-		  count = 1;
+-		}
+-	      else
+-		{
+-		  free (npat);
+-		  lose = 1;
+-		}
+-	    }
+-	  else
+-	    {
+-	      free (nextname);
+-	      free (npat);
+-	    }
+-	}
+-
+-      skip = 1;
+-    }
+-
+-  if (skip == 0)
+-    {
+-      /* Open the directory, punting immediately if we cannot.  If opendir
+-	 is not robust (i.e., it opens non-directories successfully), test
+-	 that DIR is a directory and punt if it's not. */
+-#if defined (OPENDIR_NOT_ROBUST)
+-      if (glob_testdir (dir, 0) < 0)
+-	return ((char **) &glob_error_return);
+-#endif
+-
+-      d = opendir (dir);
+-      if (d == NULL)
+-	return ((char **) &glob_error_return);
+-
+-      convpat = fnx_fromfs (pat, patlen);
+-      if (convpat != pat)
+-	convpat = savestring (convpat);
+-
+-      /* Compute the flags that will be passed to strmatch().  We don't
+-	 need to do this every time through the loop. */
+-      mflags = (noglob_dot_filenames ? FNM_PERIOD : FNM_DOTDOT) | FNM_PATHNAME;
+-
+-#ifdef FNM_CASEFOLD
+-      if (glob_ignore_case)
+-	mflags |= FNM_CASEFOLD;
+-#endif
+-
+-      if (extended_glob)
+-	mflags |= FNM_EXTMATCH;
+-
+-      add_current = ((flags & (GX_ALLDIRS|GX_ADDCURDIR)) == (GX_ALLDIRS|GX_ADDCURDIR));
+-
+-      /* Scan the directory, finding all names that match	 For each name that matches, allocate a struct globval
+-	 on the stack and store the name in it.
+-	 Chain those structs together; lastlink is the front of the chain.  */
+-      while (1)
+-	{
+-	  /* Make globbing interruptible in the shell. */
+-	  if (interrupt_state || terminating_signal)
+-	    {
+-	      lose = 1;
+-	      break;
+-	    }
+-	  else if (signal_is_pending (SIGINT))	/* XXX - make SIGINT traps responsive */
+-	    {
+-	      lose = 1;
+-	      break;
+-	    }
+-
+-	  dp = readdir (d);
+-	  if (dp == NULL)
+-	    break;
+-
+-	  /* If this directory entry is not to be used, try again. */
+-	  if (REAL_DIR_ENTRY (dp) == 0)
+-	    continue;
+-
+-#if 0
+-	  if (dp->d_name == 0 || *dp->d_name == 0)
+-	    continue;
+-#endif
+-
+-#if HANDLE_MULTIBYTE
+-	  if (MB_CUR_MAX > 1 && mbskipname (pat, dp->d_name, flags))
+-	    continue;
+-	  else
+-#endif
+-	  if (skipname (pat, dp->d_name, flags))
+-	    continue;
+-
+-	  /* If we're only interested in directories, don't bother with files */
+-	  if (flags & (GX_MATCHDIRS|GX_ALLDIRS))
+-	    {
+-	      pflags = (flags & GX_ALLDIRS) ? MP_RMDOT : 0;
+-	      if (flags & GX_NULLDIR)
+-		pflags |= MP_IGNDOT;
+-	      subdir = sh_makepath (dir, dp->d_name, pflags);
+-	      isdir = glob_testdir (subdir, flags);
+-	      if (isdir < 0 && (flags & GX_MATCHDIRS))
+-		{
+-		  free (subdir);
+-		  continue;
+-		}
+-	    }
+-
+-	  if (flags & GX_ALLDIRS)
+-	    {
+-	      if (isdir == 0)
+-		{
+-		  dirlist = finddirs (pat, subdir, (flags & ~GX_ADDCURDIR), &e, &ndirs);
+-		  if (dirlist == &finddirs_error_return)
+-		    {
+-		      free (subdir);
+-		      lose = 1;
+-		      break;
+-		    }
+-		  if (ndirs)		/* add recursive directories to list */
+-		    {
+-		      if (firstmalloc == 0)
+-		        firstmalloc = e;
+-		      e->next = lastlink;
+-		      lastlink = dirlist;
+-		      count += ndirs;
+-		    }
+-		}
+-
+-	      /* XXX - should we even add this if it's not a directory? */
+-	      nextlink = (struct globval *) malloc (sizeof (struct globval));
+-	      if (firstmalloc == 0)
+-		firstmalloc = nextlink;
+-	      sdlen = strlen (subdir);
+-	      nextname = (char *) malloc (sdlen + 1);
+-	      if (nextlink == 0 || nextname == 0)
+-		{
+-		  if (firstmalloc && firstmalloc == nextlink)
+-		    firstmalloc = 0;
+-		  /* If we reset FIRSTMALLOC we can free this here. */
+-		  FREE (nextlink);
+-		  FREE (nextname);
+-		  free (subdir);
+-		  lose = 1;
+-		  break;
+-		}
+-	      nextlink->next = lastlink;
+-	      lastlink = nextlink;
+-	      nextlink->name = nextname;
+-	      bcopy (subdir, nextname, sdlen + 1);
+-	      free (subdir);
+-	      ++count;
+-	      continue;
+-	    }
+-	  else if (flags & GX_MATCHDIRS)
+-	    free (subdir);
+-
+-	  convfn = fnx_fromfs (dp->d_name, D_NAMLEN (dp));
+-	  if (strmatch (convpat, convfn, mflags) != FNM_NOMATCH)
+-	    {
+-	      if (nalloca < ALLOCA_MAX)
+-		{
+-		  nextlink = (struct globval *) alloca (sizeof (struct globval));
+-		  nalloca += sizeof (struct globval);
+-		}
+-	      else
+-		{
+-		  nextlink = (struct globval *) malloc (sizeof (struct globval));
+-		  if (firstmalloc == 0)
+-		    firstmalloc = nextlink;
+-		}
+-
+-	      nextname = (char *) malloc (D_NAMLEN (dp) + 1);
+-	      if (nextlink == 0 || nextname == 0)
+-		{
+-		  /* We free NEXTLINK here, since it won't be added to the
+-		     LASTLINK chain. If we used malloc, and it returned non-
+-		     NULL, firstmalloc will be set to something valid. If it's
+-		     NEXTLINK, reset it before we free NEXTLINK to avoid
+-		     duplicate frees. If not, it will be taken care of by the
+-		     loop below with TMPLINK. */
+-		  if (firstmalloc)
+-		    {
+-		      if (firstmalloc == nextlink)
+-			firstmalloc = 0;
+-		      FREE (nextlink);
+-		    }
+-		  FREE (nextname);
+-		  lose = 1;
+-		  break;
+-		}
+-	      nextlink->next = lastlink;
+-	      lastlink = nextlink;
+-	      nextlink->name = nextname;
+-	      bcopy (dp->d_name, nextname, D_NAMLEN (dp) + 1);
+-	      ++count;
+-	    }
+-	}
+-
+-      (void) closedir (d);
+-
+-      if (convpat != pat)
+-	free (convpat);
+-    }
+-
+-  /* compat: if GX_ADDCURDIR, add the passed directory also.  Add an empty
+-     directory name as a placeholder if GX_NULLDIR (in which case the passed
+-     directory name is "."). */
+-  if (add_current && lose == 0)
+-    {
+-      sdlen = strlen (dir);
+-      nextname = (char *)malloc (sdlen + 1);
+-      nextlink = (struct globval *) malloc (sizeof (struct globval));
+-      if (nextlink == 0 || nextname == 0)
+-	{
+-	  FREE (nextlink);
+-	  FREE (nextname);
+-	  lose = 1;
+-	}
+-      else
+-	{
+-	  nextlink->name = nextname;
+-	  nextlink->next = lastlink;
+-	  lastlink = nextlink;
+-	  if (flags & GX_NULLDIR)
+-	    nextname[0] = '\0';
+-	  else
+-	    bcopy (dir, nextname, sdlen + 1);
+-	  ++count;
+-	}
+-    }
+-
+-  if (lose == 0)
+-    {
+-      name_vector = (char **) malloc ((count + 1) * sizeof (char *));
+-      lose |= name_vector == NULL;
+-    }
+-
+-  /* Have we run out of memory or been interrupted? */
+-  if (lose)
+-    {
+-      tmplink = 0;
+-
+-      /* Here free the strings we have got.  */
+-      while (lastlink)
+-	{
+-	  /* Since we build the list in reverse order, the first N entries
+-	     will be allocated with malloc, if firstmalloc is set, from
+-	     lastlink to firstmalloc. */
+-	  if (firstmalloc)
+-	    {
+-	      if (lastlink == firstmalloc)
+-		firstmalloc = 0;
+-	      tmplink = lastlink;
+-	    }
+-	  else
+-	    tmplink = 0;
+-	  free (lastlink->name);
+-	  lastlink = lastlink->next;
+-	  FREE (tmplink);
+-	}
+-
+-      /* Don't call QUIT; here; let higher layers deal with it. */
+-
+-      return ((char **)NULL);
+-    }
+-
+-  /* Copy the name pointers from the linked list into the vector.  */
+-  for (tmplink = lastlink, i = 0; i < count; ++i)
+-    {
+-      name_vector[i] = tmplink->name;
+-      tmplink = tmplink->next;
+-    }
+-
+-  name_vector[count] = NULL;
+-
+-  /* If we allocated some of the struct globvals, free them now. */
+-  if (firstmalloc)
+-    {
+-      tmplink = 0;
+-      while (lastlink)
+-	{
+-	  tmplink = lastlink;
+-	  if (lastlink == firstmalloc)
+-	    lastlink = firstmalloc = 0;
+-	  else
+-	    lastlink = lastlink->next;
+-	  free (tmplink);
+-	}
+-    }
+-
+-  return (name_vector);
+-}
+-
+-/* Return a new array which is the concatenation of each string in ARRAY
+-   to DIR.  This function expects you to pass in an allocated ARRAY, and
+-   it takes care of free()ing that array.  Thus, you might think of this
+-   function as side-effecting ARRAY.  This should handle GX_MARKDIRS. */
+-static char **
+-glob_dir_to_array (char *dir, char **array, int flags)
+-{
+-  unsigned int i;
+-  size_t l;
+-  int add_slash;
+-  char **result, *new;
+-  struct stat sb;
+-
+-  l = strlen (dir);
+-  if (l == 0)
+-    {
+-      if (flags & GX_MARKDIRS)
+-	for (i = 0; array[i]; i++)
+-	  {
+-	    if ((stat (array[i], &sb) == 0) && S_ISDIR (sb.st_mode))
+-	      {
+-		l = strlen (array[i]);
+-		new = (char *)realloc (array[i], l + 2);
+-		if (new == 0)
+-		  return NULL;
+-		new[l] = '/';
+-		new[l+1] = '\0';
+-		array[i] = new;
+-	      }
+-	  }
+-      return (array);
+-    }
+-
+-  add_slash = dir[l - 1] != '/';
+-
+-  i = 0;
+-  while (array[i] != NULL)
+-    ++i;
+-
+-  result = (char **) malloc ((i + 1) * sizeof (char *));
+-  if (result == NULL)
+-    return (NULL);
+-
+-  for (i = 0; array[i] != NULL; i++)
+-    {
+-      /* 3 == 1 for NUL, 1 for slash at end of DIR, 1 for GX_MARKDIRS */
+-      result[i] = (char *) malloc (l + strlen (array[i]) + 3);
+-
+-      if (result[i] == NULL)
+-	{
+-	  int ind;
+-	  for (ind = 0; ind < i; ind++)
+-	    free (result[ind]);
+-	  free (result);
+-	  return (NULL);
+-	}
+-
+-      strcpy (result[i], dir);
+-      if (add_slash)
+-	result[i][l] = '/';
+-      if (array[i][0])
+-	{
+-	  strcpy (result[i] + l + add_slash, array[i]);
+-	  if (flags & GX_MARKDIRS)
+-	    {
+-	      if ((stat (result[i], &sb) == 0) && S_ISDIR (sb.st_mode))
+-		{
+-		  size_t rlen;
+-		  rlen = strlen (result[i]);
+-		  result[i][rlen] = '/';
+-		  result[i][rlen+1] = '\0';
+-		}
+-	    }
+-	}
+-      else
+-        result[i][l+add_slash] = '\0';
+-    }
+-  result[i] = NULL;
+-
+-  /* Free the input array.  */
+-  for (i = 0; array[i] != NULL; i++)
+-    free (array[i]);
+-  free ((char *) array);
+-
+-  return (result);
+-}
+-
+-/* Do globbing on PATHNAME.  Return an array of pathnames that match,
+-   marking the end of the array with a null-pointer as an element.
+-   If no pathnames match, then the array is empty (first element is null).
+-   If there isn't enough memory, then return NULL.
+-   If a file system error occurs, return -1; `errno' has the error code.  */
+-char **
+-glob_filename (char *pathname, int flags)
+-{
+-  char **result, **new_result;
+-  unsigned int result_size;
+-  char *directory_name, *filename, *dname, *fn;
+-  size_t directory_len;
+-  int free_dirname;			/* flag */
+-  int dflags, hasglob;
+-
+-  result = (char **) malloc (sizeof (char *));
+-  result_size = 1;
+-  if (result == NULL)
+-    return (NULL);
+-
+-  result[0] = NULL;
+-
+-  directory_name = NULL;
+-
+-  /* Find the filename.  */
+-  filename = strrchr (pathname, '/');
+-#if defined (EXTENDED_GLOB)
+-  if (filename && extended_glob)
+-    {
+-      fn = glob_dirscan (pathname, '/');
+-#if DEBUG_MATCHING
+-      if (fn != filename)
+-	fprintf (stderr, "glob_filename: glob_dirscan: fn (%s) != filename (%s)\n", fn ? fn : "(null)", filename);
+-#endif
+-      filename = fn;
+-    }
+-#endif
+-
+-  if (filename == NULL)
+-    {
+-      filename = pathname;
+-      directory_name = "";
+-      directory_len = 0;
+-      free_dirname = 0;
+-    }
+-  else
+-    {
+-      directory_len = (filename - pathname) + 1;
+-      directory_name = (char *) malloc (directory_len + 1);
+-
+-      if (directory_name == 0)		/* allocation failed? */
+-	{
+-	  free (result);
+-	  return (NULL);
+-	}
+-
+-      bcopy (pathname, directory_name, directory_len);
+-      directory_name[directory_len] = '\0';
+-      ++filename;
+-      free_dirname = 1;
+-    }
+-
+-  hasglob = 0;
+-  /* If directory_name contains globbing characters, then we
+-     have to expand the previous levels.  Just recurse.
+-     If glob_pattern_p returns != [0,1] we have a pattern that has backslash
+-     quotes but no unquoted glob pattern characters. We dequote it below. */
+-  if (directory_len > 0 && (hasglob = glob_pattern_p (directory_name)) == 1)
+-    {
+-      char **directories, *d, *p;
+-      unsigned int i;
+-      int all_starstar, last_starstar;
+-
+-      all_starstar = last_starstar = 0;
+-      d = directory_name;
+-      dflags = flags & ~GX_MARKDIRS;
+-      /* Collapse a sequence of ** patterns separated by one or more slashes
+-	 to a single ** terminated by a slash or NUL */
+-      if ((flags & GX_GLOBSTAR) && d[0] == '*' && d[1] == '*' && (d[2] == '/' || d[2] == '\0'))
+-	{
+-	  p = d;
+-	  while (d[0] == '*' && d[1] == '*' && (d[2] == '/' || d[2] == '\0'))
+-	    {
+-	      p = d;
+-	      if (d[2])
+-		{
+-		  d += 3;
+-		  while (*d == '/')
+-		    d++;
+-		  if (*d == 0)
+-		    break;
+-		}
+-	    }
+-	  if (*d == 0)
+-	    all_starstar = 1;
+-	  d = p;
+-	  dflags |= GX_ALLDIRS|GX_ADDCURDIR;
+-	  directory_len = strlen (d);
+-	}
+-
+-      /* If there is a non [star][star]/ component in directory_name, we
+-	 still need to collapse trailing sequences of [star][star]/ into
+-	 a single one and note that the directory name ends with [star][star],
+-	 so we can compensate if filename is [star][star] */
+-      if ((flags & GX_GLOBSTAR) && all_starstar == 0)
+-	{
+-	  size_t dl, prev;
+-	  prev = dl = directory_len;
+-	  while (dl >= 4 && d[dl - 1] == '/' &&
+-			   d[dl - 2] == '*' &&
+-			   d[dl - 3] == '*' &&
+-			   d[dl - 4] == '/')
+-	    prev = dl, dl -= 3;
+-	  if (dl != directory_len)
+-	    last_starstar = 1;
+-	  directory_len = prev;
+-	}
+-
+-      /* If the directory name ends in [star][star]/ but the filename is
+-	 [star][star], just remove the final [star][star] from the directory
+-	 so we don't have to scan everything twice. */
+-      if (last_starstar && directory_len > 4 &&
+-	    filename[0] == '*' && filename[1] == '*' && filename[2] == 0)
+-	{
+-	  directory_len -= 3;
+-	}
+-
+-      if (d[directory_len - 1] == '/')
+-	d[directory_len - 1] = '\0';
+-
+-      directories = glob_filename (d, dflags|GX_RECURSE);
+-
+-      if (free_dirname)
+-	{
+-	  free (directory_name);
+-	  directory_name = NULL;
+-	}
+-
+-      if (directories == NULL)
+-	goto memory_error;
+-      else if (directories == (char **)&glob_error_return)
+-	{
+-	  free ((char *) result);
+-	  return ((char **) &glob_error_return);
+-	}
+-      else if (*directories == NULL)
+-	{
+-	  free ((char *) directories);
+-	  free ((char *) result);
+-	  return ((char **) &glob_error_return);
+-	}
+-
+-      /* If we have something like [star][star]/[star][star], it's no use to
+-         glob **, then do it again, and throw half the results away.  */
+-      if (all_starstar && filename[0] == '*' && filename[1] == '*' && filename[2] == 0)
+-	{
+-	  free ((char *) directories);
+-	  free (directory_name);
+-	  directory_name = NULL;
+-	  directory_len = 0;
+-	  goto only_filename;
+-	}
+-
+-      /* We have successfully globbed the preceding directory name.
+-	 For each name in DIRECTORIES, call glob_vector on it and
+-	 FILENAME.  Concatenate the results together.  */
+-      for (i = 0; directories[i] != NULL; ++i)
+-	{
+-	  char **temp_results;
+-	  int shouldbreak;
+-
+-	  shouldbreak = 0;
+-	  /* XXX -- we've recursively scanned any directories resulting from
+-	     a `**', so turn off the flag.  We turn it on again below if
+-	     filename is `**' */
+-	  /* Scan directory even on a NULL filename.  That way, `*h/'
+-	     returns only directories ending in `h', instead of all
+-	     files ending in `h' with a `/' appended. */
+-	  dname = directories[i];
+-	  dflags = flags & ~(GX_MARKDIRS|GX_ALLDIRS|GX_ADDCURDIR);
+-	  /* last_starstar? */
+-	  if ((flags & GX_GLOBSTAR) && filename[0] == '*' && filename[1] == '*' && filename[2] == '\0')
+-	    dflags |= GX_ALLDIRS|GX_ADDCURDIR;
+-	  if (dname[0] == '\0' && filename[0])
+-	    {
+-	      dflags |= GX_NULLDIR;
+-	      dname = ".";	/* treat null directory name and non-null filename as current directory */
+-	    }
+-
+-	  /* Special handling for symlinks to directories with globstar on */
+-	  if (all_starstar && (dflags & GX_NULLDIR) == 0)
+-	    {
+-	      /* If we have a directory name that is not null (GX_NULLDIR above)
+-		 and is a symlink to a directory, we return the symlink if
+-		 we're not `descending' into it (filename[0] == 0) and return
+-		 glob_error_return (which causes the code below to skip the
+-		 name) otherwise. I should fold this into a test that does both
+-		 checks instead of calling stat twice. */
+-	      if (glob_testdir (dname, flags|GX_ALLDIRS) == -2 && glob_testdir (dname, 0) == 0)
+-		{
+-		  if (filename[0] != 0)
+-		    temp_results = (char **)&glob_error_return;		/* skip */
+-		  else
+-		    {
+-		      /* Construct array to pass to glob_dir_to_array */
+-		      temp_results = (char **)malloc (2 * sizeof (char *));
+-		      if (temp_results == NULL)
+-			goto memory_error;
+-		      temp_results[0] = (char *)malloc (1);
+-		      if (temp_results[0] == 0)
+-			{
+-			  free (temp_results);
+-			  goto memory_error;
+-			}
+-		      **temp_results = '\0';
+-		      temp_results[1] = NULL;
+-		      dflags |= GX_SYMLINK;	/* mostly for debugging */
+-		    }
+-		}
+-	      else
+-		temp_results = glob_vector (filename, dname, dflags);
+-	    }
+-	  else
+-	    temp_results = glob_vector (filename, dname, dflags);
+-
+-	  /* Handle error cases. */
+-	  if (temp_results == NULL)
+-	    goto memory_error;
+-	  else if (temp_results == (char **)&glob_error_return)
+-	    /* This filename is probably not a directory.  Ignore it.  */
+-	    ;
+-	  else
+-	    {
+-	      char **array;
+-	      unsigned int l;
+-
+-	      /* If we're expanding **, we don't need to glue the directory
+-		 name to the results; we've already done it in glob_vector */
+-	      if ((dflags & GX_ALLDIRS) && filename[0] == '*' && filename[1] == '*' && (filename[2] == '\0' || filename[2] == '/'))
+-		{
+-		  /* When do we remove null elements from temp_results?  And
+-		     how to avoid duplicate elements in the final result? */
+-		  /* If (dflags & GX_NULLDIR) glob_filename potentially left a
+-		     NULL placeholder in the temp results just in case
+-		     glob_vector/glob_dir_to_array did something with it, but
+-		     if it didn't, and we're not supposed to be passing them
+-		     through for some reason ((flags & GX_NULLDIR) == 0) we
+-		     need to remove all the NULL elements from the beginning
+-		     of TEMP_RESULTS. */
+-		  /* If we have a null directory name and ** as the filename,
+-		     we have just searched for everything from the current
+-		     directory on down. Break now (shouldbreak = 1) to avoid
+-		     duplicate entries in the final result. */
+-#define NULL_PLACEHOLDER(x)	((x) && *(x) && **(x) == 0)
+-		  if ((dflags & GX_NULLDIR) && (flags & GX_NULLDIR) == 0 &&
+-			NULL_PLACEHOLDER (temp_results))
+-#undef NULL_PLACEHOLDER
+-		    {
+-		      int i, n;
+-		      for (n = 0; temp_results[n] && *temp_results[n] == 0; n++)
+-			;
+-		      i = n;
+-		      do
+-			temp_results[i - n] = temp_results[i];
+-		      while (temp_results[i++] != 0);
+-		      array = temp_results;
+-		      shouldbreak = 1;
+-		    }
+-	          else
+-		    array = temp_results;
+-		}
+-	      else if (dflags & GX_SYMLINK)
+-		array = glob_dir_to_array (directories[i], temp_results, flags);
+-	      else
+-		array = glob_dir_to_array (directories[i], temp_results, flags);
+-	      l = 0;
+-	      while (array[l] != NULL)
+-		++l;
+-
+-	      new_result = (char **)realloc (result, (result_size + l) * sizeof (char *));
+-
+-	      if (new_result == NULL)
+-		{
+-		  for (l = 0; array[l]; ++l)
+-		    free (array[l]);
+-		  free ((char *)array);
+-		  goto memory_error;
+-		}
+-	      result = new_result;
+-
+-	      for (l = 0; array[l] != NULL; ++l)
+-		result[result_size++ - 1] = array[l];
+-
+-	      result[result_size - 1] = NULL;
+-
+-	      /* Note that the elements of ARRAY are not freed.  */
+-	      if (array != temp_results)
+-		free ((char *) array);
+-	      else if ((dflags & GX_ALLDIRS) && filename[0] == '*' && filename[1] == '*' && filename[2] == '\0')
+-		free (temp_results);	/* expanding ** case above */
+-	      else if (array == temp_results)
+-		/* If array == temp_results, either we assigned it above or
+-		   glob_dir_to_array returned temp_results because the dirname
+-		   was the empty string. In any case, we assume temp_results
+-		   has not been freed, and free it here. */
+-		free (temp_results);
+-
+-	      if (shouldbreak)
+-		break;
+-	    }
+-	}
+-      /* Free the directories.  */
+-      for (i = 0; directories[i]; i++)
+-	free (directories[i]);
+-
+-      free ((char *) directories);
+-
+-      return (result);
+-    }
+-
+-only_filename:
+-  /* If there is only a directory name, return it. */
+-  if (*filename == '\0')
+-    {
+-      result = (char **) realloc ((char *) result, 2 * sizeof (char *));
+-      if (result == NULL)
+-	{
+-	  if (free_dirname)
+-	    free (directory_name);
+-	  return (NULL);
+-	}
+-      /* If we have a directory name with quoted characters, and we are
+-	 being called recursively to glob the directory portion of a pathname,
+-	 we need to dequote the directory name before returning it so the
+-	 caller can read the directory */
+-      if (directory_len > 0 && hasglob == 2 && (flags & GX_RECURSE) != 0)
+-	{
+-	  dequote_pathname (directory_name);
+-	  directory_len = strlen (directory_name);
+-	}
+-
+-      /* We could check whether or not the dequoted directory_name is a
+-	 directory and return it here, returning the original directory_name
+-	 if not, but we don't do that. We do return the dequoted directory
+-	 name if we're not being called recursively and the dequoted name
+-	 corresponds to an actual directory. For better backwards compatibility,
+-	 we can return &glob_error_return unconditionally in this case. */
+-
+-      if (directory_len > 0 && hasglob == 2 && (flags & GX_RECURSE) == 0)
+-	{
+-	  dequote_pathname (directory_name);
+-	  if (glob_testdir (directory_name, 0) < 0)
+-	    {
+-	      if (free_dirname)
+-		free (directory_name);
+-	      free ((char *) result);
+-	      return ((char **)&glob_error_return);
+-	    }
+-	}
+-
+-      /* Handle GX_MARKDIRS here. */
+-      result[0] = (char *) malloc (directory_len + 1);
+-      if (result[0] == NULL)
+-	goto memory_error;
+-      bcopy (directory_name, result[0], directory_len + 1);
+-      if (free_dirname)
+-	free (directory_name);
+-      result[1] = NULL;
+-      return (result);
+-    }
+-  else
+-    {
+-      char **temp_results;
+-
+-      /* There are no unquoted globbing characters in DIRECTORY_NAME.
+-	 Dequote it before we try to open the directory since there may
+-	 be quoted globbing characters which should be treated verbatim. */
+-      if (directory_len > 0)
+-	dequote_pathname (directory_name);
+-
+-      /* We allocated a small array called RESULT, which we won't be using.
+-	 Free that memory now. */
+-      free (result);
+-
+-      /* Just return what glob_vector () returns appended to the
+-	 directory name. */
+-      /* If flags & GX_ALLDIRS, we're called recursively */
+-      dflags = flags & ~GX_MARKDIRS;
+-      if (directory_len == 0)
+-	dflags |= GX_NULLDIR;
+-      if ((flags & GX_GLOBSTAR) && filename[0] == '*' && filename[1] == '*' && filename[2] == '\0')
+-	{
+-	  dflags |= GX_ALLDIRS|GX_ADDCURDIR;
+-#if 0
+-	  /* If we want all directories (dflags & GX_ALLDIRS) and we're not
+-	     being called recursively as something like `echo [star][star]/[star].o'
+-	     ((flags & GX_ALLDIRS) == 0), we want to prevent glob_vector from
+-	     adding a null directory name to the front of the temp_results
+-	     array.  We turn off ADDCURDIR if not called recursively and
+-	     dlen == 0 */
+-#endif
+-	  if (directory_len == 0 && (flags & GX_ALLDIRS) == 0)
+-	    dflags &= ~GX_ADDCURDIR;
+-	}
+-      temp_results = glob_vector (filename,
+-				  (directory_len == 0 ? "." : directory_name),
+-				  dflags);
+-
+-      if (temp_results == NULL || temp_results == (char **)&glob_error_return)
+-	{
+-	  if (free_dirname)
+-	    free (directory_name);
+-	  QUIT;			/* XXX - shell */
+-	  run_pending_traps ();
+-	  return (temp_results);
+-	}
+-
+-      result = glob_dir_to_array ((dflags & GX_ALLDIRS) ? "" : directory_name, temp_results, flags);
+-
+-      if (free_dirname)
+-	free (directory_name);
+-
+-      return (result);
+-    }
+-
+-  /* We get to memory_error if the program has run out of memory, or
+-     if this is the shell, and we have been interrupted. */
+- memory_error:
+-  if (result != NULL)
+-    {
+-      register unsigned int i;
+-      for (i = 0; result[i] != NULL; ++i)
+-	free (result[i]);
+-      free ((char *) result);
+-    }
+-
+-  if (free_dirname && directory_name)
+-    free (directory_name);
+-
+-  QUIT;
+-  run_pending_traps ();
+-
+-  return (NULL);
+-}
+-
+-#if defined (TEST)
+-
+-main (argc, argv)
+-     int argc;
+-     char **argv;
+-{
+-  unsigned int i;
+-
+-  for (i = 1; i < argc; ++i)
+-    {
+-      char **value = glob_filename (argv[i], 0);
+-      if (value == NULL)
+-	puts ("Out of memory.");
+-      else if (value == &glob_error_return)
+-	perror (argv[i]);
+-      else
+-	for (i = 0; value[i] != NULL; i++)
+-	  puts (value[i]);
+-    }
+-
+-  exit (0);
+-}
+-#endif	/* TEST.  */
+diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob.h /tmp/bash-patch-test/work/lib/glob/glob.h
+--- bash-5.3.orig/lib/glob/glob.h	2026-11-07 14:09:55.995944681 -0500
++++ bash-5.3/lib/glob/glob.h	2026-11-07 14:46:56.365843317 -0500
+@@ -21,27 +21,13 @@
+ #define	_GLOB_H_
+ 
+ #include "stdc.h"
+-
+-#define GX_MARKDIRS	0x001	/* mark directory names with trailing `/' */
+-#define GX_NOCASE	0x002	/* ignore case */
+-#define GX_MATCHDOT	0x004	/* match `.' literally */
+-#define GX_MATCHDIRS	0x008	/* match only directory names */
+-#define GX_ALLDIRS	0x010	/* match all directory names, no others */
+-#define GX_NULLDIR	0x100	/* internal -- no directory preceding pattern */
+-#define GX_ADDCURDIR	0x200	/* internal -- add passed directory name */
+-#define GX_GLOBSTAR	0x400	/* turn on special handling of ** */
+-#define GX_RECURSE	0x800	/* internal -- glob_filename called recursively */
+-#define GX_SYMLINK	0x1000	/* internal -- symlink to a directory */
+-#define GX_NEGATE	0x2000	/* internal -- extglob pattern being negated */
+-
+-extern int glob_pattern_p (const char *);
+-extern char **glob_vector (char *, char *, int);
+-extern char **glob_filename (char *, int);
++#include <glob.h>
+ 
+ extern int extglob_pattern_p (const char *);
+ 
+ extern char *glob_error_return;
+ extern int noglob_dot_filenames;
+ extern int glob_ignore_case;
++extern int glob_always_skip_dot_and_dotdot;
+ 
+ #endif /* _GLOB_H_ */
+diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob_loop.c /tmp/bash-patch-test/work/lib/glob/glob_loop.c
+--- bash-5.3.orig/lib/glob/glob_loop.c	2026-11-07 14:09:55.995775957 -0500
++++ bash-5.3/lib/glob/glob_loop.c	1969-12-31 19:00:00.000000000 -0500
+@@ -1,83 +0,0 @@
+-/* Copyright (C) 1991-2020,2022 Free Software Foundation, Inc.
+-
+-   This file is part of GNU Bash, the Bourne Again SHell.
+-   
+-   Bash is free software: you can redistribute it and/or modify
+-   it under the terms of the GNU General Public License as published by
+-   the Free Software Foundation, either version 3 of the License, or
+-   (at your option) any later version.
+-
+-   Bash is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-   GNU General Public License for more details.
+-
+-   You should have received a copy of the GNU General Public License
+-   along with Bash.  If not, see <http://www.gnu.org/licenses/>.
+-*/
+-
+-static int INTERNAL_GLOB_PATTERN_P (const GCHAR *);
+-
+-/* Return nonzero if PATTERN has any special globbing chars in it.
+-   Compiled twice, once each for single-byte and multibyte characters. */
+-static int
+-INTERNAL_GLOB_PATTERN_P (const GCHAR *pattern)
+-{
+-  register const GCHAR *p;
+-  register GCHAR c;
+-  int bopen, bsquote;
+-
+-  p = pattern;
+-  bopen = bsquote = 0;
+-
+-  while ((c = *p++) != L('\0'))
+-    switch (c)
+-      {
+-      case L('?'):
+-      case L('*'):
+-	return 1;
+-
+-      case L('['):      /* Only accept an open brace if there is a close */
+-	bopen++;        /* brace to match it.  Bracket expressions must be */
+-	continue;       /* complete, according to Posix.2 */
+-      case L(']'):
+-	if (bopen)
+-	  return 1;
+-	continue;
+-
+-      case L('+'):         /* extended matching operators */
+-      case L('@'):
+-      case L('!'):
+-	if (*p == L('('))  /*) */
+-	  return 1;
+-	continue;
+-
+-      case L('\\'):
+-	/* Don't let the pattern end in a backslash (GMATCH returns no match
+-	   if the pattern ends in a backslash anyway), but otherwise note that 
+-	   we have seen this, since the matching engine uses backslash as an
+-	   escape character and it can be removed. We return 2 later if we
+-	   have seen only backslash-escaped characters, so interested callers
+-	   know they can shortcut and just dequote the pathname. */
+-	if (*p != L('\0'))
+-	  {
+-	    p++;
+-	    bsquote = 1;
+-	    continue;
+-	  }
+-	else 	/* (*p == L('\0')) */
+-	  return 0;
+-      }
+-
+-#if 0
+-  return bsquote ? 2 : 0;
+-#else
+-  return (0);
+-#endif
+-}
+-
+-#undef INTERNAL_GLOB_PATTERN_P
+-#undef L
+-#undef INT
+-#undef CHAR
+-#undef GCHAR
+diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/gmisc.c /tmp/bash-patch-test/work/lib/glob/gmisc.c
+--- bash-5.3.orig/lib/glob/gmisc.c	2026-11-07 14:09:55.994888177 -0500
++++ bash-5.3/lib/glob/gmisc.c	2026-11-07 14:46:56.365782472 -0500
+@@ -72,35 +72,3 @@
+ #include "gm_loop.c"
+ 
+ #endif /* HANDLE_MULTIBYTE */
+-
+-
+-#if defined (EXTENDED_GLOB)
+-/* Skip characters in PAT and return the final occurrence of DIRSEP.  This
+-   is only called when extended_glob is set, so we have to skip over extglob
+-   patterns x(...) */
+-char *
+-glob_dirscan (char *pat, int dirsep)
+-{
+-  char *p, *d, *pe, *se;
+-
+-  d = pe = se = 0;
+-  for (p = pat; p && *p; p++)
+-    {
+-      if (extglob_pattern_p (p))
+-	{
+-	  if (se == 0)
+-	    se = p + strlen (p) - 1;
+-	  pe = glob_patscan (p + 2, se, 0, 0);
+-	  if (pe == 0)
+-	    continue;
+-	  else if (*pe == 0)
+-	    break;
+-	  p = pe - 1;	/* will do increment above */
+-	  continue;
+-	}
+-      if (*p ==  dirsep)
+-	d = p;
+-    }
+-  return d;
+-}
+-#endif /* EXTENDED_GLOB */
+diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/Makefile.in /tmp/bash-patch-test/work/lib/glob/Makefile.in
+--- bash-5.3.orig/lib/glob/Makefile.in	2026-11-07 14:09:55.995860855 -0500
++++ bash-5.3/lib/glob/Makefile.in	2026-11-07 14:46:56.365969808 -0500
+@@ -67,16 +67,16 @@
+ LIBRARY_NAME = libglob.a
+ 
+ # The C code source files for this library.
+-CSOURCES = $(srcdir)/glob.c $(srcdir)/strmatch.c $(srcdir)/smatch.c \
++CSOURCES = $(srcdir)/strmatch.c $(srcdir)/smatch.c \
+ 	   $(srcdir)/gmisc.c \
+ 	   $(srcdir)/xmbsrtowcs.c
+ 
+-LOOP_FILES = $(srcdir)/glob_loop.c $(srcdir)/gm_loop.c $(srcdir)/sm_loop.c
++LOOP_FILES = $(srcdir)/gm_loop.c $(srcdir)/sm_loop.c
+ 
+ # The header files for this library.
+ HSOURCES = $(srcdir)/strmatch.h
+ 
+-OBJECTS = glob.o strmatch.o smatch.o xmbsrtowcs.o gmisc.o
++OBJECTS = strmatch.o smatch.o xmbsrtowcs.o gmisc.o
+ 
+ # The texinfo files which document this library.
+ DOCSOURCE = doc/glob.texi
+@@ -146,14 +146,6 @@
+ strmatch.o: $(BUILD_DIR)/config.h
+ strmatch.o: $(BASHINCDIR)/stdc.h
+ 
+-glob.o: $(BUILD_DIR)/config.h
+-glob.o: $(topdir)/shell.h $(BUILD_DIR)/pathnames.h
+-glob.o: $(topdir)/bashtypes.h $(BASHINCDIR)/ansi_stdlib.h $(topdir)/bashansi.h
+-glob.o: $(BASHINCDIR)/posixstat.h $(BASHINCDIR)/memalloc.h
+-glob.o: strmatch.h glob.h
+-glob.o: $(BASHINCDIR)/shmbutil.h
+-glob.o: $(topdir)/xmalloc.h
+-
+ gmisc.o: $(BUILD_DIR)/config.h
+ gmisc.o: $(topdir)/bashtypes.h $(BASHINCDIR)/ansi_stdlib.h $(topdir)/bashansi.h
+ gmisc.o: $(BASHINCDIR)/shmbutil.h
+@@ -163,13 +155,11 @@
+ xmbsrtowcs.o: ${BASHINCDIR}/shmbutil.h
+ 
+ # Rules for deficient makes, like SunOS and Solaris
+-glob.o: glob.c
+ gmisc.o: gmisc.c
+ strmatch.o: strmatch.c
+ smatch.o: smatch.c
+ xmbsrtowcs.o: xmbsrtowcs.c
+ 
+ # dependencies for C files that include other C files
+-glob.o: glob_loop.c
+ gmisc.o: gm_loop.c
+ smatch.o: sm_loop.c
+diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/smatch.c /tmp/bash-patch-test/work/lib/glob/smatch.c
+--- bash-5.3.orig/lib/glob/smatch.c	2026-11-07 14:09:55.995408110 -0500
++++ bash-5.3/lib/glob/smatch.c	2026-11-07 14:50:03.336536701 -0500
+@@ -321,6 +321,25 @@
+ #define PATSCAN			glob_patscan
+ #define STRCOMPARE		strcompare
+ #define EXTMATCH		extmatch
++void
++udequote_pathname (unsigned char *pathname)
++{
++  int i, j;
++
++  for (i = j = 0; pathname && pathname[i]; )
++    {
++      if (pathname[i] == '\\')
++	i++;
++
++      pathname[j++] = pathname[i++];
++
++      if (pathname[i - 1] == 0)
++	break;
++    }
++  if (pathname)
++    pathname[j] = '\0';
++}
++
+ #define DEQUOTE_PATHNAME	udequote_pathname
+ #define STRUCT			smat_struct
+ #define STRCHR(S, C)		strchr((S), (C))
+@@ -566,6 +585,25 @@
+ #define PATSCAN			glob_patscan_wc
+ #define STRCOMPARE		wscompare
+ #define EXTMATCH		extmatch_wc
++void
++wcdequote_pathname (wchar_t *wpathname)
++{
++  int i, j;
++
++  for (i = j = 0; wpathname && wpathname[i]; )
++    {
++      if (wpathname[i] == L'\\')
++	i++;
++
++      wpathname[j++] = wpathname[i++];
++
++      if (wpathname[i - 1] == L'\0')
++	break;
++    }
++  if (wpathname)
++    wpathname[j] = L'\0';
++}
++
+ #define DEQUOTE_PATHNAME	wcdequote_pathname
+ #define STRUCT			wcsmat_struct
+ #define STRCHR(S, C)		wcschr((S), (C))
+diff -a -u -N -r /tmp/bash-patch-test/orig/Makefile.in /tmp/bash-patch-test/work/Makefile.in
+--- bash-5.3.orig/Makefile.in	2026-11-07 14:09:56.016421293 -0500
++++ bash-5.3/Makefile.in	2026-11-07 14:46:56.366192923 -0500
+@@ -370,12 +370,12 @@
+ GLOB_LDFLAGS = -L$(GLOB_LIBDIR)
+ GLOB_DEP = $(GLOB_LIBRARY)
+ 
+-GLOB_SOURCE = $(GLOB_LIBSRC)/glob.c $(GLOB_LIBSRC)/strmatch.c \
++GLOB_SOURCE = $(GLOB_LIBSRC)/strmatch.c \
+ 	      $(GLOB_LIBSRC)/smatch.c $(GLOB_LIBSRC)/xmbsrtowcs.c \
+-	      $(GLOB_LIBSRC)/glob_loop.c $(GLOB_LIBSRC)/sm_loop.c \
++	      $(GLOB_LIBSRC)/sm_loop.c \
+ 	      $(GLOB_LIBSRC)/gmisc.c \
+ 	      $(GLOB_LIBSRC)/glob.h $(GLOB_LIBSRC)/strmatch.h
+-GLOB_OBJ    = $(GLOB_LIBDIR)/glob.o $(GLOB_LIBDIR)/strmatch.o \
++GLOB_OBJ    = $(GLOB_LIBDIR)/strmatch.o \
+ 	      $(GLOB_LIBDIR)/smatch.o $(GLOB_LIBDIR)/xmbsrtowcs.o \
+ 	      $(GLOB_LIBDIR)/gmisc.o
+ 
+diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.c /tmp/bash-patch-test/work/pathexp.c
+--- bash-5.3.orig/pathexp.c	2026-11-07 14:09:55.973181177 -0500
++++ bash-5.3/pathexp.c	2026-11-07 14:49:04.536600622 -0500
+@@ -35,6 +35,7 @@
+ #include "shell.h"
+ #include "pathexp.h"
+ #include "flags.h"
++#include "trap.h"
+ 
+ #include "shmbutil.h"
+ #include "bashintl.h"
+@@ -46,12 +47,18 @@
+ static void ignore_globbed_names (char **, sh_ignore_func_t *);
+ static char *split_ignorespec (char *, int *);
+ static void sh_sortglob (char **);
++static int glob_sorttype = SORT_NONE;
+ 	       
+ #include <glob/glob.h>
+ 
+ /* Control whether * matches .files in globbing. */
+ int glob_dot_filenames;
+ 
++int noglob_dot_filenames = 1;
++int glob_ignore_case = 0;
++int glob_always_skip_dot_and_dotdot = 1;
++char *glob_error_return;
++
+ /* Control whether the extended globbing features are enabled. */
+ int extended_glob = EXTGLOB_DEFAULT;
+ 
+@@ -436,33 +443,81 @@
+   return temp;
+ }
+ 
+-/* Call the glob library to do globbing on PATHNAME, honoring all the shell
++static int
++bash_glob_flags (void)
++{
++  int gflags;
++
++  gflags = GLOB_DOTDOT;
++  if (glob_dot_filenames)
++    gflags |= GLOB_PERIOD;
++  if (glob_always_skip_dot_and_dotdot)
++    gflags |= GLOB_SKIPDOTS;
++  if (glob_ignore_case)
++    gflags |= GLOB_CASEFOLD;
++  if (extended_glob)
++    gflags |= GLOB_EXTMATCH;
++  if (glob_star)
++    gflags |= GLOB_GLOBSTAR;
++  return gflags;
++}
++
++/* Call the C library glob() to do globbing on PATHNAME, honoring all the shell
+    variables that control globbing. */
+ char **
+ shell_glob_filename (const char *pathname, int qflags)
+ {
+   char *temp, **results;
+-  int gflags, quoted_pattern;
++  glob_t g;
++  int gflags, r;
+ 
+   noglob_dot_filenames = glob_dot_filenames == 0;
+ 
+   temp = quote_string_for_globbing (pathname, QGLOB_FILENAME|qflags);
+-  gflags = glob_star ? GX_GLOBSTAR : 0;
+-  results = glob_filename (temp, gflags);
++  QUIT;
++  gflags = bash_glob_flags ();
++  if (glob_sorttype != SORT_NONE && glob_sorttype != SORT_NAME)
++    gflags |= GLOB_NOSORT;
++  memset (&g, 0, sizeof (g));
++  r = glob (temp, gflags, NULL, &g);
+   free (temp);
+ 
+-  if (results && ((GLOB_FAILED (results)) == 0))
++  if (interrupt_state || terminating_signal)
+     {
++      if (g.gl_pathv)
++	globfree (&g);
++      QUIT;
++    }
++  run_pending_traps ();
++
++  if (r == 0)
++    {
++      results = g.gl_pathv;
+       if (should_ignore_glob_matches ())
+ 	ignore_glob_matches (results);
+       if (results && results[0])
+-        sh_sortglob (results);
++	{
++	  if (glob_sorttype != SORT_NONE && glob_sorttype != SORT_NAME)
++	    sh_sortglob (results);
++	}
+       else
+ 	{
+ 	  FREE (results);
+ 	  results = (char **)&glob_error_return;
+ 	}
+     }
++  else if (r == GLOB_NOMATCH)
++    {
++      if (g.gl_pathv)
++	globfree (&g);
++      results = (char **)&glob_error_return;
++    }
++  else
++    {
++      if (g.gl_pathv)
++	globfree (&g);
++      results = (char **)NULL;
++    }
+ 
+   return (results);
+ }
+@@ -471,24 +526,71 @@
+ char **
+ noquote_glob_filename (char *pathname)
+ {
+-  char **results;
+-  int gflags;
++  glob_t g;
++  int gflags, r;
+ 
+   noglob_dot_filenames = glob_dot_filenames == 0;
+-  gflags = glob_star ? GX_GLOBSTAR : 0;
++  QUIT;
++  gflags = bash_glob_flags ();
++  if (glob_sorttype != SORT_NONE && glob_sorttype != SORT_NAME)
++    gflags |= GLOB_NOSORT;
++  memset (&g, 0, sizeof (g));
++  r = glob (pathname, gflags, NULL, &g);
+ 
+-  results = glob_filename (pathname, gflags);
++  if (interrupt_state || terminating_signal)
++    {
++      if (g.gl_pathv)
++	globfree (&g);
++      QUIT;
++    }
++  run_pending_traps ();
+ 
+-  if (results && GLOB_FAILED (results))
+-    results = (char **)NULL;
++  if (r != 0)
++    {
++      if (g.gl_pathv)
++	globfree (&g);
++      return ((char **)NULL);
++    }
+ 
+-  if (results && results[0])
+-    sh_sortglob (results);
++  if (g.gl_pathv && g.gl_pathv[0] && glob_sorttype != SORT_NONE && glob_sorttype != SORT_NAME)
++    sh_sortglob (g.gl_pathv);
+ 
+-  return (results);
++  return (g.gl_pathv);
+ }
+ #endif
+ 
++char **
++shell_glob_path (const char *path_list)
++{
++  glob_t g;
++  int gflags, r;
++
++  noglob_dot_filenames = glob_dot_filenames == 0;
++  QUIT;
++  gflags = bash_glob_flags () | GLOB_PATHS;
++  if (posixly_correct == 0)
++    gflags |= GLOB_TILDE;
++  memset (&g, 0, sizeof (g));
++  r = glob (path_list ? path_list : "", gflags, NULL, &g);
++
++  if (interrupt_state || terminating_signal)
++    {
++      if (g.gl_pathv)
++	globfree (&g);
++      QUIT;
++    }
++  run_pending_traps ();
++
++  if (r != 0)
++    {
++      if (g.gl_pathv)
++	globfree (&g);
++      return ((char **)NULL);
++    }
++
++  return (g.gl_pathv);
++}
++
+ /* Stuff for GLOBIGNORE. */
+ 
+ static struct ignorevar globignore =
+@@ -682,7 +784,6 @@
+ /* Functions to handle sorting glob results in different ways depending on
+    the value of the GLOBSORT variable. */
+ 
+-static int glob_sorttype = SORT_NONE;
+ 
+ static STRING_INT_ALIST sorttypes[] = {
+   { "name",	SORT_NAME },
+diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.h /tmp/bash-patch-test/work/pathexp.h
+--- bash-5.3.orig/pathexp.h	2026-11-07 14:09:55.846366178 -0500
++++ bash-5.3/pathexp.h	2026-11-07 14:46:56.366576509 -0500
+@@ -72,6 +72,7 @@
+ extern char **shell_glob_filename (const char *, int);
+ 
+ extern char **noquote_glob_filename (char *);
++extern char **shell_glob_path (const char *);
+ 
+ /* Filename completion ignore.  Used to implement the "fignore" facility of
+    tcsh, GLOBIGNORE (like ksh-93 FIGNORE), and EXECIGNORE.
+diff -a -u -N -r /tmp/bash-patch-test/orig/stringlib.c /tmp/bash-patch-test/work/stringlib.c
+--- bash-5.3.orig/stringlib.c	2026-11-07 14:09:55.920100496 -0500
++++ bash-5.3/stringlib.c	2026-11-07 14:46:56.366467053 -0500
+@@ -198,7 +198,7 @@
+ 	  if (len)
+ 	    {
+ 	      ind = r - ret;
+-	      if (do_glob && (glob_pattern_p (text) || strchr (text, '\\')))
++	      if (do_glob && (glob_pattern_p (text, 1) || strchr (text, '\\')))
+ 		{
+ 		  t = quote_globbing_chars (text);
+ 		  tlen = strlen (t);
+diff -a -u -N -r /tmp/bash-patch-test/orig/tests/glob.right /tmp/bash-patch-test/work/tests/glob.right
+--- bash-5.3.orig/tests/glob.right	2026-11-07 14:09:55.861693536 -0500
++++ bash-5.3/tests/glob.right	2026-11-07 14:55:26.919088424 -0500
+@@ -277,3 +277,8 @@
+ argv[1] = <*>
+ argv[1] = <man/man1/bash.1>
+ argv[1] = <man/man1/bash.1>
++z_first/bin/myprog
++z_first/bin/myprog
++m_wild/pkg_a/bin/myprog
++m_wild/pkg_b/bin/myprog
++a_last/bin/myprog
+diff -a -u -N -r /tmp/bash-patch-test/orig/tests/glob.tests /tmp/bash-patch-test/work/tests/glob.tests
+--- bash-5.3.orig/tests/glob.tests	2026-11-07 14:09:55.874972160 -0500
++++ bash-5.3/tests/glob.tests	2026-11-07 14:55:06.213218619 -0500
+@@ -404,6 +404,18 @@
+ 
+ # this is for the benefit of pure coverage, so it writes the pcv file
+ # in the right place, and for gprof
++# test wildcard PATH expansion and GLOB_PATHS ordering
++OPATH=$PATH
++mkdir -p z_first/bin m_wild/pkg_b/bin m_wild/pkg_a/bin a_last/bin
++for d in z_first/bin m_wild/pkg_b/bin m_wild/pkg_a/bin a_last/bin; do
++	touch "$d/myprog"
++	chmod +x "$d/myprog"
++done
++PATH="z_first/bin:m_wild/*/bin:a_last/bin"
++type -P myprog
++type -a -p myprog
++PATH=$OPATH
++
+ builtin cd $MYDIR
+ 
+ rm -rf $TESTDIR

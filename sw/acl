@@ -7,6 +7,8 @@ fi
 
 VERSION=2.4.0
 
+HAS_LDFLAGS=-lacl
+
 ARCHIVES=(
     e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3 https://download.savannah.gnu.org/releases/acl/acl-$VERSION.tar.xz
     3b6fa9f9013c4b1b24fcd90927a1234e37a85083fff713db6e670e225303ce9e file://acl-$VERSION-fluffy-shell.patch

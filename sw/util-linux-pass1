@@ -7,11 +7,13 @@ ARCHIVES=(
 )
 
 NEEDS=(
+    glibc-pass1
     ncurses-pass1
 )
 
 BUILD_NEEDS=(
     gcc-pass1
+    glibc-pass1
     linux-headers
     ncurses-pass1
 )

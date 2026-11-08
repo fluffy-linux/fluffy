@@ -14,6 +14,8 @@ ARCHIVES=(
 
 NEEDS=(
     bash
+    glibc
+    libgcc
     libstdcpp
 )
 
@@ -25,6 +27,7 @@ then
         coreutils-pass1
         gcc
         glibc
+        libgcc
         libstdcpp
         linux-headers
         patch-pass1
@@ -39,6 +42,7 @@ else
         coreutils
         gcc
         glibc
+        libgcc
         libstdcpp
         linux-headers
         patch

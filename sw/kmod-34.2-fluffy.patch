@@ -1,0 +1,501 @@
+diff --no-dereference -Naur kmod-34.2.orig/libkmod/libkmod-config.c kmod-34.2/libkmod/libkmod-config.c
+--- kmod-34.2.orig/libkmod/libkmod-config.c	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/libkmod/libkmod-config.c	2025-03-28 04:01:47.000000000 +0000
+@@ -6,6 +6,7 @@
+ 
+ #include <ctype.h>
+ #include <dirent.h>
++#include <glob.h>
+ #include <errno.h>
+ #include <stdarg.h>
+ #include <stddef.h>
+@@ -1013,6 +1014,63 @@
+ 	return 0;
+ }
+ 
++static void glob_closedir(void *dirp)
++{
++	closedir(dirp);
++}
++
++static struct dirent *glob_readdir(void *dirp)
++{
++	return readdir(dirp);
++}
++
++static bool config_path_exists(const struct kmod_list *path_list, const char *path)
++{
++	const struct kmod_list *l;
++
++	kmod_list_foreach(l, path_list) {
++		const struct kmod_config_path *cf = l->data;
++
++		if (streq(cf->path, path))
++			return true;
++	}
++	return false;
++}
++
++static int kmod_config_add_path(struct kmod_ctx *ctx, struct kmod_list **list,
++				struct kmod_list **path_list, const char *path)
++{
++	unsigned long long path_stamp = 0;
++	size_t pathlen;
++	struct kmod_list *tmp;
++	struct kmod_config_path *cf;
++
++	if (config_path_exists(*path_list, path))
++		return 0;
++
++	pathlen = strlen(path) + 1;
++	cf = malloc(sizeof(*cf) + pathlen);
++	if (cf == NULL)
++		return -ENOMEM;
++
++	memcpy(cf->path, path, pathlen);
++
++	if (conf_files_list(ctx, list, cf->path, &path_stamp) < 0) {
++		free(cf);
++		return 0;
++	}
++
++	cf->stamp = path_stamp;
++
++	tmp = kmod_list_append(*path_list, cf);
++	if (tmp == NULL) {
++		free(cf);
++		return -ENOMEM;
++	}
++	*path_list = tmp;
++	return 0;
++}
++
+ int kmod_config_new(struct kmod_ctx *ctx, struct kmod_config **p_config,
+ 		    const char *const *config_paths)
+ {
+@@ -1026,28 +1084,31 @@
+ 
+ 	for (i = 0; config_paths[i] != NULL; i++) {
+ 		const char *path = config_paths[i];
+-		unsigned long long path_stamp = 0;
+-		size_t pathlen;
+-		struct kmod_list *tmp;
+-		struct kmod_config_path *cf;
+ 
+-		if (conf_files_list(ctx, &list, path, &path_stamp) < 0)
+-			continue;
+-
+-		pathlen = strlen(path) + 1;
+-		cf = malloc(sizeof(*cf) + pathlen);
+-		if (cf == NULL)
+-			goto oom;
+-
+-		cf->stamp = path_stamp;
+-		memcpy(cf->path, path, pathlen);
+-
+-		tmp = kmod_list_append(path_list, cf);
+-		if (tmp == NULL) {
+-			free(cf);
+-			goto oom;
++		if (strpbrk(path, "*?[") != NULL) {
++			glob_t gl = {
++				.gl_closedir = glob_closedir,
++				.gl_readdir = glob_readdir,
++				.gl_opendir = (void *(*)(const char *))opendir,
++				.gl_lstat = stat,
++				.gl_stat = stat,
++			};
++			size_t j;
++
++			if (glob(path, GLOB_ALTDIRFUNC, NULL, &gl) == 0) {
++				for (j = 0; j < gl.gl_pathc; j++) {
++					if (kmod_config_add_path(ctx, &list, &path_list,
++								 gl.gl_pathv[j]) < 0) {
++						globfree(&gl);
++						goto oom;
++					}
++				}
++			}
++			globfree(&gl);
++		} else {
++			if (kmod_config_add_path(ctx, &list, &path_list, path) < 0)
++				goto oom;
+ 		}
+-		path_list = tmp;
+ 	}
+ 
+ 	*p_config = config = calloc(1, sizeof(struct kmod_config));
+diff --no-dereference -Naur kmod-34.2.orig/libkmod/libkmod.c kmod-34.2/libkmod/libkmod.c
+--- kmod-34.2.orig/libkmod/libkmod.c	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/libkmod/libkmod.c	2025-03-28 04:01:47.000000000 +0000
+@@ -44,9 +44,12 @@
+ static const char *const default_config_paths[] = {
+ 	// clang-format off
+ 	SYSCONFDIR "/modprobe.d",
++	"/etc/modprobe.d",
++	"/sw/*/etc/modprobe.d",
+ 	"/run/modprobe.d",
+ 	"/usr/local/lib/modprobe.d",
+ 	DISTCONFDIR "/modprobe.d",
++	"/sw/*/lib/modprobe.d",
+ 	"/lib/modprobe.d",
+ 	NULL,
+ 	// clang-format on
+diff --no-dereference -Naur kmod-34.2.orig/meson.build kmod-34.2/meson.build
+--- kmod-34.2.orig/meson.build	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/meson.build	2025-03-28 04:01:47.000000000 +0000
+@@ -292,9 +292,9 @@
+ #-------------------------------------------------------------------------------
+ 
+ _compression = [
+-  ['zstd', 'libzstd', '>= 1.4.4'],
+-  ['xz',   'liblzma', '>= 4.99'],
+-  ['zlib', 'zlib',    '>= 0'],
++  ['zstd', 'zstd', '>= 1.4.4'],
++  ['xz',   'xz',   '>= 4.99'],
++  ['zlib', 'zlib', '>= 0'],
+ ]
+ 
+ foreach tuple : _compression
+@@ -329,7 +329,7 @@
+ #-------------------------------------------------------------------------------
+ 
+ opt = 'openssl'
+-dep = dependency('libcrypto', version : '>= 1.1.0', required : get_option(opt))
++dep = dependency('openssl', version : '>= 1.1.0', required : get_option(opt))
+ have = dep.found()
+ 
+ if have
+diff --no-dereference -Naur kmod-34.2.orig/scripts/setup-rootfs.sh kmod-34.2/scripts/setup-rootfs.sh
+--- kmod-34.2.orig/scripts/setup-rootfs.sh	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/scripts/setup-rootfs.sh	2025-03-28 04:01:47.000000000 +0000
+@@ -33,7 +33,7 @@
+ 	fi
+ 
+ 	if [ "$SYSCONFDIR" != "/etc" ]; then
+-		find "$ROOTFS" -type d -name etc -printf "%h\n" | while read -r e; do
++		find "$ROOTFS" -path "*/sw/*" -prune -o -type d -name etc -printf "%h\n" | while read -r e; do
+ 			mkdir -p "$(dirname "$e/$SYSCONFDIR")"
+ 			mv "$e"/{etc,"$SYSCONFDIR"}
+ 		done
+@@ -70,6 +70,8 @@
+     ["test-depmod/search-order-external-last/lib/modules/external/"]="mod-simple.ko"
+     ["test-depmod/search-order-override$MODULE_DIRECTORY/4.4.4/foo/"]="mod-simple.ko"
+     ["test-depmod/search-order-override$MODULE_DIRECTORY/4.4.4/override/"]="mod-simple.ko"
++    ["test-depmod/search-order-fluffy-sw$MODULE_DIRECTORY/4.4.4/foo/"]="mod-simple.ko"
++    ["test-depmod/search-order-fluffy-sw$MODULE_DIRECTORY/4.4.4/override/"]="mod-simple.ko"
+     ["test-depmod/check-weakdep$MODULE_DIRECTORY/4.4.4/kernel/mod-weakdep.ko"]="mod-weakdep.ko"
+     ["test-depmod/check-weakdep$MODULE_DIRECTORY/4.4.4/kernel/mod-simple.ko"]="mod-simple.ko"
+     ["test-dependencies$MODULE_DIRECTORY/4.0.20-kmod/kernel/fs/foo/"]="mod-foo-b.ko"
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/module-playground/Makefile kmod-34.2/testsuite/module-playground/Makefile
+--- kmod-34.2.orig/testsuite/module-playground/Makefile	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/testsuite/module-playground/Makefile	2025-03-28 04:01:47.000000000 +0000
+@@ -1,28 +1,12 @@
+-# When KDIR is not manually set, use the MODULE_DIRECTORY for the pre-existent
+-# kmod, not the one being built, to figure out how to get to the kernel
+-# sources/headers for building our own dummy kernel modules.  The final
+-# location of the modules may change later by scripts/setup-rootfs.sh that
+-# assembles a per-test-rootfs.
+-ifndef KDIR
+-  MODULE_DIRECTORY := $(shell pkg-config --variable module_directory kmod)
+-  ifeq ($(MODULE_DIRECTORY),)
+-    MODULE_DIRECTORY := /lib/modules
+-  endif
+-  KDIR := $(MODULE_DIRECTORY)/$$(uname -r)/build
+-endif
+-
+-ARCH_SPECIFIC_MODULES := mod-simple-x86_64.ko mod-simple-i386.ko mod-simple-sparc64.ko
++include Kbuild
++MODULES_KO := $(obj-m:.o=.ko)
+ 
+ default: modules
+ 
+-mod-simple-%.ko: mod-simple-%.c Makefile.arch
+-	$(eval arch=$(patsubst mod-simple-%.ko,%,$@))
+-	$(MAKE) KDIR=$(KDIR_$(arch)) ARCH=$(arch) CROSS_COMPILE=$(CROSS_COMPILE_$(arch)) -f Makefile.arch
+-
+-modules:
+-	$(MAKE) -C $(KDIR) M=$$PWD modules
++%.ko: %.c
++	$(CC) -Iinclude -DKBUILD_MODNAME='"$(subst -,_,$*)"' -O2 -fno-common -c -o $@ $<
+ 
+-arch-modules: $(ARCH_SPECIFIC_MODULES)
++modules: $(MODULES_KO)
+ 
+ clean:
+-	$(MAKE) -C $(KDIR) M=$$PWD clean
++	rm -f *.ko *.o
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/module-playground/include/linux/debugfs.h kmod-34.2/testsuite/module-playground/include/linux/debugfs.h
+--- kmod-34.2.orig/testsuite/module-playground/include/linux/debugfs.h	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/module-playground/include/linux/debugfs.h	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1,9 @@
++#pragma once
++#include <stddef.h>
++struct dentry;
++struct seq_file;
++static inline void seq_puts(struct seq_file *s, const char *str) { (void)s; (void)str; }
++#define DEFINE_SHOW_ATTRIBUTE(name) static const int name##_fops = 0
++static inline struct dentry *debugfs_create_dir(const char *name, struct dentry *parent) { (void)name; (void)parent; return NULL; }
++static inline struct dentry *debugfs_create_file(const char *name, unsigned int mode, struct dentry *parent, void *data, const void *fops) { (void)name; (void)mode; (void)parent; (void)data; (void)fops; return NULL; }
++static inline void debugfs_remove_recursive(struct dentry *dentry) { (void)dentry; }
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/module-playground/include/linux/init.h kmod-34.2/testsuite/module-playground/include/linux/init.h
+--- kmod-34.2.orig/testsuite/module-playground/include/linux/init.h	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/module-playground/include/linux/init.h	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1,5 @@
++#pragma once
++#define __init
++#define __exit
++#define module_init(fn) int init_module(void) __attribute__((alias(#fn)));
++#define module_exit(fn) void cleanup_module(void) __attribute__((alias(#fn)));
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/module-playground/include/linux/module.h kmod-34.2/testsuite/module-playground/include/linux/module.h
+--- kmod-34.2.orig/testsuite/module-playground/include/linux/module.h	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/module-playground/include/linux/module.h	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1,42 @@
++#pragma once
++#define __CONCAT_ID2(a, b) a##b
++#define __CONCAT_ID(a, b) __CONCAT_ID2(a, b)
++#define MODULE_INFO(tag, info) \
++    static const char __CONCAT_ID(__modinfo_, __LINE__)[] \
++    __attribute__((section(".modinfo"), used, aligned(1))) = #tag "=" info
++
++#define MODULE_AUTHOR(a) MODULE_INFO(author, a)
++#define MODULE_LICENSE(l) MODULE_INFO(license, l)
++#define MODULE_ALIAS(a) MODULE_INFO(alias, a)
++#define MODULE_DESCRIPTION(d) MODULE_INFO(description, d)
++#define MODULE_WEAKDEP(w) MODULE_INFO(weakdep, w)
++
++#define EXPORT_SYMBOL(sym) \
++    static const char __ksymtab_str_##sym[] \
++    __attribute__((section("__ksymtab_strings"), used, aligned(1))) = #sym
++
++struct __kmod_stub_module {
++    int state;
++    void *next;
++    void *prev;
++    char name[64 - sizeof(unsigned long)];
++};
++
++__attribute__((section(".gnu.linkonce.this_module"), used))
++struct __kmod_stub_module __this_module = {
++    .name = KBUILD_MODNAME,
++};
++
++struct __kmod_stub_modversion {
++    unsigned long crc;
++    char name[64 - sizeof(unsigned long)];
++};
++
++__attribute__((section("__versions"), used, aligned(sizeof(unsigned long))))
++static const struct __kmod_stub_modversion __mod_versions[] = {
++    { 0x12345678UL, "module_layout" },
++};
++
++MODULE_INFO(name, KBUILD_MODNAME);
++MODULE_INFO(depends, "");
++MODULE_INFO(vermagic, "4.4.4 SMP mod_unload ");
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/module-playground/include/linux/printk.h kmod-34.2/testsuite/module-playground/include/linux/printk.h
+--- kmod-34.2.orig/testsuite/module-playground/include/linux/printk.h	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/module-playground/include/linux/printk.h	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1,2 @@
++#pragma once
++static inline int pr_warn(const char *fmt, ...) { (void)fmt; return 0; }
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/fluffy-etc.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/fluffy-etc.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/fluffy-etc.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/fluffy-etc.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++blacklist fluffy_etc
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/fluffy-lib.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/fluffy-lib.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/fluffy-lib.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/fluffy-lib.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++blacklist fluffy_lib
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/lib/modules/4.4.4/correct-modules.dep kmod-34.2/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/lib/modules/4.4.4/correct-modules.dep
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/lib/modules/4.4.4/correct-modules.dep	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/lib/modules/4.4.4/correct-modules.dep	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++override/mod-simple.ko:
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/sw/fluffy-pkg/etc/depmod.d/search.conf kmod-34.2/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/sw/fluffy-pkg/etc/depmod.d/search.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/sw/fluffy-pkg/etc/depmod.d/search.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/sw/fluffy-pkg/etc/depmod.d/search.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++search foo built-in
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/sw/fluffy-pkg/lib/depmod.d/override.conf kmod-34.2/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/sw/fluffy-pkg/lib/depmod.d/override.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/sw/fluffy-pkg/lib/depmod.d/override.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/sw/fluffy-pkg/lib/depmod.d/override.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++override mod-simple 4.4.4 override
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/test-blacklist.c kmod-34.2/testsuite/test-blacklist.c
+--- kmod-34.2.orig/testsuite/test-blacklist.c	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/testsuite/test-blacklist.c	2025-03-28 04:01:47.000000000 +0000
+@@ -86,4 +86,69 @@
+ 		    [TC_ROOTFS] = TESTSUITE_ROOTFS "test-blacklist/",
+ 	    });
+ 
++
++static int blacklist_fluffy_glob(const struct test *t)
++{
++	struct kmod_ctx *ctx;
++	struct kmod_list *list = NULL, *l, *filtered;
++	struct kmod_module *mod;
++	int err;
++	size_t len = 0;
++
++	const char *names[] = { "fluffy_etc", "fluffy_lib", "ext4", NULL };
++	const char **name;
++
++	ctx = kmod_new(NULL, NULL);
++	if (ctx == NULL)
++		exit(EXIT_FAILURE);
++
++	for (name = names; *name; name++) {
++		err = kmod_module_new_from_name(ctx, *name, &mod);
++		if (err < 0)
++			goto fail_lookup;
++		list = kmod_list_append(list, mod);
++	}
++
++	err = kmod_module_apply_filter(ctx, KMOD_FILTER_BLACKLIST, list, &filtered);
++	if (err < 0) {
++		ERR("Could not filter: %s\n", strerror(-err));
++		goto fail;
++	}
++	if (filtered == NULL) {
++		ERR("All modules were filtered out!\n");
++		goto fail;
++	}
++
++	kmod_list_foreach(l, filtered) {
++		const char *modname;
++		mod = kmod_module_get_module(l);
++		modname = kmod_module_get_name(mod);
++		if (streq("fluffy_etc", modname) || streq("fluffy_lib", modname))
++			goto fail;
++		len++;
++		kmod_module_unref(mod);
++	}
++
++	if (len != 1)
++		goto fail;
++
++	kmod_module_unref_list(filtered);
++	kmod_module_unref_list(list);
++	kmod_unref(ctx);
++
++	return EXIT_SUCCESS;
++
++fail:
++	kmod_module_unref_list(list);
++fail_lookup:
++	kmod_unref(ctx);
++	return EXIT_FAILURE;
++}
++
++DEFINE_TEST(blacklist_fluffy_glob,
++	    .description = "check if modules in /sw/*/{etc,lib}/modprobe.d are blacklisted",
++	    .config = {
++		    [TC_ROOTFS] = TESTSUITE_ROOTFS "test-blacklist/",
++	    });
++
+ TESTSUITE_MAIN();
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/test-depmod.c kmod-34.2/testsuite/test-depmod.c
+--- kmod-34.2.orig/testsuite/test-depmod.c	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/testsuite/test-depmod.c	2025-03-28 04:01:47.000000000 +0000
+@@ -257,4 +257,26 @@
+ 		},
+ 	});
+ 
++#define SEARCH_ORDER_FLUFFY_SW_ROOTFS TESTSUITE_ROOTFS "test-depmod/search-order-fluffy-sw"
++#define SEARCH_ORDER_FLUFFY_SW_LIB_MODULES \
++	SEARCH_ORDER_FLUFFY_SW_ROOTFS MODULE_DIRECTORY "/" MODULES_UNAME
++static noreturn int depmod_search_order_fluffy_sw(const struct test *t)
++{
++	EXEC_DEPMOD();
++	exit(EXIT_FAILURE);
++}
++DEFINE_TEST(depmod_search_order_fluffy_sw,
++	.description = "check if depmod honors /sw/*/{etc,lib}/depmod.d configs",
++	.config = {
++		[TC_UNAME_R] = MODULES_UNAME,
++		[TC_ROOTFS] = SEARCH_ORDER_FLUFFY_SW_ROOTFS,
++	},
++	.output = {
++		.files = (const struct keyval[]) {
++			{ SEARCH_ORDER_FLUFFY_SW_LIB_MODULES "/correct-modules.dep",
++			  SEARCH_ORDER_FLUFFY_SW_LIB_MODULES "/modules.dep" },
++			{ },
++		},
++	});
++
+ TESTSUITE_MAIN();
+diff --no-dereference -Naur kmod-34.2.orig/tools/depmod.c kmod-34.2/tools/depmod.c
+--- kmod-34.2.orig/tools/depmod.c	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/tools/depmod.c	2025-03-28 04:01:47.000000000 +0000
+@@ -8,6 +8,7 @@
+ #include <assert.h>
+ #include <ctype.h>
+ #include <dirent.h>
++#include <glob.h>
+ #include <errno.h>
+ #include <getopt.h>
+ #include <limits.h>
+@@ -41,9 +42,12 @@
+ static const char *const default_cfg_paths[] = {
+ 	// clang-format off
+ 	SYSCONFDIR "/depmod.d",
++	"/etc/depmod.d",
++	"/sw/*/etc/depmod.d",
+ 	"/run/depmod.d",
+ 	"/usr/local/lib/depmod.d",
+ 	DISTCONFDIR "/depmod.d",
++	"/sw/*/lib/depmod.d",
+ 	"/lib/depmod.d",
+ 	NULL,
+ 	// clang-format on
+@@ -890,6 +894,16 @@
+ 	return err;
+ }
+ 
++static void glob_closedir(void *dirp)
++{
++	closedir(dirp);
++}
++
++static struct dirent *glob_readdir(void *dirp)
++{
++	return readdir(dirp);
++}
++
+ static int cfg_load(struct cfg *cfg, const char *const *cfg_paths)
+ {
+ 	size_t i, n_files = 0;
+@@ -898,8 +912,28 @@
+ 	if (cfg_paths == NULL)
+ 		cfg_paths = default_cfg_paths;
+ 
+-	for (i = 0; cfg_paths[i] != NULL; i++)
+-		cfg_files_list(&files, &n_files, cfg_paths[i]);
++	for (i = 0; cfg_paths[i] != NULL; i++) {
++		const char *path = cfg_paths[i];
++
++		if (strpbrk(path, "*?[") != NULL) {
++			glob_t gl = {
++				.gl_closedir = glob_closedir,
++				.gl_readdir = glob_readdir,
++				.gl_opendir = (void *(*)(const char *))opendir,
++				.gl_lstat = stat,
++				.gl_stat = stat,
++			};
++			size_t j;
++
++			if (glob(path, GLOB_ALTDIRFUNC, NULL, &gl) == 0) {
++				for (j = 0; j < gl.gl_pathc; j++)
++					cfg_files_list(&files, &n_files, gl.gl_pathv[j]);
++			}
++			globfree(&gl);
++		} else {
++			cfg_files_list(&files, &n_files, path);
++		}
++	}
+ 
+ 	for (i = 0; i < n_files; i++) {
+ 		struct cfg_file *f = files[i];

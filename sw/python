@@ -7,31 +7,35 @@ fi
 
 VERSION=3.14.7
 
+HAS_CFLAGS=-I/sw/python/include/python3.14
+HAS_LDFLAGS=-lpython3.14
+
 ARCHIVES=(
     3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz
     d484b784ec35c5776c5ff55f81fa984b5251a38b532b24bb00e43148bd73ffe9 https://www.python.org/ftp/python/doc/$VERSION/python-$VERSION-docs-html.tar.bz2
     66a7f2c9e5ae91a8ed0824d1888c5ba70c46e28ed2e22bd04d05d2d1aab06778 file://Python-$VERSION-fluffy.patch
 )
 
-NEEDS=(
-    bzip2
-    expat
-    gdbm
-    glibc
-    libffi
-    libxcrypt
-    mpdecimal
-    ncurses
-    openssl
-    readline
-    sqlite
-    xz
-    zlib
-    zstd
-)
-
 if test -v CROSS
 then
+    NEEDS=(
+        bzip2
+        expat
+        gdbm
+        glibc
+        libffi
+        libxcrypt
+        mpdecimal
+        ncurses
+        openssl
+        readline
+        sqlite
+        util-linux-pass1
+        xz
+        zlib
+        zstd
+    )
+
     BUILD_NEEDS=(
         bash
         binutils
@@ -59,11 +63,30 @@ then
         sed
         sqlite
         tar-pass1
+        util-linux-pass1
         xz
         zlib
         zstd
     )
 else
+    NEEDS=(
+        bzip2
+        expat
+        gdbm
+        glibc
+        libffi
+        libxcrypt
+        mpdecimal
+        ncurses
+        openssl
+        readline
+        sqlite
+        util-linux
+        xz
+        zlib
+        zstd
+    )
+
     BUILD_NEEDS=(
         bash
         binutils
@@ -91,6 +114,7 @@ else
         sed
         sqlite
         tar
+        util-linux
         xz
         zlib
         zstd

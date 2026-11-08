@@ -1,5 +1,7 @@
 VERSION=4.21.0
 
+HAS_LDFLAGS=-ltasn1
+
 ARCHIVES=(
     1d8a444a223cc5464240777346e125de51d8e6abf0b8bac742ac84609167dc87 https://ftpmirror.gnu.org/libtasn1/libtasn1-$VERSION.tar.gz
     18cba3f3bd722aecea5a913e7de83315b80c047badfb08cdc6222f2158e8422f file://libtasn1-$VERSION-fluffy-shell.patch

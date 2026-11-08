@@ -10,7 +10,7 @@ VERSION=5.3
 ARCHIVES=(
     0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz
     89543561daf7a466eb36f55a22788efabc48b27e0f7ee8a4f91e163d348148cc file://bash-$VERSION-fluffy-shell.patch
-    1c93ce4cbb6926e7bde96c227aba4bbff9325065acfe30b5bcc624743e7d7f82 file://bash-$VERSION-fluffy-source.patch
+    145952bdaf6b917ee467e92ab668d2cb6588a7062ebcd046dcf79a587428db6b file://bash-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -92,6 +92,10 @@ expect eof
 lassign [wait] _ _ _ value
 exit $value
 '
+    for t in run-glob-test run-glob-bracket run-globstar run-extglob run-extglob2 run-extglob3
+    do
+        env -C tests TMPDIR=/tmp BASH_TSTOUT=/tmp/bashtst-$$ THIS_SH=$PWD/bash BUILD_DIR=$PWD PATH=$PWD:$PATH $PWD/bash $t
+    done
 }
 
 INSTALL() {

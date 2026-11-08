@@ -1,6 +1,5 @@
-diff -Naur glibc-2.44.patched/posix/globtest.sh glibc-2.44.test/posix/globtest.sh
---- glibc-2.44.patched/posix/globtest.sh	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/posix/globtest.sh	2026-10-31 17:01:51.403229147 +0000
+--- glibc-2.44.orig/posix/globtest.sh	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/globtest.sh	2026-10-31 13:01:51.403229147 -0400
 @@ -21,7 +21,7 @@
  
  common_objpfx=$1; shift
@@ -10,9 +9,8 @@ diff -Naur glibc-2.44.patched/posix/globtest.sh glibc-2.44.test/posix/globtest.s
  test_wrapper_env=$1; shift
  logfile=$common_objpfx/posix/globtest.out
  
-diff -Naur glibc-2.44.patched/posix/test-errno.c glibc-2.44.test/posix/test-errno.c
---- glibc-2.44.patched/posix/test-errno.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/posix/test-errno.c	2026-10-31 17:01:51.404127334 +0000
+--- glibc-2.44.orig/posix/test-errno.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/test-errno.c	2026-10-31 13:01:51.404127334 -0400
 @@ -115,7 +115,7 @@
    fails |= test_wrp (EBADF, accept, -1, &sa, &sl);
    fails |= test_wrp (EINVAL, access, "/", -1);
@@ -31,9 +29,8 @@ diff -Naur glibc-2.44.patched/posix/test-errno.c glibc-2.44.test/posix/test-errn
    fails |= test_wrp (EBADF, read, -1, buf, 1);
    fails |= test_wrp (EINVAL, readlink, "/", buf, sizeof buf);
    fails |= test_wrp (EBADF, readv, -1, iov, 1);
-diff -Naur glibc-2.44.patched/posix/tst-execveat.c glibc-2.44.test/posix/tst-execveat.c
---- glibc-2.44.patched/posix/tst-execveat.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/posix/tst-execveat.c	2026-10-31 17:29:36.393548435 +0000
+--- glibc-2.44.orig/posix/tst-execveat.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/tst-execveat.c	2026-10-31 13:29:36.393548435 -0400
 @@ -85,7 +85,8 @@
    struct stat64 st;
  #endif
@@ -128,10 +125,17 @@ diff -Naur glibc-2.44.patched/posix/tst-execveat.c glibc-2.44.test/posix/tst-exe
  
    return 0;
  }
-diff -Naur glibc-2.44.patched/posix/tst-glob-bz30635.c glibc-2.44.test/posix/tst-glob-bz30635.c
---- glibc-2.44.patched/posix/tst-glob-bz30635.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/posix/tst-glob-bz30635.c	2026-10-31 17:01:51.404361987 +0000
-@@ -43,8 +43,10 @@
+--- glibc-2.44.orig/posix/tst-glob-bz30635.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/tst-glob-bz30635.c	2026-11-07 21:45:25.656597281 -0500
+@@ -17,6 +17,7 @@
+    <https://www.gnu.org/licenses/>.  */
+ 
+ #include <glob.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <support/test-driver.h>
+ #include <support/support.h>
+@@ -43,12 +44,44 @@
    TEST_VERIFY (glob (pattern, 0, NULL, &g) == 0);
    globfree (&g);
  
@@ -143,9 +147,42 @@ diff -Naur glibc-2.44.patched/posix/tst-glob-bz30635.c glibc-2.44.test/posix/tst
    pattern[SIZE - 3] = 's';
    pattern[SIZE - 2] = 'h';
    TEST_VERIFY (glob (pattern, 0, NULL, &g) == 0);
-diff -Naur glibc-2.44.patched/posix/tst-spawn-chdir.c glibc-2.44.test/posix/tst-spawn-chdir.c
---- glibc-2.44.patched/posix/tst-spawn-chdir.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/posix/tst-spawn-chdir.c	2026-10-31 17:01:51.404456837 +0000
+   globfree (&g);
++  free (pattern);
++
++  /* Verify Fluffy SquashFS cache and literal-suffix fast paths match the
++     uncached slow path across cold and warm runs.  */
++  int dummy_err (const char *epath, int eerrno) { return 0; }
++  static const char *const sw_pats[] =
++    {
++      "/sw/*/bin/bash",
++      "/sw/*/bin/nonexistent_fluffy_test_binary",
++      "/sw/*/bin",
++      "/sw/*/bin/",
++      "/sw/*/lib/libc.so*",
++      "/sw/*/include/*.h"
++    };
++  for (size_t i = 0; i < sizeof (sw_pats) / sizeof (sw_pats[0]); ++i)
++    for (int pass = 0; pass < 2; ++pass)
++      {
++        glob_t g_fast, g_slow;
++        int r_fast = glob (sw_pats[i], 0, NULL, &g_fast);
++        int r_slow = glob (sw_pats[i], 0, dummy_err, &g_slow);
++        TEST_COMPARE (r_fast, r_slow);
++        if (r_fast == 0)
++          {
++            TEST_COMPARE (g_fast.gl_pathc, g_slow.gl_pathc);
++            for (size_t j = 0; j < g_fast.gl_pathc; ++j)
++              TEST_COMPARE_STRING (g_fast.gl_pathv[j], g_slow.gl_pathv[j]);
++            globfree (&g_fast);
++            globfree (&g_slow);
++          }
++      }
+ 
+   return 0;
+ }
+--- glibc-2.44.orig/posix/tst-spawn-chdir.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/tst-spawn-chdir.c	2026-10-31 13:01:51.404456837 -0400
 @@ -61,7 +61,7 @@
  const char *
  get_pwd_program (void)
@@ -155,9 +192,8 @@ diff -Naur glibc-2.44.patched/posix/tst-spawn-chdir.c glibc-2.44.test/posix/tst-
    for (size_t i = 0; i < array_length (paths); ++i)
      if (access (paths[i], X_OK) == 0)
        return paths[i];
-diff -Naur glibc-2.44.patched/stdio-common/test-popen.c glibc-2.44.test/stdio-common/test-popen.c
---- glibc-2.44.patched/stdio-common/test-popen.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/stdio-common/test-popen.c	2026-10-31 17:01:51.404591053 +0000
+--- glibc-2.44.orig/stdio-common/test-popen.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/stdio-common/test-popen.c	2026-10-31 13:01:51.404591053 -0400
 @@ -59,7 +59,7 @@
       the perhaps incompatible new shared libraries.  */
    unsetenv ("LD_LIBRARY_PATH");
@@ -185,9 +221,8 @@ diff -Naur glibc-2.44.patched/stdio-common/test-popen.c glibc-2.44.test/stdio-co
    if (output != NULL)
      {
        puts ("popen called with illegal mode does not return NULL");
-diff -Naur glibc-2.44.patched/stdlib/tst-realpath-toolong.c glibc-2.44.test/stdlib/tst-realpath-toolong.c
---- glibc-2.44.patched/stdlib/tst-realpath-toolong.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/stdlib/tst-realpath-toolong.c	2026-10-31 17:01:51.404961763 +0000
+--- glibc-2.44.orig/stdlib/tst-realpath-toolong.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/stdlib/tst-realpath-toolong.c	2026-10-31 13:01:51.404961763 -0400
 @@ -44,7 +44,7 @@
    /* canonicalize.c states that if the real path is >= PATH_MAX, then
       realpath returns NULL and sets ENAMETOOLONG.  */
@@ -197,10 +232,9 @@ diff -Naur glibc-2.44.patched/stdlib/tst-realpath-toolong.c glibc-2.44.test/stdl
  
    free (base);
    return 0;
-diff -Naur glibc-2.44.patched/posix/tst-gnuglob-skeleton.c glibc-2.44.test/posix/tst-gnuglob-skeleton.c
---- glibc-2.44.patched/posix/tst-gnuglob-skeleton.c	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/posix/tst-gnuglob-skeleton.c	2026-07-24 13:16:45.000000000 +0000
-@@ -500,6 +500,16 @@
+--- glibc-2.44.orig/posix/tst-gnuglob-skeleton.c	2026-07-24 09:16:45.000000000 -0400
++++ glibc-2.44/posix/tst-gnuglob-skeleton.c	2026-11-07 19:11:57.010970384 -0500
+@@ -500,9 +500,69 @@
  
    test ("", GLOB_NOCHECK, 0, "");
  
@@ -214,6 +248,59 @@ diff -Naur glibc-2.44.patched/posix/tst-gnuglob-skeleton.c glibc-2.44.test/posix
 +	"dir1lev1/",
 +	"dir2lev1/");
 +
++  test ("dir2lev1/*:dir1lev1/dir*lev2/file*lev3", GLOB_PATHS, 0,
++	"dir2lev1/dir1lev2",
++	"dir1lev1/dir2lev2/file1lev3",
++	"dir1lev1/dir2lev2/file2lev3",
++	"dir1lev1/dir3lev2/file3lev3",
++	"dir1lev1/dir3lev2/file4lev3");
++
++  test ("dir1lev1/dir3lev2/file*lev3:dir1lev1/dir2lev2/file*lev3", GLOB_PATHS, 0,
++	"dir1lev1/dir3lev2/file3lev3",
++	"dir1lev1/dir3lev2/file4lev3",
++	"dir1lev1/dir2lev2/file1lev3",
++	"dir1lev1/dir2lev2/file2lev3");
++
++  test (":dir2lev1:dir1lev1/dir*lev2:", GLOB_PATHS, 0,
++	".",
++	"dir2lev1",
++	"dir1lev1/dir1lev2",
++	"dir1lev1/dir2lev2",
++	"dir1lev1/dir3lev2",
++	".");
++
++  test ("dir1lev1/dir@(1|3)lev2/*", GLOB_EXTMATCH, 0,
++	"dir1lev1/dir3lev2/file3lev3",
++	"dir1lev1/dir3lev2/file4lev3");
++
++  test ("DIR1LEV1/DIR2LEV2/FILE*LEV3", GLOB_CASEFOLD, 0,
++	"dir1lev1/dir2lev2/file1lev3",
++	"dir1lev1/dir2lev2/file2lev3");
++
++  test ("dir2lev1/dir1lev2/.*", GLOB_SKIPDOTS, 0,
++	"dir2lev1/dir1lev2/.dir",
++	"dir2lev1/dir1lev2/.foo");
++
++  test ("dir2lev1/dir1lev2/*", GLOB_PERIOD | GLOB_DOTDOT, 0,
++	"dir2lev1/dir1lev2/.dir",
++	"dir2lev1/dir1lev2/.foo");
++
++  test ("dir2lev1/dir1lev2/!(*.bar)",
++	GLOB_EXTMATCH | GLOB_DOTDOT, GLOB_NOMATCH, NULL);
++
++  test ("dir2lev1/dir1lev2/!(*.bar)",
++	GLOB_EXTMATCH | GLOB_PERIOD | GLOB_DOTDOT, 0,
++	"dir2lev1/dir1lev2/.dir",
++	"dir2lev1/dir1lev2/.foo");
++
++  test ("**/file1lev4", GLOB_GLOBSTAR, 0,
++	"dir1lev1/dir2lev2/dir1lev3/file1lev4");
++
    GLOBFREE_FUNC (&gl);
  
    return result;
+ }
+ 
++
++
+ #include <support/test-driver.c>

@@ -7,6 +7,8 @@ fi
 
 VERSION=4.5.2
 
+HAS_LDFLAGS=-lcrypt
+
 ARCHIVES=(
     71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071 https://github.com/besser82/libxcrypt/releases/download/v$VERSION/libxcrypt-$VERSION.tar.xz
     c52bbf6498d194b9dc92dbbac213319421f2315b36be6f67ebfafc021acd870b file://libxcrypt-$VERSION-fluffy-shell.patch
