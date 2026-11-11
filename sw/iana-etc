@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=20260805
 
@@ -6,9 +11,16 @@ ARCHIVES=(
     29270860664e324107537f32ea476a333ca52d71b59c74bc06ecc3b0fa9cf490 https://github.com/Mic92/iana-etc/releases/download/$VERSION/iana-etc-$VERSION.tar.gz
 )
 
-BUILD_NEEDS=(
-    coreutils-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        coreutils-pass1
+    )
+else
+    BUILD_NEEDS=(
+        coreutils
+    )
+fi
 
 INSTALL() {
     install -d $DESTDIR/sw/iana-etc/etc

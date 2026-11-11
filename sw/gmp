@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=6.3.0
 
@@ -10,32 +15,65 @@ ARCHIVES=(
     75a7b0a73fb0f15620053673ad113ae39a75a978c60344c207df64afadbefa1d file://gmp-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(
-    glibc
-    libgcc
-    libstdcpp-pass1
-)
+if test -v CROSS
+then
+    NEEDS=(
+        glibc
+        libgcc
+        libstdcpp-pass1
+    )
+else
+    NEEDS=(
+        glibc
+        libgcc
+        libstdcpp
+    )
+fi
 
-BUILD_NEEDS=(
-    bash-pass1
-    binutils
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    libgcc
-    libstdcpp-pass1
-    linux-headers
-    m4
-    make-pass1
-    patch-pass1
-    perl-pass1
-    sed-pass1
-    texinfo-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        libgcc
+        libstdcpp-pass1
+        linux-headers
+        m4
+        make-pass1
+        patch-pass1
+        perl-pass1
+        sed-pass1
+        texinfo-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        libstdcpp
+        linux-headers
+        m4
+        make
+        patch
+        perl
+        sed
+        texinfo
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i gmp-$VERSION-fluffy-shell.patch

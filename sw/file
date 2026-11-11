@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=5.48
 
@@ -9,34 +14,71 @@ ARCHIVES=(
     7973df10da80fffb459395d2c11e5a4f7699ad6001b82ab7c446af737a6dfc1d file://file-$VERSION-fluffy-shell.patch
 )
 
-NEEDS=(
-    bzip2
-    glibc
-    xz
-    zlib
-    zstd-pass1
-)
+if test -v CROSS
+then
+    NEEDS=(
+        bzip2
+        glibc
+        xz
+        zlib
+        zstd-pass1
+    )
+else
+    NEEDS=(
+        bzip2
+        glibc
+        xz
+        zlib
+        zstd
+    )
+fi
 
-BUILD_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    bzip2
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    patch-pass1
-    sed-pass1
-    tar-pass1
-    xz
-    zlib
-    zstd-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        bzip2
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed-pass1
+        tar-pass1
+        xz
+        zlib
+        zstd-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bzip2
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        xz
+        zlib
+        zstd
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i file-$VERSION-fluffy-shell.patch

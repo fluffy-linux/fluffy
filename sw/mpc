@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=1.4.1
 
@@ -15,26 +20,50 @@ NEEDS=(
     mpfr
 )
 
-BUILD_NEEDS=(
-    bash-pass1
-    binutils
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    gmp
-    grep-pass1
-    libgcc
-    linux-headers
-    make-pass1
-    mpfr
-    patch-pass1
-    perl-pass1
-    sed-pass1
-    texinfo-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        gmp
+        grep-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        mpfr
+        patch-pass1
+        perl-pass1
+        sed-pass1
+        texinfo-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        gmp
+        grep
+        libgcc
+        linux-headers
+        make
+        mpfr
+        patch
+        perl
+        sed
+        texinfo
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i mpc-$VERSION-fluffy-shell.patch

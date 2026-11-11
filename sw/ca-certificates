@@ -1,16 +1,29 @@
-ON=host-build
+if test -v CROSS
+then
+    ON=host-build
+else
+    ON=fluffy-build
+fi
 
-VERSION=2026.10.20
+VERSION=2026.11.05
 
 ARCHIVES=(
-    796f1389bfea13c0ed78f663b765baaff54a508e5483786bd6ece73c5e3e3cbe https://curl.se/ca/cacert.pem
+    427c064216761a1e72a8b30f0d954d08cb6e4435a82091fb865afd20c8497285 https://curl.se/ca/cacert-${VERSION//./-}.pem
 )
 
-BUILD_NEEDS=(
-    coreutils-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        coreutils-pass1
+    )
+else
+    BUILD_NEEDS=(
+        coreutils
+    )
+fi
 
 INSTALL() {
+    mv -v cacert-${VERSION//./-}.pem cacert.pem
     install -vdm755 $DESTDIR/sw/ca-certificates/etc/ssl/certs
     install -vm644 cacert.pem $DESTDIR/sw/ca-certificates/etc/ssl/certs/ca-certificates.crt
     ln -sfv certs/ca-certificates.crt $DESTDIR/sw/ca-certificates/etc/ssl/cert.pem

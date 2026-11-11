@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=2.6.4
 
@@ -15,24 +20,50 @@ NEEDS=(
     m4
 )
 
-BUILD_NEEDS=(
-    bash-pass1
-    bison-pass1
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    gzip-pass1
-    linux-headers
-    m4
-    make-pass1
-    patch-pass1
-    sed-pass1
-    tar-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        bison-pass1
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        gzip-pass1
+        libgcc
+        linux-headers
+        m4
+        make-pass1
+        patch-pass1
+        sed-pass1
+        tar-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        m4
+        make
+        patch
+        sed
+        tar
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i flex-$VERSION-fluffy-shell.patch

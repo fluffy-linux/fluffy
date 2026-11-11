@@ -1,6 +1,6 @@
-diff -a -u -N -r /tmp/bash-patch-test/orig/bashline.c /tmp/bash-patch-test/work/bashline.c
---- bash-5.3.orig/bashline.c	2026-11-07 14:09:55.846604303 -0500
-+++ bash-5.3/bashline.c	2026-11-07 14:49:35.639531635 -0500
+diff -uNr bash-5.3.orig/bashline.c bash-5.3/bashline.c
+--- bash-5.3.orig/bashline.c	2025-06-25 15:53:44.000000000 -0400
++++ bash-5.3/bashline.c	2026-11-10 22:27:42.012040151 -0500
 @@ -2012,6 +2012,7 @@
    static char *dequoted_hint = (char *)NULL;
    static char *directory_part = (char *)NULL;
@@ -75,9 +75,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/bashline.c /tmp/bash-patch-test/work/
  }
  
  static char *globtext;
-diff -a -u -N -r /tmp/bash-patch-test/orig/builtins/help.def /tmp/bash-patch-test/work/builtins/help.def
---- bash-5.3.orig/builtins/help.def	2026-11-07 14:09:55.925487258 -0500
-+++ bash-5.3/builtins/help.def	2026-11-07 14:46:56.366363290 -0500
+diff -uNr bash-5.3.orig/builtins/help.def bash-5.3/builtins/help.def
+--- bash-5.3.orig/builtins/help.def	2025-03-17 11:49:56.000000000 -0400
++++ bash-5.3/builtins/help.def	2026-11-10 22:27:42.012383219 -0500
 @@ -128,7 +128,7 @@
  
    /* We should consider making `help bash' do something. */
@@ -87,10 +87,22 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/builtins/help.def /tmp/bash-patch-tes
      {
        printf ("%s", ngettext ("Shell commands matching keyword `", "Shell commands matching keywords `", (list->next ? 2 : 1)));
        print_word_list (list, ", ");
-diff -a -u -N -r /tmp/bash-patch-test/orig/findcmd.c /tmp/bash-patch-test/work/findcmd.c
---- bash-5.3.orig/findcmd.c	2026-11-07 14:09:56.017162999 -0500
-+++ bash-5.3/findcmd.c	2026-11-07 14:46:56.366866053 -0500
-@@ -314,29 +314,6 @@
+diff -uNr bash-5.3.orig/findcmd.c bash-5.3/findcmd.c
+--- bash-5.3.orig/findcmd.c	2023-05-31 16:30:31.000000000 -0400
++++ bash-5.3/findcmd.c	2026-11-10 22:59:07.164311724 -0500
+@@ -55,10 +55,9 @@
+ static char *_find_user_command_internal (const char *, int);
+ static char *find_user_command_internal (const char *, int);
+ static char *find_user_command_in_path (const char *, char *, int, int *);
+-static char *find_in_path_element (const char *, char *, int, size_t, struct stat *, int *);
++static char *find_in_path_element (const char *, char *, int, size_t, struct stat *, int *, int);
+ static char *find_absolute_program (const char *, int);
+ 
+-static char *get_next_path_element (char *, int *);
+ 
+ /* The file name which we would try to execute, except that it isn't
+    possible to execute it.  This is the first file that matches the
+@@ -314,29 +313,6 @@
  #endif
  }
  
@@ -120,104 +132,307 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/findcmd.c /tmp/bash-patch-test/work/f
  /* Look for PATHNAME in $PATH.  Returns either the hashed command
     corresponding to PATHNAME or the first instance of PATHNAME found
     in $PATH.  If (FLAGS&CMDSRCH_HASH) is non-zero, insert the instance of
-@@ -478,29 +455,31 @@
+@@ -472,35 +448,113 @@
+ 	  name_len = strlen (name);
+ 	  file_to_lose_on = (char *)NULL;
+ 	  dot_found_in_search = 0;
+-	  if (stat (".", &dotinfo) < 0)
+-	    dotinfo.st_dev = dotinfo.st_ino = 0;	/* so same_file won't match */
++	  dotinfo.st_dev = dotinfo.st_ino = 0;
+ 	  path_list = path_value ("PATH", 0);
  	  path_index = 0;
  	}
  
 -      while (path_list && path_list[path_index])
-+      if (path_list)
++      if (path_list && *path_list)
  	{
 -	  path_element = get_next_path_element (path_list, &path_index);
-+	  char **dirs;
- 
+-
 -	  if (path_element == 0)
 -	    break;
-+	  dirs = shell_glob_path (path_list);
-+	  for (path_index = 0; dirs && dirs[path_index]; path_index++)
-+	    {
-+	      match = find_in_path_element (name, dirs[path_index], flags, name_len, &dotinfo, (int *)0);
- 
+-
 -	  match = find_in_path_element (name, path_element, flags, name_len, &dotinfo, (int *)0);
 -	  free (path_element);
-+	      if (match == 0)
-+		continue;
++	  size_t seg_idx = 0;
++	  int have_dotinfo = 0;
++	  int seg_has_glob = 0;
++	  char *seg;
  
 -	  if (match == 0)
 -	    continue;
-+	      if (match_index + 1 == match_list_size)
-+		{
-+		  match_list_size += 10;
-+		  match_list = strvec_resize (match_list, (match_list_size + 1));
-+		}
- 
+-
 -	  if (match_index + 1 == match_list_size)
--	    {
++	  while ((seg = shell_next_path_pattern (path_list, &seg_idx, &seg_has_glob)) != 0)
+ 	    {
 -	      match_list_size += 10;
 -	      match_list = strvec_resize (match_list, (match_list_size + 1));
-+	      match_list[match_index++] = match;
-+	      match_list[match_index] = (char *)NULL;
-+	      FREE (file_to_lose_on);
-+	      file_to_lose_on = (char *)NULL;
++	      QUIT;
++	      if (seg_has_glob == 0)
++		{
++		  if (have_dotinfo == 0 && (*seg == '.' || *seg == '~'))
++		    {
++		      if (stat (".", &dotinfo) < 0)
++			dotinfo.st_dev = dotinfo.st_ino = 0;
++		      have_dotinfo = 1;
++		    }
++		  match = find_in_path_element (name, seg, flags, name_len, &dotinfo, (int *)0, 1);
++		  free (seg);
++		  if (match)
++		    {
++		      if (match_index + 1 == match_list_size)
++			{
++			  match_list_size += 10;
++			  match_list = strvec_resize (match_list, (match_list_size + 1));
++			}
++		      match_list[match_index++] = match;
++		      match_list[match_index] = (char *)NULL;
++		      FREE (file_to_lose_on);
++		      file_to_lose_on = (char *)NULL;
++		    }
++		}
++	      else if (*seg == '.' || glob_ignore_case
++		       || (name[0] == '.' && (name[1] == '\0' || (name[1] == '.' && name[2] == '\0'))))
++		{
++		  char **dirs = shell_glob_path_segment (seg);
++		  free (seg);
++		  for (path_index = 0; dirs && dirs[path_index]; path_index++)
++		    {
++		      if (have_dotinfo == 0 && (*dirs[path_index] == '.' || *dirs[path_index] == '~'))
++			{
++			  if (stat (".", &dotinfo) < 0)
++			    dotinfo.st_dev = dotinfo.st_ino = 0;
++			  have_dotinfo = 1;
++			}
++		      match = find_in_path_element (name, dirs[path_index], flags, name_len, &dotinfo, (int *)0, 0);
++		      if (match == 0)
++			continue;
++		      if (match_index + 1 == match_list_size)
++			{
++			  match_list_size += 10;
++			  match_list = strvec_resize (match_list, (match_list_size + 1));
++			}
++		      match_list[match_index++] = match;
++		      match_list[match_index] = (char *)NULL;
++		      FREE (file_to_lose_on);
++		      file_to_lose_on = (char *)NULL;
++		    }
++		  if (dirs)
++		    strvec_dispose (dirs);
++		}
++	      else
++		{
++		  char **cands = shell_glob_path_target (seg, name);
++		  free (seg);
++		  for (path_index = 0; cands && cands[path_index]; path_index++)
++		    {
++		      char *slash = strrchr (cands[path_index], '/');
++		      char *dir;
++		      if (slash == 0)
++			dir = ".";
++		      else if (slash == cands[path_index])
++			dir = "/";
++		      else
++			{
++			  *slash = '\0';
++			  dir = cands[path_index];
++			}
++		      if (have_dotinfo == 0 && (*dir == '.' || *dir == '~'))
++			{
++			  if (stat (".", &dotinfo) < 0)
++			    dotinfo.st_dev = dotinfo.st_ino = 0;
++			  have_dotinfo = 1;
++			}
++		      match = find_in_path_element (name, dir, flags, name_len, &dotinfo, (int *)0, 0);
++		      if (match == 0)
++			continue;
++		      if (match_index + 1 == match_list_size)
++			{
++			  match_list_size += 10;
++			  match_list = strvec_resize (match_list, (match_list_size + 1));
++			}
++		      match_list[match_index++] = match;
++		      match_list[match_index] = (char *)NULL;
++		      FREE (file_to_lose_on);
++		      file_to_lose_on = (char *)NULL;
++		    }
++		  if (cands)
++		    strvec_dispose (cands);
++		}
  	    }
 -
 -	  match_list[match_index++] = match;
 -	  match_list[match_index] = (char *)NULL;
 -	  FREE (file_to_lose_on);
 -	  file_to_lose_on = (char *)NULL;
-+	  if (dirs)
-+	    strvec_dispose (dirs);
  	}
  
        /* We haven't returned any strings yet. */
-@@ -622,7 +601,7 @@
+@@ -536,12 +590,12 @@
+ }
+ 
+ static char *
+-find_in_path_element (const char *name, char *path, int flags, size_t name_len, struct stat *dotinfop, int *rflagsp)
++find_in_path_element (const char *name, char *path, int flags, size_t name_len, struct stat *dotinfop, int *rflagsp, int do_tilde)
+ {
+   int status;
+   char *full_path, *xpath;
+ 
+-  xpath = (posixly_correct == 0 && *path == '~') ? bash_tilde_expand (path, 0) : path;
++  xpath = (do_tilde && posixly_correct == 0 && *path == '~') ? bash_tilde_expand (path, 0) : path;
+ 
+   /* Remember the location of "." in the path, in all its forms
+      (as long as they begin with a `.', e.g. `./.') */
+@@ -622,9 +676,9 @@
  static char *
  find_user_command_in_path (const char *name, char *path_list, int flags, int *rflagsp)
  {
 -  char *full_path, *path;
-+  char *full_path, **dirs;
-   int path_index, rflags;
-   size_t name_len;
+-  int path_index, rflags;
+-  size_t name_len;
++  char *full_path, *seg;
++  int path_index, rflags, have_dotinfo, seg_has_glob;
++  size_t name_len, seg_idx;
    struct stat dotinfo;
-@@ -647,21 +626,16 @@
+ 
+   /* We haven't started looking, so we certainly haven't seen
+@@ -645,38 +699,110 @@
+ 
+   file_to_lose_on = (char *)NULL;
    name_len = strlen (name);
-   if (stat (".", &dotinfo) < 0)
-     dotinfo.st_dev = dotinfo.st_ino = 0;
+-  if (stat (".", &dotinfo) < 0)
+-    dotinfo.st_dev = dotinfo.st_ino = 0;
 -  path_index = 0;
++  dotinfo.st_dev = dotinfo.st_ino = 0;
++  have_dotinfo = 0;
++  seg_idx = 0;
  
 -  while (path_list[path_index])
-+  dirs = shell_glob_path (path_list);
-+  for (path_index = 0; dirs && dirs[path_index]; path_index++)
++  while ((seg = shell_next_path_pattern (path_list, &seg_idx, &seg_has_glob)) != 0)
      {
-       /* Allow the user to interrupt out of a lengthy path search. */
+-      /* Allow the user to interrupt out of a lengthy path search. */
        QUIT;
  
 -      path = get_next_path_element (path_list, &path_index);
 -      if (path == 0)
 -	break;
 -
-       /* Side effects: sets dot_found_in_search, possibly sets
- 	 file_to_lose_on. */
+-      /* Side effects: sets dot_found_in_search, possibly sets
+-	 file_to_lose_on. */
 -      full_path = find_in_path_element (name, path, flags, name_len, &dotinfo, &rflags);
 -      free (path);
-+      full_path = find_in_path_element (name, dirs[path_index], flags, name_len, &dotinfo, &rflags);
- 
-       /* We use the file status flag bits to check whether full_path is a
- 	 directory, which we reject here. */
-@@ -676,9 +650,12 @@
- 	  if (rflagsp)
- 	    *rflagsp = rflags;
- 	  FREE (file_to_lose_on);
-+	  strvec_dispose (dirs);
- 	  return (full_path);
+-
+-      /* We use the file status flag bits to check whether full_path is a
+-	 directory, which we reject here. */
+-      if (full_path && (rflags & FS_DIRECTORY))
++      if (seg_has_glob == 0)
++	{
++	  if (have_dotinfo == 0 && (*seg == '.' || *seg == '~'))
++	    {
++	      if (stat (".", &dotinfo) < 0)
++		dotinfo.st_dev = dotinfo.st_ino = 0;
++	      have_dotinfo = 1;
++	    }
++	  full_path = find_in_path_element (name, seg, flags, name_len, &dotinfo, &rflags, 1);
++	  free (seg);
++	  if (full_path && (rflags & FS_DIRECTORY))
++	    {
++	      free (full_path);
++	      continue;
++	    }
++	  if (full_path)
++	    {
++	      if (rflagsp)
++		*rflagsp = rflags;
++	      FREE (file_to_lose_on);
++	      return (full_path);
++	    }
++	}
++      else if (*seg == '.' || glob_ignore_case
++	       || (name[0] == '.' && (name[1] == '\0' || (name[1] == '.' && name[2] == '\0'))))
+ 	{
+-	  free (full_path);
+-	  continue;
++	  char **dirs = shell_glob_path_segment (seg);
++	  free (seg);
++	  for (path_index = 0; dirs && dirs[path_index]; path_index++)
++	    {
++	      QUIT;
++	      if (have_dotinfo == 0 && (*dirs[path_index] == '.' || *dirs[path_index] == '~'))
++		{
++		  if (stat (".", &dotinfo) < 0)
++		    dotinfo.st_dev = dotinfo.st_ino = 0;
++		  have_dotinfo = 1;
++		}
++	      full_path = find_in_path_element (name, dirs[path_index], flags, name_len, &dotinfo, &rflags, 0);
++	      if (full_path && (rflags & FS_DIRECTORY))
++		{
++		  free (full_path);
++		  continue;
++		}
++	      if (full_path)
++		{
++		  if (rflagsp)
++		    *rflagsp = rflags;
++		  FREE (file_to_lose_on);
++		  strvec_dispose (dirs);
++		  return (full_path);
++		}
++	    }
++	  if (dirs)
++	    strvec_dispose (dirs);
+ 	}
+-
+-      if (full_path)
++      else
+ 	{
+-	  if (rflagsp)
+-	    *rflagsp = rflags;
+-	  FREE (file_to_lose_on);
+-	  return (full_path);
++	  char **cands = shell_glob_path_target (seg, name);
++	  free (seg);
++	  for (path_index = 0; cands && cands[path_index]; path_index++)
++	    {
++	      char *slash = strrchr (cands[path_index], '/');
++	      char *dir;
++	      QUIT;
++	      if (slash == 0)
++		dir = ".";
++	      else if (slash == cands[path_index])
++		dir = "/";
++	      else
++		{
++		  *slash = '\0';
++		  dir = cands[path_index];
++		}
++	      if (have_dotinfo == 0 && (*dir == '.' || *dir == '~'))
++		{
++		  if (stat (".", &dotinfo) < 0)
++		    dotinfo.st_dev = dotinfo.st_ino = 0;
++		  have_dotinfo = 1;
++		}
++	      full_path = find_in_path_element (name, dir, flags, name_len, &dotinfo, &rflags, 0);
++	      if (full_path && (rflags & FS_DIRECTORY))
++		{
++		  free (full_path);
++		  continue;
++		}
++	      if (full_path)
++		{
++		  if (rflagsp)
++		    *rflagsp = rflags;
++		  FREE (file_to_lose_on);
++		  strvec_dispose (cands);
++		  return (full_path);
++		}
++	    }
++	  if (cands)
++	    strvec_dispose (cands);
  	}
      }
-+  if (dirs)
-+    strvec_dispose (dirs);
  
-   /* We didn't find exactly what the user was looking for.  Return
-      the contents of FILE_TO_LOSE_ON which is NULL when the search
-diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob.c /tmp/bash-patch-test/work/lib/glob/glob.c
---- bash-5.3.orig/lib/glob/glob.c	2026-11-07 14:09:55.995211257 -0500
+diff -uNr bash-5.3.orig/lib/glob/glob.c bash-5.3/lib/glob/glob.c
+--- bash-5.3.orig/lib/glob/glob.c	2023-07-20 11:28:53.000000000 -0400
 +++ bash-5.3/lib/glob/glob.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,1579 +0,0 @@
 -/* glob.c -- file-name wildcard pattern matching for Bash.
@@ -1799,9 +2014,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob.c /tmp/bash-patch-test/
 -  exit (0);
 -}
 -#endif	/* TEST.  */
-diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob.h /tmp/bash-patch-test/work/lib/glob/glob.h
---- bash-5.3.orig/lib/glob/glob.h	2026-11-07 14:09:55.995944681 -0500
-+++ bash-5.3/lib/glob/glob.h	2026-11-07 14:46:56.365843317 -0500
+diff -uNr bash-5.3.orig/lib/glob/glob.h bash-5.3/lib/glob/glob.h
+--- bash-5.3.orig/lib/glob/glob.h	2022-12-28 14:14:57.000000000 -0500
++++ bash-5.3/lib/glob/glob.h	2026-11-10 22:27:42.013707357 -0500
 @@ -21,27 +21,13 @@
  #define	_GLOB_H_
  
@@ -1832,8 +2047,8 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob.h /tmp/bash-patch-test/
 +extern int glob_always_skip_dot_and_dotdot;
  
  #endif /* _GLOB_H_ */
-diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob_loop.c /tmp/bash-patch-test/work/lib/glob/glob_loop.c
---- bash-5.3.orig/lib/glob/glob_loop.c	2026-11-07 14:09:55.995775957 -0500
+diff -uNr bash-5.3.orig/lib/glob/glob_loop.c bash-5.3/lib/glob/glob_loop.c
+--- bash-5.3.orig/lib/glob/glob_loop.c	2022-12-29 11:57:51.000000000 -0500
 +++ bash-5.3/lib/glob/glob_loop.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,83 +0,0 @@
 -/* Copyright (C) 1991-2020,2022 Free Software Foundation, Inc.
@@ -1919,9 +2134,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/glob_loop.c /tmp/bash-patch-
 -#undef INT
 -#undef CHAR
 -#undef GCHAR
-diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/gmisc.c /tmp/bash-patch-test/work/lib/glob/gmisc.c
---- bash-5.3.orig/lib/glob/gmisc.c	2026-11-07 14:09:55.994888177 -0500
-+++ bash-5.3/lib/glob/gmisc.c	2026-11-07 14:46:56.365782472 -0500
+diff -uNr bash-5.3.orig/lib/glob/gmisc.c bash-5.3/lib/glob/gmisc.c
+--- bash-5.3.orig/lib/glob/gmisc.c	2022-12-29 11:58:16.000000000 -0500
++++ bash-5.3/lib/glob/gmisc.c	2026-11-10 22:27:42.013953392 -0500
 @@ -72,35 +72,3 @@
  #include "gm_loop.c"
  
@@ -1958,9 +2173,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/gmisc.c /tmp/bash-patch-test
 -  return d;
 -}
 -#endif /* EXTENDED_GLOB */
-diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/Makefile.in /tmp/bash-patch-test/work/lib/glob/Makefile.in
---- bash-5.3.orig/lib/glob/Makefile.in	2026-11-07 14:09:55.995860855 -0500
-+++ bash-5.3/lib/glob/Makefile.in	2026-11-07 14:46:56.365969808 -0500
+diff -uNr bash-5.3.orig/lib/glob/Makefile.in bash-5.3/lib/glob/Makefile.in
+--- bash-5.3.orig/lib/glob/Makefile.in	2024-11-11 15:06:25.000000000 -0500
++++ bash-5.3/lib/glob/Makefile.in	2026-11-10 22:27:42.014095624 -0500
 @@ -67,16 +67,16 @@
  LIBRARY_NAME = libglob.a
  
@@ -2010,9 +2225,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/Makefile.in /tmp/bash-patch-
 -glob.o: glob_loop.c
  gmisc.o: gm_loop.c
  smatch.o: sm_loop.c
-diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/smatch.c /tmp/bash-patch-test/work/lib/glob/smatch.c
---- bash-5.3.orig/lib/glob/smatch.c	2026-11-07 14:09:55.995408110 -0500
-+++ bash-5.3/lib/glob/smatch.c	2026-11-07 14:50:03.336536701 -0500
+diff -uNr bash-5.3.orig/lib/glob/smatch.c bash-5.3/lib/glob/smatch.c
+--- bash-5.3.orig/lib/glob/smatch.c	2023-05-29 14:15:17.000000000 -0400
++++ bash-5.3/lib/glob/smatch.c	2026-11-10 22:27:42.014254716 -0500
 @@ -321,6 +321,25 @@
  #define PATSCAN			glob_patscan
  #define STRCOMPARE		strcompare
@@ -2065,9 +2280,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/lib/glob/smatch.c /tmp/bash-patch-tes
  #define DEQUOTE_PATHNAME	wcdequote_pathname
  #define STRUCT			wcsmat_struct
  #define STRCHR(S, C)		wcschr((S), (C))
-diff -a -u -N -r /tmp/bash-patch-test/orig/Makefile.in /tmp/bash-patch-test/work/Makefile.in
---- bash-5.3.orig/Makefile.in	2026-11-07 14:09:56.016421293 -0500
-+++ bash-5.3/Makefile.in	2026-11-07 14:46:56.366192923 -0500
+diff -uNr bash-5.3.orig/Makefile.in bash-5.3/Makefile.in
+--- bash-5.3.orig/Makefile.in	2025-05-16 14:56:31.000000000 -0400
++++ bash-5.3/Makefile.in	2026-11-10 22:27:42.014542290 -0500
 @@ -370,12 +370,12 @@
  GLOB_LDFLAGS = -L$(GLOB_LIBDIR)
  GLOB_DEP = $(GLOB_LIBRARY)
@@ -2084,9 +2299,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/Makefile.in /tmp/bash-patch-test/work
  	      $(GLOB_LIBDIR)/smatch.o $(GLOB_LIBDIR)/xmbsrtowcs.o \
  	      $(GLOB_LIBDIR)/gmisc.o
  
-diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.c /tmp/bash-patch-test/work/pathexp.c
---- bash-5.3.orig/pathexp.c	2026-11-07 14:09:55.973181177 -0500
-+++ bash-5.3/pathexp.c	2026-11-07 14:49:04.536600622 -0500
+diff -uNr bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
+--- bash-5.3.orig/pathexp.c	2025-06-26 11:34:29.000000000 -0400
++++ bash-5.3/pathexp.c	2026-11-10 22:50:54.187650561 -0500
 @@ -35,6 +35,7 @@
  #include "shell.h"
  #include "pathexp.h"
@@ -2163,7 +2378,7 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.c /tmp/bash-patch-test/work/p
  
 -  if (results && ((GLOB_FAILED (results)) == 0))
 +  if (interrupt_state || terminating_signal)
-     {
++    {
 +      if (g.gl_pathv)
 +	globfree (&g);
 +      QUIT;
@@ -2171,7 +2386,7 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.c /tmp/bash-patch-test/work/p
 +  run_pending_traps ();
 +
 +  if (r == 0)
-+    {
+     {
 +      results = g.gl_pathv;
        if (should_ignore_glob_matches ())
  	ignore_glob_matches (results);
@@ -2202,7 +2417,7 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.c /tmp/bash-patch-test/work/p
  
    return (results);
  }
-@@ -471,24 +526,71 @@
+@@ -471,24 +526,291 @@
  char **
  noquote_glob_filename (char *pathname)
  {
@@ -2280,10 +2495,230 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.c /tmp/bash-patch-test/work/p
 +  return (g.gl_pathv);
 +}
 +
++static const char *
++shell_scan_path_colon (const char *cp, const char *end,
++		       int *has_glob_p, int *has_bs_p)
++{
++  int has_glob = 0;
++  int has_bs = 0;
++
++  while (cp < end && *cp != '\0')
++    {
++      if (*cp == '\\')
++	{
++	  has_bs = 1;
++	  ++cp;
++	  if (cp < end && *cp != '\0')
++	    ++cp;
++	}
++      else if (*cp == '*' || *cp == '?')
++	{
++	  has_glob = 1;
++	  ++cp;
++	}
++      else if (*cp == '[')
++	{
++	  const char *p = cp + 1;
++	  if (p < end && (*p == '!' || *p == '^'))
++	    ++p;
++	  if (p < end && *p == ']')
++	    ++p;
++	  while (p < end && *p != '\0' && *p != ']')
++	    {
++	      if (*p == '\\' && p + 1 < end)
++		++p;
++	      else if (p[0] == '[' && p + 1 < end
++		       && (p[1] == ':' || p[1] == '.' || p[1] == '='))
++		{
++		  char ctype = p[1];
++		  const char *t = p + 2;
++		  while (t < end && *t != '\0' && (ctype == '.' || *t != ']'))
++		    {
++		      if (*t == ctype && t + 1 < end && t[1] == ']')
++			{
++			  p = t + 1;
++			  break;
++			}
++		      ++t;
++		    }
++		}
++	      ++p;
++	    }
++	  if (p < end && *p == ']')
++	    {
++	      has_glob = 1;
++	      cp = p + 1;
++	    }
++	  else
++	    ++cp;
++	}
++      else if (extended_glob && cp + 1 < end && cp[1] == '('
++	       && (*cp == '?' || *cp == '*' || *cp == '+'
++		   || *cp == '@' || *cp == '!'))
++	{
++	  const char *p = cp + 2;
++	  int depth = 1;
++	  while (p < end && *p != '\0' && depth > 0)
++	    {
++	      if (*p == '\\' && p + 1 < end)
++		++p;
++	      else if (*p == '(')
++		++depth;
++	      else if (*p == ')')
++		--depth;
++	      ++p;
++	    }
++	  if (depth == 0)
++	    {
++	      has_glob = 1;
++	      cp = p;
++	    }
++	  else
++	    ++cp;
++	}
++      else if (*cp == ':')
++	break;
++      else
++	++cp;
++    }
++
++  *has_glob_p = has_glob;
++  *has_bs_p = has_bs;
++  return cp;
++}
++
++char *
++shell_next_path_pattern (const char *path_list, size_t *idx_p, int *has_glob_p)
++{
++  const char *end, *seg_start, *colon;
++  size_t seg_len;
++  int has_glob, has_bs;
++  char *out;
++
++  if (path_list == 0 || *idx_p == (size_t)-1)
++    return ((char *)NULL);
++
++  end = path_list + strlen (path_list);
++  seg_start = path_list + *idx_p;
++  colon = shell_scan_path_colon (seg_start, end, &has_glob, &has_bs);
++  seg_len = (size_t)(colon - seg_start);
++
++  if (*colon == ':')
++    *idx_p = (size_t)(colon - path_list) + 1;
++  else
++    *idx_p = (size_t)-1;
++
++  if (seg_len == 0)
++    {
++      *has_glob_p = 0;
++      return (savestring ("."));
++    }
++
++  if (glob_ignore_case || (seg_len > 1 && seg_start[0] == '\\' && seg_start[1] == '~'))
++    has_glob = 1;
++
++  *has_glob_p = has_glob;
++  out = (char *)xmalloc (seg_len + 1);
++  if (has_glob == 0 && has_bs)
++    {
++      size_t si, di = 0;
++      for (si = 0; si < seg_len; ++si)
++	{
++	  if (seg_start[si] == '\\' && si + 1 < seg_len)
++	    ++si;
++	  out[di++] = seg_start[si];
++	}
++      out[di] = '\0';
++    }
++  else
++    {
++      memcpy (out, seg_start, seg_len);
++      out[seg_len] = '\0';
++    }
++  return (out);
++}
++
++static char **
++shell_run_path_glob (const char *pat)
++{
++  glob_t g;
++  int gflags, r;
++
++  noglob_dot_filenames = glob_dot_filenames == 0;
++  QUIT;
++  gflags = bash_glob_flags ();
++  if (posixly_correct == 0)
++    gflags |= GLOB_TILDE;
++  memset (&g, 0, sizeof (g));
++  r = glob (pat, gflags, NULL, &g);
++
++  if (interrupt_state || terminating_signal)
++    {
++      if (g.gl_pathv)
++	globfree (&g);
++      QUIT;
++    }
++  run_pending_traps ();
++
++  if (r != 0)
++    {
++      if (g.gl_pathv)
++	globfree (&g);
++      return ((char **)NULL);
++    }
++
++  return (g.gl_pathv);
++}
++
++char **
++shell_glob_path_segment (const char *seg)
++{
++  return (shell_run_path_glob (seg ? seg : "."));
++}
++
++char **
++shell_glob_path_target (const char *seg, const char *name)
++{
++  size_t slen, nlen, i, p;
++  char *pat, **res;
++
++  slen = strlen (seg);
++  while (slen > 1 && seg[slen - 1] == '/')
++    {
++      size_t bs = 0;
++      while (bs < slen - 1 && seg[slen - 2 - bs] == '\\')
++	++bs;
++      if (bs & 1)
++	break;
++      --slen;
++    }
++
++  nlen = strlen (name);
++  pat = (char *)xmalloc (slen + 1 + (nlen * 2) + 1);
++  memcpy (pat, seg, slen);
++  p = slen;
++  if (p == 0 || pat[p - 1] != '/')
++    pat[p++] = '/';
++
++  for (i = 0; i < nlen; ++i)
++    {
++      char c = name[i];
++      if (c == '\\' || c == '*' || c == '?' || c == '['
++	  || c == '(' || c == ')')
++	pat[p++] = '\\';
++      pat[p++] = c;
++    }
++  pat[p] = '\0';
++
++  res = shell_run_path_glob (pat);
++  free (pat);
++  return (res);
++}
++
  /* Stuff for GLOBIGNORE. */
  
  static struct ignorevar globignore =
-@@ -682,7 +784,6 @@
+@@ -682,7 +1004,6 @@
  /* Functions to handle sorting glob results in different ways depending on
     the value of the GLOBSORT variable. */
  
@@ -2291,20 +2726,31 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.c /tmp/bash-patch-test/work/p
  
  static STRING_INT_ALIST sorttypes[] = {
    { "name",	SORT_NAME },
-diff -a -u -N -r /tmp/bash-patch-test/orig/pathexp.h /tmp/bash-patch-test/work/pathexp.h
---- bash-5.3.orig/pathexp.h	2026-11-07 14:09:55.846366178 -0500
-+++ bash-5.3/pathexp.h	2026-11-07 14:46:56.366576509 -0500
-@@ -72,6 +72,7 @@
+diff -uNr bash-5.3.orig/pathexp.h bash-5.3/pathexp.h
+--- bash-5.3.orig/pathexp.h	2024-06-12 18:08:50.000000000 -0400
++++ bash-5.3/pathexp.h	2026-11-10 22:50:54.187455202 -0500
+@@ -24,6 +24,7 @@
+ #define GLOB_FAILED(glist)	(glist) == (char **)&glob_error_return
+ 
+ extern int noglob_dot_filenames;
++extern int glob_ignore_case;
+ extern char *glob_error_return;
+ 
+ /* Flag values for quote_string_for_globbing */
+@@ -72,6 +73,10 @@
  extern char **shell_glob_filename (const char *, int);
  
  extern char **noquote_glob_filename (char *);
 +extern char **shell_glob_path (const char *);
++extern char *shell_next_path_pattern (const char *, size_t *, int *);
++extern char **shell_glob_path_segment (const char *);
++extern char **shell_glob_path_target (const char *, const char *);
  
  /* Filename completion ignore.  Used to implement the "fignore" facility of
     tcsh, GLOBIGNORE (like ksh-93 FIGNORE), and EXECIGNORE.
-diff -a -u -N -r /tmp/bash-patch-test/orig/stringlib.c /tmp/bash-patch-test/work/stringlib.c
---- bash-5.3.orig/stringlib.c	2026-11-07 14:09:55.920100496 -0500
-+++ bash-5.3/stringlib.c	2026-11-07 14:46:56.366467053 -0500
+diff -uNr bash-5.3.orig/stringlib.c bash-5.3/stringlib.c
+--- bash-5.3.orig/stringlib.c	2024-10-25 13:57:23.000000000 -0400
++++ bash-5.3/stringlib.c	2026-11-10 22:27:42.015332108 -0500
 @@ -198,7 +198,7 @@
  	  if (len)
  	    {
@@ -2314,9 +2760,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/stringlib.c /tmp/bash-patch-test/work
  		{
  		  t = quote_globbing_chars (text);
  		  tlen = strlen (t);
-diff -a -u -N -r /tmp/bash-patch-test/orig/tests/glob.right /tmp/bash-patch-test/work/tests/glob.right
---- bash-5.3.orig/tests/glob.right	2026-11-07 14:09:55.861693536 -0500
-+++ bash-5.3/tests/glob.right	2026-11-07 14:55:26.919088424 -0500
+diff -uNr bash-5.3.orig/tests/glob.right bash-5.3/tests/glob.right
+--- bash-5.3.orig/tests/glob.right	2024-06-12 16:13:01.000000000 -0400
++++ bash-5.3/tests/glob.right	2026-11-10 22:27:42.015499990 -0500
 @@ -277,3 +277,8 @@
  argv[1] = <*>
  argv[1] = <man/man1/bash.1>
@@ -2326,9 +2772,9 @@ diff -a -u -N -r /tmp/bash-patch-test/orig/tests/glob.right /tmp/bash-patch-test
 +m_wild/pkg_a/bin/myprog
 +m_wild/pkg_b/bin/myprog
 +a_last/bin/myprog
-diff -a -u -N -r /tmp/bash-patch-test/orig/tests/glob.tests /tmp/bash-patch-test/work/tests/glob.tests
---- bash-5.3.orig/tests/glob.tests	2026-11-07 14:09:55.874972160 -0500
-+++ bash-5.3/tests/glob.tests	2026-11-07 14:55:06.213218619 -0500
+diff -uNr bash-5.3.orig/tests/glob.tests bash-5.3/tests/glob.tests
+--- bash-5.3.orig/tests/glob.tests	2023-09-25 10:48:40.000000000 -0400
++++ bash-5.3/tests/glob.tests	2026-11-10 22:27:42.015682423 -0500
 @@ -404,6 +404,18 @@
  
  # this is for the benefit of pure coverage, so it writes the pcv file

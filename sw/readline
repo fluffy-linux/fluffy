@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=8.3
 
@@ -10,28 +15,59 @@ ARCHIVES=(
     ad168a38184511c918dd3390d208dca6044b24bcbb9fd1cc87a7571d0e873234 file://readline-$VERSION-fluffy-source.patch
 )
 
-NEEDS=(
-    glibc
-    ncurses-pass1
-)
+if test -v CROSS
+then
+    NEEDS=(
+        glibc
+        ncurses-pass1
+    )
+else
+    NEEDS=(
+        glibc
+        ncurses
+    )
+fi
 
-BUILD_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    ncurses-pass1
-    patch-pass1
-    sed-pass1
-    tar-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        ncurses-pass1
+        patch-pass1
+        sed-pass1
+        tar-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        tar
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i readline-$VERSION-fluffy-shell.patch

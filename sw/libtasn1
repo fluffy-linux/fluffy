@@ -1,3 +1,10 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
 VERSION=4.21.0
 
 HAS_LDFLAGS=-ltasn1
@@ -7,6 +14,53 @@ ARCHIVES=(
     18cba3f3bd722aecea5a913e7de83315b80c047badfb08cdc6222f2158e8422f file://libtasn1-$VERSION-fluffy-shell.patch
     b06975a04ed52e8ce380c1177c2bc10a1df09bfba58f7b4e7e308335ba06d03e file://libtasn1-$VERSION-fluffy-test.patch
 )
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed
+        tar-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i libtasn1-$VERSION-fluffy-shell.patch
@@ -23,4 +77,5 @@ CHECK() {
 
 INSTALL() {
     make install
+    find $DESTDIR/sw/libtasn1 -name '*.la' -delete
 }

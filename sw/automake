@@ -24,7 +24,21 @@ then
         sed
         texinfo-pass1
     )
+else
+    NEEDS=(
+        autoconf
+        bash
+        coreutils
+        grep
+        m4
+        perl
+        sed
+        texinfo
+    )
+fi
 
+if test -v CROSS
+then
     BUILD_NEEDS=(
         autoconf
         bash
@@ -57,17 +71,6 @@ then
         xz
     )
 else
-    NEEDS=(
-        autoconf
-        bash
-        coreutils
-        grep
-        m4
-        perl
-        sed
-        texinfo
-    )
-
     BUILD_NEEDS=(
         autoconf
         bash

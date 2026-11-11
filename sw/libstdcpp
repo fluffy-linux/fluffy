@@ -23,32 +23,44 @@ then
         bash-pass1
         binutils
         coreutils-pass1
+        dejagnu
         diffutils-pass1
+        expect
+        findutils-pass1
         gawk-pass1
         gcc-pass2
+        gettext-pass1
         glibc
         grep-pass1
         libgcc
         linux-headers
         make-pass1
         patch-pass1
+        python-pass1
         sed-pass1
+        tcl
     )
 else
     BUILD_NEEDS=(
         bash
         binutils
         coreutils
+        dejagnu
         diffutils
+        expect
+        findutils
         gawk
         gcc
+        gettext
         glibc
         grep
         libgcc
         linux-headers
         make
         patch
+        python
         sed
+        tcl
     )
 fi
 
@@ -66,6 +78,18 @@ MAKE() {
         --disable-libstdcxx-pch \
         --with-gxx-include-dir=/sw/libstdcpp/include/c++
     make
+}
+
+CHECK() {
+    cd build
+    ln -sfv . libstdc++-v3
+    sed -i 's|SECTIONLDFLAGS="|SECTIONLDFLAGS="-L${BUILD_DIR}/src/.libs |' scripts/testsuite_flags
+    sed -i '/TEST_GCC_EXEC_PREFIX/d' testsuite/Makefile
+    ulimit -s -H unlimited
+    LD_LIBRARY_PATH="$PWD/src/.libs" make -k check
+    ../contrib/test_summary -t
+    rm -fv libstdc++-v3
+    ! grep -E '^(FAIL|XPASS|UNRESOLVED|ERROR):' $(find . -name '*.sum')
 }
 
 INSTALL() {

@@ -1,3 +1,10 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
 VERSION=0.26.5
 
 HAS_CFLAGS=-I/sw/p11-kit/include/p11-kit-1
@@ -9,13 +16,70 @@ ARCHIVES=(
     d5a8f80223afccb9c38b21e8a45ced672e205abfa1e1fb9dea296c26e5104d8b file://p11-kit-$VERSION-fluffy-test.patch
 )
 
+NEEDS=(
+    glibc
+    libffi
+    libtasn1
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        gettext
+        glibc
+        grep
+        libffi
+        libgcc
+        libtasn1
+        linux-headers
+        make-pass1
+        meson
+        ninja
+        patch-pass1
+        python
+        sed
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        libffi
+        libgcc
+        libtasn1
+        linux-headers
+        make
+        meson
+        ninja
+        patch
+        python
+        sed
+        xz
+    )
+fi
+
 MAKE() {
     patch -Z -Np1 -i p11-kit-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i p11-kit-$VERSION-fluffy-test.patch
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/p11-kit \
-        --sysconfdir=/etc \
-        --with-trust-paths=/etc/pki/anchors \
+        --sysconfdir=/sw/p11-kit/etc \
+        --with-trust-paths=/etc/pki/anchors:/sw/ca-certificates/etc/ssl/certs/ca-certificates.crt \
         --disable-static
     make
 }
@@ -26,7 +90,8 @@ CHECK() {
 
 INSTALL() {
     make install
-    ln -sfv /sw/p11-kit/libexec/p11-kit/trust-extract-compat \
-        /sw/p11-kit/bin/update-ca-certificates
-    ln -sfv ./pkcs11/p11-kit-trust.so /sw/p11-kit/lib/libnssckbi.so
+    ln -sfv ../libexec/p11-kit/trust-extract-compat \
+        $DESTDIR/sw/p11-kit/bin/update-ca-certificates
+    ln -sfv ./pkcs11/p11-kit-trust.so $DESTDIR/sw/p11-kit/lib/libnssckbi.so
+    find $DESTDIR/sw/p11-kit -name '*.la' -delete
 }

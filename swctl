@@ -474,8 +474,22 @@ report_phase_err() {
     fatal "$phase_name ($pkg) failed with exit code $rc"
 }
 
+format_elapsed() {
+    local total=$1 h m s out=""
+    (( h = total / 3600 )) || true
+    (( m = (total % 3600) / 60 )) || true
+    (( s = total % 60 )) || true
+    (( h > 0 )) && out+="${h}h"
+    (( m > 0 )) && out+="${m}m"
+    if (( s > 0 )) || test -z "$out"
+    then
+        out+="${s}s"
+    fi
+    printf '%s' "$out"
+}
+
 run_phase() {
-    local phase_name="$1"
+    local phase_name="$1" start_sec=$SECONDS elapsed
     shift
     log -n " $phase_name"
     trap report_phase_err ERR
@@ -483,6 +497,8 @@ run_phase() {
         "$@"
     ) > "$phase_log" 2>&1
     trap - ERR
+    elapsed="$(format_elapsed $(( SECONDS - start_sec )))"
+    log -n "($elapsed)"
 }
 
 lockdown_exec() {
@@ -528,6 +544,8 @@ lockdown_exec() {
             install_targets "${mount_targets[@]}"
         fi
 
+        call mount /sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
+
         case "$1" in
             MAKE)
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
@@ -541,14 +559,13 @@ lockdown_exec() {
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             SQUASHFS)
-                call mount /sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             *)
                 fatal "unknown phase: $1"
                 ;;
         esac
 
-        if test "$ON" == host-build
+        if test "$1" != SQUASHFS
         then
             call mount none /sw $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
         fi
@@ -565,6 +582,8 @@ lockdown_exec() {
 
         if test "$1" != SQUASHFS
         then
+            touch /tmp/.fluffy_ns_sealed
+            chmod 0444 /tmp/.fluffy_ns_sealed
             cd /work
             call setgroups 0 $NULL
             call setresgid "$SUDO_GID" "$SUDO_GID" "$SUDO_GID"

@@ -35,39 +35,6 @@ then
         zlib
         zstd
     )
-
-    BUILD_NEEDS=(
-        bash
-        binutils
-        bzip2
-        coreutils-pass1
-        diffutils-pass1
-        expat
-        findutils-pass1
-        gawk-pass1
-        gcc
-        gdbm
-        glibc
-        grep
-        gzip-pass1
-        iana-etc
-        libffi
-        libxcrypt
-        linux-headers
-        make-pass1
-        mpdecimal
-        ncurses
-        openssl
-        patch-pass1
-        readline
-        sed
-        sqlite
-        tar-pass1
-        util-linux-pass1
-        xz
-        zlib
-        zstd
-    )
 else
     NEEDS=(
         bzip2
@@ -86,7 +53,44 @@ else
         zlib
         zstd
     )
+fi
 
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bzip2
+        coreutils-pass1
+        diffutils-pass1
+        expat
+        findutils-pass1
+        gawk-pass1
+        gcc
+        gdbm
+        glibc
+        grep
+        gzip-pass1
+        iana-etc
+        libffi
+        libgcc
+        libxcrypt
+        linux-headers
+        make-pass1
+        mpdecimal
+        ncurses
+        openssl
+        patch-pass1
+        readline
+        sed
+        sqlite
+        tar-pass1
+        util-linux-pass1
+        xz
+        zlib
+        zstd
+    )
+else
     BUILD_NEEDS=(
         bash
         binutils
@@ -103,6 +107,7 @@ else
         gzip
         iana-etc
         libffi
+        libgcc
         libxcrypt
         linux-headers
         make

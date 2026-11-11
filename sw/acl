@@ -46,6 +46,7 @@ else
         attr
         bash
         binutils
+        coreutils
         diffutils
         findutils
         gawk

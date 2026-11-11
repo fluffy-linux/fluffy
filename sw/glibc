@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=2.44
 TZDATA_VERSION=2026c
@@ -9,31 +14,55 @@ ARCHIVES=(
     643552db030e2f2d7ffde4f558e0f5f83d3fabf34a2e0e56ebdb49750ac27b0d https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-fhs-1.patch
     500567ff0a22e295bfe3b55e9b397796f71a19f01e1ff7fb29c9189482ee1809 https://www.linuxfromscratch.org/patches/lfs/13.1/glibc-$VERSION-upstream_fixes-1.patch
     aa7dc37d87cd1c3cd5edd70755415c3cc50c0165752cd519a58df225e9f66bdc file://glibc-$VERSION-fluffy-shell.patch
-    5325756eb1fb14858f39d5c53569a48e4f70006346a7aa12f4f51c45ae774ce0 file://glibc-$VERSION-fluffy-source.patch
-    06d79ccba2057f0e98bec7110eb4f421c0d664c9004e6dfd4a511daf549e2804 file://glibc-$VERSION-fluffy-test.patch
+    1bd941327cfa5012b334347e56da78917ece8d937d2089382170608675179878 file://glibc-$VERSION-fluffy-source.patch
+    9841d50981f64a9341811df93780fca7c64aa8de4f47c09d336e1069ae21eca9 file://glibc-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
     libgcc
 )
 
-BUILD_NEEDS=(
-    bash-pass1
-    bison-pass1
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    grep-pass1
-    gzip-pass1
-    linux-headers
-    make-pass1
-    patch-pass1
-    perl-pass1
-    python-pass1
-    sed-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        bison-pass1
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        grep-pass1
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        perl-pass1
+        python-pass1
+        sed-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        perl
+        python
+        sed
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i glibc-fhs-1.patch

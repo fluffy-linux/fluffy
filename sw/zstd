@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=1.5.7
 
@@ -17,23 +22,48 @@ NEEDS=(
     zlib
 )
 
-BUILD_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    file
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    lz4
-    make-pass1
-    patch-pass1
-    sed-pass1
-    tar-pass1
-    xz
-    zlib
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        coreutils-pass1
+        diffutils-pass1
+        file
+        gcc-pass2
+        glibc
+        grep-pass1
+        libgcc
+        linux-headers
+        lz4
+        make-pass1
+        patch-pass1
+        sed-pass1
+        tar-pass1
+        xz
+        zlib
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        file
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        lz4
+        make
+        patch
+        sed
+        tar
+        xz
+        zlib
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i zstd-$VERSION-fluffy-shell.patch
