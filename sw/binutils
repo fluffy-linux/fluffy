@@ -1,57 +1,113 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=2.47
 
 ARCHIVES=(
     154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff https://ftpmirror.gnu.org/binutils/binutils-$VERSION.tar.xz
     4602feb91bec5a8053b8683a5032a835d35940f0d1e3aa17a28c6db42adfbd9a file://binutils-$VERSION-fluffy-shell.patch
-    6690a172945cba4e886738bb16a66acf115d88d044212a3ae9f4b42454f33d4d file://binutils-$VERSION-fluffy-source.patch
+    b336826eebce46174f9237c3d5c1acef3ed00a74de8431cc97c9eb6b95d4977b file://binutils-$VERSION-fluffy-source.patch
     a90a0a242ac4af22d0ab9dea370faeb189a20a1613763c106c1fc53ecaa96b29 file://binutils-$VERSION-fluffy-test.patch
 )
 
-NEEDS=(
-    bash-pass1
-    flex
-    glibc
-    libgcc
-    libstdcpp-pass1
-    zlib
-    zstd
-)
+if test -v CROSS
+then
+    NEEDS=(
+        bash-pass1
+        flex
+        glibc
+        libgcc
+        libstdcpp-pass1
+        zlib
+        zstd
+    )
+else
+    NEEDS=(
+        bash
+        flex
+        glibc
+        libgcc
+        libstdcpp
+        zlib
+        zstd
+    )
+fi
 
-BUILD_NEEDS=(
-    bash-pass1
-    bc
-    bison-pass1
-    coreutils-pass1
-    dejagnu
-    diffutils-pass1
-    expect
-    file
-    findutils-pass1
-    flex
-    gawk-pass1
-    gcc-pass2
-    gettext-pass1
-    glibc
-    grep-pass1
-    gzip-pass1
-    libgcc
-    libstdcpp-pass1
-    linux-headers
-    m4
-    make-pass1
-    patch-pass1
-    perl-pass1
-    sed-pass1
-    tar-pass1
-    tcl
-    texinfo-pass1
-    util-linux-pass1
-    xz
-    zlib
-    zstd
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        bc
+        bison-pass1
+        coreutils-pass1
+        dejagnu
+        diffutils-pass1
+        expect
+        file
+        findutils-pass1
+        flex
+        gawk-pass1
+        gcc-pass2
+        gettext-pass1
+        glibc
+        grep-pass1
+        gzip-pass1
+        libgcc
+        libstdcpp-pass1
+        linux-headers
+        m4
+        make-pass1
+        patch-pass1
+        perl-pass1
+        sed-pass1
+        tar-pass1
+        tcl
+        texinfo-pass1
+        util-linux-pass1
+        xz
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        bc
+        binutils
+        bison
+        coreutils
+        dejagnu
+        diffutils
+        expect
+        file
+        findutils
+        flex
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        libstdcpp
+        linux-headers
+        m4
+        make
+        patch
+        perl
+        sed
+        tar
+        tcl
+        texinfo
+        util-linux
+        xz
+        zlib
+        zstd
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i binutils-$VERSION-fluffy-shell.patch

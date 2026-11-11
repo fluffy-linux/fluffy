@@ -1,6 +1,29 @@
-diff -uNr gcc-16.2.0.orig/gcc/configure gcc-16.2.0/gcc/configure
---- gcc-16.2.0.orig/gcc/configure	2026-08-07 07:47:29.994988106 +0000
-+++ gcc-16.2.0/gcc/configure	2026-08-07 07:47:29.994988106 +0000
+diff -ruN gcc-16.2.0.orig/gcc/Makefile.in gcc-16.2.0/gcc/Makefile.in
+--- gcc-16.2.0.orig/gcc/Makefile.in	2026-08-07 03:46:05.499679583 -0400
++++ gcc-16.2.0/gcc/Makefile.in	2026-11-08 21:53:53.674108569 -0500
+@@ -577,16 +577,16 @@
+ # The sed idiom for this is to repeat the search-and-replace until it doesn't match, using :a ... ta.
+ # Use single quotes here to avoid nested double- and backquotes, this
+ # macro is also used in a double-quoted context.
+-SYSTEM_HEADER_DIR = `echo @SYSTEM_HEADER_DIR@ | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
++SYSTEM_HEADER_DIR = `echo "@SYSTEM_HEADER_DIR@" | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
+ 
+ # Path to the system headers on the build machine.
+-BUILD_SYSTEM_HEADER_DIR = `echo @BUILD_SYSTEM_HEADER_DIR@ | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
++BUILD_SYSTEM_HEADER_DIR = `echo "@BUILD_SYSTEM_HEADER_DIR@" | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
+ 
+ # Control whether to run fixincludes.
+ STMP_FIXINC = @STMP_FIXINC@
+ 
+ # Test to see whether <limits.h> exists in the system header files.
+-LIMITS_H_TEST = [ -f $(BUILD_SYSTEM_HEADER_DIR)/limits.h ]
++LIMITS_H_TEST = for f in $(BUILD_SYSTEM_HEADER_DIR)/limits.h; do [ -f "$$f" ] && break; done && [ -f "$$f" ]
+ 
+ # Directory for prefix to system directories, for
+ # each of $(system_prefix)/usr/include, $(system_prefix)/usr/lib, etc.
+diff -ruN gcc-16.2.0.orig/gcc/configure gcc-16.2.0/gcc/configure
+--- gcc-16.2.0.orig/gcc/configure	2026-08-07 03:47:29.994988106 -0400
++++ gcc-16.2.0/gcc/configure	2026-11-08 21:53:53.670536035 -0500
 @@ -15282,7 +15282,7 @@
  
  if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x ||
@@ -37,9 +60,9 @@ diff -uNr gcc-16.2.0.orig/gcc/configure gcc-16.2.0/gcc/configure
         inhibit_libc=true
  fi
  
-diff -uNr gcc-16.2.0.orig/gcc/cppdefault.cc gcc-16.2.0/gcc/cppdefault.cc
---- gcc-16.2.0.orig/gcc/cppdefault.cc	2026-08-07 07:46:06.072688487 +0000
-+++ gcc-16.2.0/gcc/cppdefault.cc	2026-08-07 07:46:06.072688487 +0000
+diff -ruN gcc-16.2.0.orig/gcc/cppdefault.cc gcc-16.2.0/gcc/cppdefault.cc
+--- gcc-16.2.0.orig/gcc/cppdefault.cc	2026-08-07 03:46:06.072688487 -0400
++++ gcc-16.2.0/gcc/cppdefault.cc	2026-11-08 21:53:53.672111437 -0500
 @@ -30,7 +30,6 @@
  
  #if defined (CROSS_DIRECTORY_STRUCTURE) && !defined (TARGET_SYSTEM_ROOT)
@@ -48,10 +71,71 @@ diff -uNr gcc-16.2.0.orig/gcc/cppdefault.cc gcc-16.2.0/gcc/cppdefault.cc
  #else
  # undef CROSS_INCLUDE_DIR
  #endif
-diff -uNr gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
---- gcc-16.2.0.orig/gcc/gcc.cc	2026-08-07 07:46:06.189690306 +0000
-+++ gcc-16.2.0/gcc/gcc.cc	2026-08-07 07:46:06.189690306 +0000
-@@ -1649,7 +1649,6 @@
+diff -ruN gcc-16.2.0.orig/gcc/file-find.cc gcc-16.2.0/gcc/file-find.cc
+--- gcc-16.2.0.orig/gcc/file-find.cc	2026-08-07 03:46:06.150689700 -0400
++++ gcc-16.2.0/gcc/file-find.cc	2026-11-10 23:00:04.498239547 -0500
+@@ -21,6 +21,7 @@
+ #include "system.h"
+ #include "filenames.h"
+ #include "file-find.h"
++#include "fluffy-cache.h"
+ 
+ static bool debug = false;
+ 
+@@ -81,6 +82,9 @@
+ 	strcpy (temp, pl->prefix);
+ 	strcat (temp, name);
+ 
++	if (!debug && fc_lookup_path (temp, false) == 0)
++	  continue;
++
+ 	if (stat (temp, &st) >= 0
+ 	    && ! S_ISDIR (st.st_mode)
+ 	    && access (temp, mode) == 0)
+@@ -114,6 +118,31 @@
+   struct prefix_list *pl, **prev;
+   int len;
+ 
++  if (strpbrk (prefix, "*?[") != NULL)
++    {
++      glob_t gbuf = {};
++      int gres = fc_expand_dirs (prefix, &gbuf);
++      if (gres < 0)
++	gres = glob (prefix, GLOB_ONLYDIR, NULL, &gbuf);
++      if (gres == 0)
++	{
++	  const char sep[2] = { DIR_SEPARATOR, 0 };
++	  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
++	    {
++	      size_t idx = first ? (gbuf.gl_pathc - 1 - gi) : gi;
++	      size_t glen = strlen (gbuf.gl_pathv[idx]);
++	      char *dir = (glen > 0
++			   && IS_DIR_SEPARATOR (gbuf.gl_pathv[idx][glen - 1]))
++			  ? xstrdup (gbuf.gl_pathv[idx])
++			  : concat (gbuf.gl_pathv[idx], sep, NULL);
++	      do_add_prefix (pprefix, dir, first);
++	      free (dir);
++	    }
++	  globfree (&gbuf);
++	}
++      return;
++    }
++
+   if (pprefix->plist && !first)
+     {
+       for (pl = pprefix->plist; pl->next; pl = pl->next)
+diff -ruN gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
+--- gcc-16.2.0.orig/gcc/gcc.cc	2026-08-07 03:46:06.189690306 -0400
++++ gcc-16.2.0/gcc/gcc.cc	2026-11-10 23:00:04.499032715 -0500
+@@ -55,6 +55,7 @@
+ #include "gcc-urlifier.h"
+ #include "opts-diagnostic.h"
+ #include "auto-profile.h" /* for AUTO_PROFILE_VERSION.  */
++#include "fluffy-cache.h"
+ 
+ #ifndef MATH_LIBRARY
+ #define MATH_LIBRARY "m"
+@@ -1649,7 +1650,6 @@
  #endif
  
  #ifdef CROSS_DIRECTORY_STRUCTURE  /* Don't use these prefixes for a cross compiler.  */
@@ -59,30 +143,42 @@ diff -uNr gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
  #undef MD_STARTFILE_PREFIX
  #undef MD_STARTFILE_PREFIX_1
  #endif
-@@ -3165,6 +3164,32 @@
+@@ -3037,6 +3037,12 @@
+ static int
+ access_check (const char *name, int mode)
+ {
++  if (fc_lookup_path (name, false) == 0)
++    {
++      errno = ENOENT;
++      return -1;
++    }
++
+   if (mode == X_OK)
+     {
+       struct stat st;
+@@ -3165,6 +3171,31 @@
    struct prefix_list *pl, **prev;
    int len;
  
 +  if (strpbrk (prefix, "*?[") != NULL)
 +    {
-+      glob_t gbuf;
-+      if (glob (prefix, 0, NULL, &gbuf) == 0)
++      glob_t gbuf = {};
++      int gres = fc_expand_dirs (prefix, &gbuf);
++      if (gres < 0)
++	gres = glob (prefix, GLOB_ONLYDIR, NULL, &gbuf);
++      if (gres == 0)
 +	{
 +	  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
 +	    {
-+	      struct stat st;
-+	      if (stat (gbuf.gl_pathv[gi], &st) == 0 && S_ISDIR (st.st_mode))
-+		{
-+		  size_t glen = strlen (gbuf.gl_pathv[gi]);
-+		  char *dir = (glen > 0
-+			       && IS_DIR_SEPARATOR (gbuf.gl_pathv[gi][glen - 1]))
-+			      ? xstrdup (gbuf.gl_pathv[gi])
-+			      : concat (gbuf.gl_pathv[gi], dir_separator_str,
-+					NULL);
-+		  add_prefix (pprefix, dir, component, priority,
-+			      require_machine_suffix, os_multilib);
-+		  free (dir);
-+		}
++	      size_t glen = strlen (gbuf.gl_pathv[gi]);
++	      char *dir = (glen > 0
++			   && IS_DIR_SEPARATOR (gbuf.gl_pathv[gi][glen - 1]))
++			  ? xstrdup (gbuf.gl_pathv[gi])
++			  : concat (gbuf.gl_pathv[gi], dir_separator_str,
++				    NULL);
++	      add_prefix (pprefix, dir, component, priority,
++			  require_machine_suffix, os_multilib);
++	      free (dir);
 +	    }
 +	  globfree (&gbuf);
 +	}
@@ -92,7 +188,18 @@ diff -uNr gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
    for (prev = &pprefix->plist;
         (*prev) != NULL && (*prev)->priority <= priority;
         prev = &(*prev)->next)
-@@ -8556,15 +8581,13 @@
+@@ -8102,6 +8133,10 @@
+ static int
+ is_directory (const char *path1)
+ {
++  int fc_res = fc_lookup_path (path1, true);
++  if (fc_res >= 0)
++    return fc_res;
++
+   int len1;
+   char *path;
+   char *cp;
+@@ -8556,15 +8591,13 @@
    for (i = 0; i < ARRAY_SIZE (driver_self_specs); i++)
      do_self_spec (driver_self_specs[i]);
  
@@ -115,26 +222,42 @@ diff -uNr gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
      }
  
    /* Process sysroot_suffix_spec.  */
-diff -uNr gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpath.cc
---- gcc-16.2.0.orig/gcc/incpath.cc	2026-08-07 07:46:06.226690881 +0000
-+++ gcc-16.2.0/gcc/incpath.cc	2026-08-07 07:46:06.226690881 +0000
-@@ -449,6 +449,25 @@
+diff -ruN gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpath.cc
+--- gcc-16.2.0.orig/gcc/incpath.cc	2026-08-07 03:46:06.226690881 -0400
++++ gcc-16.2.0/gcc/incpath.cc	2026-11-10 23:00:04.498127256 -0500
+@@ -26,6 +26,7 @@
+ #include "intl.h"
+ #include "incpath.h"
+ #include "cppdefault.h"
++#include "fluffy-cache.h"
+ 
+ /* Microsoft Windows does not natively support inodes.
+    VMS has non-numeric inodes.  */
+@@ -258,7 +259,8 @@
+ 
+       cur = *pcur;
+ 
+-      if (HOST_STAT_FOR_64BIT_INODES (cur->name, &st))
++      if ((fc_lookup_path (cur->name, true) == 0 && ((errno = ENOENT), 1))
++	  || HOST_STAT_FOR_64BIT_INODES (cur->name, &st))
+ 	{
+ 	  /* Dirs that don't exist or have denied permissions are
+ 	     silently ignored, unless verbose.  */
+@@ -449,6 +451,23 @@
  void
  add_path (char *path, incpath_kind chain, int cxx_aware, bool user_supplied_p)
  {
 +  if (strpbrk (path, "*?[") != NULL)
 +    {
-+      glob_t gbuf;
-+      if (glob (path, 0, NULL, &gbuf) == 0)
++      glob_t gbuf = {};
++      int gres = fc_expand_dirs (path, &gbuf);
++      if (gres < 0)
++	gres = glob (path, GLOB_ONLYDIR, NULL, &gbuf);
++      if (gres == 0)
 +	{
 +	  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
-+	    {
-+	      struct HOST_STAT_FOR_64BIT_INODES st;
-+	      if (HOST_STAT_FOR_64BIT_INODES (gbuf.gl_pathv[gi], &st) == 0
-+		  && S_ISDIR (st.st_mode))
-+		add_path (xstrdup (gbuf.gl_pathv[gi]), chain, cxx_aware,
-+			  user_supplied_p);
-+	    }
++	    add_path (xstrdup (gbuf.gl_pathv[gi]), chain, cxx_aware,
++		      user_supplied_p);
 +	  globfree (&gbuf);
 +	}
 +      free (path);
@@ -144,32 +267,9 @@ diff -uNr gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpath.cc
    cpp_dir *p;
    size_t pathlen = strlen (path);
  
-diff -uNr gcc-16.2.0.orig/gcc/Makefile.in gcc-16.2.0/gcc/Makefile.in
---- gcc-16.2.0.orig/gcc/Makefile.in	2026-08-07 07:46:05.499679583 +0000
-+++ gcc-16.2.0/gcc/Makefile.in	2026-08-07 07:46:05.499679583 +0000
-@@ -577,16 +577,16 @@
- # The sed idiom for this is to repeat the search-and-replace until it doesn't match, using :a ... ta.
- # Use single quotes here to avoid nested double- and backquotes, this
- # macro is also used in a double-quoted context.
--SYSTEM_HEADER_DIR = `echo @SYSTEM_HEADER_DIR@ | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
-+SYSTEM_HEADER_DIR = `echo "@SYSTEM_HEADER_DIR@" | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
- 
- # Path to the system headers on the build machine.
--BUILD_SYSTEM_HEADER_DIR = `echo @BUILD_SYSTEM_HEADER_DIR@ | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
-+BUILD_SYSTEM_HEADER_DIR = `echo "@BUILD_SYSTEM_HEADER_DIR@" | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
- 
- # Control whether to run fixincludes.
- STMP_FIXINC = @STMP_FIXINC@
- 
- # Test to see whether <limits.h> exists in the system header files.
--LIMITS_H_TEST = [ -f $(BUILD_SYSTEM_HEADER_DIR)/limits.h ]
-+LIMITS_H_TEST = for f in $(BUILD_SYSTEM_HEADER_DIR)/limits.h; do [ -f "$$f" ] && break; done && [ -f "$$f" ]
- 
- # Directory for prefix to system directories, for
- # each of $(system_prefix)/usr/include, $(system_prefix)/usr/lib, etc.
-diff -uNr gcc-16.2.0.orig/gcc/system.h gcc-16.2.0/gcc/system.h
---- gcc-16.2.0.orig/gcc/system.h	2026-08-07 07:46:06.533695651 +0000
-+++ gcc-16.2.0/gcc/system.h	2026-08-07 07:46:06.533695651 +0000
+diff -ruN gcc-16.2.0.orig/gcc/system.h gcc-16.2.0/gcc/system.h
+--- gcc-16.2.0.orig/gcc/system.h	2026-08-07 03:46:06.533695651 -0400
++++ gcc-16.2.0/gcc/system.h	2026-11-08 21:53:53.674650021 -0500
 @@ -617,6 +617,7 @@
  #if HAVE_SYS_STAT_H
  # include <sys/stat.h>
@@ -178,3 +278,3399 @@ diff -uNr gcc-16.2.0.orig/gcc/system.h gcc-16.2.0/gcc/system.h
  
  /* Test if something is a normal file.  */
  #ifndef S_ISREG
+diff -ruN gcc-16.2.0.orig/include/fluffy-cache.h gcc-16.2.0/include/fluffy-cache.h
+--- gcc-16.2.0.orig/include/fluffy-cache.h	1969-12-31 19:00:00.000000000 -0500
++++ gcc-16.2.0/include/fluffy-cache.h	2026-11-10 23:31:25.173639046 -0500
+@@ -0,0 +1,3282 @@
++#define FC_WITH_PATH_HELPERS 1
++/* Limit-free SquashFS-aware shared directory cache for Fluffy Linux.
++   Copyright (C) 2026 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++    Binary layout (mmap'd PROT_READ, 8-byte aligned, position-independent):
++     [struct fswc_header]
++     [struct fswc_pkg      * num_pkgs]       (sorted lexicographically)
++     [struct fswc_ht_entry * (ht_mask + 1)]  (<= 50% load open-addressed FNV-1a)
++     [uint32_t             * postings_count] (sorted pkg_idx slices for count > 1)
++     [struct fswc_dirent   * dirents_count]  (per-pkg contiguous dirent slices)
++     [char                 * strtab_size]    (NUL-terminated deduplicated strings)
++
++   Single-package postings (count == 1) are stored inline in fswc_ht_entry
++   without indirection.  All build buffers grow dynamically via anonymous
++   mmap + mremap (zero malloc dependency, zero fixed package/path/size caps).  */
++
++#ifndef _GLOB_FLUFFY_CACHE_H
++#define _GLOB_FLUFFY_CACHE_H 1
++
++#include <stdint.h>
++#include <stdbool.h>
++#include <stddef.h>
++#include <limits.h>
++#include <string.h>
++#include <fcntl.h>
++#include <dirent.h>
++#include <sys/mman.h>
++#include <sys/stat.h>
++#ifndef STATX_TYPE
++# include <linux/stat.h>
++#endif
++#include <sys/syscall.h>
++
++#include <unistd.h>
++#ifdef _LIBC
++# include <sysdep.h>
++# define FC_SYSCALL(name, ...) INTERNAL_SYSCALL_CALL (name, __VA_ARGS__)
++# define FC_SYSCALL0(name)     INTERNAL_SYSCALL_CALL (name)
++#else
++# include <errno.h>
++# if defined __x86_64__
++static inline long
++fc_raw_syscall (long nr, long a1, long a2, long a3, long a4, long a5, long a6)
++{
++  long ret;
++  register long r10 __asm__ ("r10") = a4;
++  register long r8 __asm__ ("r8") = a5;
++  register long r9 __asm__ ("r9") = a6;
++  __asm__ volatile ("syscall"
++                    : "=a" (ret)
++                    : "a" (nr), "D" (a1), "S" (a2), "d" (a3),
++                      "r" (r10), "r" (r8), "r" (r9)
++                    : "rcx", "r11", "memory");
++  return ret;
++}
++# else
++static inline long
++fc_raw_syscall (long nr, long a1, long a2, long a3, long a4, long a5, long a6)
++{
++  long r = syscall (nr, a1, a2, a3, a4, a5, a6);
++  return r < 0 ? -errno : r;
++}
++# endif
++# define FC_SYSCALL_N(_1, _2, _3, _4, _5, _6, _7, NAME, ...) NAME
++# define FC_SYSCALL0(name) \
++  fc_raw_syscall (__NR_##name, 0, 0, 0, 0, 0, 0)
++# define FC_SC1(n, a) \
++  fc_raw_syscall (__NR_##n, (long) (a), 0, 0, 0, 0, 0)
++# define FC_SC2(n, a, b) \
++  fc_raw_syscall (__NR_##n, (long) (a), (long) (b), 0, 0, 0, 0)
++# define FC_SC3(n, a, b, c) \
++  fc_raw_syscall (__NR_##n, (long) (a), (long) (b), (long) (c), 0, 0, 0)
++# define FC_SC4(n, a, b, c, d) \
++  fc_raw_syscall (__NR_##n, (long) (a), (long) (b), (long) (c), (long) (d), 0, 0)
++# define FC_SC5(n, a, b, c, d, e) \
++  fc_raw_syscall (__NR_##n, (long) (a), (long) (b), (long) (c), (long) (d), (long) (e), 0)
++# define FC_SC6(n, a, b, c, d, e, f) \
++  fc_raw_syscall (__NR_##n, (long) (a), (long) (b), (long) (c), (long) (d), (long) (e), (long) (f))
++# define FC_SYSCALL(name, ...) \
++  FC_SYSCALL_N (name, __VA_ARGS__, FC_SC6, FC_SC5, FC_SC4, FC_SC3, FC_SC2, FC_SC1, 0) (name, __VA_ARGS__)
++#endif
++
++#ifndef __NR_statx
++# define __NR_statx 332
++#endif
++#ifndef __NR_listmount
++# define __NR_listmount 458
++#endif
++#ifndef STATX_MNT_ID_UNIQUE
++# define STATX_MNT_ID_UNIQUE 0x00004000U
++#endif
++#ifndef MREMAP_MAYMOVE
++# define MREMAP_MAYMOVE 1
++#endif
++#ifndef AT_EMPTY_PATH
++# define AT_EMPTY_PATH 0x1000
++#endif
++#ifndef MAP_ANONYMOUS
++# define MAP_ANONYMOUS 0x20
++#endif
++
++#define FSWC_MAGIC           0x46535743U /* "FSWC" */
++#define FSWC_VERSION         4U
++#define FSWC_SHM_SLOTS       16U         /* bounded per-(uid, mnt_id) slots */
++#define FSWC_NUM_SUBDIRS     5U          /* 0:bin, 1:lib, 2:etc, 3:include, 4:libexec */
++#define FSWC_INC_MAX_SLASHES 4U          /* up to 5 components inside include/ */
++#define FSWC_SQUASHFS_MAGIC  0x73717368UL
++#define FSWC_ST_RDONLY       0x00000001UL
++#define FSWC_PKG_IMMUTABLE   0x00000001U
++#define FSWC_PKG_SQUASHFS    0x00000002U
++#define FSWC_HDR_WORLD_RX    0x00000001U
++#define FSWC_HDR_SEALED      0x00000002U
++#define FSWC_DE_IS_DIR       0x80000000U
++#define FSWC_DE_EXT_LNK      0x40000000U
++#define FSWC_DE_LEN_MASK     0x00ffffffU
++#define FSWC_HT_EXT_LNK      0x80000000U
++#define FSWC_HT_KEY_MASK     0x7fffffffU
++#define FSWC_STATX_MASK      (STATX_TYPE | STATX_MODE | STATX_INO \
++                              | STATX_MTIME | STATX_CTIME | STATX_MNT_ID_UNIQUE)
++
++static inline bool
++fswc_is_secure_mode (void)
++{
++#ifdef _LIBC
++  return __libc_enable_secure != 0;
++#else
++  return (FC_SYSCALL0 (geteuid) != FC_SYSCALL0 (getuid)
++          || FC_SYSCALL0 (getegid) != FC_SYSCALL0 (getgid));
++#endif
++}
++
++struct fswc_mnt_id_req
++{
++  uint32_t size;
++  uint32_t spare;
++  uint64_t mnt_id;
++  uint64_t param;
++};
++
++struct fswc_kernel_statfs
++{
++  unsigned long f_type;
++  unsigned long f_bsize;
++  unsigned long f_blocks;
++  unsigned long f_bfree;
++  unsigned long f_bavail;
++  unsigned long f_files;
++  unsigned long f_ffree;
++  int f_fsid[2];
++  unsigned long f_namelen;
++  unsigned long f_frsize;
++  unsigned long f_flags;
++  unsigned long f_spare[4];
++};
++
++struct fswc_linux_dirent64
++{
++  uint64_t d_ino;
++  int64_t d_off;
++  unsigned short d_reclen;
++  unsigned char d_type;
++  char d_name[1];
++};
++
++struct fswc_header
++{
++  uint32_t magic;
++  uint32_t version;
++  uint64_t total_size;
++  uint64_t prefix_mnt_id;
++  uint32_t prefix_dev_major;
++  uint32_t prefix_dev_minor;
++  uint64_t prefix_ino;
++  int64_t prefix_ctime_sec;
++  int64_t prefix_ctime_nsec;
++  int64_t prefix_mtime_sec;
++  int64_t prefix_mtime_nsec;
++  uint64_t mnt_hash1;
++  uint64_t mnt_hash2;
++  uint32_t mnt_count;
++  uint32_t prefix_off;
++  uint32_t prefix_len;
++  uint32_t num_pkgs;
++  uint32_t pkgs_off;
++  uint32_t ht_mask;
++  uint32_t ht_off;
++  uint32_t postings_count;
++  uint32_t postings_off;
++  uint32_t dirents_count;
++  uint32_t dirents_off;
++  uint32_t strtab_size;
++  uint32_t strtab_off;
++  uint32_t flags;
++};
++
++struct fswc_pkg
++{
++  uint32_t name_off;
++  uint32_t name_len;
++  uint32_t dev_major;
++  uint32_t dev_minor;
++  uint64_t ino;
++  int64_t mtime_sec;
++  int64_t mtime_nsec;
++  uint32_t flags;
++  uint32_t top_start;
++  uint32_t top_count;
++  uint32_t sub_start[FSWC_NUM_SUBDIRS];
++  uint32_t sub_count[FSWC_NUM_SUBDIRS];
++  uint32_t inc_deep_start;
++  uint32_t inc_deep_count;
++  uint32_t reserved;
++};
++
++/* Open-addressed hash table bucket.
++   ns_id == 0: top-level entry under /sw/<pkg>/<name>.
++   ns_id == 1..5: subdir 0..4 relative path under /sw/<pkg>/<subdir>/<name>.
++   When *_count == 1, *_ref holds pkg_idx directly (zero indirection).
++   When *_count > 1, *_ref is the starting index in postings[].  */
++struct fswc_ht_entry
++{
++  uint32_t hash;
++  uint32_t name_off;
++  uint32_t name_len_ns; /* FSWC_HT_EXT_LNK | (ns_id << 24) | name_len */
++  uint32_t all_count;
++  uint32_t all_ref;
++  uint32_t dir_count;
++  uint32_t dir_ref;
++};
++
++struct fswc_dirent
++{
++  uint32_t name_off;
++  uint32_t name_len_flags; /* FSWC_DE_IS_DIR | name_len */
++};
++
++struct fswc_view
++{
++  const struct fswc_header *hdr;
++  const struct fswc_pkg *pkgs;
++  const struct fswc_ht_entry *ht;
++  const uint32_t *postings;
++  const struct fswc_dirent *dirents;
++  const char *strtab;
++  size_t map_size;
++};
++
++static inline bool
++fc_syscall_err (long r)
++{
++  return (unsigned long) r >= (unsigned long) -4095L;
++}
++
++static inline size_t
++fswc_align8 (size_t v)
++{
++  return (v + 7U) & ~(size_t) 7U;
++}
++
++static inline uint32_t
++fswc_hash_str (uint32_t seed, const char *s, size_t len)
++{
++  uint32_t h = (seed * 16777619U) ^ 2166136261U;
++  for (size_t i = 0; i < len; ++i)
++    {
++      h ^= (unsigned char) s[i];
++      h *= 16777619U;
++    }
++  return h == 0 ? 1U : h;
++}
++
++static inline uint64_t
++fswc_mix64 (uint64_t x)
++{
++  x += 0x9e3779b97f4a7c15ULL;
++  x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
++  x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
++  return x ^ (x >> 31);
++}
++
++static const char *const fc_subdir_names[FSWC_NUM_SUBDIRS] =
++{
++  "bin", "lib", "etc", "include", "libexec"
++};
++
++static inline int
++fc_subdir_id (const char *name, size_t len)
++{
++  switch (len)
++    {
++    case 3:
++      if (memcmp (name, "bin", 3) == 0)
++        return 0;
++      if (memcmp (name, "lib", 3) == 0)
++        return 1;
++      if (memcmp (name, "etc", 3) == 0)
++        return 2;
++      break;
++    case 7:
++      if (memcmp (name, "include", 7) == 0)
++        return 3;
++      if (memcmp (name, "libexec", 7) == 0)
++        return 4;
++      break;
++    }
++  return -1;
++}
++
++static inline bool
++fswc_check_range (size_t map_size, size_t off, size_t count, size_t elem_size,
++                  size_t align_mask)
++{
++  if ((off & align_mask) != 0)
++    return false;
++  size_t bytes = 0;
++  size_t end = 0;
++  if (__builtin_mul_overflow (count, elem_size, &bytes))
++    return false;
++  if (__builtin_add_overflow (off, bytes, &end))
++    return false;
++  return end <= map_size;
++}
++
++static inline bool
++fswc_init_view (const void *base, size_t map_size, struct fswc_view *out)
++{
++  if (base == NULL || map_size < sizeof (struct fswc_header)
++      || (((uintptr_t) base) & 7U) != 0)
++    return false;
++
++  const struct fswc_header *hdr = (const struct fswc_header *) base;
++  if (hdr->magic != FSWC_MAGIC
++      || hdr->version != FSWC_VERSION
++      || hdr->total_size != map_size)
++    return false;
++
++  size_t ht_cap = (size_t) hdr->ht_mask + 1U;
++  if (hdr->ht_mask < 63U || (ht_cap & (size_t) hdr->ht_mask) != 0)
++    return false;
++
++  if (!fswc_check_range (map_size, hdr->pkgs_off, hdr->num_pkgs,
++                         sizeof (struct fswc_pkg), 7U)
++      || !fswc_check_range (map_size, hdr->ht_off, ht_cap,
++                            sizeof (struct fswc_ht_entry), 3U)
++      || !fswc_check_range (map_size, hdr->postings_off, hdr->postings_count,
++                            sizeof (uint32_t), 3U)
++      || !fswc_check_range (map_size, hdr->dirents_off, hdr->dirents_count,
++                            sizeof (struct fswc_dirent), 3U)
++      || hdr->strtab_size == 0
++      || !fswc_check_range (map_size, hdr->strtab_off, hdr->strtab_size, 1U, 0U))
++    return false;
++
++  const char *cbase = (const char *) base;
++  const char *strtab = cbase + hdr->strtab_off;
++  if (strtab[hdr->strtab_size - 1U] != '\0')
++    return false;
++  if ((size_t) hdr->prefix_off >= (size_t) hdr->strtab_size
++      || (size_t) hdr->prefix_len > (size_t) (hdr->strtab_size - 1U - hdr->prefix_off))
++    return false;
++
++  out->hdr = hdr;
++  out->pkgs = (const struct fswc_pkg *) (const void *) (cbase + hdr->pkgs_off);
++  out->ht = (const struct fswc_ht_entry *) (const void *) (cbase + hdr->ht_off);
++  out->postings = (const uint32_t *) (const void *) (cbase + hdr->postings_off);
++  out->dirents = (const struct fswc_dirent *) (const void *) (cbase + hdr->dirents_off);
++  out->strtab = strtab;
++  out->map_size = map_size;
++  return true;
++}
++
++static inline const struct fswc_ht_entry *
++fswc_lookup (const struct fswc_view *v, uint8_t ns_id,
++             const char *name, size_t len)
++{
++  if (len == 0 || len > 0x00ffffffU)
++    return NULL;
++  uint32_t h = fswc_hash_str ((uint32_t) ns_id, name, len);
++  uint32_t key_tag = ((uint32_t) ns_id << 24) | (uint32_t) len;
++  uint32_t mask = v->hdr->ht_mask;
++  uint32_t idx = h & mask;
++  uint32_t str_lim = v->hdr->strtab_size;
++
++  for (uint32_t step = 0; step <= mask; ++step)
++    {
++      const struct fswc_ht_entry *e = &v->ht[idx];
++      if (e->hash == 0)
++        return NULL;
++      if (e->hash == h && (e->name_len_ns & FSWC_HT_KEY_MASK) == key_tag
++          && e->name_off < str_lim && len <= (size_t) (str_lim - e->name_off)
++          && memcmp (v->strtab + e->name_off, name, len) == 0)
++        return e;
++      idx = (idx + 1U) & mask;
++    }
++  return NULL;
++}
++
++static inline const uint32_t *
++fswc_posting_slice (const struct fswc_view *v, uint32_t count, uint32_t ref,
++                    uint32_t *inline_slot, uint32_t *out_count)
++{
++  if (count == 0)
++    {
++      *out_count = 0;
++      return NULL;
++    }
++  if (count == 1U)
++    {
++      if (ref >= v->hdr->num_pkgs)
++        {
++          *out_count = 0;
++          return NULL;
++        }
++      *inline_slot = ref;
++      *out_count = 1U;
++      return inline_slot;
++    }
++  if (ref > v->hdr->postings_count || count > v->hdr->postings_count - ref)
++    {
++      *out_count = 0;
++      return NULL;
++    }
++  *out_count = count;
++  return v->postings + ref;
++}
++
++static inline bool
++fswc_posting_contains (const struct fswc_view *v, uint32_t count, uint32_t ref,
++                       uint32_t pkg_idx)
++{
++  if (count == 0)
++    return false;
++  if (count == 1U)
++    return ref == pkg_idx;
++  if (ref > v->hdr->postings_count || count > v->hdr->postings_count - ref)
++    return false;
++  const uint32_t *arr = v->postings + ref;
++  uint32_t lo = 0, hi = count;
++  while (lo < hi)
++    {
++      uint32_t mid = lo + (hi - lo) / 2U;
++      uint32_t val = arr[mid];
++      if (val == pkg_idx)
++        return true;
++      if (val < pkg_idx)
++        lo = mid + 1U;
++      else
++        hi = mid;
++    }
++  return false;
++}
++
++static inline int32_t
++fswc_find_pkg (const struct fswc_view *v, const char *name, size_t len)
++{
++  uint32_t lo = 0, hi = v->hdr->num_pkgs;
++  uint32_t str_lim = v->hdr->strtab_size;
++  while (lo < hi)
++    {
++      uint32_t mid = lo + (hi - lo) / 2U;
++      const struct fswc_pkg *pk = &v->pkgs[mid];
++      if (pk->name_off >= str_lim || pk->name_len > str_lim - pk->name_off)
++        return -1;
++      const char *mname = v->strtab + pk->name_off;
++      size_t mlen = pk->name_len;
++      size_t min_len = len < mlen ? len : mlen;
++      int cmp = memcmp (name, mname, min_len);
++      if (cmp == 0)
++        {
++          if (len == mlen)
++            return (int32_t) mid;
++          cmp = (len < mlen) ? -1 : 1;
++        }
++      if (cmp < 0)
++        hi = mid;
++      else
++        lo = mid + 1U;
++    }
++  return -1;
++}
++
++/* Dynamic mmap/mremap buffer (zero malloc dependency, zero fixed caps).  */
++struct fswc_buf
++{
++  char *data;
++  size_t used;
++  size_t cap;
++};
++
++static inline void
++fswc_buf_init (struct fswc_buf *b)
++{
++  b->data = NULL;
++  b->used = 0;
++  b->cap = 0;
++}
++
++static inline void
++fswc_buf_free (struct fswc_buf *b)
++{
++  if (b->data != NULL)
++    {
++      FC_SYSCALL (munmap, b->data, b->cap);
++      b->data = NULL;
++      b->used = 0;
++      b->cap = 0;
++    }
++}
++
++static bool
++fswc_buf_reserve (struct fswc_buf *b, size_t add)
++{
++  size_t need = 0;
++  if (__builtin_add_overflow (b->used, add, &need))
++    return false;
++  if (need <= b->cap)
++    return true;
++
++  size_t new_cap = b->cap == 0 ? 16384U : b->cap;
++  while (new_cap < need)
++    {
++      if (__builtin_mul_overflow (new_cap, (size_t) 2U, &new_cap))
++        {
++          new_cap = (need + 4095U) & ~(size_t) 4095U;
++          if (new_cap < need)
++            return false;
++          break;
++        }
++    }
++  new_cap = (new_cap + 4095U) & ~(size_t) 4095U;
++
++  long m;
++  if (b->data == NULL)
++    m = FC_SYSCALL (mmap, 0, new_cap, PROT_READ | PROT_WRITE,
++                    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++  else
++    m = FC_SYSCALL (mremap, b->data, b->cap, new_cap, MREMAP_MAYMOVE, 0);
++
++  if (fc_syscall_err (m))
++    return false;
++
++  b->data = (char *) (uintptr_t) m;
++  b->cap = new_cap;
++  return true;
++}
++
++static char *
++fswc_utoa (char *p, uint64_t v)
++{
++  char tmp[24];
++  int i = 0;
++  if (v == 0)
++    {
++      *p++ = '0';
++      return p;
++    }
++  while (v > 0)
++    {
++      tmp[i++] = (char) ('0' + (v % 10U));
++      v /= 10U;
++    }
++  while (i > 0)
++    *p++ = tmp[--i];
++  return p;
++}
++
++static inline uint32_t
++fswc_shm_slot (uint64_t prefix_mnt_id)
++{
++  return (uint32_t) (fswc_mix64 (prefix_mnt_id) & (FSWC_SHM_SLOTS - 1U));
++}
++
++static inline bool
++fswc_is_sw_prefix (const char *prefix, size_t prefix_len)
++{
++#ifdef FC_TEST_SEALED_PREFIX
++  if (prefix_len == strlen (FC_TEST_SEALED_PREFIX)
++      && memcmp (prefix, FC_TEST_SEALED_PREFIX, prefix_len) == 0)
++    return true;
++#endif
++  return (prefix_len == 3U
++          && prefix[0] == '/' && prefix[1] == 's' && prefix[2] == 'w');
++}
++
++static void
++fswc_format_shm_path (char *buf, const char *dir, uid_t uid, uint32_t slot)
++{
++  size_t dlen = strlen (dir);
++  char *p = buf;
++  memcpy (p, dir, dlen);
++  p += dlen;
++  const char *base = "/.fluffy_sw_cache_v4_";
++  size_t blen = strlen (base);
++  memcpy (p, base, blen);
++  p += blen;
++  p = fswc_utoa (p, (uint64_t) uid);
++  *p++ = '_';
++  p = fswc_utoa (p, (uint64_t) slot);
++  *p = '\0';
++}
++
++static void
++fswc_format_sealed_path (char *buf, uid_t uid)
++{
++#ifdef FC_TEST_SEALED_CACHE_DIR
++  const char *dir = FC_TEST_SEALED_CACHE_DIR;
++#else
++  const char *dir = "/tmp";
++#endif
++  size_t dlen = strlen (dir);
++  char *p = buf;
++  memcpy (p, dir, dlen);
++  p += dlen;
++  const char *base = "/.fluffy_sw_cache_v4_sealed_";
++  size_t blen = strlen (base);
++  memcpy (p, base, blen);
++  p += blen;
++  p = fswc_utoa (p, (uint64_t) uid);
++  *p = '\0';
++}
++
++static bool
++fswc_check_ns_sealed (uid_t euid)
++{
++  if (fswc_is_secure_mode ())
++    return false;
++#ifndef FC_TEST_SEALED_ALLOW_SELF_UID
++  if (euid == 0)
++    return false;
++#endif
++#ifdef FC_TEST_SEALED_MARKER_PATH
++  const char *marker = FC_TEST_SEALED_MARKER_PATH;
++#else
++  const char *marker = "/tmp/.fluffy_ns_sealed";
++#endif
++  struct statx stx;
++  long r = FC_SYSCALL (statx, AT_FDCWD, marker, AT_SYMLINK_NOFOLLOW,
++                       STATX_TYPE | STATX_MODE | STATX_UID, &stx);
++  if (fc_syscall_err (r))
++    return false;
++  uint32_t req_mask = STATX_TYPE | STATX_MODE | STATX_UID;
++  if ((stx.stx_mask & req_mask) != req_mask
++      || !S_ISREG (stx.stx_mode)
++      || (stx.stx_mode & 07777) != 0444)
++    return false;
++#ifdef FC_TEST_SEALED_ALLOW_SELF_UID
++  return stx.stx_uid == 0 || stx.stx_uid == euid;
++#else
++  return stx.stx_uid == 0;
++#endif
++}
++
++static int
++fswc_get_prefix_state (const char *prefix, struct statx *stx,
++                       uint32_t *out_mnt_count, uint64_t *out_h1,
++                       uint64_t *out_h2)
++{
++  long r = FC_SYSCALL (statx, AT_FDCWD, prefix, 0, FSWC_STATX_MASK, stx);
++  if (fc_syscall_err (r) || !S_ISDIR (stx->stx_mode)
++      || !(stx->stx_mask & STATX_MNT_ID_UNIQUE))
++    return -1;
++
++  struct fswc_mnt_id_req req;
++  req.size = 24U;
++  req.spare = 0U;
++  req.mnt_id = stx->stx_mnt_id;
++  req.param = 0ULL;
++
++  uint64_t mnt_ids[256];
++  uint64_t h1 = 0, h2 = 0;
++  uint32_t total = 0;
++
++  while (1)
++    {
++      long n = FC_SYSCALL (listmount, &req, mnt_ids, 256, 0);
++      if (fc_syscall_err (n))
++        return -1;
++      for (long i = 0; i < n; ++i)
++        {
++          uint64_t m = fswc_mix64 (mnt_ids[i]);
++          h1 += m;
++          h2 ^= (m << 19) | (m >> (64 - 19));
++        }
++      total += (uint32_t) n;
++      if (n < 256)
++        break;
++      req.param = mnt_ids[255];
++    }
++
++  *out_mnt_count = total;
++  *out_h1 = h1;
++  *out_h2 = h2;
++  return 0;
++}
++
++static inline bool
++fswc_view_matches (const struct fswc_view *v, const char *prefix,
++                   size_t prefix_len, const struct statx *stx,
++                   uint32_t mnt_count, uint64_t h1, uint64_t h2)
++{
++  const struct fswc_header *hdr = v->hdr;
++  return (hdr->prefix_len == prefix_len
++          && hdr->prefix_mnt_id == stx->stx_mnt_id
++          && hdr->mnt_count == mnt_count
++          && hdr->mnt_hash1 == h1
++          && hdr->mnt_hash2 == h2
++          && hdr->prefix_dev_major == stx->stx_dev_major
++          && hdr->prefix_dev_minor == stx->stx_dev_minor
++          && hdr->prefix_ino == stx->stx_ino
++          && hdr->prefix_ctime_sec == stx->stx_ctime.tv_sec
++          && hdr->prefix_ctime_nsec == stx->stx_ctime.tv_nsec
++          && hdr->prefix_mtime_sec == stx->stx_mtime.tv_sec
++          && hdr->prefix_mtime_nsec == stx->stx_mtime.tv_nsec
++          && memcmp (v->strtab + hdr->prefix_off, prefix, prefix_len) == 0);
++}
++
++/* Builder context: dynamically grown string table, key table, posting nodes,
++   package metadata, and dirent slices.  */
++struct fswc_str_slot
++{
++  uint32_t hash;
++  uint32_t off;
++  uint32_t len;
++};
++
++struct fswc_build_node
++{
++  uint32_t pkg_idx;
++  uint32_t next;
++};
++
++struct fswc_build_key
++{
++  uint32_t hash;
++  uint32_t name_off;
++  uint32_t name_len_ns;
++  uint32_t all_head;
++  uint32_t all_tail;
++  uint32_t all_count;
++  uint32_t dir_head;
++  uint32_t dir_tail;
++  uint32_t dir_count;
++};
++
++struct fswc_builder
++{
++  struct fswc_buf strtab;
++  struct fswc_buf str_ht;    /* struct fswc_str_slot[str_ht_cap] */
++  size_t str_ht_cap;
++  size_t str_count;
++
++  struct fswc_buf keys;      /* struct fswc_build_key[] */
++  struct fswc_buf key_ht;    /* uint32_t[key_ht_cap], UINT32_MAX = empty */
++  size_t key_ht_cap;
++  size_t key_count;
++
++  struct fswc_buf nodes;     /* struct fswc_build_node[] */
++  struct fswc_buf pkgs;      /* struct fswc_pkg[] */
++  struct fswc_buf dirents;   /* struct fswc_dirent[] */
++};
++
++static void
++fswc_builder_free (struct fswc_builder *b)
++{
++  fswc_buf_free (&b->strtab);
++  fswc_buf_free (&b->str_ht);
++  fswc_buf_free (&b->keys);
++  fswc_buf_free (&b->key_ht);
++  fswc_buf_free (&b->nodes);
++  fswc_buf_free (&b->pkgs);
++  fswc_buf_free (&b->dirents);
++}
++
++static bool
++fswc_builder_init (struct fswc_builder *b)
++{
++  memset (b, 0, sizeof (*b));
++  if (!fswc_buf_reserve (&b->strtab, 1U))
++    return false;
++  b->strtab.data[0] = '\0';
++  b->strtab.used = 1U;
++
++  b->str_ht_cap = 1024U;
++  if (!fswc_buf_reserve (&b->str_ht, b->str_ht_cap * sizeof (struct fswc_str_slot)))
++    {
++      fswc_builder_free (b);
++      return false;
++    }
++  b->str_ht.used = b->str_ht_cap * sizeof (struct fswc_str_slot);
++  memset (b->str_ht.data, 0, b->str_ht.used);
++
++  b->key_ht_cap = 1024U;
++  if (!fswc_buf_reserve (&b->key_ht, b->key_ht_cap * sizeof (uint32_t)))
++    {
++      fswc_builder_free (b);
++      return false;
++    }
++  b->key_ht.used = b->key_ht_cap * sizeof (uint32_t);
++  memset (b->key_ht.data, 0xff, b->key_ht.used);
++  return true;
++}
++
++static bool
++fswc_str_ht_grow (struct fswc_builder *b)
++{
++  size_t new_cap = b->str_ht_cap * 2U;
++  struct fswc_buf nb;
++  fswc_buf_init (&nb);
++  if (!fswc_buf_reserve (&nb, new_cap * sizeof (struct fswc_str_slot)))
++    return false;
++  nb.used = new_cap * sizeof (struct fswc_str_slot);
++  memset (nb.data, 0, nb.used);
++
++  const struct fswc_str_slot *old_slots
++    = (const struct fswc_str_slot *) (const void *) b->str_ht.data;
++  struct fswc_str_slot *new_slots
++    = (struct fswc_str_slot *) (void *) nb.data;
++  size_t mask = new_cap - 1U;
++
++  for (size_t i = 0; i < b->str_ht_cap; ++i)
++    {
++      if (old_slots[i].hash == 0)
++        continue;
++      size_t idx = old_slots[i].hash & mask;
++      while (new_slots[idx].hash != 0)
++        idx = (idx + 1U) & mask;
++      new_slots[idx] = old_slots[i];
++    }
++
++  fswc_buf_free (&b->str_ht);
++  b->str_ht = nb;
++  b->str_ht_cap = new_cap;
++  return true;
++}
++
++static bool
++fswc_intern_str (struct fswc_builder *b, const char *s, size_t len,
++                 uint32_t *out_off)
++{
++  if (len == 0)
++    {
++      *out_off = 0U;
++      return true;
++    }
++  if (len > 0x7fffffffU)
++    return false;
++  if ((b->str_count + 1U) * 2U >= b->str_ht_cap && !fswc_str_ht_grow (b))
++    return false;
++
++  uint32_t h = fswc_hash_str (0U, s, len);
++  struct fswc_str_slot *slots = (struct fswc_str_slot *) (void *) b->str_ht.data;
++  size_t mask = b->str_ht_cap - 1U;
++  size_t idx = h & mask;
++
++  while (slots[idx].hash != 0)
++    {
++      if (slots[idx].hash == h && slots[idx].len == len
++          && memcmp (b->strtab.data + slots[idx].off, s, len) == 0)
++        {
++          *out_off = slots[idx].off;
++          return true;
++        }
++      idx = (idx + 1U) & mask;
++    }
++
++  if (b->strtab.used > (size_t) UINT32_MAX - len - 1U)
++    return false;
++  if (!fswc_buf_reserve (&b->strtab, len + 1U))
++    return false;
++
++  uint32_t off = (uint32_t) b->strtab.used;
++  memcpy (b->strtab.data + off, s, len);
++  b->strtab.data[off + len] = '\0';
++  b->strtab.used += len + 1U;
++
++  slots = (struct fswc_str_slot *) (void *) b->str_ht.data;
++  slots[idx].hash = h;
++  slots[idx].off = off;
++  slots[idx].len = (uint32_t) len;
++  ++b->str_count;
++  *out_off = off;
++  return true;
++}
++
++static bool
++fswc_key_ht_grow (struct fswc_builder *b)
++{
++  size_t new_cap = b->key_ht_cap * 2U;
++  struct fswc_buf nb;
++  fswc_buf_init (&nb);
++  if (!fswc_buf_reserve (&nb, new_cap * sizeof (uint32_t)))
++    return false;
++  nb.used = new_cap * sizeof (uint32_t);
++  memset (nb.data, 0xff, nb.used);
++
++  const struct fswc_build_key *keys
++    = (const struct fswc_build_key *) (const void *) b->keys.data;
++  uint32_t *new_ht = (uint32_t *) (void *) nb.data;
++  size_t mask = new_cap - 1U;
++
++  for (size_t i = 0; i < b->key_count; ++i)
++    {
++      size_t idx = keys[i].hash & mask;
++      while (new_ht[idx] != UINT32_MAX)
++        idx = (idx + 1U) & mask;
++      new_ht[idx] = (uint32_t) i;
++    }
++
++  fswc_buf_free (&b->key_ht);
++  b->key_ht = nb;
++  b->key_ht_cap = new_cap;
++  return true;
++}
++
++static bool
++fswc_append_posting_node (struct fswc_builder *b, uint32_t *head,
++                          uint32_t *tail, uint32_t *count, uint32_t pkg_idx)
++{
++  struct fswc_build_node *nodes
++    = (struct fswc_build_node *) (void *) b->nodes.data;
++  if (*count > 0 && nodes[*tail].pkg_idx == pkg_idx)
++    return true;
++
++  size_t cur_nodes = b->nodes.used / sizeof (struct fswc_build_node);
++  if (cur_nodes >= (size_t) UINT32_MAX - 1U)
++    return false;
++  if (!fswc_buf_reserve (&b->nodes, sizeof (struct fswc_build_node)))
++    return false;
++
++  nodes = (struct fswc_build_node *) (void *) b->nodes.data;
++  uint32_t nid = (uint32_t) cur_nodes;
++  nodes[nid].pkg_idx = pkg_idx;
++  nodes[nid].next = UINT32_MAX;
++  b->nodes.used += sizeof (struct fswc_build_node);
++
++  if (*count == 0)
++    *head = nid;
++  else
++    nodes[*tail].next = nid;
++  *tail = nid;
++  ++(*count);
++  return true;
++}
++
++static bool
++fswc_record_entry (struct fswc_builder *b, uint32_t pkg_idx, uint8_t ns_id,
++                   const char *name, size_t len, bool is_dir, bool is_ext_lnk,
++                   bool record_dirent)
++{
++  if (len == 0 || len > 0x00ffffffU)
++    return false;
++  if ((b->key_count + 1U) * 2U >= b->key_ht_cap && !fswc_key_ht_grow (b))
++    return false;
++
++  uint32_t h = fswc_hash_str ((uint32_t) ns_id, name, len);
++  uint32_t key_tag = ((uint32_t) ns_id << 24) | (uint32_t) len;
++  uint32_t *kht = (uint32_t *) (void *) b->key_ht.data;
++  struct fswc_build_key *keys = (struct fswc_build_key *) (void *) b->keys.data;
++  size_t mask = b->key_ht_cap - 1U;
++  size_t idx = h & mask;
++  uint32_t kid = UINT32_MAX;
++
++  while (kht[idx] != UINT32_MAX)
++    {
++      uint32_t cand = kht[idx];
++      if (keys[cand].hash == h
++          && (keys[cand].name_len_ns & FSWC_HT_KEY_MASK) == key_tag
++          && memcmp (b->strtab.data + keys[cand].name_off, name, len) == 0)
++        {
++          kid = cand;
++          break;
++        }
++      idx = (idx + 1U) & mask;
++    }
++
++  uint32_t name_off = 0;
++  if (kid == UINT32_MAX)
++    {
++      if (b->key_count >= (size_t) UINT32_MAX - 1U)
++        return false;
++      if (!fswc_intern_str (b, name, len, &name_off))
++        return false;
++      if (!fswc_buf_reserve (&b->keys, sizeof (struct fswc_build_key)))
++        return false;
++
++      keys = (struct fswc_build_key *) (void *) b->keys.data;
++      kht = (uint32_t *) (void *) b->key_ht.data;
++      kid = (uint32_t) b->key_count++;
++      b->keys.used += sizeof (struct fswc_build_key);
++      keys[kid].hash = h;
++      keys[kid].name_off = name_off;
++      keys[kid].name_len_ns = key_tag;
++      keys[kid].all_head = UINT32_MAX;
++      keys[kid].all_tail = UINT32_MAX;
++      keys[kid].all_count = 0U;
++      keys[kid].dir_head = UINT32_MAX;
++      keys[kid].dir_tail = UINT32_MAX;
++      keys[kid].dir_count = 0U;
++      kht[idx] = kid;
++    }
++  else
++    name_off = keys[kid].name_off;
++
++  if (is_ext_lnk)
++    keys[kid].name_len_ns |= FSWC_HT_EXT_LNK;
++
++  if (!fswc_append_posting_node (b, &keys[kid].all_head, &keys[kid].all_tail,
++                                 &keys[kid].all_count, pkg_idx))
++    return false;
++  if (is_dir
++      && !fswc_append_posting_node (b, &keys[kid].dir_head, &keys[kid].dir_tail,
++                                    &keys[kid].dir_count, pkg_idx))
++    return false;
++
++  if (record_dirent)
++    {
++      size_t cur_de = b->dirents.used / sizeof (struct fswc_dirent);
++      if (cur_de >= (size_t) UINT32_MAX - 1U)
++        return false;
++      if (!fswc_buf_reserve (&b->dirents, sizeof (struct fswc_dirent)))
++        return false;
++      struct fswc_dirent *de
++        = &((struct fswc_dirent *) (void *) b->dirents.data)[cur_de];
++      de->name_off = name_off;
++      de->name_len_flags = ((uint32_t) len
++                            | (is_dir ? FSWC_DE_IS_DIR : 0U)
++                            | (is_ext_lnk ? FSWC_DE_EXT_LNK : 0U));
++      b->dirents.used += sizeof (struct fswc_dirent);
++    }
++  return true;
++}
++
++struct fswc_raw_str
++{
++  uint32_t off;
++  uint32_t len;
++};
++
++static void
++fswc_sort_raw_strs (struct fswc_raw_str *arr, struct fswc_raw_str *tmp,
++                    size_t n, const char *pool)
++{
++  for (size_t width = 1U; width < n; width *= 2U)
++    {
++      for (size_t i = 0; i < n; i += 2U * width)
++        {
++          size_t left = i;
++          size_t mid = (i + width < n) ? (i + width) : n;
++          size_t right = (i + 2U * width < n) ? (i + 2U * width) : n;
++          size_t l = left, r = mid, out = left;
++          while (l < mid && r < right)
++            {
++              if (strcmp (pool + arr[l].off, pool + arr[r].off) <= 0)
++                tmp[out++] = arr[l++];
++              else
++                tmp[out++] = arr[r++];
++            }
++          while (l < mid)
++            tmp[out++] = arr[l++];
++          while (r < right)
++            tmp[out++] = arr[r++];
++        }
++      memcpy (arr, tmp, n * sizeof (struct fswc_raw_str));
++    }
++}
++
++/* Classify dirent D inside DFD belonging to SquashFS mount PKG_MNT_ID.
++   Symlinks resolving within PKG_MNT_ID are immutable; dangling symlinks or
++   symlinks crossing out of PKG_MNT_ID are flagged via *OUT_EXT_LNK so their
++   target directoryness is never cached as immutable.  */
++static bool
++fswc_classify_dirent (int dfd, const struct fswc_linux_dirent64 *d,
++                      uint64_t pkg_mnt_id, bool *out_is_dir,
++                      bool *out_ext_lnk)
++{
++  *out_is_dir = false;
++  *out_ext_lnk = false;
++  if (d->d_type == DT_DIR)
++    {
++      *out_is_dir = true;
++      return true;
++    }
++  if (d->d_type != DT_LNK && d->d_type != DT_UNKNOWN)
++    return true;
++
++  if (d->d_type == DT_UNKNOWN)
++    {
++      struct statx lstx;
++      long lr = FC_SYSCALL (statx, dfd, d->d_name, AT_SYMLINK_NOFOLLOW,
++                            STATX_TYPE | STATX_MNT_ID_UNIQUE, &lstx);
++      if (fc_syscall_err (lr))
++        return false;
++      if (S_ISDIR (lstx.stx_mode))
++        {
++          if (!(lstx.stx_mask & STATX_MNT_ID_UNIQUE)
++              || lstx.stx_mnt_id != pkg_mnt_id)
++            return false;
++          *out_is_dir = true;
++          return true;
++        }
++      if (!S_ISLNK (lstx.stx_mode))
++        return true;
++    }
++
++  struct statx stx;
++  long r = FC_SYSCALL (statx, dfd, d->d_name, 0,
++                       STATX_TYPE | STATX_MODE | STATX_MNT_ID_UNIQUE, &stx);
++  if (fc_syscall_err (r)
++      || !(stx.stx_mask & STATX_MNT_ID_UNIQUE)
++      || stx.stx_mnt_id != pkg_mnt_id)
++    {
++      *out_ext_lnk = true;
++      return true;
++    }
++  if (S_ISDIR (stx.stx_mode))
++    {
++      if ((stx.stx_mode & 0005) != 0005)
++        return false;
++      *out_is_dir = true;
++    }
++  return true;
++}
++
++static bool
++fswc_check_dir_fd (int dfd, uint64_t pkg_mnt_id)
++{
++  struct statx dstx;
++  long r = FC_SYSCALL (statx, dfd, "", AT_EMPTY_PATH,
++                       STATX_TYPE | STATX_MODE | STATX_MNT_ID_UNIQUE, &dstx);
++  return (!fc_syscall_err (r)
++          && S_ISDIR (dstx.stx_mode)
++          && (dstx.stx_mode & 0005) == 0005
++          && (dstx.stx_mask & STATX_MNT_ID_UNIQUE) != 0
++          && dstx.stx_mnt_id == pkg_mnt_id);
++}
++
++static bool
++fswc_scan_include_deep (struct fswc_builder *b, uint32_t pkg_idx,
++                        uint64_t pkg_mnt_id, int dir_fd,
++                        struct fswc_buf *path_buf,
++                        size_t base_len, uint32_t depth, uint32_t *io_cnt)
++{
++  if (!fswc_check_dir_fd (dir_fd, pkg_mnt_id))
++    return false;
++
++  char dent_buf[8192];
++  if (!fswc_buf_reserve (path_buf, 2U))
++    return false;
++  path_buf->data[base_len] = '/';
++
++  while (1)
++    {
++      long nr = FC_SYSCALL (getdents64, dir_fd, dent_buf, sizeof (dent_buf));
++      if (fc_syscall_err (nr))
++        return false;
++      if (nr == 0)
++        break;
++      for (long bp = 0; bp < nr; )
++        {
++          const struct fswc_linux_dirent64 *d
++            = (const struct fswc_linux_dirent64 *) (const void *) (dent_buf + bp);
++          bp += d->d_reclen;
++          if (d->d_name[0] == '.'
++              && (d->d_name[1] == '\0'
++                  || (d->d_name[1] == '.' && d->d_name[2] == '\0')))
++            continue;
++          size_t dlen = strlen (d->d_name);
++          size_t full_len = base_len + 1U + dlen;
++          path_buf->used = base_len + 1U;
++          if (!fswc_buf_reserve (path_buf, dlen + 1U))
++            return false;
++          memcpy (path_buf->data + base_len + 1U, d->d_name, dlen + 1U);
++          path_buf->used = full_len;
++
++          bool is_dir = false, is_ext_lnk = false;
++          if (!fswc_classify_dirent (dir_fd, d, pkg_mnt_id,
++                                     &is_dir, &is_ext_lnk))
++            return false;
++          if (!fswc_record_entry (b, pkg_idx, 4U, path_buf->data, full_len,
++                                  is_dir, is_ext_lnk, true))
++            return false;
++          ++(*io_cnt);
++
++          if (is_dir && depth < FSWC_INC_MAX_SLASHES)
++            {
++              long cfd_l = FC_SYSCALL (openat, dir_fd, d->d_name,
++                                       O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++              if (fc_syscall_err (cfd_l))
++                return false;
++              int cfd = (int) cfd_l;
++              bool sub_ok = fswc_scan_include_deep (b, pkg_idx, pkg_mnt_id, cfd,
++                                                    path_buf, full_len,
++                                                    depth + 1U, io_cnt);
++              FC_SYSCALL (close, cfd);
++              if (!sub_ok)
++                return false;
++              path_buf->data[base_len] = '/';
++            }
++        }
++    }
++  return true;
++}
++
++static void *
++fswc_build_blob (const struct fswc_view *old_view,
++                 const char *prefix, size_t prefix_len,
++                 const struct statx *prefix_stx,
++                 uint32_t mnt_count, uint64_t h1, uint64_t h2,
++                 size_t *out_size)
++{
++  if (prefix_len == 0 || prefix_len > 0x00ffffffU)
++    return NULL;
++
++  long pfd_l = FC_SYSCALL (openat, AT_FDCWD, prefix,
++                           O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++  if (fc_syscall_err (pfd_l))
++    return NULL;
++  int pfd = (int) pfd_l;
++
++  struct fswc_kernel_statfs prefix_sfs;
++  bool prefix_rdonly = false;
++  if (!fc_syscall_err (FC_SYSCALL (fstatfs, pfd, &prefix_sfs)))
++    prefix_rdonly = (prefix_sfs.f_flags & FSWC_ST_RDONLY) != 0;
++#ifdef FC_TEST_FORCE_PREFIX_RDONLY
++  prefix_rdonly = (FC_TEST_FORCE_PREFIX_RDONLY) != 0;
++#endif
++
++  struct fswc_buf raw_pool;
++  struct fswc_buf raw_list;
++  struct fswc_buf raw_tmp;
++  fswc_buf_init (&raw_pool);
++  fswc_buf_init (&raw_list);
++  fswc_buf_init (&raw_tmp);
++
++  char dent_buf[8192];
++  bool read_ok = true;
++  while (1)
++    {
++      long nread = FC_SYSCALL (getdents64, pfd, dent_buf, sizeof (dent_buf));
++      if (fc_syscall_err (nread))
++        {
++          read_ok = false;
++          break;
++        }
++      if (nread == 0)
++        break;
++      for (long bpos = 0; bpos < nread; )
++        {
++          const struct fswc_linux_dirent64 *d
++            = (const struct fswc_linux_dirent64 *) (const void *) (dent_buf + bpos);
++          bpos += d->d_reclen;
++          if (d->d_name[0] == '.')
++            continue;
++          if (d->d_type != DT_DIR && d->d_type != DT_LNK
++              && d->d_type != DT_UNKNOWN)
++            continue;
++          size_t namelen = strlen (d->d_name);
++          if (namelen == 0 || namelen > 0x00ffffffU
++              || raw_pool.used > (size_t) UINT32_MAX - namelen - 1U)
++            {
++              read_ok = false;
++              break;
++            }
++          if (!fswc_buf_reserve (&raw_pool, namelen + 1U)
++              || !fswc_buf_reserve (&raw_list, sizeof (struct fswc_raw_str)))
++            {
++              read_ok = false;
++              break;
++            }
++          uint32_t off = (uint32_t) raw_pool.used;
++          memcpy (raw_pool.data + off, d->d_name, namelen + 1U);
++          raw_pool.used += namelen + 1U;
++
++          size_t idx = raw_list.used / sizeof (struct fswc_raw_str);
++          struct fswc_raw_str *rs
++            = &((struct fswc_raw_str *) (void *) raw_list.data)[idx];
++          rs->off = off;
++          rs->len = (uint32_t) namelen;
++          raw_list.used += sizeof (struct fswc_raw_str);
++        }
++      if (!read_ok)
++        break;
++    }
++
++  size_t raw_npkgs = raw_list.used / sizeof (struct fswc_raw_str);
++  if (!read_ok || raw_npkgs == 0
++      || (raw_npkgs > 1U && !fswc_buf_reserve (&raw_tmp, raw_list.used)))
++    {
++      fswc_buf_free (&raw_pool);
++      fswc_buf_free (&raw_list);
++      fswc_buf_free (&raw_tmp);
++      FC_SYSCALL (close, pfd);
++      return NULL;
++    }
++
++  if (raw_npkgs > 1U)
++    fswc_sort_raw_strs ((struct fswc_raw_str *) (void *) raw_list.data,
++                        (struct fswc_raw_str *) (void *) raw_tmp.data,
++                        raw_npkgs, raw_pool.data);
++  fswc_buf_free (&raw_tmp);
++
++  struct fswc_builder b;
++  if (!fswc_builder_init (&b))
++    {
++      fswc_buf_free (&raw_pool);
++      fswc_buf_free (&raw_list);
++      FC_SYSCALL (close, pfd);
++      return NULL;
++    }
++
++  uint32_t prefix_off = 0;
++  if (!fswc_intern_str (&b, prefix, prefix_len, &prefix_off))
++    {
++      fswc_builder_free (&b);
++      fswc_buf_free (&raw_pool);
++      fswc_buf_free (&raw_list);
++      FC_SYSCALL (close, pfd);
++      return NULL;
++    }
++
++  struct fswc_buf inc_path_buf;
++  fswc_buf_init (&inc_path_buf);
++
++  uint32_t valid_pkgs = 0;
++  uint32_t num_immutable = 0;
++  bool build_ok = true;
++  const struct fswc_raw_str *raw_arr
++    = (const struct fswc_raw_str *) (const void *) raw_list.data;
++
++  for (size_t i = 0; i < raw_npkgs; ++i)
++    {
++      const char *pkg_name = raw_pool.data + raw_arr[i].off;
++      size_t pkg_name_len = raw_arr[i].len;
++
++      struct statx cstx;
++      long sr = FC_SYSCALL (statx, pfd, pkg_name, 0, FSWC_STATX_MASK, &cstx);
++      if (fc_syscall_err (sr) || !S_ISDIR (cstx.stx_mode))
++        continue;
++
++      uint32_t pkg_name_off = 0;
++      if (!fswc_intern_str (&b, pkg_name, pkg_name_len, &pkg_name_off)
++          || !fswc_buf_reserve (&b.pkgs, sizeof (struct fswc_pkg)))
++        {
++          build_ok = false;
++          break;
++        }
++
++      uint32_t pkg_idx = valid_pkgs;
++      struct fswc_pkg *meta
++        = &((struct fswc_pkg *) (void *) b.pkgs.data)[pkg_idx];
++      memset (meta, 0, sizeof (*meta));
++      meta->name_off = pkg_name_off;
++      meta->name_len = (uint32_t) pkg_name_len;
++      meta->dev_major = cstx.stx_dev_major;
++      meta->dev_minor = cstx.stx_dev_minor;
++      meta->ino = cstx.stx_ino;
++      meta->mtime_sec = cstx.stx_mtime.tv_sec;
++      meta->mtime_nsec = cstx.stx_mtime.tv_nsec;
++
++#ifndef FC_BENCH_ALLOW_TMPFS
++      if (cstx.stx_mnt_id == prefix_stx->stx_mnt_id
++          && cstx.stx_dev_major == prefix_stx->stx_dev_major
++          && cstx.stx_dev_minor == prefix_stx->stx_dev_minor)
++        {
++          if (cstx.stx_size == 0)
++            {
++              b.pkgs.used += sizeof (struct fswc_pkg);
++              ++valid_pkgs;
++              continue;
++            }
++          long cfd_l = FC_SYSCALL (openat, pfd, pkg_name,
++                                   O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++          if (fc_syscall_err (cfd_l))
++            {
++              build_ok = false;
++              break;
++            }
++          int cfd = (int) cfd_l;
++          bool empty = true;
++          long nr = FC_SYSCALL (getdents64, cfd, dent_buf, sizeof (dent_buf));
++          if (!fc_syscall_err (nr) && nr > 0)
++            {
++              for (long bp = 0; bp < nr; )
++                {
++                  const struct fswc_linux_dirent64 *cd
++                    = (const struct fswc_linux_dirent64 *) (const void *) (dent_buf + bp);
++                  bp += cd->d_reclen;
++                  if (cd->d_name[0] == '.'
++                      && (cd->d_name[1] == '\0'
++                          || (cd->d_name[1] == '.' && cd->d_name[2] == '\0')))
++                    continue;
++                  empty = false;
++                  break;
++                }
++            }
++          FC_SYSCALL (close, cfd);
++          if (empty)
++            {
++              b.pkgs.used += sizeof (struct fswc_pkg);
++              ++valid_pkgs;
++              continue;
++            }
++          if (!prefix_rdonly)
++            {
++              build_ok = false;
++              break;
++            }
++        }
++#endif
++
++      if ((cstx.stx_mode & 0005) != 0005)
++        {
++          build_ok = false;
++          break;
++        }
++
++      /* Layer-1 incremental reuse from previous validated view.  */
++      const struct fswc_pkg *reuse_om = NULL;
++      if (old_view != NULL)
++        {
++          int32_t cand_oi = fswc_find_pkg (old_view, pkg_name, pkg_name_len);
++          if (cand_oi >= 0)
++            {
++              const struct fswc_pkg *om = &old_view->pkgs[cand_oi];
++              if ((om->flags & FSWC_PKG_SQUASHFS) != 0
++                  && om->dev_major == meta->dev_major
++                  && om->dev_minor == meta->dev_minor
++                  && om->ino == meta->ino
++                  && om->mtime_sec == meta->mtime_sec
++                  && om->mtime_nsec == meta->mtime_nsec)
++                reuse_om = om;
++            }
++#ifndef FC_BENCH_ALLOW_TMPFS
++          if (reuse_om == NULL)
++            {
++              for (uint32_t oi = 0; oi < old_view->hdr->num_pkgs; ++oi)
++                {
++                  const struct fswc_pkg *om = &old_view->pkgs[oi];
++                  if ((om->flags & FSWC_PKG_SQUASHFS) != 0
++                      && om->dev_major == meta->dev_major
++                      && om->dev_minor == meta->dev_minor
++                      && om->ino == meta->ino
++                      && om->mtime_sec == meta->mtime_sec
++                      && om->mtime_nsec == meta->mtime_nsec)
++                    {
++                      reuse_om = om;
++                      break;
++                    }
++                }
++            }
++#endif
++        }
++
++      if (reuse_om != NULL)
++        {
++          meta->flags = FSWC_PKG_IMMUTABLE | FSWC_PKG_SQUASHFS;
++          meta->top_start
++            = (uint32_t) (b.dirents.used / sizeof (struct fswc_dirent));
++          meta->top_count = reuse_om->top_count;
++          for (uint32_t k = 0; k < reuse_om->top_count; ++k)
++            {
++              const struct fswc_dirent *ode
++                = &old_view->dirents[reuse_om->top_start + k];
++              uint32_t olen = ode->name_len_flags & FSWC_DE_LEN_MASK;
++              bool odir = (ode->name_len_flags & FSWC_DE_IS_DIR) != 0;
++              bool oext = (ode->name_len_flags & FSWC_DE_EXT_LNK) != 0;
++              if (!fswc_record_entry (&b, pkg_idx, 0U,
++                                      old_view->strtab + ode->name_off,
++                                      olen, odir, oext, true))
++                {
++                  build_ok = false;
++                  break;
++                }
++            }
++          for (uint8_t s = 0; build_ok && s < FSWC_NUM_SUBDIRS; ++s)
++            {
++              meta = &((struct fswc_pkg *) (void *) b.pkgs.data)[pkg_idx];
++              meta->sub_start[s]
++                = (uint32_t) (b.dirents.used / sizeof (struct fswc_dirent));
++              meta->sub_count[s] = reuse_om->sub_count[s];
++              for (uint32_t k = 0; k < reuse_om->sub_count[s]; ++k)
++                {
++                  const struct fswc_dirent *ode
++                    = &old_view->dirents[reuse_om->sub_start[s] + k];
++                  uint32_t olen = ode->name_len_flags & FSWC_DE_LEN_MASK;
++                  bool odir = (ode->name_len_flags & FSWC_DE_IS_DIR) != 0;
++                  bool oext = (ode->name_len_flags & FSWC_DE_EXT_LNK) != 0;
++                  if (!fswc_record_entry (&b, pkg_idx, (uint8_t) (s + 1U),
++                                          old_view->strtab + ode->name_off,
++                                          olen, odir, oext, true))
++                    {
++                      build_ok = false;
++                      break;
++                    }
++                }
++            }
++          if (build_ok)
++            {
++              meta = &((struct fswc_pkg *) (void *) b.pkgs.data)[pkg_idx];
++              meta->inc_deep_start
++                = (uint32_t) (b.dirents.used / sizeof (struct fswc_dirent));
++              meta->inc_deep_count = reuse_om->inc_deep_count;
++              for (uint32_t k = 0; k < reuse_om->inc_deep_count; ++k)
++                {
++                  const struct fswc_dirent *ode
++                    = &old_view->dirents[reuse_om->inc_deep_start + k];
++                  uint32_t olen = ode->name_len_flags & FSWC_DE_LEN_MASK;
++                  bool odir = (ode->name_len_flags & FSWC_DE_IS_DIR) != 0;
++                  bool oext = (ode->name_len_flags & FSWC_DE_EXT_LNK) != 0;
++                  if (!fswc_record_entry (&b, pkg_idx, 4U,
++                                          old_view->strtab + ode->name_off,
++                                          olen, odir, oext, true))
++                    {
++                      build_ok = false;
++                      break;
++                    }
++                }
++            }
++          if (!build_ok)
++            break;
++          b.pkgs.used += sizeof (struct fswc_pkg);
++          ++num_immutable;
++          ++valid_pkgs;
++          continue;
++        }
++
++      long pkg_fd_l = FC_SYSCALL (openat, pfd, pkg_name,
++                                  O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++      if (fc_syscall_err (pkg_fd_l))
++        {
++          build_ok = false;
++          break;
++        }
++      int pkg_fd = (int) pkg_fd_l;
++
++      struct fswc_kernel_statfs sfs;
++      long sfr = FC_SYSCALL (fstatfs, pkg_fd, &sfs);
++      bool is_squashfs = (!fc_syscall_err (sfr)
++                          && (unsigned long) sfs.f_type == FSWC_SQUASHFS_MAGIC);
++      bool is_ro_pkg = (!fc_syscall_err (sfr) && prefix_rdonly
++#ifdef FC_TEST_FORCE_PREFIX_RDONLY
++                        && ((FC_TEST_FORCE_PREFIX_RDONLY) != 0
++                            || (sfs.f_flags & FSWC_ST_RDONLY) != 0)
++#else
++                        && (sfs.f_flags & FSWC_ST_RDONLY) != 0
++#endif
++                       );
++      if (fc_syscall_err (sfr)
++#ifndef FC_BENCH_ALLOW_TMPFS
++          || (!is_squashfs && !is_ro_pkg)
++#endif
++         )
++        {
++          (void) is_ro_pkg;
++          FC_SYSCALL (close, pkg_fd);
++          build_ok = false;
++          break;
++        }
++
++      uint64_t pkg_mnt_id = cstx.stx_mnt_id;
++      meta->flags = FSWC_PKG_IMMUTABLE | (is_squashfs ? FSWC_PKG_SQUASHFS : 0U);
++      meta->top_start
++        = (uint32_t) (b.dirents.used / sizeof (struct fswc_dirent));
++      uint32_t top_cnt = 0;
++      uint8_t has_sub_dir[FSWC_NUM_SUBDIRS];
++      memset (has_sub_dir, 0, sizeof (has_sub_dir));
++
++      while (1)
++        {
++          long nr = FC_SYSCALL (getdents64, pkg_fd, dent_buf, sizeof (dent_buf));
++          if (fc_syscall_err (nr))
++            {
++              build_ok = false;
++              break;
++            }
++          if (nr == 0)
++            break;
++          for (long bp = 0; bp < nr; )
++            {
++              const struct fswc_linux_dirent64 *d
++                = (const struct fswc_linux_dirent64 *) (const void *) (dent_buf + bp);
++              bp += d->d_reclen;
++              if (d->d_name[0] == '.'
++                  && (d->d_name[1] == '\0'
++                      || (d->d_name[1] == '.' && d->d_name[2] == '\0')))
++                continue;
++              size_t dlen = strlen (d->d_name);
++              bool is_dir = false, is_ext_lnk = false;
++              int sid = fc_subdir_id (d->d_name, dlen);
++              if (!fswc_classify_dirent (pkg_fd, d, pkg_mnt_id,
++                                         &is_dir, &is_ext_lnk)
++                  || (sid >= 0 && is_ext_lnk)
++                  || !fswc_record_entry (&b, pkg_idx, 0U, d->d_name, dlen,
++                                         is_dir, is_ext_lnk, true))
++                {
++                  build_ok = false;
++                  break;
++                }
++              ++top_cnt;
++              if (is_dir && sid >= 0)
++                has_sub_dir[sid] = 1U;
++            }
++          if (!build_ok)
++            break;
++        }
++
++      if (!build_ok)
++        {
++          FC_SYSCALL (close, pkg_fd);
++          break;
++        }
++
++      meta = &((struct fswc_pkg *) (void *) b.pkgs.data)[pkg_idx];
++      meta->top_count = top_cnt;
++
++      for (uint8_t s = 0; s < FSWC_NUM_SUBDIRS; ++s)
++        {
++          meta = &((struct fswc_pkg *) (void *) b.pkgs.data)[pkg_idx];
++          meta->sub_start[s]
++            = (uint32_t) (b.dirents.used / sizeof (struct fswc_dirent));
++          meta->sub_count[s] = 0U;
++          if (!has_sub_dir[s])
++            continue;
++
++          long sfd_l = FC_SYSCALL (openat, pkg_fd, fc_subdir_names[s],
++                                   O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++          if (fc_syscall_err (sfd_l))
++            {
++              build_ok = false;
++              break;
++            }
++          int sfd = (int) sfd_l;
++
++          if (!fswc_check_dir_fd (sfd, pkg_mnt_id))
++            {
++              FC_SYSCALL (close, sfd);
++              build_ok = false;
++              break;
++            }
++
++          uint32_t scnt = 0;
++          while (1)
++            {
++              long nr = FC_SYSCALL (getdents64, sfd, dent_buf, sizeof (dent_buf));
++              if (fc_syscall_err (nr))
++                {
++                  build_ok = false;
++                  break;
++                }
++              if (nr == 0)
++                break;
++              for (long bp = 0; bp < nr; )
++                {
++                  const struct fswc_linux_dirent64 *d
++                    = (const struct fswc_linux_dirent64 *) (const void *) (dent_buf + bp);
++                  bp += d->d_reclen;
++                  if (d->d_name[0] == '.'
++                      && (d->d_name[1] == '\0'
++                          || (d->d_name[1] == '.' && d->d_name[2] == '\0')))
++                    continue;
++                  size_t dlen = strlen (d->d_name);
++                  bool is_dir = false, is_ext_lnk = false;
++                  if (!fswc_classify_dirent (sfd, d, pkg_mnt_id,
++                                             &is_dir, &is_ext_lnk)
++                      || !fswc_record_entry (&b, pkg_idx, (uint8_t) (s + 1U),
++                                             d->d_name, dlen, is_dir,
++                                             is_ext_lnk, true))
++                    {
++                      build_ok = false;
++                      break;
++                    }
++                  ++scnt;
++                }
++              if (!build_ok)
++                break;
++            }
++
++          if (!build_ok)
++            {
++              FC_SYSCALL (close, sfd);
++              break;
++            }
++
++          meta = &((struct fswc_pkg *) (void *) b.pkgs.data)[pkg_idx];
++          meta->sub_count[s] = scnt;
++
++          if (s == 3U)
++            {
++              uint32_t sub3_start = meta->sub_start[3];
++              meta->inc_deep_start
++                = (uint32_t) (b.dirents.used / sizeof (struct fswc_dirent));
++              uint32_t deep_cnt = 0;
++              for (uint32_t k = 0; k < scnt; ++k)
++                {
++                  const struct fswc_dirent *de
++                    = &((const struct fswc_dirent *) (const void *) b.dirents.data)[sub3_start + k];
++                  if ((de->name_len_flags & FSWC_DE_IS_DIR) == 0)
++                    continue;
++                  uint32_t d1_len = de->name_len_flags & FSWC_DE_LEN_MASK;
++                  inc_path_buf.used = 0;
++                  if (!fswc_buf_reserve (&inc_path_buf, (size_t) d1_len + 2U))
++                    {
++                      build_ok = false;
++                      break;
++                    }
++                  memcpy (inc_path_buf.data, b.strtab.data + de->name_off, d1_len);
++                  inc_path_buf.data[d1_len] = '\0';
++                  inc_path_buf.used = d1_len;
++
++                  long cfd_l = FC_SYSCALL (openat, sfd, inc_path_buf.data,
++                                           O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++                  if (fc_syscall_err (cfd_l))
++                    {
++                      build_ok = false;
++                      break;
++                    }
++                  int cfd = (int) cfd_l;
++                  bool dok = fswc_scan_include_deep (&b, pkg_idx, pkg_mnt_id,
++                                                     cfd, &inc_path_buf, d1_len,
++                                                     1U, &deep_cnt);
++                  FC_SYSCALL (close, cfd);
++                  if (!dok)
++                    {
++                      build_ok = false;
++                      break;
++                    }
++                }
++              if (!build_ok)
++                {
++                  FC_SYSCALL (close, sfd);
++                  break;
++                }
++              meta = &((struct fswc_pkg *) (void *) b.pkgs.data)[pkg_idx];
++              meta->inc_deep_count = deep_cnt;
++            }
++
++          FC_SYSCALL (close, sfd);
++        }
++
++      FC_SYSCALL (close, pkg_fd);
++      if (!build_ok)
++        break;
++      b.pkgs.used += sizeof (struct fswc_pkg);
++      ++num_immutable;
++      ++valid_pkgs;
++    }
++
++  fswc_buf_free (&inc_path_buf);
++  fswc_buf_free (&raw_pool);
++  fswc_buf_free (&raw_list);
++  FC_SYSCALL (close, pfd);
++
++  if (!build_ok || num_immutable == 0)
++    {
++      fswc_builder_free (&b);
++      return NULL;
++    }
++
++  /* Compute serialized section sizes and offsets.  */
++  size_t ht_cap = 64U;
++  while (ht_cap < b.key_count * 2U)
++    {
++      if (__builtin_mul_overflow (ht_cap, (size_t) 2U, &ht_cap)
++          || ht_cap > (size_t) (1ULL << 31))
++        {
++          fswc_builder_free (&b);
++          return NULL;
++        }
++    }
++
++  const struct fswc_build_key *keys
++    = (const struct fswc_build_key *) (const void *) b.keys.data;
++  const struct fswc_build_node *nodes
++    = (const struct fswc_build_node *) (const void *) b.nodes.data;
++
++  size_t postings_count = 0;
++  for (size_t i = 0; i < b.key_count; ++i)
++    {
++      if (keys[i].all_count > 1U)
++        postings_count += keys[i].all_count;
++      if (keys[i].dir_count > 1U && keys[i].dir_count != keys[i].all_count)
++        postings_count += keys[i].dir_count;
++    }
++
++  size_t dirents_count = b.dirents.used / sizeof (struct fswc_dirent);
++  size_t pkgs_off = fswc_align8 (sizeof (struct fswc_header));
++  size_t ht_off = fswc_align8 (pkgs_off + (size_t) valid_pkgs * sizeof (struct fswc_pkg));
++  size_t postings_off = fswc_align8 (ht_off + ht_cap * sizeof (struct fswc_ht_entry));
++  size_t dirents_off = fswc_align8 (postings_off + postings_count * sizeof (uint32_t));
++  size_t strtab_off = fswc_align8 (dirents_off + dirents_count * sizeof (struct fswc_dirent));
++  size_t total_size = fswc_align8 (strtab_off + b.strtab.used);
++
++  if (total_size > (size_t) UINT32_MAX || postings_count > (size_t) UINT32_MAX)
++    {
++      fswc_builder_free (&b);
++      return NULL;
++    }
++
++  long m = FC_SYSCALL (mmap, 0, total_size, PROT_READ | PROT_WRITE,
++                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++  if (fc_syscall_err (m))
++    {
++      fswc_builder_free (&b);
++      return NULL;
++    }
++
++  char *blob = (char *) (uintptr_t) m;
++  struct fswc_header *hdr = (struct fswc_header *) (void *) blob;
++  hdr->magic = FSWC_MAGIC;
++  hdr->version = FSWC_VERSION;
++  hdr->total_size = total_size;
++  hdr->prefix_mnt_id = prefix_stx->stx_mnt_id;
++  hdr->prefix_dev_major = prefix_stx->stx_dev_major;
++  hdr->prefix_dev_minor = prefix_stx->stx_dev_minor;
++  hdr->prefix_ino = prefix_stx->stx_ino;
++  hdr->prefix_ctime_sec = prefix_stx->stx_ctime.tv_sec;
++  hdr->prefix_ctime_nsec = prefix_stx->stx_ctime.tv_nsec;
++  hdr->prefix_mtime_sec = prefix_stx->stx_mtime.tv_sec;
++  hdr->prefix_mtime_nsec = prefix_stx->stx_mtime.tv_nsec;
++  hdr->mnt_hash1 = h1;
++  hdr->mnt_hash2 = h2;
++  hdr->mnt_count = mnt_count;
++  hdr->prefix_off = prefix_off;
++  hdr->prefix_len = (uint32_t) prefix_len;
++  hdr->num_pkgs = valid_pkgs;
++  hdr->pkgs_off = (uint32_t) pkgs_off;
++  hdr->ht_mask = (uint32_t) (ht_cap - 1U);
++  hdr->ht_off = (uint32_t) ht_off;
++  hdr->postings_count = (uint32_t) postings_count;
++  hdr->postings_off = (uint32_t) postings_off;
++  hdr->dirents_count = (uint32_t) dirents_count;
++  hdr->dirents_off = (uint32_t) dirents_off;
++  hdr->strtab_size = (uint32_t) b.strtab.used;
++  hdr->strtab_off = (uint32_t) strtab_off;
++  hdr->flags = ((prefix_stx->stx_mode & 0005) == 0005) ? 1U : 0U;
++
++  memcpy (blob + pkgs_off, b.pkgs.data,
++          (size_t) valid_pkgs * sizeof (struct fswc_pkg));
++  if (dirents_count > 0)
++    memcpy (blob + dirents_off, b.dirents.data,
++            dirents_count * sizeof (struct fswc_dirent));
++  memcpy (blob + strtab_off, b.strtab.data, b.strtab.used);
++
++  struct fswc_ht_entry *ht
++    = (struct fswc_ht_entry *) (void *) (blob + ht_off);
++  uint32_t *postings = (uint32_t *) (void *) (blob + postings_off);
++  uint32_t ht_mask = (uint32_t) (ht_cap - 1U);
++  uint32_t post_cursor = 0;
++
++  for (size_t i = 0; i < b.key_count; ++i)
++    {
++      const struct fswc_build_key *k = &keys[i];
++      uint32_t slot = k->hash & ht_mask;
++      while (ht[slot].hash != 0)
++        slot = (slot + 1U) & ht_mask;
++
++      struct fswc_ht_entry *dst = &ht[slot];
++      dst->hash = k->hash;
++      dst->name_off = k->name_off;
++      dst->name_len_ns = k->name_len_ns;
++      dst->all_count = k->all_count;
++      dst->dir_count = k->dir_count;
++
++      if (k->all_count == 1U)
++        dst->all_ref = nodes[k->all_head].pkg_idx;
++      else if (k->all_count > 1U)
++        {
++          dst->all_ref = post_cursor;
++          for (uint32_t n = k->all_head; n != UINT32_MAX; n = nodes[n].next)
++            postings[post_cursor++] = nodes[n].pkg_idx;
++        }
++
++      if (k->dir_count == 0U)
++        dst->dir_ref = 0U;
++      else if (k->dir_count == 1U)
++        dst->dir_ref = nodes[k->dir_head].pkg_idx;
++      else if (k->dir_count == k->all_count)
++        dst->dir_ref = dst->all_ref;
++      else
++        {
++          dst->dir_ref = post_cursor;
++          for (uint32_t n = k->dir_head; n != UINT32_MAX; n = nodes[n].next)
++            postings[post_cursor++] = nodes[n].pkg_idx;
++        }
++    }
++
++  fswc_builder_free (&b);
++  *out_size = total_size;
++  return blob;
++}
++
++static void
++fswc_write_shm_blob (const void *blob, size_t blob_size, uid_t euid)
++{
++  if (fswc_is_secure_mode ())
++    return;
++
++  static const char *const dirs[2] = { "/dev/shm", "/tmp" };
++  const struct fswc_header *hdr = (const struct fswc_header *) blob;
++  uint32_t slot = fswc_shm_slot (hdr->prefix_mnt_id);
++  int mode = (euid == 0 && (hdr->flags & 1U) != 0) ? 0644 : 0600;
++  long pid = FC_SYSCALL0 (getpid);
++  long tid = FC_SYSCALL0 (gettid);
++
++  for (int d = 0; d < 2; ++d)
++    {
++      char final_path[128];
++      char tmp_path[160];
++      fswc_format_shm_path (final_path, dirs[d], euid, slot);
++      size_t flen = strlen (final_path);
++      memcpy (tmp_path, final_path, flen);
++
++      long fd_l = -1;
++      for (uint32_t attempt = 0; attempt < 8U; ++attempt)
++        {
++          char *p = tmp_path + flen;
++          memcpy (p, ".tmp.", 5);
++          p += 5;
++          p = fswc_utoa (p, (uint64_t) pid);
++          *p++ = '.';
++          p = fswc_utoa (p, (uint64_t) tid);
++          *p++ = '.';
++          p = fswc_utoa (p, (uint64_t) attempt);
++          *p = '\0';
++
++          fd_l = FC_SYSCALL (openat, AT_FDCWD, tmp_path,
++                             O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC | O_NOFOLLOW,
++                             mode);
++          if (!fc_syscall_err (fd_l))
++            break;
++        }
++      if (fc_syscall_err (fd_l))
++        continue;
++      int fd = (int) fd_l;
++      if (mode == 0644)
++        FC_SYSCALL (fchmod, fd, 0644);
++
++      const char *buf = (const char *) blob;
++      size_t rem = blob_size;
++      bool ok = true;
++      while (rem > 0)
++        {
++          long nw = FC_SYSCALL (write, fd, buf, rem);
++          if (fc_syscall_err (nw) || nw == 0)
++            {
++              ok = false;
++              break;
++            }
++          buf += nw;
++          rem -= (size_t) nw;
++        }
++      FC_SYSCALL (close, fd);
++
++      if (ok)
++        {
++          long rr = FC_SYSCALL (renameat, AT_FDCWD, tmp_path,
++                                AT_FDCWD, final_path);
++          if (!fc_syscall_err (rr))
++            return;
++        }
++      FC_SYSCALL (unlinkat, AT_FDCWD, tmp_path, 0);
++    }
++}
++
++static void *
++fswc_map_shm_one (const char *dir, uid_t target_uid, uint32_t slot,
++                  struct fswc_view *out_view)
++{
++  char final_path[128];
++  fswc_format_shm_path (final_path, dir, target_uid, slot);
++  long fd_l = FC_SYSCALL (openat, AT_FDCWD, final_path,
++                          O_RDONLY | O_CLOEXEC | O_NOFOLLOW, 0);
++  if (fc_syscall_err (fd_l))
++    return NULL;
++  int fd = (int) fd_l;
++
++  struct statx stx;
++  long sr = FC_SYSCALL (statx, fd, "", AT_EMPTY_PATH,
++                        STATX_TYPE | STATX_MODE | STATX_UID | STATX_SIZE, &stx);
++  if (!fc_syscall_err (sr)
++      && S_ISREG (stx.stx_mode)
++      && stx.stx_uid == target_uid
++      && (stx.stx_mode & (target_uid == 0 ? 0022 : 0077)) == 0
++      && stx.stx_size >= sizeof (struct fswc_header)
++      && stx.stx_size <= (uint64_t) (512ULL * 1024ULL * 1024ULL))
++    {
++      size_t map_size = (size_t) stx.stx_size;
++      long m = FC_SYSCALL (mmap, 0, map_size, PROT_READ, MAP_PRIVATE, fd, 0);
++      FC_SYSCALL (close, fd);
++      if (!fc_syscall_err (m))
++        {
++          void *ptr = (void *) (uintptr_t) m;
++          if (fswc_init_view (ptr, map_size, out_view))
++            return ptr;
++          FC_SYSCALL (munmap, ptr, map_size);
++        }
++    }
++  else
++    FC_SYSCALL (close, fd);
++  return NULL;
++}
++
++static void *
++fswc_map_shm_matching (uid_t euid, const char *prefix, size_t prefix_len,
++                       const struct statx *stx, uint32_t mnt_count,
++                       uint64_t h1, uint64_t h2,
++                       struct fswc_view *out_view,
++                       void **out_stale_ptr, struct fswc_view *out_stale_view)
++{
++  static const char *const dirs[2] = { "/dev/shm", "/tmp" };
++  *out_stale_ptr = NULL;
++
++  if (fswc_is_secure_mode ())
++    return NULL;
++
++  uint32_t slot = fswc_shm_slot (stx->stx_mnt_id);
++  uid_t uids[2];
++  int nuids = 1;
++  uids[0] = euid;
++  if (euid != 0)
++    uids[nuids++] = 0;
++
++  for (int u = 0; u < nuids; ++u)
++    for (int d = 0; d < 2; ++d)
++      {
++        struct fswc_view v;
++        void *ptr = fswc_map_shm_one (dirs[d], uids[u], slot, &v);
++        if (ptr == NULL)
++          continue;
++        if (fswc_view_matches (&v, prefix, prefix_len, stx, mnt_count, h1, h2))
++          {
++            if (*out_stale_ptr != NULL)
++              {
++                FC_SYSCALL (munmap, *out_stale_ptr, out_stale_view->map_size);
++                *out_stale_ptr = NULL;
++              }
++            *out_view = v;
++            return ptr;
++          }
++        if (*out_stale_ptr == NULL)
++          {
++            *out_stale_ptr = ptr;
++            *out_stale_view = v;
++          }
++        else
++          FC_SYSCALL (munmap, ptr, v.map_size);
++      }
++  return NULL;
++}
++
++static void * __attribute__ ((__unused__))
++fswc_build_and_publish (const struct fswc_view *stale_view,
++                        const char *prefix, size_t prefix_len,
++                        const struct statx *stx, uint32_t mnt_count,
++                        uint64_t h1, uint64_t h2, uid_t euid,
++                        struct fswc_view *out_view)
++{
++  size_t new_size = 0;
++  void *blob = fswc_build_blob (stale_view, prefix, prefix_len, stx,
++                                mnt_count, h1, h2, &new_size);
++  if (blob == NULL)
++    return NULL;
++  if (!fswc_init_view (blob, new_size, out_view))
++    {
++      FC_SYSCALL (munmap, blob, new_size);
++      return NULL;
++    }
++  fswc_write_shm_blob (blob, new_size, euid);
++  FC_SYSCALL (mprotect, blob, new_size, PROT_READ);
++  return blob;
++}
++
++static void __attribute__ ((__unused__))
++fswc_write_sealed_blob (const void *blob, size_t blob_size, uid_t euid)
++{
++  if (fswc_is_secure_mode ())
++    return;
++
++  char final_path[128];
++  char tmp_path[160];
++  fswc_format_sealed_path (final_path, euid);
++  size_t flen = strlen (final_path);
++  memcpy (tmp_path, final_path, flen);
++
++  long pid = FC_SYSCALL0 (getpid);
++  long tid = FC_SYSCALL0 (gettid);
++  long fd_l = -1;
++  for (uint32_t attempt = 0; attempt < 8U; ++attempt)
++    {
++      char *p = tmp_path + flen;
++      memcpy (p, ".tmp.", 5);
++      p += 5;
++      p = fswc_utoa (p, (uint64_t) pid);
++      *p++ = '.';
++      p = fswc_utoa (p, (uint64_t) tid);
++      *p++ = '.';
++      p = fswc_utoa (p, (uint64_t) attempt);
++      *p = '\0';
++
++      fd_l = FC_SYSCALL (openat, AT_FDCWD, tmp_path,
++                         O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC | O_NOFOLLOW,
++                         0600);
++      if (!fc_syscall_err (fd_l))
++        break;
++    }
++  if (fc_syscall_err (fd_l))
++    return;
++  int fd = (int) fd_l;
++
++  const char *buf = (const char *) blob;
++  size_t rem = blob_size;
++  bool ok = true;
++  while (rem > 0)
++    {
++      long nw = FC_SYSCALL (write, fd, buf, rem);
++      if (fc_syscall_err (nw) || nw == 0)
++        {
++          ok = false;
++          break;
++        }
++      buf += nw;
++      rem -= (size_t) nw;
++    }
++  FC_SYSCALL (close, fd);
++
++  if (ok)
++    {
++      long rr = FC_SYSCALL (renameat, AT_FDCWD, tmp_path, AT_FDCWD, final_path);
++      if (!fc_syscall_err (rr))
++        return;
++    }
++  FC_SYSCALL (unlinkat, AT_FDCWD, tmp_path, 0);
++}
++
++static void * __attribute__ ((__unused__))
++fswc_map_sealed_one (uid_t euid, const char *prefix, size_t prefix_len,
++                     struct fswc_view *out_view)
++{
++  char final_path[128];
++  fswc_format_sealed_path (final_path, euid);
++  long fd_l = FC_SYSCALL (openat, AT_FDCWD, final_path,
++                          O_RDONLY | O_CLOEXEC | O_NOFOLLOW, 0);
++  if (fc_syscall_err (fd_l))
++    return NULL;
++  int fd = (int) fd_l;
++
++  struct statx stx;
++  long sr = FC_SYSCALL (statx, fd, "", AT_EMPTY_PATH,
++                        STATX_TYPE | STATX_MODE | STATX_UID | STATX_SIZE, &stx);
++  if (!fc_syscall_err (sr)
++      && S_ISREG (stx.stx_mode)
++      && stx.stx_uid == euid
++      && (stx.stx_mode & 0077) == 0
++      && stx.stx_size >= sizeof (struct fswc_header)
++      && stx.stx_size <= (uint64_t) (512ULL * 1024ULL * 1024ULL))
++    {
++      size_t map_size = (size_t) stx.stx_size;
++      long m = FC_SYSCALL (mmap, 0, map_size, PROT_READ, MAP_PRIVATE, fd, 0);
++      FC_SYSCALL (close, fd);
++      if (!fc_syscall_err (m))
++        {
++          void *ptr = (void *) (uintptr_t) m;
++          if (fswc_init_view (ptr, map_size, out_view)
++              && (out_view->hdr->flags & FSWC_HDR_SEALED) != 0
++              && out_view->hdr->prefix_len == prefix_len
++              && memcmp (out_view->strtab + out_view->hdr->prefix_off,
++                         prefix, prefix_len) == 0)
++            return ptr;
++          FC_SYSCALL (munmap, ptr, map_size);
++        }
++    }
++  else
++    FC_SYSCALL (close, fd);
++  return NULL;
++}
++
++static void * __attribute__ ((__unused__))
++fswc_try_acquire_sealed (uid_t euid, const char *prefix, size_t prefix_len,
++                         const struct fswc_view *hint_old_view,
++                         struct fswc_view *out_view)
++{
++  if (!fswc_check_ns_sealed (euid))
++    return NULL;
++
++  void *mapped = fswc_map_sealed_one (euid, prefix, prefix_len, out_view);
++  if (mapped != NULL)
++    return mapped;
++
++  long pfd_l = FC_SYSCALL (openat, AT_FDCWD, prefix,
++                           O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
++  if (fc_syscall_err (pfd_l))
++    return NULL;
++  int pfd = (int) pfd_l;
++  struct fswc_kernel_statfs sfs;
++  long sfr = FC_SYSCALL (fstatfs, pfd, &sfs);
++  FC_SYSCALL (close, pfd);
++  if (fc_syscall_err (sfr)
++#ifndef FC_BENCH_ALLOW_TMPFS
++      || (sfs.f_flags & FSWC_ST_RDONLY) == 0
++#endif
++     )
++    return NULL;
++
++  struct statx stx;
++  uint32_t mnt_count = 0;
++  uint64_t mnt_h1 = 0, mnt_h2 = 0;
++  if (fswc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++    return NULL;
++
++  void *stale_ptr = NULL;
++  struct fswc_view stale_view;
++  struct fswc_view shm_view;
++  void *shm_ptr = fswc_map_shm_matching (euid, prefix, prefix_len, &stx,
++                                         mnt_count, mnt_h1, mnt_h2,
++                                         &shm_view, &stale_ptr, &stale_view);
++  if (shm_ptr != NULL)
++    {
++      if (!fc_syscall_err (FC_SYSCALL (mprotect, shm_ptr, shm_view.map_size,
++                                       PROT_READ | PROT_WRITE)))
++        {
++          ((struct fswc_header *) shm_ptr)->flags |= FSWC_HDR_SEALED;
++          fswc_write_sealed_blob (shm_ptr, shm_view.map_size, euid);
++          FC_SYSCALL (mprotect, shm_ptr, shm_view.map_size, PROT_READ);
++        }
++      *out_view = shm_view;
++      return shm_ptr;
++    }
++
++  const struct fswc_view *reuse_v
++    = hint_old_view != NULL ? hint_old_view
++      : (stale_ptr != NULL ? &stale_view : NULL);
++  size_t new_size = 0;
++  void *blob = fswc_build_blob (reuse_v, prefix, prefix_len, &stx,
++                                mnt_count, mnt_h1, mnt_h2, &new_size);
++  if (stale_ptr != NULL)
++    FC_SYSCALL (munmap, stale_ptr, stale_view.map_size);
++  if (blob == NULL)
++    return NULL;
++
++  if (!fswc_init_view (blob, new_size, out_view))
++    {
++      FC_SYSCALL (munmap, blob, new_size);
++      return NULL;
++    }
++
++  fswc_write_shm_blob (blob, new_size, euid);
++  ((struct fswc_header *) blob)->flags |= FSWC_HDR_SEALED;
++  fswc_write_sealed_blob (blob, new_size, euid);
++  FC_SYSCALL (mprotect, blob, new_size, PROT_READ);
++  return blob;
++}
++
++#ifdef FC_WITH_GLOB_HELPERS
++# ifdef _LIBC
++#  if defined SHARED && IS_IN (libc)
++#   include <ldsodefs.h>
++#   define FSWC_HAVE_GLRO 1
++#  endif
++# endif
++# ifdef _LIBC
++__libc_lock_define_initialized (static, fc_lock);
++# endif
++
++struct fswc_neg_state
++{
++  uint64_t mnt_id;
++  uint64_t ino;
++  int64_t mtime_sec;
++  int64_t mtime_nsec;
++  uint32_t mnt_count;
++  uint64_t h1;
++  uint64_t h2;
++};
++
++static void *fc_cur_blob = NULL;
++static struct fswc_view fc_cur_view;
++static struct fswc_neg_state fc_neg;
++# ifdef _LIBC
++static uint64_t fc_known_pid = 0;
++static uint64_t fc_fork_gate = 0;
++# endif
++
++static bool
++fswc_glob_acquire_view (const char *prefix, size_t prefix_len,
++                        struct fswc_view *out_view, bool *out_locked)
++{
++  *out_locked = false;
++  if (prefix_len == 0 || prefix_len > 0x00ffffffU || fswc_is_secure_mode ())
++    return false;
++
++  bool is_sw = fswc_is_sw_prefix (prefix, prefix_len);
++
++# ifdef FSWC_HAVE_GLRO
++  if (is_sw && GLRO (dl_fluffy_cache) != NULL && GLRO (dl_fluffy_cache_size) != 0)
++    {
++      const struct fswc_header *gh
++        = (const struct fswc_header *) GLRO (dl_fluffy_cache);
++      if ((gh->flags & FSWC_HDR_SEALED) != 0
++          && fswc_init_view (gh, GLRO (dl_fluffy_cache_size), out_view))
++        return true;
++    }
++# else
++  if (is_sw && fc_cur_blob != NULL
++      && (fc_cur_view.hdr->flags & FSWC_HDR_SEALED) != 0
++      && fc_cur_view.hdr->prefix_len == prefix_len
++      && memcmp (fc_cur_view.strtab + fc_cur_view.hdr->prefix_off,
++                 prefix, prefix_len) == 0)
++    {
++      *out_view = fc_cur_view;
++      return true;
++    }
++# endif
++
++  struct statx stx;
++  uint32_t mnt_count = 0;
++  uint64_t mnt_h1 = 0, mnt_h2 = 0;
++  bool have_state = false;
++
++# ifdef FSWC_HAVE_GLRO
++  if (GLRO (dl_fluffy_cache) != NULL && GLRO (dl_fluffy_cache_size) != 0)
++    {
++      if (fswc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++        return false;
++      have_state = true;
++      struct fswc_view glro_v;
++      if (fswc_init_view (GLRO (dl_fluffy_cache), GLRO (dl_fluffy_cache_size),
++                          &glro_v)
++          && fswc_view_matches (&glro_v, prefix, prefix_len, &stx,
++                                mnt_count, mnt_h1, mnt_h2))
++        {
++          *out_view = glro_v;
++          return true;
++        }
++    }
++# endif
++
++# ifdef _LIBC
++  /* Fork-safe reset: if another thread held fc_lock across fork(), reinit
++     fc_lock and drop inherited slow-path state in the new child PID.  */
++  uint64_t cur_pid = (uint64_t) (uint32_t) FC_SYSCALL0 (getpid);
++  if (__atomic_load_n (&fc_known_pid, __ATOMIC_ACQUIRE) != cur_pid)
++    {
++      while (1)
++        {
++          uint64_t g = __atomic_load_n (&fc_fork_gate, __ATOMIC_ACQUIRE);
++          if ((g >> 32) == cur_pid && (g & 1U) != 0)
++            continue;
++          if (__atomic_compare_exchange_n (&fc_fork_gate, &g,
++                                           (cur_pid << 32) | 1U, false,
++                                           __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
++            break;
++        }
++      if (__atomic_load_n (&fc_known_pid, __ATOMIC_ACQUIRE) != cur_pid)
++        {
++          __libc_lock_init (fc_lock);
++          fc_cur_blob = NULL;
++          memset (&fc_neg, 0, sizeof (fc_neg));
++          __atomic_store_n (&fc_known_pid, cur_pid, __ATOMIC_RELEASE);
++        }
++      __atomic_store_n (&fc_fork_gate, cur_pid << 32, __ATOMIC_RELEASE);
++    }
++  __libc_lock_lock (fc_lock);
++  *out_locked = true;
++
++  if (is_sw && fc_cur_blob != NULL
++      && (fc_cur_view.hdr->flags & FSWC_HDR_SEALED) != 0
++      && fc_cur_view.hdr->prefix_len == prefix_len
++      && memcmp (fc_cur_view.strtab + fc_cur_view.hdr->prefix_off,
++                 prefix, prefix_len) == 0)
++    {
++      *out_view = fc_cur_view;
++      return true;
++    }
++# endif
++
++  if (is_sw && !have_state)
++    {
++      uid_t seuid = (uid_t) FC_SYSCALL0 (geteuid);
++      struct fswc_view sealed_v;
++      void *sptr = fswc_try_acquire_sealed (seuid, prefix, prefix_len,
++                                            fc_cur_blob != NULL ? &fc_cur_view : NULL,
++                                            &sealed_v);
++      if (sptr != NULL)
++        {
++          if (fc_cur_blob != NULL)
++            FC_SYSCALL (munmap, fc_cur_blob, fc_cur_view.map_size);
++          fc_cur_blob = sptr;
++          fc_cur_view = sealed_v;
++          *out_view = fc_cur_view;
++          return true;
++        }
++    }
++
++  if (!have_state
++      && fswc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++    {
++# ifdef _LIBC
++      __libc_lock_unlock (fc_lock);
++      *out_locked = false;
++# endif
++      return false;
++    }
++
++  if (fc_cur_blob != NULL
++      && fswc_view_matches (&fc_cur_view, prefix, prefix_len, &stx,
++                            mnt_count, mnt_h1, mnt_h2))
++    {
++      *out_view = fc_cur_view;
++      return true;
++    }
++
++  if (fc_neg.mnt_id == stx.stx_mnt_id
++      && fc_neg.ino == stx.stx_ino
++      && fc_neg.mtime_sec == stx.stx_mtime.tv_sec
++      && fc_neg.mtime_nsec == stx.stx_mtime.tv_nsec
++      && fc_neg.mnt_count == mnt_count
++      && fc_neg.h1 == mnt_h1
++      && fc_neg.h2 == mnt_h2)
++    {
++# ifdef _LIBC
++      __libc_lock_unlock (fc_lock);
++      *out_locked = false;
++# endif
++      return false;
++    }
++
++  uid_t euid = (uid_t) FC_SYSCALL0 (geteuid);
++  void *stale_ptr = NULL;
++  struct fswc_view stale_view;
++  struct fswc_view shm_view;
++  void *shm_ptr = fswc_map_shm_matching (euid, prefix, prefix_len, &stx,
++                                         mnt_count, mnt_h1, mnt_h2,
++                                         &shm_view, &stale_ptr, &stale_view);
++  if (shm_ptr != NULL)
++    {
++      if (fc_cur_blob != NULL)
++        FC_SYSCALL (munmap, fc_cur_blob, fc_cur_view.map_size);
++      fc_cur_blob = shm_ptr;
++      fc_cur_view = shm_view;
++      *out_view = fc_cur_view;
++      return true;
++    }
++
++  const struct fswc_view *reuse_v
++    = (fc_cur_blob != NULL) ? &fc_cur_view
++      : (stale_ptr != NULL ? &stale_view : NULL);
++  struct fswc_view built_view;
++  void *built = fswc_build_and_publish (reuse_v, prefix, prefix_len, &stx,
++                                        mnt_count, mnt_h1, mnt_h2, euid,
++                                        &built_view);
++  if (stale_ptr != NULL)
++    FC_SYSCALL (munmap, stale_ptr, stale_view.map_size);
++
++  if (built == NULL)
++    {
++      fc_neg.mnt_id = stx.stx_mnt_id;
++      fc_neg.ino = stx.stx_ino;
++      fc_neg.mtime_sec = stx.stx_mtime.tv_sec;
++      fc_neg.mtime_nsec = stx.stx_mtime.tv_nsec;
++      fc_neg.mnt_count = mnt_count;
++      fc_neg.h1 = mnt_h1;
++      fc_neg.h2 = mnt_h2;
++# ifdef _LIBC
++      __libc_lock_unlock (fc_lock);
++      *out_locked = false;
++# endif
++      return false;
++    }
++
++  if (fc_cur_blob != NULL)
++    FC_SYSCALL (munmap, fc_cur_blob, fc_cur_view.map_size);
++  fc_cur_blob = built;
++  fc_cur_view = built_view;
++  *out_view = fc_cur_view;
++  return true;
++}
++
++static inline void
++fswc_glob_release_view (bool locked)
++{
++# ifdef _LIBC
++  if (locked)
++    __libc_lock_unlock (fc_lock);
++# else
++  (void) locked;
++# endif
++}
++
++static int
++fc_append_match (glob_t *pglob, const char *prefix, size_t prefix_len,
++                 const char *pkg, size_t pkg_len,
++                 const char *sub1, size_t sub1_len,
++                 const char *sub2, size_t sub2_len,
++                 bool add_slash)
++{
++  size_t newcount = pglob->gl_pathc + pglob->gl_offs;
++  if (newcount > SIZE_MAX / sizeof (char *) - 2U)
++    return GLOB_NOSPACE;
++  char **new_pathv = (char **) (pglob->gl_pathv == NULL
++                                ? malloc ((newcount + 2U) * sizeof (char *))
++                                : realloc (pglob->gl_pathv,
++                                           (newcount + 2U) * sizeof (char *)));
++  if (new_pathv == NULL)
++    return GLOB_NOSPACE;
++  pglob->gl_pathv = new_pathv;
++
++  size_t p_eff = (prefix_len == 1U && prefix[0] == '/') ? 0U : prefix_len;
++  size_t total_len = (p_eff + 1U + pkg_len + 1U + sub1_len
++                      + (sub2 != NULL ? 1U + sub2_len : 0U)
++                      + (add_slash ? 1U : 0U));
++  char *str = (char *) malloc (total_len + 1U);
++  if (str == NULL)
++    return GLOB_NOSPACE;
++
++  char *q = str;
++  if (p_eff > 0)
++    {
++      memcpy (q, prefix, p_eff);
++      q += p_eff;
++    }
++  *q++ = '/';
++  memcpy (q, pkg, pkg_len);
++  q += pkg_len;
++  *q++ = '/';
++  memcpy (q, sub1, sub1_len);
++  q += sub1_len;
++  if (sub2 != NULL)
++    {
++      *q++ = '/';
++      memcpy (q, sub2, sub2_len);
++      q += sub2_len;
++    }
++  if (add_slash)
++    *q++ = '/';
++  *q = '\0';
++
++  pglob->gl_pathv[newcount] = str;
++  pglob->gl_pathv[newcount + 1U] = NULL;
++  ++pglob->gl_pathc;
++  return 0;
++}
++
++static int
++fswc_emit_ht_matches (const struct fswc_view *v,
++                      const struct fswc_ht_entry *e,
++                      const char *prefix, size_t prefix_len,
++                      const char *sub1, size_t sub1_len,
++                      const char *sub2, size_t sub2_len,
++                      int flags, glob_t *pglob)
++{
++  bool only_dir = (flags & GLOB_ONLYDIR) != 0;
++  uint32_t raw_cnt = only_dir ? e->dir_count : e->all_count;
++  uint32_t raw_ref = only_dir ? e->dir_ref : e->all_ref;
++  uint32_t inline_slot = 0;
++  uint32_t nfound = 0;
++  const uint32_t *list = fswc_posting_slice (v, raw_cnt, raw_ref,
++                                             &inline_slot, &nfound);
++  if (nfound == 0 || list == NULL)
++    return 0;
++
++  size_t cur_idx = pglob->gl_pathc + pglob->gl_offs;
++  if (cur_idx > SIZE_MAX / sizeof (char *) - (size_t) nfound - 2U)
++    return GLOB_NOSPACE;
++  size_t alloc_slots = cur_idx + (size_t) nfound + 1U;
++  char **new_pathv = (char **) (pglob->gl_pathv == NULL
++                                ? malloc (alloc_slots * sizeof (char *))
++                                : realloc (pglob->gl_pathv,
++                                           alloc_slots * sizeof (char *)));
++  if (new_pathv == NULL)
++    return GLOB_NOSPACE;
++  pglob->gl_pathv = new_pathv;
++
++  size_t p_eff = (prefix_len == 1U && prefix[0] == '/') ? 0U : prefix_len;
++  bool want_mark = (flags & GLOB_MARK) != 0;
++
++  for (uint32_t i = 0; i < nfound; ++i)
++    {
++      uint32_t pkg_idx = list[i];
++      if (pkg_idx >= v->hdr->num_pkgs)
++        continue;
++      const struct fswc_pkg *pk = &v->pkgs[pkg_idx];
++      const char *pkg = v->strtab + pk->name_off;
++      size_t pkg_len = pk->name_len;
++      bool add_slash = (want_mark
++                        && (only_dir
++                            || fswc_posting_contains (v, e->dir_count,
++                                                      e->dir_ref, pkg_idx)));
++      size_t total_len = (p_eff + 1U + pkg_len + 1U + sub1_len
++                          + (sub2 != NULL ? 1U + sub2_len : 0U)
++                          + (add_slash ? 1U : 0U));
++      char *str = (char *) malloc (total_len + 1U);
++      if (str == NULL)
++        {
++          pglob->gl_pathv[pglob->gl_offs + pglob->gl_pathc] = NULL;
++          return GLOB_NOSPACE;
++        }
++
++      char *q = str;
++      if (p_eff > 0)
++        {
++          memcpy (q, prefix, p_eff);
++          q += p_eff;
++        }
++      *q++ = '/';
++      memcpy (q, pkg, pkg_len);
++      q += pkg_len;
++      *q++ = '/';
++      memcpy (q, sub1, sub1_len);
++      q += sub1_len;
++      if (sub2 != NULL)
++        {
++          *q++ = '/';
++          memcpy (q, sub2, sub2_len);
++          q += sub2_len;
++        }
++      if (add_slash)
++        *q++ = '/';
++      *q = '\0';
++
++      pglob->gl_pathv[pglob->gl_offs + pglob->gl_pathc++] = str;
++    }
++  pglob->gl_pathv[pglob->gl_offs + pglob->gl_pathc] = NULL;
++  return 0;
++}
++#endif /* FC_WITH_GLOB_HELPERS */
++
++#ifdef FC_WITH_EXECVPE_HELPERS
++# ifdef _LIBC
++#  if defined SHARED && IS_IN (libc)
++#   include <ldsodefs.h>
++#   define FSWC_EXEC_HAVE_GLRO 1
++#  endif
++# endif
++
++/* Map or build a temporary FSWC view for execvpe when GLRO(dl_fluffy_cache)
++   is unavailable or stale.  Caller MUST munmap (*out_temp_map, view->map_size)
++   before calling __execve so CLONE_VM | CLONE_VFORK parents never leak VMAs.  */
++static bool
++fswc_execvpe_open_view (const char *prefix, size_t prefix_len,
++                        struct fswc_view *out_view, void **out_temp_map)
++{
++  *out_temp_map = NULL;
++  if (prefix_len == 0 || prefix_len > 0x00ffffffU || fswc_is_secure_mode ())
++    return false;
++
++  bool is_sw = fswc_is_sw_prefix (prefix, prefix_len);
++  if (is_sw)
++    {
++# ifdef FSWC_EXEC_HAVE_GLRO
++      if (GLRO (dl_fluffy_cache) != NULL && GLRO (dl_fluffy_cache_size) != 0)
++        {
++          const struct fswc_header *gh
++            = (const struct fswc_header *) GLRO (dl_fluffy_cache);
++          if ((gh->flags & FSWC_HDR_SEALED) != 0
++              && fswc_init_view (gh, GLRO (dl_fluffy_cache_size), out_view))
++            return true;
++        }
++# endif
++      uid_t seuid = (uid_t) FC_SYSCALL0 (geteuid);
++      void *sptr = fswc_try_acquire_sealed (seuid, prefix, prefix_len,
++                                            NULL, out_view);
++      if (sptr != NULL)
++        {
++          *out_temp_map = sptr;
++          return true;
++        }
++    }
++
++  struct statx stx;
++  uint32_t mnt_count = 0;
++  uint64_t mnt_h1 = 0, mnt_h2 = 0;
++  if (fswc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++    return false;
++
++# ifdef FSWC_EXEC_HAVE_GLRO
++  if (GLRO (dl_fluffy_cache) != NULL && GLRO (dl_fluffy_cache_size) != 0)
++    {
++      struct fswc_view glro_v;
++      if (fswc_init_view (GLRO (dl_fluffy_cache), GLRO (dl_fluffy_cache_size),
++                          &glro_v)
++          && fswc_view_matches (&glro_v, prefix, prefix_len, &stx,
++                                mnt_count, mnt_h1, mnt_h2))
++        {
++          *out_view = glro_v;
++          return true;
++        }
++    }
++# endif
++
++  uid_t euid = (uid_t) FC_SYSCALL0 (geteuid);
++  void *stale_ptr = NULL;
++  struct fswc_view stale_view;
++  void *shm_ptr = fswc_map_shm_matching (euid, prefix, prefix_len, &stx,
++                                         mnt_count, mnt_h1, mnt_h2,
++                                         out_view, &stale_ptr, &stale_view);
++  if (shm_ptr != NULL)
++    {
++      *out_temp_map = shm_ptr;
++      return true;
++    }
++
++  void *built = fswc_build_and_publish (stale_ptr != NULL ? &stale_view : NULL,
++                                        prefix, prefix_len, &stx,
++                                        mnt_count, mnt_h1, mnt_h2, euid,
++                                        out_view);
++  if (stale_ptr != NULL)
++    FC_SYSCALL (munmap, stale_ptr, stale_view.map_size);
++  if (built == NULL)
++    return false;
++
++  *out_temp_map = built;
++  return true;
++}
++#endif /* FC_WITH_EXECVPE_HELPERS */
++
++#ifdef FC_WITH_RTLD_HELPERS
++static void *fc_rtld_blob = NULL;
++static struct fswc_view fc_rtld_view;
++static uint32_t *fc_rtld_dir_pkg_idx = NULL;
++static size_t fc_rtld_dir_pkg_count = 0;
++
++static const struct fswc_view *
++fc_rtld_get_view (const char *prefix, size_t prefix_len)
++{
++  if (prefix_len == 0 || prefix_len > 0x00ffffffU || fswc_is_secure_mode ())
++    return NULL;
++
++  if (fswc_is_sw_prefix (prefix, prefix_len))
++    {
++      if (fc_rtld_blob != NULL
++          && (fc_rtld_view.hdr->flags & FSWC_HDR_SEALED) != 0)
++        return &fc_rtld_view;
++      uid_t seuid = (uid_t) FC_SYSCALL0 (geteuid);
++      struct fswc_view sealed_v;
++      void *sptr = fswc_try_acquire_sealed (seuid, prefix, prefix_len,
++                                            fc_rtld_blob != NULL ? &fc_rtld_view : NULL,
++                                            &sealed_v);
++      if (sptr != NULL)
++        {
++          if (fc_rtld_blob != NULL)
++            FC_SYSCALL (munmap, fc_rtld_blob, fc_rtld_view.map_size);
++          fc_rtld_blob = sptr;
++          fc_rtld_view = sealed_v;
++          return &fc_rtld_view;
++        }
++    }
++
++  struct statx stx;
++  uint32_t mnt_count = 0;
++  uint64_t mnt_h1 = 0, mnt_h2 = 0;
++  if (fswc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++    return NULL;
++
++  if (fc_rtld_blob != NULL
++      && fswc_view_matches (&fc_rtld_view, prefix, prefix_len, &stx,
++                            mnt_count, mnt_h1, mnt_h2))
++    return &fc_rtld_view;
++
++  uid_t euid = (uid_t) FC_SYSCALL0 (geteuid);
++  void *stale_ptr = NULL;
++  struct fswc_view stale_view;
++  struct fswc_view shm_view;
++  void *shm_ptr = fswc_map_shm_matching (euid, prefix, prefix_len, &stx,
++                                         mnt_count, mnt_h1, mnt_h2,
++                                         &shm_view, &stale_ptr, &stale_view);
++  if (shm_ptr != NULL)
++    {
++      if (fc_rtld_blob != NULL)
++        FC_SYSCALL (munmap, fc_rtld_blob, fc_rtld_view.map_size);
++      fc_rtld_blob = shm_ptr;
++      fc_rtld_view = shm_view;
++      return &fc_rtld_view;
++    }
++
++  const struct fswc_view *reuse_v
++    = (fc_rtld_blob != NULL) ? &fc_rtld_view
++      : (stale_ptr != NULL ? &stale_view : NULL);
++  struct fswc_view built_view;
++  void *built = fswc_build_and_publish (reuse_v, prefix, prefix_len, &stx,
++                                        mnt_count, mnt_h1, mnt_h2, euid,
++                                        &built_view);
++  if (stale_ptr != NULL)
++    FC_SYSCALL (munmap, stale_ptr, stale_view.map_size);
++  if (built == NULL)
++    return NULL;
++
++  if (fc_rtld_blob != NULL)
++    FC_SYSCALL (munmap, fc_rtld_blob, fc_rtld_view.map_size);
++  fc_rtld_blob = built;
++  fc_rtld_view = built_view;
++  return &fc_rtld_view;
++}
++#endif /* FC_WITH_RTLD_HELPERS */
++
++#ifdef FC_WITH_PATH_HELPERS
++#ifndef LIBIBERTY_H
++# include <stdlib.h>
++#endif
++#include <glob.h>
++
++static void *fc_path_blob = NULL;
++static struct fswc_view fc_path_view;
++static int fc_path_state = 0;
++
++static const struct fswc_view *
++fc_path_get_view (const char *prefix, size_t prefix_len)
++{
++  if (fc_path_state == 1)
++    return &fc_path_view;
++  if (fc_path_state < 0)
++    return NULL;
++  if (fswc_is_secure_mode ())
++    {
++      fc_path_state = -1;
++      return NULL;
++    }
++
++  if (fswc_is_sw_prefix (prefix, prefix_len))
++    {
++      uid_t seuid = (uid_t) FC_SYSCALL0 (geteuid);
++      void *sptr = fswc_try_acquire_sealed (seuid, prefix, prefix_len,
++                                            NULL, &fc_path_view);
++      if (sptr != NULL)
++        {
++          fc_path_blob = sptr;
++          fc_path_state = 1;
++          return &fc_path_view;
++        }
++    }
++
++  struct statx stx;
++  uint32_t mnt_count = 0;
++  uint64_t mnt_h1 = 0, mnt_h2 = 0;
++  if (fswc_get_prefix_state (prefix, &stx, &mnt_count, &mnt_h1, &mnt_h2) < 0)
++    {
++      fc_path_state = -1;
++      return NULL;
++    }
++
++  uid_t euid = (uid_t) FC_SYSCALL0 (geteuid);
++  void *stale_ptr = NULL;
++  struct fswc_view stale_view;
++  void *shm_ptr = fswc_map_shm_matching (euid, prefix, prefix_len, &stx,
++                                         mnt_count, mnt_h1, mnt_h2,
++                                         &fc_path_view, &stale_ptr,
++                                         &stale_view);
++  if (shm_ptr != NULL)
++    {
++      fc_path_blob = shm_ptr;
++      fc_path_state = 1;
++      return &fc_path_view;
++    }
++
++  void *built = fswc_build_and_publish (stale_ptr != NULL ? &stale_view : NULL,
++                                        prefix, prefix_len, &stx,
++                                        mnt_count, mnt_h1, mnt_h2, euid,
++                                        &fc_path_view);
++  if (stale_ptr != NULL)
++    FC_SYSCALL (munmap, stale_ptr, stale_view.map_size);
++  if (built == NULL)
++    {
++      fc_path_state = -1;
++      return NULL;
++    }
++
++  fc_path_blob = built;
++  fc_path_state = 1;
++  return &fc_path_view;
++}
++
++static inline int __attribute__ ((__unused__))
++fc_lookup_path (const char *path, bool require_dir)
++{
++  if (path == NULL || path[0] != '/' || path[1] != 's'
++      || path[2] != 'w' || path[3] != '/')
++    return -1;
++
++  const char *p = path + 4;
++  size_t rem_len = strlen (p);
++  while (rem_len > 0)
++    {
++      if (p[rem_len - 1U] == '/')
++        --rem_len;
++      else if (rem_len >= 2U && p[rem_len - 1U] == '.' && p[rem_len - 2U] == '/')
++        rem_len -= 2U;
++      else if (rem_len == 1U && p[0] == '.')
++        rem_len = 0U;
++      else
++        break;
++    }
++  if (rem_len == 0 || p[0] == '.')
++    return -1;
++
++  for (size_t i = 0; i < rem_len; ++i)
++    {
++      if (p[i] == '/' && (i + 1U < rem_len && p[i + 1U] == '/'))
++        return -1;
++      if (p[i] == '.' && (i == 0 || p[i - 1U] == '/'))
++        {
++          if (i + 1U == rem_len || p[i + 1U] == '/')
++            return -1;
++          if (p[i + 1U] == '.' && (i + 2U == rem_len || p[i + 2U] == '/'))
++            return -1;
++        }
++    }
++
++  const struct fswc_view *v = fc_path_get_view ("/sw", 3U);
++  if (v == NULL)
++    return -1;
++
++  const char *slash1 = (const char *) memchr (p, '/', rem_len);
++  size_t pkg_len = (slash1 != NULL) ? (size_t) (slash1 - p) : rem_len;
++  if (pkg_len == 0)
++    return -1;
++
++  int32_t pkg_idx_s = fswc_find_pkg (v, p, pkg_len);
++  if (pkg_idx_s < 0)
++    return 0;
++  uint32_t pkg_idx = (uint32_t) pkg_idx_s;
++
++  if ((v->pkgs[pkg_idx].flags & FSWC_PKG_IMMUTABLE) == 0)
++    return (slash1 == NULL) ? (require_dir ? 1 : -1) : 0;
++  if (slash1 == NULL)
++    return require_dir ? 1 : -1;
++
++  const char *sub1 = slash1 + 1;
++  size_t after_pkg_len = (size_t) ((p + rem_len) - sub1);
++  const char *slash2 = (const char *) memchr (sub1, '/', after_pkg_len);
++  size_t sub1_len = (slash2 != NULL) ? (size_t) (slash2 - sub1) : after_pkg_len;
++  const struct fswc_ht_entry *tb = fswc_lookup (v, 0U, sub1, sub1_len);
++  if (tb == NULL)
++    return 0;
++
++  if ((tb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++    return -1;
++
++  if (slash2 == NULL)
++    {
++      uint32_t cnt = require_dir ? tb->dir_count : tb->all_count;
++      uint32_t ref = require_dir ? tb->dir_ref : tb->all_ref;
++      if (!fswc_posting_contains (v, cnt, ref, pkg_idx))
++        return 0;
++      return require_dir ? 1 : -1;
++    }
++
++  if (!fswc_posting_contains (v, tb->dir_count, tb->dir_ref, pkg_idx))
++    return 0;
++
++  int sub1_id = fc_subdir_id (sub1, sub1_len);
++  if (sub1_id < 0)
++    return -1;
++
++  const char *rel = slash2 + 1;
++  size_t rel_len = (size_t) ((p + rem_len) - rel);
++  size_t max_slashes = (sub1_id == 3) ? FSWC_INC_MAX_SLASHES : 0U;
++  size_t nslashes = 0;
++  size_t indexed_prefix_len = rel_len;
++  for (size_t i = 0; i < rel_len; ++i)
++    if (rel[i] == '/')
++      {
++        ++nslashes;
++        if (nslashes == max_slashes + 1U)
++          {
++            indexed_prefix_len = i;
++            break;
++          }
++      }
++
++  uint8_t ns_id = (uint8_t) (sub1_id + 1);
++  for (size_t i = 0; i < indexed_prefix_len; ++i)
++    if (rel[i] == '/')
++      {
++        const struct fswc_ht_entry *pb = fswc_lookup (v, ns_id, rel, i);
++        if (pb != NULL && (pb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++          return -1;
++      }
++
++  if (nslashes <= max_slashes)
++    {
++      const struct fswc_ht_entry *sb = fswc_lookup (v, ns_id, rel, rel_len);
++      if (sb == NULL)
++        return 0;
++      if ((sb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++        return -1;
++      uint32_t cnt = require_dir ? sb->dir_count : sb->all_count;
++      uint32_t ref = require_dir ? sb->dir_ref : sb->all_ref;
++      if (!fswc_posting_contains (v, cnt, ref, pkg_idx))
++        return 0;
++      return require_dir ? 1 : -1;
++    }
++  else
++    {
++      const struct fswc_ht_entry *sb
++        = fswc_lookup (v, ns_id, rel, indexed_prefix_len);
++      if (sb == NULL)
++        return 0;
++      if ((sb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++        return -1;
++      if (!fswc_posting_contains (v, sb->dir_count, sb->dir_ref, pkg_idx))
++        return 0;
++      return -1;
++    }
++}
++
++static inline void *
++fc_path_alloc (size_t sz)
++{
++# ifdef LIBIBERTY_H
++  return xmalloc (sz);
++# else
++  return malloc (sz);
++# endif
++}
++
++static inline int
++fc_emit_dir_postings (const struct fswc_view *v, uint32_t count, uint32_t ref,
++                      const char *sub_suffix, size_t sub_suffix_len,
++                      bool verify_statx, glob_t *out_glob)
++{
++  uint32_t inline_slot = 0;
++  uint32_t nfound = 0;
++  const uint32_t *list = fswc_posting_slice (v, count, ref,
++                                             &inline_slot, &nfound);
++  if (nfound == 0 || list == NULL)
++    return GLOB_NOMATCH;
++
++  char **pathv = (char **) fc_path_alloc (((size_t) nfound + 1U)
++                                          * sizeof (char *));
++  if (pathv == NULL)
++    return GLOB_NOSPACE;
++
++  size_t emitted = 0;
++  for (uint32_t i = 0; i < nfound; ++i)
++    {
++      uint32_t pkg_idx = list[i];
++      if (pkg_idx >= v->hdr->num_pkgs)
++        continue;
++      const struct fswc_pkg *pk = &v->pkgs[pkg_idx];
++      const char *pkg = v->strtab + pk->name_off;
++      size_t pkg_len = pk->name_len;
++      size_t total_len = 4U + pkg_len + 1U + sub_suffix_len;
++      char *s = (char *) fc_path_alloc (total_len + 1U);
++      if (s == NULL)
++        {
++          for (size_t j = 0; j < emitted; ++j)
++            free (pathv[j]);
++          free (pathv);
++          return GLOB_NOSPACE;
++        }
++      memcpy (s, "/sw/", 4U);
++      memcpy (s + 4U, pkg, pkg_len);
++      s[4U + pkg_len] = '/';
++      memcpy (s + 4U + pkg_len + 1U, sub_suffix, sub_suffix_len);
++      s[total_len] = '\0';
++
++      if (verify_statx)
++        {
++          struct statx stx;
++          long sr = FC_SYSCALL (statx, AT_FDCWD, s, 0, STATX_TYPE, &stx);
++          if (fc_syscall_err (sr) || !S_ISDIR (stx.stx_mode))
++            {
++              free (s);
++              continue;
++            }
++        }
++      pathv[emitted++] = s;
++    }
++
++  if (emitted == 0)
++    {
++      free (pathv);
++      return GLOB_NOMATCH;
++    }
++  pathv[emitted] = NULL;
++  out_glob->gl_pathc = emitted;
++  out_glob->gl_pathv = pathv;
++  out_glob->gl_offs = 0;
++  return 0;
++}
++
++/* Expand "/sw/<star>/<subpath>[/]" into OUT_GLOB directly from FSWC without
++   invoking host glob().  Returns 0, GLOB_NOMATCH, GLOB_NOSPACE, or -1 if
++   PATTERN is outside FSWC's scope (caller should fall back to glob()).  */
++static inline int __attribute__ ((__unused__))
++fc_expand_dirs (const char *pattern, glob_t *out_glob)
++{
++  out_glob->gl_pathc = 0;
++  out_glob->gl_pathv = NULL;
++  out_glob->gl_offs = 0;
++
++  if (pattern == NULL || strncmp (pattern, "/sw/*/", 6U) != 0)
++    return -1;
++
++  const char *rest = pattern + 6U;
++  size_t rest_len = strlen (rest);
++  while (rest_len > 0 && rest[rest_len - 1U] == '/')
++    --rest_len;
++  if (rest_len == 0)
++    return -1;
++
++  for (size_t i = 0; i < rest_len; ++i)
++    {
++      char c = rest[i];
++      if (c == '*' || c == '?' || c == '[' || c == '{' || c == '\\')
++        return -1;
++      if (c == '/' && i + 1U < rest_len && rest[i + 1U] == '/')
++        return -1;
++      if (c == '.' && (i == 0 || rest[i - 1U] == '/'))
++        {
++          if (i + 1U == rest_len || rest[i + 1U] == '/')
++            return -1;
++          if (rest[i + 1U] == '.' && (i + 2U == rest_len || rest[i + 2U] == '/'))
++            return -1;
++        }
++    }
++
++  const struct fswc_view *v = fc_path_get_view ("/sw", 3U);
++  if (v == NULL)
++    return -1;
++
++  const char *slash = (const char *) memchr (rest, '/', rest_len);
++  size_t sub1_len = (slash != NULL) ? (size_t) (slash - rest) : rest_len;
++  const struct fswc_ht_entry *tb = fswc_lookup (v, 0U, rest, sub1_len);
++  if (tb == NULL)
++    return GLOB_NOMATCH;
++  if ((tb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++    return -1;
++
++  if (slash == NULL)
++    return fc_emit_dir_postings (v, tb->dir_count, tb->dir_ref,
++                                 rest, rest_len, false, out_glob);
++
++  const char *rel = slash + 1U;
++  size_t rel_len = (size_t) ((rest + rest_len) - rel);
++  int sub1_id = fc_subdir_id (rest, sub1_len);
++
++  if (sub1_id == 3)
++    {
++      size_t nslashes = 0;
++      for (size_t i = 0; i < rel_len; ++i)
++        if (rel[i] == '/')
++          ++nslashes;
++      if (nslashes <= FSWC_INC_MAX_SLASHES)
++        {
++          for (size_t i = 0; i < rel_len; ++i)
++            if (rel[i] == '/')
++              {
++                const struct fswc_ht_entry *pb = fswc_lookup (v, 4U, rel, i);
++                if (pb != NULL && (pb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++                  return -1;
++              }
++          const struct fswc_ht_entry *sb = fswc_lookup (v, 4U, rel, rel_len);
++          if (sb == NULL)
++            return GLOB_NOMATCH;
++          if ((sb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++            return -1;
++          return fc_emit_dir_postings (v, sb->dir_count, sb->dir_ref,
++                                       rest, rest_len, false, out_glob);
++        }
++    }
++  else if (sub1_id >= 0 && memchr (rel, '/', rel_len) == NULL)
++    {
++      const struct fswc_ht_entry *sb
++        = fswc_lookup (v, (uint8_t) (sub1_id + 1), rel, rel_len);
++      if (sb == NULL)
++        return GLOB_NOMATCH;
++      if ((sb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++        return -1;
++      return fc_emit_dir_postings (v, sb->dir_count, sb->dir_ref,
++                                   rest, rest_len, false, out_glob);
++    }
++
++  /* Unindexed deeper subpath (e.g. /sw/<star>/$FLUFFY_TGT/bin): probe only
++     the packages known to contain top-level SUB1.  */
++  return fc_emit_dir_postings (v, tb->dir_count, tb->dir_ref,
++                               rest, rest_len, true, out_glob);
++}
++
++struct fc_inc_query
++{
++  const struct fswc_view *v;
++  const struct fswc_ht_entry *sb;
++  const char *single_pkg;
++  size_t single_pkg_len;
++  bool active;
++};
++
++static inline void __attribute__ ((__unused__))
++fc_inc_query_init (struct fc_inc_query *q, const char *fname)
++{
++  q->active = false;
++  if (fname == NULL || fname[0] == '\0' || fname[0] == '/' || fname[0] == '.')
++    return;
++
++  size_t flen = strlen (fname);
++  if (fname[flen - 1U] == '/')
++    return;
++
++  size_t nslashes = 0;
++  for (size_t i = 0; i < flen; ++i)
++    {
++      if (fname[i] == '/')
++        {
++          if (i + 1U < flen && fname[i + 1U] == '/')
++            return;
++          if (++nslashes > FSWC_INC_MAX_SLASHES)
++            return;
++        }
++      else if (fname[i] == '.' && fname[i - 1U] == '/')
++        {
++          if (i + 1U == flen || fname[i + 1U] == '/')
++            return;
++          if (fname[i + 1U] == '.' && (i + 2U == flen || fname[i + 2U] == '/'))
++            return;
++        }
++    }
++
++  const struct fswc_view *v = fc_path_get_view ("/sw", 3U);
++  if (v == NULL)
++    return;
++
++  for (size_t i = 0; i < flen; ++i)
++    if (fname[i] == '/')
++      {
++        const struct fswc_ht_entry *pb = fswc_lookup (v, 4U, fname, i);
++        if (pb != NULL && (pb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++          return;
++      }
++
++  const struct fswc_ht_entry *sb = fswc_lookup (v, 4U, fname, flen);
++  if (sb != NULL && (sb->name_len_ns & FSWC_HT_EXT_LNK) != 0)
++    return;
++
++  q->v = v;
++  q->sb = sb;
++  q->single_pkg = NULL;
++  q->single_pkg_len = 0;
++  if (sb != NULL && sb->all_count == 1U && sb->all_ref < v->hdr->num_pkgs)
++    {
++      const struct fswc_pkg *pk = &v->pkgs[sb->all_ref];
++      q->single_pkg = v->strtab + pk->name_off;
++      q->single_pkg_len = pk->name_len;
++    }
++  q->active = true;
++}
++
++static inline bool __attribute__ ((__unused__))
++fc_inc_dir_can_skip (const struct fc_inc_query *q, const char *dir_name)
++{
++  if (!q->active || dir_name == NULL
++      || dir_name[0] != '/' || dir_name[1] != 's'
++      || dir_name[2] != 'w' || dir_name[3] != '/')
++    return false;
++
++  const char *pkg = dir_name + 4U;
++  if (pkg[0] == '.' || pkg[0] == '/' || pkg[0] == '\0')
++    return false;
++
++  const char *slash = strchr (pkg, '/');
++  if (slash == NULL)
++    return false;
++  if (memcmp (slash, "/include", 8U) != 0
++      || (slash[8U] != '\0' && !(slash[8U] == '/' && slash[9U] == '\0')))
++    return false;
++
++  if (q->sb == NULL || q->sb->all_count == 0)
++    return true;
++
++  size_t pkg_len = (size_t) (slash - pkg);
++  if (q->single_pkg != NULL)
++    return (pkg_len != q->single_pkg_len
++            || memcmp (pkg, q->single_pkg, pkg_len) != 0);
++
++  int32_t pkg_idx = fswc_find_pkg (q->v, pkg, pkg_len);
++  if (pkg_idx < 0)
++    return true;
++  return !fswc_posting_contains (q->v, q->sb->all_count, q->sb->all_ref,
++                                 (uint32_t) pkg_idx);
++}
++#endif /* FC_WITH_PATH_HELPERS */
++
++#endif /* _GLOB_FLUFFY_CACHE_H */
+diff -ruN gcc-16.2.0.orig/libcpp/files.cc gcc-16.2.0/libcpp/files.cc
+--- gcc-16.2.0.orig/libcpp/files.cc	2026-08-07 03:46:09.934748504 -0400
++++ gcc-16.2.0/libcpp/files.cc	2026-11-10 22:44:05.533616099 -0500
+@@ -29,6 +29,7 @@
+ #include "hashtab.h"
+ #include "md5.h"
+ #include <dirent.h>
++#include "fluffy-cache.h"
+ 
+ /* Variable length record files on VMS will have a stat size that includes
+    record control characters that won't be included in the read size.  */
+@@ -320,7 +321,7 @@
+   memcpy (pchname, path, flen);
+   memcpy (pchname + flen, extension, sizeof (extension));
+ 
+-  if (stat (pchname, &st) == 0)
++  if (fc_lookup_path (pchname, false) != 0 && stat (pchname, &st) == 0)
+     {
+       DIR *pchdir;
+       struct dirent *d;
+@@ -406,23 +407,12 @@
+       char *copy;
+       void **pp;
+ 
+-      /* We try to canonicalize system headers.  For DOS based file
+-       * system, we always try to shorten non-system headers, as DOS
+-       * has a tighter constraint on max path length.  */
+-      if ((CPP_OPTION (pfile, canonical_system_headers) && file->dir->sysp)
+-#ifdef HAVE_DOS_BASED_FILE_SYSTEM
+-	  || !file->dir->sysp
+-#endif
+-	 )
++      if (fc_lookup_path (path, false) == 0)
+ 	{
+-	  char * canonical_path = maybe_shorter_path (path);
+-	  if (canonical_path)
+-	    {
+-	      /* The canonical path was newly allocated.  Let's free the
+-		 non-canonical one.  */
+-	      free (path);
+-	      path = canonical_path;
+-	    }
++	  free (path);
++	  file->err_no = ENOENT;
++	  file->path = file->name;
++	  return false;
+ 	}
+ 
+       hv = htab_hash_string (path);
+@@ -437,7 +427,22 @@
+ 	return true;
+ 
+       if (open_file (file))
+-	return true;
++	{
++	  if ((CPP_OPTION (pfile, canonical_system_headers) && file->dir->sysp)
++#ifdef HAVE_DOS_BASED_FILE_SYSTEM
++	      || !file->dir->sysp
++#endif
++	     )
++	    {
++	      char * canonical_path = maybe_shorter_path (path);
++	      if (canonical_path)
++		{
++		  free (path);
++		  file->path = canonical_path;
++		}
++	    }
++	  return true;
++	}
+ 
+       if (file->err_no != ENOENT)
+ 	{
+@@ -558,11 +563,23 @@
+   if (kind == _cpp_FFK_FAKE)
+     file->dont_read = true;
+   else
+-    /* Try each path in the include chain.  */
+-    for (;;)
+-      {
+-	if (find_file_in_dir (pfile, file, &invalid_pch, loc))
+-	  break;
++    {
++      struct fc_inc_query fc_inc_q;
++      fc_inc_q.active = false;
++      if (!CPP_OPTION (pfile, remap) && pfile->cb.valid_pch == NULL)
++	fc_inc_query_init (&fc_inc_q, fname);
++
++      /* Try each path in the include chain.  */
++      for (;;)
++	{
++	  if (file->dir->construct == NULL
++	      && fc_inc_dir_can_skip (&fc_inc_q, file->dir->name))
++	    {
++	      file->err_no = ENOENT;
++	      file->path = file->name;
++	    }
++	  else if (find_file_in_dir (pfile, file, &invalid_pch, loc))
++	    break;
+ 
+ 	if (is_embed
+ 	    && file->dir == start_dir
+@@ -649,6 +666,7 @@
+ 	    break;
+ 	  }
+       }
++    }
+ 
+   if (entry)
+     {

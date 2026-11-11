@@ -43,6 +43,7 @@ else
     BUILD_NEEDS=(
         bash
         binutils
+        coreutils
         diffutils
         findutils
         gawk

@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=5.45.4
 
@@ -10,30 +15,65 @@ ARCHIVES=(
     65c24de18586bdd30578746aedf7f3f2a369f2f8354c19514de6697be21a4537 file://expect$VERSION-fluffy-test.patch
 )
 
-NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    glibc
-    tcl
-)
+if test -v CROSS
+then
+    NEEDS=(
+        bash-pass1
+        coreutils-pass1
+        glibc
+        tcl
+    )
+else
+    NEEDS=(
+        bash
+        coreutils
+        glibc
+        tcl
+    )
+fi
 
-BUILD_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    gzip-pass1
-    linux-headers
-    make-pass1
-    patch-pass1
-    sed-pass1
-    tar-pass1
-    tcl
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed-pass1
+        tar-pass1
+        tcl
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        tcl
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i expect-$VERSION-gcc15-1.patch

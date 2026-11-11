@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=6.18
 
@@ -8,15 +13,28 @@ ARCHIVES=(
     0d84d157288e440c1f6602472f57d27de6315be13d0c442e1bc3110664aec4a1 file://man-pages-$VERSION-fluffy-test.patch
 )
 
-BUILD_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    findutils-pass1
-    grep-pass1
-    make-pass1
-    patch-pass1
-    sed-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        coreutils-pass1
+        findutils-pass1
+        grep-pass1
+        make-pass1
+        patch-pass1
+        sed-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        coreutils
+        findutils
+        grep
+        make
+        patch
+        sed
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i man-pages-$VERSION-fluffy-shell.patch

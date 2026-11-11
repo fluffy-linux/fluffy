@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=10.47
 
@@ -17,24 +22,48 @@ NEEDS=(
     zlib
 )
 
-BUILD_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    bzip2
-    coreutils-pass1
-    diffutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    linux-headers
-    make-pass1
-    patch-pass1
-    readline
-    sed-pass1
-    tar-pass1
-    zlib
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        bzip2
+        coreutils-pass1
+        diffutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        readline
+        sed-pass1
+        tar-pass1
+        zlib
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bzip2
+        coreutils
+        diffutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        patch
+        readline
+        sed
+        tar
+        zlib
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i pcre2-$VERSION-fluffy-shell.patch

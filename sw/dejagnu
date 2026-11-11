@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=1.6.3
 
@@ -9,35 +14,75 @@ ARCHIVES=(
     8150c0cfe6033cedd215c5f33b0f7880b0f44b0c163d23c8c73dc56a466bdf6a file://dejagnu-$VERSION-fluffy-test.patch
 )
 
-NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    expect
-    gawk-pass1
-    grep-pass1
-    sed-pass1
-    tcl
-)
+if test -v CROSS
+then
+    NEEDS=(
+        bash-pass1
+        coreutils-pass1
+        expect
+        gawk-pass1
+        grep-pass1
+        sed-pass1
+        tcl
+    )
+else
+    NEEDS=(
+        bash
+        coreutils
+        expect
+        gawk
+        grep
+        sed
+        tcl
+    )
+fi
 
-BUILD_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    expect
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    gzip-pass1
-    linux-headers
-    make-pass1
-    patch-pass1
-    sed-pass1
-    tar-pass1
-    tcl
-    texinfo-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        coreutils-pass1
+        diffutils-pass1
+        expect
+        findutils-pass1
+        gawk-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed-pass1
+        tar-pass1
+        tcl
+        texinfo-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        expect
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        tcl
+        texinfo
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i dejagnu-$VERSION-fluffy-shell.patch

@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=1.10.0
 
@@ -14,20 +19,42 @@ NEEDS=(
     glibc
 )
 
-BUILD_NEEDS=(
-    bash-pass1
-    coreutils-pass1
-    diffutils-pass1
-    gcc-pass2
-    glibc
-    grep-pass1
-    gzip-pass1
-    linux-headers
-    make-pass1
-    patch-pass1
-    sed-pass1
-    tar-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        coreutils-pass1
+        diffutils-pass1
+        gcc-pass2
+        glibc
+        grep-pass1
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed-pass1
+        tar-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i lz4-$VERSION-fluffy-shell.patch

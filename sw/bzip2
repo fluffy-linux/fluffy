@@ -1,4 +1,9 @@
-ON=cross-build
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
 
 VERSION=1.0.8
 
@@ -14,17 +19,34 @@ NEEDS=(
     glibc
 )
 
-BUILD_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    coreutils-pass1
-    diffutils-pass1
-    gcc-pass2
-    glibc
-    linux-headers
-    make-pass1
-    patch-pass1
-)
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        coreutils-pass1
+        diffutils-pass1
+        gcc-pass2
+        glibc
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        gcc
+        glibc
+        libgcc
+        linux-headers
+        make
+        patch
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i bzip2-$VERSION-fluffy-shell.patch

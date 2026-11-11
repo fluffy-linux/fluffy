@@ -4,7 +4,7 @@ VERSION=5.3
 
 ARCHIVES=(
     0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz
-    145952bdaf6b917ee467e92ab668d2cb6588a7062ebcd046dcf79a587428db6b file://bash-$VERSION-fluffy-source.patch
+    26b6fe28d82797afe85ba22ce897a80bb3d74bf46de0f64d702a021690a2ccef file://bash-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(

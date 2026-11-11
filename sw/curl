@@ -1,3 +1,10 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
 VERSION=8.23.0
 
 HAS_LDFLAGS=-lcurl
@@ -8,6 +15,69 @@ ARCHIVES=(
     afe278436da2a91bffe1aa4556424eb5f22aca3c3061a5856bfcec36f662315c file://curl-$VERSION-fluffy-source.patch
     a3f92fc9cec3592efcb089bcec37fa5025b8b7f3b67d22ca4a8abac343c4e4b7 file://curl-$VERSION-fluffy-test.patch
 )
+
+NEEDS=(
+    ca-certificates
+    glibc
+    openssl
+    zlib
+    zstd
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        ca-certificates
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        openssl
+        patch-pass1
+        perl
+        python
+        sed
+        tar-pass1
+        xz
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        ca-certificates
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        openssl
+        patch
+        perl
+        python
+        sed
+        tar
+        xz
+        zlib
+        zstd
+    )
+fi
 
 MAKE() {
     patch -Z -Np1 -i curl-$VERSION-fluffy-shell.patch
