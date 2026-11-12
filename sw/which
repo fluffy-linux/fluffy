@@ -1,0 +1,81 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.25
+
+ARCHIVES=(
+    1cb83e4f702e60b8211ab5ec4c2afbab1b1dec80209456a7d2faf7584ed225ea https://ftpmirror.gnu.org/which/which-$VERSION.tar.gz
+    63e15cce40edbd65c490f0c3a687f225a9676383cc439aa7e87991c5b6019b8f file://which-$VERSION-fluffy-shell.patch
+    0f5af25b7e8b3eba9f1397ef7af3d051def98139167cc30603847148dced9ff9 file://which-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i which-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i which-$VERSION-fluffy-source.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/which
+    make
+}
+
+CHECK() {
+    mkdir -p /tmp/fluffy-which/pkg1/bin /tmp/fluffy-which/pkg2/bin
+    ln -sf /sw/coreutils/bin/true /tmp/fluffy-which/pkg1/bin/fluffytest
+    ln -sf /sw/coreutils/bin/true /tmp/fluffy-which/pkg2/bin/fluffytest
+    test "$(PATH='/tmp/fluffy-which/*/bin' ./which fluffytest)" = "/tmp/fluffy-which/pkg1/bin/fluffytest"
+    test "$(PATH='/tmp/fluffy-which/*/bin' ./which -a fluffytest | wc -l)" = "2"
+}
+
+INSTALL() {
+    make install
+    rm -fv $DESTDIR/sw/which/share/info/dir
+}
