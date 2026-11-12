@@ -1,6 +1,6 @@
 diff -Naur libtasn1-4.21.0.orig/build-aux/announce-gen libtasn1-4.21.0/build-aux/announce-gen
---- libtasn1-4.21.0.orig/build-aux/announce-gen	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/announce-gen	2026-10-28 01:23:02.016381229 -0400
+--- libtasn1-4.21.0.orig/build-aux/announce-gen	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/announce-gen	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -8,8 +8,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/announce-gen libtasn1-4.21.0/build-aux
  
  # Generate a release announcement message.
 diff -Naur libtasn1-4.21.0.orig/build-aux/compile libtasn1-4.21.0/build-aux/compile
---- libtasn1-4.21.0.orig/build-aux/compile	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/compile	2026-10-28 01:23:02.020702951 -0400
+--- libtasn1-4.21.0.orig/build-aux/compile	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/compile	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -17,8 +17,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/compile libtasn1-4.21.0/build-aux/comp
  
  scriptversion=2024-06-19.01; # UTC
 diff -Naur libtasn1-4.21.0.orig/build-aux/config.guess libtasn1-4.21.0/build-aux/config.guess
---- libtasn1-4.21.0.orig/build-aux/config.guess	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/config.guess	2026-10-28 01:23:02.016651209 -0400
+--- libtasn1-4.21.0.orig/build-aux/config.guess	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/config.guess	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -26,8 +26,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/config.guess libtasn1-4.21.0/build-aux
  #   Copyright 1992-2025 Free Software Foundation, Inc.
  
 diff -Naur libtasn1-4.21.0.orig/build-aux/config.sub libtasn1-4.21.0/build-aux/config.sub
---- libtasn1-4.21.0.orig/build-aux/config.sub	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/config.sub	2026-10-28 01:23:02.020119709 -0400
+--- libtasn1-4.21.0.orig/build-aux/config.sub	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/config.sub	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -35,8 +35,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/config.sub libtasn1-4.21.0/build-aux/c
  #   Copyright 1992-2025 Free Software Foundation, Inc.
  
 diff -Naur libtasn1-4.21.0.orig/build-aux/depcomp libtasn1-4.21.0/build-aux/depcomp
---- libtasn1-4.21.0.orig/build-aux/depcomp	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/depcomp	2026-10-28 01:23:02.020848788 -0400
+--- libtasn1-4.21.0.orig/build-aux/depcomp	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/depcomp	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -44,8 +44,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/depcomp libtasn1-4.21.0/build-aux/depc
  
  scriptversion=2025-06-18.21; # UTC
 diff -Naur libtasn1-4.21.0.orig/build-aux/do-release-commit-and-tag libtasn1-4.21.0/build-aux/do-release-commit-and-tag
---- libtasn1-4.21.0.orig/build-aux/do-release-commit-and-tag	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/do-release-commit-and-tag	2026-10-28 01:23:02.016923292 -0400
+--- libtasn1-4.21.0.orig/build-aux/do-release-commit-and-tag	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/do-release-commit-and-tag	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -53,53 +53,53 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/do-release-commit-and-tag libtasn1-4.2
  # controlled .prev-version file, automate the procedure by which we record
  # the date, release-type and version string in the NEWS file.  That commit
 diff -Naur libtasn1-4.21.0.orig/build-aux/gendocs.sh libtasn1-4.21.0/build-aux/gendocs.sh
---- libtasn1-4.21.0.orig/build-aux/gendocs.sh	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/gendocs.sh	2026-10-28 01:23:02.020452432 -0400
+--- libtasn1-4.21.0.orig/build-aux/gendocs.sh	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/gendocs.sh	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh -e
 +#!/sw/bash/bin/bash -e
  # gendocs.sh -- generate a GNU manual in many formats.  This script is
  #   mentioned in maintain.texi.  See the help message below for usage details.
  
-diff -Naur libtasn1-4.21.0.orig/build-aux/gitlog-to-changelog libtasn1-4.21.0/build-aux/gitlog-to-changelog
---- libtasn1-4.21.0.orig/build-aux/gitlog-to-changelog	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/gitlog-to-changelog	2026-10-28 01:23:02.019859426 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- #! -*-perl-*-
- 
- # Convert git log output to ChangeLog format.
 diff -Naur libtasn1-4.21.0.orig/build-aux/git-version-gen libtasn1-4.21.0/build-aux/git-version-gen
---- libtasn1-4.21.0.orig/build-aux/git-version-gen	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/git-version-gen	2026-10-28 01:23:02.015988817 -0400
+--- libtasn1-4.21.0.orig/build-aux/git-version-gen	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/git-version-gen	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  # Print a version string.
  scriptversion=2025-06-10.02; # UTC
  
-diff -Naur libtasn1-4.21.0.orig/build-aux/gnupload libtasn1-4.21.0/build-aux/gnupload
---- libtasn1-4.21.0.orig/build-aux/gnupload	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/gnupload	2026-10-28 01:23:02.017161349 -0400
+diff -Naur libtasn1-4.21.0.orig/build-aux/gitlog-to-changelog libtasn1-4.21.0/build-aux/gitlog-to-changelog
+--- libtasn1-4.21.0.orig/build-aux/gitlog-to-changelog	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/gitlog-to-changelog	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
- # Sign files and upload them.
+ #! -*-perl-*-
  
- scriptversion=2025-06-28.18; # UTC
+ # Convert git log output to ChangeLog format.
 diff -Naur libtasn1-4.21.0.orig/build-aux/gnu-web-doc-update libtasn1-4.21.0/build-aux/gnu-web-doc-update
---- libtasn1-4.21.0.orig/build-aux/gnu-web-doc-update	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/gnu-web-doc-update	2026-10-28 01:23:02.019735291 -0400
+--- libtasn1-4.21.0.orig/build-aux/gnu-web-doc-update	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/gnu-web-doc-update	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  # Run this after each non-alpha release, to update the web documentation at
  # https://www.gnu.org/software/$pkg/manual/
  
+diff -Naur libtasn1-4.21.0.orig/build-aux/gnupload libtasn1-4.21.0/build-aux/gnupload
+--- libtasn1-4.21.0.orig/build-aux/gnupload	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/gnupload	2026-01-08 12:19:22.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2025-06-28.18; # UTC
 diff -Naur libtasn1-4.21.0.orig/build-aux/install-sh libtasn1-4.21.0/build-aux/install-sh
---- libtasn1-4.21.0.orig/build-aux/install-sh	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/install-sh	2026-10-28 01:23:02.021943574 -0400
+--- libtasn1-4.21.0.orig/build-aux/install-sh	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/install-sh	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -107,8 +107,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/install-sh libtasn1-4.21.0/build-aux/i
  
  scriptversion=2025-06-18.21; # UTC
 diff -Naur libtasn1-4.21.0.orig/build-aux/ltmain.sh libtasn1-4.21.0/build-aux/ltmain.sh
---- libtasn1-4.21.0.orig/build-aux/ltmain.sh	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/ltmain.sh	2026-10-28 01:23:02.018865006 -0400
+--- libtasn1-4.21.0.orig/build-aux/ltmain.sh	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/ltmain.sh	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -116,8 +116,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/ltmain.sh libtasn1-4.21.0/build-aux/lt
  ##               by inline-source v2019-02-19.15
  
 diff -Naur libtasn1-4.21.0.orig/build-aux/mdate-sh libtasn1-4.21.0/build-aux/mdate-sh
---- libtasn1-4.21.0.orig/build-aux/mdate-sh	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/mdate-sh	2026-10-28 01:23:02.017404553 -0400
+--- libtasn1-4.21.0.orig/build-aux/mdate-sh	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/mdate-sh	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -125,8 +125,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/mdate-sh libtasn1-4.21.0/build-aux/mda
  # formatted like 1 January 2000.
  
 diff -Naur libtasn1-4.21.0.orig/build-aux/missing libtasn1-4.21.0/build-aux/missing
---- libtasn1-4.21.0.orig/build-aux/missing	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/missing	2026-10-28 01:23:02.019628107 -0400
+--- libtasn1-4.21.0.orig/build-aux/missing	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/missing	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -134,8 +134,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/missing libtasn1-4.21.0/build-aux/miss
  
  scriptversion=2024-06-07.14; # UTC
 diff -Naur libtasn1-4.21.0.orig/build-aux/update-copyright libtasn1-4.21.0/build-aux/update-copyright
---- libtasn1-4.21.0.orig/build-aux/update-copyright	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/update-copyright	2026-10-28 01:23:02.016228069 -0400
+--- libtasn1-4.21.0.orig/build-aux/update-copyright	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/update-copyright	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -143,8 +143,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/update-copyright libtasn1-4.21.0/build
  
  # Update an FSF copyright year list to include the current year.
 diff -Naur libtasn1-4.21.0.orig/build-aux/useless-if-before-free libtasn1-4.21.0/build-aux/useless-if-before-free
---- libtasn1-4.21.0.orig/build-aux/useless-if-before-free	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/useless-if-before-free	2026-10-28 01:23:02.017025727 -0400
+--- libtasn1-4.21.0.orig/build-aux/useless-if-before-free	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/useless-if-before-free	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -152,8 +152,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/useless-if-before-free libtasn1-4.21.0
  
  # Detect instances of "if (p) free (p);".
 diff -Naur libtasn1-4.21.0.orig/build-aux/vc-list-files libtasn1-4.21.0/build-aux/vc-list-files
---- libtasn1-4.21.0.orig/build-aux/vc-list-files	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/vc-list-files	2026-10-28 01:23:02.016118910 -0400
+--- libtasn1-4.21.0.orig/build-aux/vc-list-files	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/vc-list-files	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -161,8 +161,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/vc-list-files libtasn1-4.21.0/build-au
  
  # Print a version string.
 diff -Naur libtasn1-4.21.0.orig/build-aux/ylwrap libtasn1-4.21.0/build-aux/ylwrap
---- libtasn1-4.21.0.orig/build-aux/ylwrap	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/build-aux/ylwrap	2026-10-28 01:23:02.017300650 -0400
+--- libtasn1-4.21.0.orig/build-aux/ylwrap	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/build-aux/ylwrap	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -170,8 +170,8 @@ diff -Naur libtasn1-4.21.0.orig/build-aux/ylwrap libtasn1-4.21.0/build-aux/ylwra
  
  scriptversion=2024-06-19.01; # UTC
 diff -Naur libtasn1-4.21.0.orig/configure libtasn1-4.21.0/configure
---- libtasn1-4.21.0.orig/configure	2026-01-08 07:19:22.000000000 -0500
-+++ libtasn1-4.21.0/configure	2026-10-28 01:23:01.992865495 -0400
+--- libtasn1-4.21.0.orig/configure	2026-01-08 12:19:22.000000000 +0000
++++ libtasn1-4.21.0/configure	2026-01-08 12:19:22.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash

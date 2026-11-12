@@ -1,0 +1,78 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=4.4.1
+
+ARCHIVES=(
+    dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3 https://ftpmirror.gnu.org/make/make-$VERSION.tar.gz
+    5a7c0dbaf345cda1187cbf9cb31637a2b5c14630d0811f4f0691a01d913a83ad file://make-$VERSION-fluffy-shell.patch
+    3ce9ccec18591a1b9e802800ec1b9fea93f0f541fddeb9fbf5a1fb420f5ef79e file://make-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        perl
+        sed
+        tar-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        perl
+        sed
+        tar
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i make-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i make-$VERSION-fluffy-source.patch
+
+    ./configure \
+        --prefix=/sw/make
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

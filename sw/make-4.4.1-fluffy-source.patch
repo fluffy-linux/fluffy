@@ -1,0 +1,294 @@
+diff --no-dereference -Naur make-4.4.1.orig/lib/findprog-in.c make-4.4.1/lib/findprog-in.c
+--- make-4.4.1.orig/lib/findprog-in.c	2023-02-26 16:04:31.000000000 +0000
++++ make-4.4.1/lib/findprog-in.c	2023-02-26 16:04:31.000000000 +0000
+@@ -25,6 +25,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <glob.h>
+ #include <sys/stat.h>
+ 
+ #include "filename.h"
+@@ -251,78 +252,79 @@
+         if (dir == cp)
+           dir = ".";
+ 
+-        /* Concatenate directory and dir.  */
+-        if (directory != NULL && IS_RELATIVE_FILE_NAME (dir))
++        glob_t globbuf;
++        bool have_glob = false;
++        size_t n_glob = 1;
++
++        if (strpbrk (dir, "*?[") != NULL)
+           {
+-            dir_as_prefix_to_free =
+-              concatenated_filename (directory, dir, NULL);
+-            if (dir_as_prefix_to_free == NULL)
++            if (glob (dir, 0, NULL, &globbuf) == 0)
+               {
+-                /* errno is set here.  */
+-                failure_errno = errno;
+-                goto failed;
++                have_glob = true;
++                n_glob = globbuf.gl_pathc;
+               }
+-            dir_as_prefix = dir_as_prefix_to_free;
+-          }
+-        else
+-          {
+-            dir_as_prefix_to_free = NULL;
+-            dir_as_prefix = dir;
+           }
+ 
+-        /* Try all platform-dependent suffixes.  */
+-        for (i = 0; i < sizeof (suffixes) / sizeof (suffixes[0]); i++)
++        for (size_t gi = 0; gi < n_glob; gi++)
+           {
+-            const char *suffix = suffixes[i];
++            const char *actual_dir = have_glob ? globbuf.gl_pathv[gi] : dir;
+ 
+-            #if defined _WIN32 && !defined __CYGWIN__ /* Native Windows */
+-            /* File names without a '.' are not considered executable, and
+-               for file names with a '.' no additional suffix is tried.  */
+-            if ((*suffix != '\0') != progname_has_dot)
+-            #endif
++            /* Concatenate directory and actual_dir.  */
++            if (directory != NULL && IS_RELATIVE_FILE_NAME (actual_dir))
++              {
++                dir_as_prefix_to_free =
++                  concatenated_filename (directory, actual_dir, NULL);
++                if (dir_as_prefix_to_free == NULL)
++                  {
++                    failure_errno = errno;
++                    if (have_glob)
++                      globfree (&globbuf);
++                    goto failed;
++                  }
++                dir_as_prefix = dir_as_prefix_to_free;
++              }
++            else
++              {
++                dir_as_prefix_to_free = NULL;
++                dir_as_prefix = actual_dir;
++              }
++
++            /* Try all platform-dependent suffixes.  */
++            for (i = 0; i < sizeof (suffixes) / sizeof (suffixes[0]); i++)
+               {
+-                /* Concatenate dir_as_prefix, progname, and suffix.  */
++                const char *suffix = suffixes[i];
++
+                 char *progpathname =
+                   concatenated_filename (dir_as_prefix, progname, suffix);
+ 
+                 if (progpathname == NULL)
+                   {
+-                    /* errno is set here.  */
+                     failure_errno = errno;
+                     free (dir_as_prefix_to_free);
++                    if (have_glob)
++                      globfree (&globbuf);
+                     goto failed;
+                   }
+ 
+-                /* On systems which have the eaccess() system call, let's
+-                   use it.  On other systems, let's hope that this program
+-                   is not installed setuid or setgid, so that it is ok to
+-                   call access() despite its design flaw.  */
+                 if (eaccess (progpathname, X_OK) == 0)
+                   {
+-                    /* Check that the progpathname does not point to a
+-                       directory.  */
+                     struct stat statbuf;
+ 
+                     if (stat (progpathname, &statbuf) >= 0)
+                       {
+                         if (! S_ISDIR (statbuf.st_mode))
+                           {
+-                            /* Found!  */
+                             if (strcmp (progpathname, progname) == 0)
+                               {
+                                 free (progpathname);
+-
+-                                /* Add the "./" prefix for real, that
+-                                   concatenated_filename() optimized away.
+-                                   This avoids a second PATH search when the
+-                                   caller uses execl/execv/execlp/execvp.  */
+                                 progpathname =
+                                   (char *) malloc (2 + strlen (progname) + 1);
+                                 if (progpathname == NULL)
+                                   {
+-                                    /* errno is set here.  */
+                                     failure_errno = errno;
+                                     free (dir_as_prefix_to_free);
++                                    if (have_glob)
++                                      globfree (&globbuf);
+                                     goto failed;
+                                   }
+                                 progpathname[0] = '.';
+@@ -332,6 +334,8 @@
+                               }
+ 
+                             free (dir_as_prefix_to_free);
++                            if (have_glob)
++                              globfree (&globbuf);
+                             free (path_copy);
+                             return progpathname;
+                           }
+@@ -345,44 +349,12 @@
+ 
+                 free (progpathname);
+               }
+-          }
+-        #if defined _WIN32 && !defined __CYGWIN__ /* Native Windows */
+-        if (failure_errno == ENOENT && !progname_has_dot)
+-          {
+-            /* In the loop above, we skipped suffix = "".  Do this loop
+-               round now, merely to provide a better errno than ENOENT.  */
+-
+-            char *progpathname =
+-              concatenated_filename (dir_as_prefix, progname, "");
+-
+-            if (progpathname == NULL)
+-              {
+-                /* errno is set here.  */
+-                failure_errno = errno;
+-                free (dir_as_prefix_to_free);
+-                goto failed;
+-              }
+-
+-            if (eaccess (progpathname, X_OK) == 0)
+-              {
+-                struct stat statbuf;
+-
+-                if (stat (progpathname, &statbuf) >= 0)
+-                  {
+-                    if (! S_ISDIR (statbuf.st_mode))
+-                      errno = ENOEXEC;
+-                    else
+-                      errno = EACCES;
+-                  }
+-              }
+-
+-            failure_errno = errno;
+ 
+-            free (progpathname);
++            free (dir_as_prefix_to_free);
+           }
+-        #endif
+ 
+-        free (dir_as_prefix_to_free);
++        if (have_glob)
++          globfree (&globbuf);
+ 
+         if (last)
+           break;
+diff --no-dereference -Naur make-4.4.1.orig/src/job.c make-4.4.1/src/job.c
+--- make-4.4.1.orig/src/job.c	2023-02-22 01:53:48.000000000 +0000
++++ make-4.4.1/src/job.c	2023-02-22 01:53:48.000000000 +0000
+@@ -2430,12 +2430,17 @@
+     /* execvp() will use a default PATH if none is set; emulate that.  */
+     if (p == NULL)
+       {
+-        size_t l = confstr (_CS_PATH, NULL, 0);
+-        if (l)
++        if (access ("/bin", F_OK) != 0)
++          p = "/sw/*/bin";
++        else
+           {
+-            char *dp = alloca (l);
+-            confstr (_CS_PATH, dp, l);
+-            p = dp;
++            size_t l = confstr (_CS_PATH, NULL, 0);
++            if (l)
++              {
++                char *dp = alloca (l);
++                confstr (_CS_PATH, dp, l);
++                p = dp;
++              }
+           }
+       }
+ 
+@@ -2630,7 +2635,7 @@
+ # else
+         shell = getenv ("SHELL");
+ # endif
+-        if (shell == 0)
++        if (shell == 0 || (access (shell, X_OK) != 0 && (streq (shell, "/bin/sh") || streq (shell, "/./bin/sh"))))
+           shell = default_shell;
+ 
+         argc = 1;
+@@ -2896,7 +2901,7 @@
+     shellflags = posix_pedantic && NONE_SET (flags, COMMANDS_NOERROR) ? "-ec" : "-c";
+ 
+   /* See if it is safe to parse commands internally.  */
+-  if (shell == 0)
++  if (shell == 0 || (access (shell, X_OK) != 0 && (streq (shell, "/bin/sh") || streq (shell, "/./bin/sh"))))
+     shell = default_shell;
+ #ifdef WINDOWS32
+   else if (strcmp (shell, default_shell))
+diff --no-dereference -Naur make-4.4.1.orig/src/main.c make-4.4.1/src/main.c
+--- make-4.4.1.orig/src/main.c	2023-02-21 05:03:51.000000000 +0000
++++ make-4.4.1/src/main.c	2023-02-21 05:03:51.000000000 +0000
+@@ -25,6 +25,7 @@
+ #include "debug.h"
+ #include "getopt.h"
+ #include "shuffle.h"
++#include "findprog.h"
+ 
+ #include <assert.h>
+ #ifdef _AMIGA
+@@ -2028,6 +2029,26 @@
+   /* Define the initial list of suffixes for old-style rules.  */
+   set_default_suffixes ();
+ 
++  /* Detect default shell if default /bin/sh is not accessible.  */
++  {
++    extern const char *default_shell;
++    if (access (default_shell, X_OK) != 0)
++      {
++        if (access ("/sw/bash/bin/sh", X_OK) == 0)
++          default_shell = "/sw/bash/bin/sh";
++        else if (access ("/sw/bash/bin/bash", X_OK) == 0)
++          default_shell = "/sw/bash/bin/bash";
++        else
++          {
++            const char *sh = find_in_given_path ("sh", NULL, NULL, 0);
++            if (!sh)
++              sh = find_in_given_path ("bash", NULL, NULL, 0);
++            if (sh)
++              default_shell = sh;
++          }
++      }
++  }
++
+   /* Define some internal and special variables.  */
+   define_automatic_variables ();
+ 
+diff --no-dereference -Naur make-4.4.1.orig/tests/scripts/features/exec make-4.4.1/tests/scripts/features/exec
+--- make-4.4.1.orig/tests/scripts/features/exec	2023-01-01 14:58:06.000000000 +0000
++++ make-4.4.1/tests/scripts/features/exec	2023-01-01 14:58:06.000000000 +0000
+@@ -15,8 +15,9 @@
+ $port_type eq 'UNIX' or return -1;
+ $^O =~ /cygwin/ and return -1;
+ 
+-my @shbangs = ('', '#!/bin/sh', "#!$perl_name");
+-my @shells = ('', 'SHELL=/bin/sh');
++my $default_sh = -x '/bin/sh' ? '/bin/sh' : (-x '/sw/bash/bin/sh' ? '/sw/bash/bin/sh' : '/sw/bash/bin/bash');
++my @shbangs = ('', "#!$default_sh", "#!$perl_name");
++my @shells = ('', "SHELL=$default_sh");
+ 
+ # Try whatever shell the user has, as long as it's not a C shell.
+ # The C shell is not usable with make, due to not correctly handling
+diff --no-dereference -Naur make-4.4.1.orig/tests/test_driver.pl make-4.4.1/tests/test_driver.pl
+--- make-4.4.1.orig/tests/test_driver.pl	2023-02-20 16:10:56.000000000 +0000
++++ make-4.4.1/tests/test_driver.pl	2023-02-20 16:10:56.000000000 +0000
+@@ -197,7 +197,7 @@
+   # Pull in benign variables from the user's environment
+ 
+   foreach (# POSIX-specific things
+-           'TZ', 'TMPDIR', 'HOME', 'USER', 'LOGNAME', 'PATH',
++           'TZ', 'TMPDIR', 'HOME', 'USER', 'LOGNAME', 'PATH', 'GCC_EXEC_PREFIX',
+            'LD_LIBRARY_PATH',
+            # *SAN things
+            'ASAN_OPTIONS', 'UBSAN_OPTIONS', 'LSAN_OPTIONS',

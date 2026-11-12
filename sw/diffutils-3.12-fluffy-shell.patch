@@ -1,0 +1,2076 @@
+diff --no-dereference -Naur diffutils-3.12.orig/aclocal.m4 diffutils-3.12/aclocal.m4
+--- diffutils-3.12.orig/aclocal.m4	2025-04-09 02:36:24.000000000 +0000
++++ diffutils-3.12/aclocal.m4	2025-04-09 02:36:24.000000000 +0000
+@@ -264,7 +264,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff --no-dereference -Naur diffutils-3.12.orig/bootstrap diffutils-3.12/bootstrap
+--- diffutils-3.12.orig/bootstrap	2025-04-04 21:23:42.000000000 +0000
++++ diffutils-3.12/bootstrap	2025-04-04 21:23:42.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # DO NOT EDIT! GENERATED AUTOMATICALLY!
+ 
+ # Bootstrap this package from checked-out sources.
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/announce-gen diffutils-3.12/build-aux/announce-gen
+--- diffutils-3.12.orig/build-aux/announce-gen	2025-02-01 19:18:09.000000000 +0000
++++ diffutils-3.12/build-aux/announce-gen	2025-02-01 19:18:09.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Generate a release announcement message.
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/compile diffutils-3.12/build-aux/compile
+--- diffutils-3.12.orig/build-aux/compile	2025-04-09 02:36:29.000000000 +0000
++++ diffutils-3.12/build-aux/compile	2025-04-09 02:36:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-02-03.05; # UTC
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/config.guess diffutils-3.12/build-aux/config.guess
+--- diffutils-3.12.orig/build-aux/config.guess	2024-09-10 22:24:14.000000000 +0000
++++ diffutils-3.12/build-aux/config.guess	2024-09-10 22:24:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1020,7 +1020,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/config.rpath diffutils-3.12/build-aux/config.rpath
+--- diffutils-3.12.orig/build-aux/config.rpath	2025-01-03 17:46:41.000000000 +0000
++++ diffutils-3.12/build-aux/config.rpath	2025-01-03 17:46:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/config.sub diffutils-3.12/build-aux/config.sub
+--- diffutils-3.12.orig/build-aux/config.sub	2024-09-10 22:24:14.000000000 +0000
++++ diffutils-3.12/build-aux/config.sub	2024-09-10 22:24:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/depcomp diffutils-3.12/build-aux/depcomp
+--- diffutils-3.12.orig/build-aux/depcomp	2025-01-03 17:46:41.000000000 +0000
++++ diffutils-3.12/build-aux/depcomp	2025-01-03 17:46:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/do-release-commit-and-tag diffutils-3.12/build-aux/do-release-commit-and-tag
+--- diffutils-3.12.orig/build-aux/do-release-commit-and-tag	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/build-aux/do-release-commit-and-tag	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # In a git/autoconf/automake-enabled project with a NEWS file and a version-
+ # controlled .prev-version file, automate the procedure by which we record
+ # the date, release-type and version string in the NEWS file.  That commit
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/gendocs.sh diffutils-3.12/build-aux/gendocs.sh
+--- diffutils-3.12.orig/build-aux/gendocs.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/build-aux/gendocs.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ # gendocs.sh -- generate a GNU manual in many formats.  This script is
+ #   mentioned in maintain.texi.  See the help message below for usage details.
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/git-version-gen diffutils-3.12/build-aux/git-version-gen
+--- diffutils-3.12.orig/build-aux/git-version-gen	2025-03-09 17:45:32.000000000 +0000
++++ diffutils-3.12/build-aux/git-version-gen	2025-03-09 17:45:32.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2025-01-28.09; # UTC
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/gitlog-to-changelog diffutils-3.12/build-aux/gitlog-to-changelog
+--- diffutils-3.12.orig/build-aux/gitlog-to-changelog	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/build-aux/gitlog-to-changelog	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Convert git log output to ChangeLog format.
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/gnu-web-doc-update diffutils-3.12/build-aux/gnu-web-doc-update
+--- diffutils-3.12.orig/build-aux/gnu-web-doc-update	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/build-aux/gnu-web-doc-update	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Run this after each non-alpha release, to update the web documentation at
+ # https://www.gnu.org/software/$pkg/manual/
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/gnupload diffutils-3.12/build-aux/gnupload
+--- diffutils-3.12.orig/build-aux/gnupload	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/build-aux/gnupload	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2024-12-09.08; # UTC
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/install-sh diffutils-3.12/build-aux/install-sh
+--- diffutils-3.12.orig/build-aux/install-sh	2025-01-03 17:46:41.000000000 +0000
++++ diffutils-3.12/build-aux/install-sh	2025-01-03 17:46:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/mdate-sh diffutils-3.12/build-aux/mdate-sh
+--- diffutils-3.12.orig/build-aux/mdate-sh	2025-01-03 17:46:41.000000000 +0000
++++ diffutils-3.12/build-aux/mdate-sh	2025-01-03 17:46:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it.
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/missing diffutils-3.12/build-aux/missing
+--- diffutils-3.12.orig/build-aux/missing	2025-04-09 02:36:29.000000000 +0000
++++ diffutils-3.12/build-aux/missing	2025-04-09 02:36:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/test-driver diffutils-3.12/build-aux/test-driver
+--- diffutils-3.12.orig/build-aux/test-driver	2025-04-09 02:36:31.000000000 +0000
++++ diffutils-3.12/build-aux/test-driver	2025-04-09 02:36:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/update-copyright diffutils-3.12/build-aux/update-copyright
+--- diffutils-3.12.orig/build-aux/update-copyright	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/build-aux/update-copyright	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Update an FSF copyright year list to include the current year.
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/useless-if-before-free diffutils-3.12/build-aux/useless-if-before-free
+--- diffutils-3.12.orig/build-aux/useless-if-before-free	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/build-aux/useless-if-before-free	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Detect instances of "if (p) free (p);".
+diff --no-dereference -Naur diffutils-3.12.orig/build-aux/vc-list-files diffutils-3.12/build-aux/vc-list-files
+--- diffutils-3.12.orig/build-aux/vc-list-files	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/build-aux/vc-list-files	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # List version-controlled file names.
+ 
+ # Print a version string.
+diff --no-dereference -Naur diffutils-3.12.orig/configure diffutils-3.12/configure
+--- diffutils-3.12.orig/configure	2025-04-09 02:37:56.000000000 +0000
++++ diffutils-3.12/configure	2025-04-09 02:37:56.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72.76-2f64 for GNU diffutils 3.12.
+ #
+@@ -287,7 +287,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -6046,7 +6046,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@printf '%s\n' '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -7627,7 +7627,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -11044,7 +11044,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -11228,7 +11228,7 @@
+ else case e in #(
+   e)
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+@@ -59934,7 +59934,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -59947,7 +59947,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -60064,7 +60064,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -60077,7 +60077,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -60143,7 +60143,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -60156,7 +60156,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+diff --no-dereference -Naur diffutils-3.12.orig/exgettext diffutils-3.12/exgettext
+--- diffutils-3.12.orig/exgettext	2025-01-12 18:27:47.000000000 +0000
++++ diffutils-3.12/exgettext	2025-01-12 18:27:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper around gettext for programs using the msgid convention.
+ 
+ # Copyright (C) 1998, 2001, 2004, 2009-2013, 2015-2025 Free Software
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/init.sh diffutils-3.12/gnulib-tests/init.sh
+--- diffutils-3.12.orig/gnulib-tests/init.sh	2025-04-04 21:21:18.000000000 +0000
++++ diffutils-3.12/gnulib-tests/init.sh	2025-04-04 21:21:18.000000000 +0000
+@@ -20,7 +20,7 @@
+ #
+ # The typical skeleton of a test looks like this:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . "${srcdir=.}/init.sh"; path_prepend_ .
+ #   Execute some commands.
+ #   Note that these commands are executed in a subdirectory, therefore you
+@@ -68,7 +68,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -130,7 +130,7 @@
+ 
+ # We require $(...) support unconditionally.
+ # We require that the printf built-in work correctly regarding octal escapes;
+-# this eliminates /bin/sh on AIX 7.2.
++# this eliminates /sw/bash/bin/bash on AIX 7.2.
+ # We require non-surprising "local" semantics (this eliminates dash).
+ # This takes the admittedly draconian step of eliminating dash, because the
+ # assignment tab=$(printf '\t') works fine, yet preceding it with "local "
+@@ -149,10 +149,10 @@
+ # If no acceptable shell is found, skip the current test.
+ #
+ # The "...set -x; P=1 true 2>err..." test is to disqualify any shell that
+-# emits "P=1" into err, as /bin/sh from SunOS 5.11 and OpenBSD 4.7 do.
++# emits "P=1" into err, as /sw/bash/bin/bash from SunOS 5.11 and OpenBSD 4.7 do.
+ #
+ # Use "9" to indicate success (rather than 0), in case some shell acts
+-# like Solaris 10's /bin/sh but exits successfully instead of with status 2.
++# like Solaris 10's /sw/bash/bin/bash but exits successfully instead of with status 2.
+ 
+ # Eval this code in a subshell to determine a shell's suitability.
+ # 10 - passes all tests; ok to use
+@@ -194,7 +194,7 @@
+ 
+   # Search for a shell that meets our requirements.
+   for re_shell_ in __current__ "${CONFIG_SHELL:-no_shell}" \
+-      /bin/sh bash dash zsh pdksh fail
++      /sw/bash/bin/bash bash dash zsh pdksh fail
+   do
+     test "$re_shell_" = no_shell && continue
+ 
+@@ -209,7 +209,7 @@
+     # When testing the current shell, simply "eval" the test code.
+     # Otherwise, run it via $re_shell_ -c ...
+     if test "$re_shell_" = __current__; then
+-      # 'eval'ing this code makes Solaris 10's /bin/sh exit with
++      # 'eval'ing this code makes Solaris 10's /sw/bash/bin/bash exit with
+       # $? set to 2.  It does not evaluate any of the code after the
+       # "unexpected" first '('.  Thus, we must run it in a subshell.
+       ( eval "$gl_shell_test_script_" ) > /dev/null 2>&1
+@@ -410,7 +410,7 @@
+ {
+   if test "$VERBOSE" = yes; then
+     # Test whether set -x may cause the selected shell to corrupt an
+-    # application's stderr.  Many do, including zsh-4.3.10 and the /bin/sh
++    # application's stderr.  Many do, including zsh-4.3.10 and the /sw/bash/bin/bash
+     # from SunOS 5.11, OpenBSD 4.7 and Irix 6.5.
+     # If enabling verbose output this way would cause trouble, simply
+     # issue a warning and refrain.
+@@ -590,9 +590,9 @@
+ 
+ # The interpreter for Bourne-shell scripts.
+ # No special standards compatibility requirements.
+-# Some environments, such as Android, don't have /bin/sh.
+-if test -f /bin/sh$EXEEXT; then
+-  BOURNE_SHELL=/bin/sh
++# Some environments, such as Android, don't have /sw/bash/bin/bash.
++if test -f /sw/bash/bin/bash$EXEEXT; then
++  BOURNE_SHELL=/sw/bash/bin/bash
+ else
+   BOURNE_SHELL=sh
+ fi
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-binary-io.sh diffutils-3.12/gnulib-tests/test-binary-io.sh
+--- diffutils-3.12.orig/gnulib-tests/test-binary-io.sh	2022-12-11 16:56:15.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-binary-io.sh	2022-12-11 16:56:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-btoc32-1.sh diffutils-3.12/gnulib-tests/test-btoc32-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-btoc32-1.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-btoc32-1.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-btoc32-2.sh diffutils-3.12/gnulib-tests/test-btoc32-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-btoc32-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-btoc32-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-btoc32-3.sh diffutils-3.12/gnulib-tests/test-btoc32-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-btoc32-3.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-btoc32-3.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-btowc-1.sh diffutils-3.12/gnulib-tests/test-btowc-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-btowc-1.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-btowc-1.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-btowc-2.sh diffutils-3.12/gnulib-tests/test-btowc-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-btowc-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-btowc-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-btowc-3.sh diffutils-3.12/gnulib-tests/test-btowc-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-btowc-3.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-btowc-3.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c-stack.sh diffutils-3.12/gnulib-tests/test-c-stack.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c-stack.sh	2022-12-11 16:56:15.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c-stack.sh	2022-12-11 16:56:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c-stack2.sh diffutils-3.12/gnulib-tests/test-c-stack2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c-stack2.sh	2022-12-11 16:56:15.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c-stack2.sh	2022-12-11 16:56:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c-strcasecmp.sh diffutils-3.12/gnulib-tests/test-c-strcasecmp.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c-strcasecmp.sh	2025-02-16 15:18:27.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c-strcasecmp.sh	2025-02-16 15:18:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the C locale.
+ ${CHECKER} ./test-c-strcasecmp${EXEEXT} || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c-strncasecmp.sh diffutils-3.12/gnulib-tests/test-c-strncasecmp.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c-strncasecmp.sh	2025-02-16 15:18:27.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c-strncasecmp.sh	2025-02-16 15:18:27.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the C locale.
+ ${CHECKER} ./test-c-strncasecmp${EXEEXT} || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isalnum.sh diffutils-3.12/gnulib-tests/test-c32isalnum.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isalnum.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isalnum.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isalnum${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isalpha.sh diffutils-3.12/gnulib-tests/test-c32isalpha.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isalpha.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isalpha.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isalpha${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isblank.sh diffutils-3.12/gnulib-tests/test-c32isblank.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isblank.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isblank.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isblank${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32iscntrl.sh diffutils-3.12/gnulib-tests/test-c32iscntrl.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32iscntrl.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32iscntrl.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32iscntrl${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isdigit.sh diffutils-3.12/gnulib-tests/test-c32isdigit.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isdigit.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isdigit.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isdigit${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isgraph.sh diffutils-3.12/gnulib-tests/test-c32isgraph.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isgraph.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isgraph.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isgraph${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32islower.sh diffutils-3.12/gnulib-tests/test-c32islower.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32islower.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32islower.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32islower${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isprint.sh diffutils-3.12/gnulib-tests/test-c32isprint.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isprint.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isprint.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isprint${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32ispunct.sh diffutils-3.12/gnulib-tests/test-c32ispunct.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32ispunct.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32ispunct.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32ispunct${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isspace.sh diffutils-3.12/gnulib-tests/test-c32isspace.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isspace.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isspace.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isspace${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isupper.sh diffutils-3.12/gnulib-tests/test-c32isupper.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isupper.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isupper.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isupper${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32isxdigit.sh diffutils-3.12/gnulib-tests/test-c32isxdigit.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32isxdigit.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32isxdigit.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isxdigit${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-2.sh diffutils-3.12/gnulib-tests/test-c32rtomb-w32-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32rtomb-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-3.sh diffutils-3.12/gnulib-tests/test-c32rtomb-w32-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32rtomb-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-4.sh diffutils-3.12/gnulib-tests/test-c32rtomb-w32-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32rtomb-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-5.sh diffutils-3.12/gnulib-tests/test-c32rtomb-w32-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32rtomb-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-6.sh diffutils-3.12/gnulib-tests/test-c32rtomb-w32-6.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32rtomb-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-7.sh diffutils-3.12/gnulib-tests/test-c32rtomb-w32-7.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32rtomb-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-8.sh diffutils-3.12/gnulib-tests/test-c32rtomb-w32-8.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32rtomb-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32rtomb-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32rtomb.sh diffutils-3.12/gnulib-tests/test-c32rtomb.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32rtomb.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32rtomb.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32rtomb${EXEEXT} 1 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-c32tolower.sh diffutils-3.12/gnulib-tests/test-c32tolower.sh
+--- diffutils-3.12.orig/gnulib-tests/test-c32tolower.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-c32tolower.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Allow distinguishing the various invocations in the .log file.
+ set -x
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-error.sh diffutils-3.12/gnulib-tests/test-error.sh
+--- diffutils-3.12.orig/gnulib-tests/test-error.sh	2023-01-15 21:09:38.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-error.sh	2023-01-15 21:09:38.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test of the 'error' module.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-exclude1.sh diffutils-3.12/gnulib-tests/test-exclude1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-exclude1.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-exclude1.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for exclude.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-exclude2.sh diffutils-3.12/gnulib-tests/test-exclude2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-exclude2.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-exclude2.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for exclude.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-exclude3.sh diffutils-3.12/gnulib-tests/test-exclude3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-exclude3.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-exclude3.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for exclude.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-exclude4.sh diffutils-3.12/gnulib-tests/test-exclude4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-exclude4.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-exclude4.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for exclude.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-exclude5.sh diffutils-3.12/gnulib-tests/test-exclude5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-exclude5.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-exclude5.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for exclude.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-exclude6.sh diffutils-3.12/gnulib-tests/test-exclude6.sh
+--- diffutils-3.12.orig/gnulib-tests/test-exclude6.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-exclude6.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for exclude.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-exclude7.sh diffutils-3.12/gnulib-tests/test-exclude7.sh
+--- diffutils-3.12.orig/gnulib-tests/test-exclude7.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-exclude7.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for exclude.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-exclude8.sh diffutils-3.12/gnulib-tests/test-exclude8.sh
+--- diffutils-3.12.orig/gnulib-tests/test-exclude8.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-exclude8.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for exclude.
+ # Copyright (C) 2010-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-1.sh diffutils-3.12/gnulib-tests/test-fnmatch-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-1.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-1.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-2.sh diffutils-3.12/gnulib-tests/test-fnmatch-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-3.sh diffutils-3.12/gnulib-tests/test-fnmatch-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-3.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-3.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-4.sh diffutils-3.12/gnulib-tests/test-fnmatch-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-5.sh diffutils-3.12/gnulib-tests/test-fnmatch-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-2.sh diffutils-3.12/gnulib-tests/test-fnmatch-w32-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-3.sh diffutils-3.12/gnulib-tests/test-fnmatch-w32-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-4.sh diffutils-3.12/gnulib-tests/test-fnmatch-w32-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-5.sh diffutils-3.12/gnulib-tests/test-fnmatch-w32-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-6.sh diffutils-3.12/gnulib-tests/test-fnmatch-w32-6.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-7.sh diffutils-3.12/gnulib-tests/test-fnmatch-w32-7.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-8.sh diffutils-3.12/gnulib-tests/test-fnmatch-w32-8.sh
+--- diffutils-3.12.orig/gnulib-tests/test-fnmatch-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-fnmatch-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-ftruncate.sh diffutils-3.12/gnulib-tests/test-ftruncate.sh
+--- diffutils-3.12.orig/gnulib-tests/test-ftruncate.sh	2019-03-17 21:27:38.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-ftruncate.sh	2019-03-17 21:27:38.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftruncate${EXEEXT} "$srcdir/test-ftruncate.sh"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-init.sh diffutils-3.12/gnulib-tests/test-init.sh
+--- diffutils-3.12.orig/gnulib-tests/test-init.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-init.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for init.sh
+ # Copyright (C) 2011-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-iswdigit.sh diffutils-3.12/gnulib-tests/test-iswdigit.sh
+--- diffutils-3.12.orig/gnulib-tests/test-iswdigit.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-iswdigit.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswdigit${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-iswpunct.sh diffutils-3.12/gnulib-tests/test-iswpunct.sh
+--- diffutils-3.12.orig/gnulib-tests/test-iswpunct.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-iswpunct.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswpunct${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-iswxdigit.sh diffutils-3.12/gnulib-tests/test-iswxdigit.sh
+--- diffutils-3.12.orig/gnulib-tests/test-iswxdigit.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-iswxdigit.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswxdigit${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-localcharset-w32utf8.sh diffutils-3.12/gnulib-tests/test-localcharset-w32utf8.sh
+--- diffutils-3.12.orig/gnulib-tests/test-localcharset-w32utf8.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-localcharset-w32utf8.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-1.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-1.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-1.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-2.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-3.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-3.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-3.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-4.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-5.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-2.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-3.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-4.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-5.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-6.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-6.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-7.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-7.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-8.sh diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-8.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtoc32-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtoc32-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-1.sh diffutils-3.12/gnulib-tests/test-mbrtowc-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-1.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-1.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-2.sh diffutils-3.12/gnulib-tests/test-mbrtowc-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-3.sh diffutils-3.12/gnulib-tests/test-mbrtowc-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-3.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-3.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-4.sh diffutils-3.12/gnulib-tests/test-mbrtowc-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-5.sh diffutils-3.12/gnulib-tests/test-mbrtowc-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-2.sh diffutils-3.12/gnulib-tests/test-mbrtowc-w32-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-3.sh diffutils-3.12/gnulib-tests/test-mbrtowc-w32-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-4.sh diffutils-3.12/gnulib-tests/test-mbrtowc-w32-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-5.sh diffutils-3.12/gnulib-tests/test-mbrtowc-w32-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-6.sh diffutils-3.12/gnulib-tests/test-mbrtowc-w32-6.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-7.sh diffutils-3.12/gnulib-tests/test-mbrtowc-w32-7.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-8.sh diffutils-3.12/gnulib-tests/test-mbrtowc-w32-8.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32utf8.sh diffutils-3.12/gnulib-tests/test-mbrtowc-w32utf8.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbrtowc-w32utf8.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbrtowc-w32utf8.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbscasecmp.sh diffutils-3.12/gnulib-tests/test-mbscasecmp.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbscasecmp.sh	2022-10-09 14:50:30.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbscasecmp.sh	2022-10-09 14:50:30.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific Turkish locale is installed.
+ : "${LOCALE_TR_UTF8=tr_TR.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsinit.sh diffutils-3.12/gnulib-tests/test-mbsinit.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsinit.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsinit.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-1.sh diffutils-3.12/gnulib-tests/test-mbsrtoc32s-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-1.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtoc32s-1.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-2.sh diffutils-3.12/gnulib-tests/test-mbsrtoc32s-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtoc32s-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-3.sh diffutils-3.12/gnulib-tests/test-mbsrtoc32s-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-3.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtoc32s-3.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-4.sh diffutils-3.12/gnulib-tests/test-mbsrtoc32s-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtoc32s-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-5.sh diffutils-3.12/gnulib-tests/test-mbsrtoc32s-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtoc32s-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtoc32s-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-1.sh diffutils-3.12/gnulib-tests/test-mbsrtowcs-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-1.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtowcs-1.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-2.sh diffutils-3.12/gnulib-tests/test-mbsrtowcs-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtowcs-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-3.sh diffutils-3.12/gnulib-tests/test-mbsrtowcs-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-3.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtowcs-3.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-4.sh diffutils-3.12/gnulib-tests/test-mbsrtowcs-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtowcs-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-5.sh diffutils-3.12/gnulib-tests/test-mbsrtowcs-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mbsrtowcs-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mbsrtowcs-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mcel-1.sh diffutils-3.12/gnulib-tests/test-mcel-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mcel-1.sh	2024-07-04 20:19:51.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mcel-1.sh	2024-07-04 20:19:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mcel-2.sh diffutils-3.12/gnulib-tests/test-mcel-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mcel-2.sh	2024-07-04 20:19:51.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mcel-2.sh	2024-07-04 20:19:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mcel-3.sh diffutils-3.12/gnulib-tests/test-mcel-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mcel-3.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mcel-3.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mcel-4.sh diffutils-3.12/gnulib-tests/test-mcel-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mcel-4.sh	2024-07-04 20:19:51.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mcel-4.sh	2024-07-04 20:19:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-mcel-5.sh diffutils-3.12/gnulib-tests/test-mcel-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-mcel-5.sh	2024-07-04 20:19:51.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-mcel-5.sh	2024-07-04 20:19:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-nl_langinfo1.sh diffutils-3.12/gnulib-tests/test-nl_langinfo1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-nl_langinfo1.sh	2023-04-12 20:58:14.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-nl_langinfo1.sh	2023-04-12 20:58:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LC_ALL=C ${CHECKER} ./test-nl_langinfo1${EXEEXT} 0 || exit 1
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-nl_langinfo2.sh diffutils-3.12/gnulib-tests/test-nl_langinfo2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-nl_langinfo2.sh	2023-04-12 20:58:14.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-nl_langinfo2.sh	2023-04-12 20:58:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # The name of a specific traditional locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-nstrftime-1.sh diffutils-3.12/gnulib-tests/test-nstrftime-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-nstrftime-1.sh	2024-02-19 05:35:07.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-nstrftime-1.sh	2024-02-19 05:35:07.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LC_ALL=C ${CHECKER} ./test-nstrftime${EXEEXT} || exit 1
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-nstrftime-2.sh diffutils-3.12/gnulib-tests/test-nstrftime-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-nstrftime-2.sh	2024-02-19 05:35:07.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-nstrftime-2.sh	2024-02-19 05:35:07.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ : "${LOCALE_FR=fr_FR}"
+ : "${LOCALE_FR_UTF8=fr_FR.UTF-8}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-perror.sh diffutils-3.12/gnulib-tests/test-perror.sh
+--- diffutils-3.12.orig/gnulib-tests/test-perror.sh	2022-10-09 14:50:30.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-perror.sh	2022-10-09 14:50:30.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-select-in.sh diffutils-3.12/gnulib-tests/test-select-in.sh
+--- diffutils-3.12.orig/gnulib-tests/test-select-in.sh	2022-12-11 16:56:15.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-select-in.sh	2022-12-11 16:56:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test select() on file descriptors opened for reading.
+ 
+ # This test is known to fail on Solaris 2.6 and older, due to its handling
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-select-out.sh diffutils-3.12/gnulib-tests/test-select-out.sh
+--- diffutils-3.12.orig/gnulib-tests/test-select-out.sh	2022-12-11 16:56:15.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-select-out.sh	2022-12-11 16:56:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test select() on file descriptors opened for writing.
+ 
+ tmpfiles=""
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-strcasecmp-1.sh diffutils-3.12/gnulib-tests/test-strcasecmp-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-strcasecmp-1.sh	2025-02-18 02:04:03.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-strcasecmp-1.sh	2025-02-18 02:04:03.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-strcasecmp-2.sh diffutils-3.12/gnulib-tests/test-strcasecmp-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-strcasecmp-2.sh	2025-02-18 02:04:03.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-strcasecmp-2.sh	2025-02-18 02:04:03.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-strncasecmp-1.sh diffutils-3.12/gnulib-tests/test-strncasecmp-1.sh
+--- diffutils-3.12.orig/gnulib-tests/test-strncasecmp-1.sh	2025-02-18 02:04:03.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-strncasecmp-1.sh	2025-02-18 02:04:03.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C \
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-strncasecmp-2.sh diffutils-3.12/gnulib-tests/test-strncasecmp-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-strncasecmp-2.sh	2025-02-18 02:04:03.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-strncasecmp-2.sh	2025-02-18 02:04:03.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-update-copyright.sh diffutils-3.12/gnulib-tests/test-update-copyright.sh
+--- diffutils-3.12.orig/gnulib-tests/test-update-copyright.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-update-copyright.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for update-copyright.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+@@ -32,20 +32,20 @@
+ TMP=$TMP_BASE
+ s=$TMP-script
+ cat <<\EOF > $s
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ # This is a prologue that allows to run a perl script as an executable
+ # on systems that are compliant to a POSIX version before POSIX:2017.
+ # On such systems, the usual invocation of an executable through execlp()
+ # or execvp() fails with ENOEXEC if it is a script that does not start
+ # with a #! line.  The script interpreter mentioned in the #! line has
+-# to be /bin/sh, because on GuixSD systems that is the only program that
++# to be /sw/bash/bin/bash, because on GuixSD systems that is the only program that
+ # has a fixed file name.  The second line is essential for perl and is
+ # also useful for editing this file in Emacs.  The next two lines below
+ # are valid code in both sh and perl.  When executed by sh, they re-execute
+ # the script through the perl program found in $PATH.  The '-x' option
+ # is essential as well; without it, perl would re-execute the script
+-# through /bin/sh.  When executed by perl, the next two lines are a no-op.
++# through /sw/bash/bin/bash.  When executed by perl, the next two lines are a no-op.
+ eval 'exec perl -wSx -pi "$0" "$@"'
+      if 0;
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-vc-list-files-cvs.sh diffutils-3.12/gnulib-tests/test-vc-list-files-cvs.sh
+--- diffutils-3.12.orig/gnulib-tests/test-vc-list-files-cvs.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-vc-list-files-cvs.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for vc-list-files
+ # Copyright (C) 2008-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+@@ -28,7 +28,7 @@
+   # On the second iteration, ensure that cvsu fails, so we'll
+   # exercise the awk-using code.
+   if test $i = without; then
+-    printf '%s\n' '#!/bin/sh' 'exit 1' > cvsu
++    printf '%s\n' '#!/sw/bash/bin/bash' 'exit 1' > cvsu
+     chmod a+x cvsu
+     PATH=`pwd`:$PATH
+     export PATH
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-vc-list-files-git.sh diffutils-3.12/gnulib-tests/test-vc-list-files-git.sh
+--- diffutils-3.12.orig/gnulib-tests/test-vc-list-files-git.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-vc-list-files-git.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for vc-list-files
+ # Copyright (C) 2008-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-verify.sh diffutils-3.12/gnulib-tests/test-verify.sh
+--- diffutils-3.12.orig/gnulib-tests/test-verify.sh	2017-05-18 16:23:32.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-verify.sh	2017-05-18 16:23:32.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ . "${srcdir=.}/init.sh"
+ 
+ # We are not interested in triggering bugs in the compilers and tools
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-version-etc.sh diffutils-3.12/gnulib-tests/test-version-etc.sh
+--- diffutils-3.12.orig/gnulib-tests/test-version-etc.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-version-etc.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for version-etc.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-2.sh diffutils-3.12/gnulib-tests/test-wcrtomb-w32-2.sh
+--- diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-wcrtomb-w32-2.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-3.sh diffutils-3.12/gnulib-tests/test-wcrtomb-w32-3.sh
+--- diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-wcrtomb-w32-3.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-4.sh diffutils-3.12/gnulib-tests/test-wcrtomb-w32-4.sh
+--- diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-wcrtomb-w32-4.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-5.sh diffutils-3.12/gnulib-tests/test-wcrtomb-w32-5.sh
+--- diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-wcrtomb-w32-5.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-6.sh diffutils-3.12/gnulib-tests/test-wcrtomb-w32-6.sh
+--- diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-wcrtomb-w32-6.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-7.sh diffutils-3.12/gnulib-tests/test-wcrtomb-w32-7.sh
+--- diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-wcrtomb-w32-7.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-8.sh diffutils-3.12/gnulib-tests/test-wcrtomb-w32-8.sh
+--- diffutils-3.12.orig/gnulib-tests/test-wcrtomb-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-wcrtomb-w32-8.sh	2024-01-05 17:00:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-wcrtomb.sh diffutils-3.12/gnulib-tests/test-wcrtomb.sh
+--- diffutils-3.12.orig/gnulib-tests/test-wcrtomb.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-wcrtomb.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-wcrtomb${EXEEXT} 1 || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-xalloc-die.sh diffutils-3.12/gnulib-tests/test-xalloc-die.sh
+--- diffutils-3.12.orig/gnulib-tests/test-xalloc-die.sh	2025-01-02 02:33:12.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-xalloc-die.sh	2025-01-02 02:33:12.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for xalloc_die.
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-xstdopen.sh diffutils-3.12/gnulib-tests/test-xstdopen.sh
+--- diffutils-3.12.orig/gnulib-tests/test-xstdopen.sh	2019-11-09 01:55:38.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-xstdopen.sh	2019-11-09 01:55:38.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test with all of stdin, stdout, stderr open.
+ ${CHECKER} ./test-xstdopen${EXEEXT} || exit 1
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-xstrtoimax.sh diffutils-3.12/gnulib-tests/test-xstrtoimax.sh
+--- diffutils-3.12.orig/gnulib-tests/test-xstrtoimax.sh	2022-10-09 14:50:30.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-xstrtoimax.sh	2022-10-09 14:50:30.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/test-xstrtol.sh diffutils-3.12/gnulib-tests/test-xstrtol.sh
+--- diffutils-3.12.orig/gnulib-tests/test-xstrtol.sh	2024-09-10 21:57:17.000000000 +0000
++++ diffutils-3.12/gnulib-tests/test-xstrtol.sh	2024-09-10 21:57:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/gnulib-tests/uniwidth/test-uc_width2.sh diffutils-3.12/gnulib-tests/uniwidth/test-uc_width2.sh
+--- diffutils-3.12.orig/gnulib-tests/uniwidth/test-uc_width2.sh	2024-09-14 16:43:24.000000000 +0000
++++ diffutils-3.12/gnulib-tests/uniwidth/test-uc_width2.sh	2024-09-14 16:43:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff --no-dereference -Naur diffutils-3.12.orig/m4/lib-ld.m4 diffutils-3.12/m4/lib-ld.m4
+--- diffutils-3.12.orig/m4/lib-ld.m4	2025-01-03 17:46:41.000000000 +0000
++++ diffutils-3.12/m4/lib-ld.m4	2025-01-03 17:46:41.000000000 +0000
+@@ -39,7 +39,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+diff --no-dereference -Naur diffutils-3.12.orig/m4/lib-link.m4 diffutils-3.12/m4/lib-link.m4
+--- diffutils-3.12.orig/m4/lib-link.m4	2025-01-03 17:46:41.000000000 +0000
++++ diffutils-3.12/m4/lib-link.m4	2025-01-03 17:46:41.000000000 +0000
+@@ -134,7 +134,7 @@
+   AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT]) dnl we use $ac_aux_dir
+   AC_CACHE_CHECK([for shared library run path origin], [acl_cv_rpath], [
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff --no-dereference -Naur diffutils-3.12.orig/m4/progtest.m4 diffutils-3.12/m4/progtest.m4
+--- diffutils-3.12.orig/m4/progtest.m4	2024-09-10 22:24:19.000000000 +0000
++++ diffutils-3.12/m4/progtest.m4	2024-09-10 22:24:19.000000000 +0000
+@@ -27,7 +27,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -40,7 +40,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+diff --no-dereference -Naur diffutils-3.12.orig/man/help2man diffutils-3.12/man/help2man
+--- diffutils-3.12.orig/man/help2man	2025-01-12 18:27:47.000000000 +0000
++++ diffutils-3.12/man/help2man	2025-01-12 18:27:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ 
+ # Generate a short man page from --help and --version output.
+ # Copyright (C) 1997-2005, 2009-2017, 2020-2021, 2025 Free Software Foundation,
+diff --no-dereference -Naur diffutils-3.12.orig/po/Makefile.in.in diffutils-3.12/po/Makefile.in.in
+--- diffutils-3.12.orig/po/Makefile.in.in	2025-04-09 02:36:31.000000000 +0000
++++ diffutils-3.12/po/Makefile.in.in	2025-04-09 02:36:31.000000000 +0000
+@@ -16,7 +16,7 @@
+ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
+ 
+ SED = @SED@
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ @SET_MAKE@
+ 
+ srcdir = @srcdir@
+@@ -463,7 +463,7 @@
+ # Recreate Makefile by invoking config.status. Explicitly invoke the shell,
+ # because execution permission bits may not work on the current file system.
+ # Use @SHELL@, which is the shell determined by autoconf for the use by its
+-# scripts, not $(SHELL) which is hardwired to /bin/sh and may be deficient.
++# scripts, not $(SHELL) which is hardwired to /sw/bash/bin/bash and may be deficient.
+ Makefile: Makefile.in.in Makevars $(top_builddir)/config.status @POMAKEFILEDEPS@
+ 	cd $(top_builddir) \
+ 	  && @SHELL@ ./config.status $(subdir)/$@.in po-directories
+diff --no-dereference -Naur diffutils-3.12.orig/tests/basic diffutils-3.12/tests/basic
+--- diffutils-3.12.orig/tests/basic	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/basic	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # small examples
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/bignum diffutils-3.12/tests/bignum
+--- diffutils-3.12.orig/tests/bignum	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/bignum	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # big numbers
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/binary diffutils-3.12/tests/binary
+--- diffutils-3.12.orig/tests/binary	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/binary	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # small examples
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/brief-vs-stat-zero-kernel-lies diffutils-3.12/tests/brief-vs-stat-zero-kernel-lies
+--- diffutils-3.12.orig/tests/brief-vs-stat-zero-kernel-lies	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/brief-vs-stat-zero-kernel-lies	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Before diff-3.4, diff --brief could mistakenly declare a difference.
+ # For example, when comparing a file like /proc/cmdline (for which the linux
+ # kernel reports a st_size of 0 even though it is not an empty file) to a
+diff --no-dereference -Naur diffutils-3.12.orig/tests/bug-64316 diffutils-3.12/tests/bug-64316
+--- diffutils-3.12.orig/tests/bug-64316	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/bug-64316	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test for signed integer overflow bug within diff.
+ # Bug reported by Gisele Vanem <http://bugs.gnu.org/64316>.
+ # Compile with gcc -fsanitize=undefined to test for this bug.
+diff --no-dereference -Naur diffutils-3.12.orig/tests/cmp diffutils-3.12/tests/cmp
+--- diffutils-3.12.orig/tests/cmp	2025-04-08 20:39:31.000000000 +0000
++++ diffutils-3.12/tests/cmp	2025-04-08 20:39:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test 'cmp'.
+ 
+ # Copyright 2017-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur diffutils-3.12.orig/tests/colliding-file-names diffutils-3.12/tests/colliding-file-names
+--- diffutils-3.12.orig/tests/colliding-file-names	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/colliding-file-names	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Check that diff responds well if a directory has multiple file names
+ # that compare equal.
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/tests/colors diffutils-3.12/tests/colors
+--- diffutils-3.12.orig/tests/colors	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/colors	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/tests/diff3 diffutils-3.12/tests/diff3
+--- diffutils-3.12.orig/tests/diff3	2025-03-09 17:45:36.000000000 +0000
++++ diffutils-3.12/tests/diff3	2025-03-09 17:45:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This would malfunction in diff-3.4
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/empty-file diffutils-3.12/tests/empty-file
+--- diffutils-3.12.orig/tests/empty-file	2025-02-24 03:16:10.000000000 +0000
++++ diffutils-3.12/tests/empty-file	2025-02-24 03:16:10.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test empty files
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/excess-slash diffutils-3.12/tests/excess-slash
+--- diffutils-3.12.orig/tests/excess-slash	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/excess-slash	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that no excess slash appears in diff -r output.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/expand-tabs diffutils-3.12/tests/expand-tabs
+--- diffutils-3.12.orig/tests/expand-tabs	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/expand-tabs	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test tab expansion.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/filename-quoting diffutils-3.12/tests/filename-quoting
+--- diffutils-3.12.orig/tests/filename-quoting	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/filename-quoting	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # filename quoting
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/function-line-vs-leading-space diffutils-3.12/tests/function-line-vs-leading-space
+--- diffutils-3.12.orig/tests/function-line-vs-leading-space	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/function-line-vs-leading-space	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Demonstrate how -F RE behavior changed after diff-2.9.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/help-version diffutils-3.12/tests/help-version
+--- diffutils-3.12.orig/tests/help-version	2025-01-12 18:27:47.000000000 +0000
++++ diffutils-3.12/tests/help-version	2025-01-12 18:27:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Make sure all these programs work properly
+ # when invoked with --help or --version.
+ 
+diff --no-dereference -Naur diffutils-3.12.orig/tests/ifdef diffutils-3.12/tests/ifdef
+--- diffutils-3.12.orig/tests/ifdef	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/ifdef	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # --ifdef
+ 
+ # Bug reported by Robert Webb in <http://bugs.gnu.org/61193>.
+diff --no-dereference -Naur diffutils-3.12.orig/tests/ignore-case diffutils-3.12/tests/ignore-case
+--- diffutils-3.12.orig/tests/ignore-case	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/ignore-case	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test ignoring case
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/ignore-matching-lines diffutils-3.12/tests/ignore-matching-lines
+--- diffutils-3.12.orig/tests/ignore-matching-lines	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/ignore-matching-lines	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # --ignore-matching-lines
+ 
+ # Bug reported by Vincent Lefevre in <http://bugs.gnu.org/16864>.
+diff --no-dereference -Naur diffutils-3.12.orig/tests/ignore-tab-expansion diffutils-3.12/tests/ignore-tab-expansion
+--- diffutils-3.12.orig/tests/ignore-tab-expansion	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/ignore-tab-expansion	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test ignoring tab expansion.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/init.sh diffutils-3.12/tests/init.sh
+--- diffutils-3.12.orig/tests/init.sh	2025-04-04 21:24:22.000000000 +0000
++++ diffutils-3.12/tests/init.sh	2025-04-04 21:24:22.000000000 +0000
+@@ -20,7 +20,7 @@
+ #
+ # The typical skeleton of a test looks like this:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . "${srcdir=.}/init.sh"; path_prepend_ .
+ #   Execute some commands.
+ #   Note that these commands are executed in a subdirectory, therefore you
+@@ -68,7 +68,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -130,7 +130,7 @@
+ 
+ # We require $(...) support unconditionally.
+ # We require that the printf built-in work correctly regarding octal escapes;
+-# this eliminates /bin/sh on AIX 7.2.
++# this eliminates /sw/bash/bin/bash on AIX 7.2.
+ # We require non-surprising "local" semantics (this eliminates dash).
+ # This takes the admittedly draconian step of eliminating dash, because the
+ # assignment tab=$(printf '\t') works fine, yet preceding it with "local "
+@@ -149,10 +149,10 @@
+ # If no acceptable shell is found, skip the current test.
+ #
+ # The "...set -x; P=1 true 2>err..." test is to disqualify any shell that
+-# emits "P=1" into err, as /bin/sh from SunOS 5.11 and OpenBSD 4.7 do.
++# emits "P=1" into err, as /sw/bash/bin/bash from SunOS 5.11 and OpenBSD 4.7 do.
+ #
+ # Use "9" to indicate success (rather than 0), in case some shell acts
+-# like Solaris 10's /bin/sh but exits successfully instead of with status 2.
++# like Solaris 10's /sw/bash/bin/bash but exits successfully instead of with status 2.
+ 
+ # Eval this code in a subshell to determine a shell's suitability.
+ # 10 - passes all tests; ok to use
+@@ -194,7 +194,7 @@
+ 
+   # Search for a shell that meets our requirements.
+   for re_shell_ in __current__ "${CONFIG_SHELL:-no_shell}" \
+-      /bin/sh bash dash zsh pdksh fail
++      /sw/bash/bin/bash bash dash zsh pdksh fail
+   do
+     test "$re_shell_" = no_shell && continue
+ 
+@@ -209,7 +209,7 @@
+     # When testing the current shell, simply "eval" the test code.
+     # Otherwise, run it via $re_shell_ -c ...
+     if test "$re_shell_" = __current__; then
+-      # 'eval'ing this code makes Solaris 10's /bin/sh exit with
++      # 'eval'ing this code makes Solaris 10's /sw/bash/bin/bash exit with
+       # $? set to 2.  It does not evaluate any of the code after the
+       # "unexpected" first '('.  Thus, we must run it in a subshell.
+       ( eval "$gl_shell_test_script_" ) > /dev/null 2>&1
+@@ -410,7 +410,7 @@
+ {
+   if test "$VERBOSE" = yes; then
+     # Test whether set -x may cause the selected shell to corrupt an
+-    # application's stderr.  Many do, including zsh-4.3.10 and the /bin/sh
++    # application's stderr.  Many do, including zsh-4.3.10 and the /sw/bash/bin/bash
+     # from SunOS 5.11, OpenBSD 4.7 and Irix 6.5.
+     # If enabling verbose output this way would cause trouble, simply
+     # issue a warning and refrain.
+@@ -590,9 +590,9 @@
+ 
+ # The interpreter for Bourne-shell scripts.
+ # No special standards compatibility requirements.
+-# Some environments, such as Android, don't have /bin/sh.
+-if test -f /bin/sh$EXEEXT; then
+-  BOURNE_SHELL=/bin/sh
++# Some environments, such as Android, don't have /sw/bash/bin/bash.
++if test -f /sw/bash/bin/bash$EXEEXT; then
++  BOURNE_SHELL=/sw/bash/bin/bash
+ else
+   BOURNE_SHELL=sh
+ fi
+diff --no-dereference -Naur diffutils-3.12.orig/tests/invalid-re diffutils-3.12/tests/invalid-re
+--- diffutils-3.12.orig/tests/invalid-re	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/invalid-re	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure we diagnose and fail upon first invalid -I regex.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/label-vs-func diffutils-3.12/tests/label-vs-func
+--- diffutils-3.12.orig/tests/label-vs-func	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/label-vs-func	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Show how diff's -p option can mistakenly match a label: in column 1.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/large-subopt diffutils-3.12/tests/large-subopt
+--- diffutils-3.12.orig/tests/large-subopt	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/large-subopt	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This test is expected to fail at least with diffutils-3.6.
+ # Demonstrate how diff can produce suboptimal output.
+ # With these two files, diff -u prints output including this:
+diff --no-dereference -Naur diffutils-3.12.orig/tests/new-file diffutils-3.12/tests/new-file
+--- diffutils-3.12.orig/tests/new-file	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/new-file	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test --new-file (-N) and --unidirectional-new-file.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/no-dereference diffutils-3.12/tests/no-dereference
+--- diffutils-3.12.orig/tests/no-dereference	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/no-dereference	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test the --no-dereference option.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/no-newline-at-eof diffutils-3.12/tests/no-newline-at-eof
+--- diffutils-3.12.orig/tests/no-newline-at-eof	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/no-newline-at-eof	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # exercise the no-newline-at-EOF bug
+ # Before the April 2010 fix, the "\ No newline at end of file"
+ # line would not be printed.
+diff --no-dereference -Naur diffutils-3.12.orig/tests/side-by-side diffutils-3.12/tests/side-by-side
+--- diffutils-3.12.orig/tests/side-by-side	2025-02-03 00:56:03.000000000 +0000
++++ diffutils-3.12/tests/side-by-side	2025-02-03 00:56:03.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test side-by-side output with non-ASCII characters.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/side-by-side-seq diffutils-3.12/tests/side-by-side-seq
+--- diffutils-3.12.orig/tests/side-by-side-seq	2025-03-09 17:45:36.000000000 +0000
++++ diffutils-3.12/tests/side-by-side-seq	2025-03-09 17:45:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test side-by-side output on sequences.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/starting-file diffutils-3.12/tests/starting-file
+--- diffutils-3.12.orig/tests/starting-file	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/starting-file	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test diff -S.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/stdin diffutils-3.12/tests/stdin
+--- diffutils-3.12.orig/tests/stdin	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/stdin	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that "-" means "standard input".
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/strcoll-0-names diffutils-3.12/tests/strcoll-0-names
+--- diffutils-3.12.orig/tests/strcoll-0-names	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/strcoll-0-names	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Check that diff responds well with two different file names
+ # that compare equal with strcoll.  See:
+ # http://lists.gnu.org/archive/html/bug-diffutils/2013-03/msg00012.html
+diff --no-dereference -Naur diffutils-3.12.orig/tests/strip-trailing-cr diffutils-3.12/tests/strip-trailing-cr
+--- diffutils-3.12.orig/tests/strip-trailing-cr	2025-02-03 02:49:22.000000000 +0000
++++ diffutils-3.12/tests/strip-trailing-cr	2025-02-03 02:49:22.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Before diff-3.7, this would provoke a UMR
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/timezone diffutils-3.12/tests/timezone
+--- diffutils-3.12.orig/tests/timezone	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/timezone	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # In diff 3.4 through 3.8, this would output the wrong timezone on Solaris.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src
+diff --no-dereference -Naur diffutils-3.12.orig/tests/y2038-vs-32bit diffutils-3.12/tests/y2038-vs-32bit
+--- diffutils-3.12.orig/tests/y2038-vs-32bit	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/y2038-vs-32bit	2024-09-10 22:21:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # dates after Y2K38 are safe
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ ../src

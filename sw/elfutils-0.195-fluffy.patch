@@ -118,6 +118,20 @@ diff --no-dereference -Naur elfutils-0.195.orig/configure elfutils-0.195/configu
  
  pkg_failed=no
  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libzstd >= 1.4.0" >&5
+@@ -14156,9 +14155,10 @@
+ 		PKG_CONFIG=""
+ 	fi
+ fi
+-if test -z "$PKG_CONFIG"; then
+-	as_fn_error $? "pkg-config not found" "$LINENO" 5
+-fi
++: "${libcurl_CFLAGS:=${CURL_CFLAGS:-}}"
++: "${libcurl_LIBS:=${CURL_LIBS:-}}"
++: "${sqlite3_CFLAGS:=${SQLITE_CFLAGS:-}}"
++: "${sqlite3_LIBS:=${SQLITE_LIBS:-}}"
+ 
+ pkg_failed=no
+ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libcurl >= 7.29.0" >&5
 diff --no-dereference -Naur elfutils-0.195.orig/src/make-debug-archive.in elfutils-0.195/src/make-debug-archive.in
 --- elfutils-0.195.orig/src/make-debug-archive.in	2026-04-15 22:29:52.000000000 +0000
 +++ elfutils-0.195/src/make-debug-archive.in	2026-04-15 22:29:52.000000000 +0000

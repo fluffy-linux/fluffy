@@ -1,0 +1,624 @@
+diff --no-dereference -Naur kbd-2.10.0.orig/aclocal.m4 kbd-2.10.0/aclocal.m4
+--- kbd-2.10.0.orig/aclocal.m4	2026-05-25 07:17:14.913600393 +0000
++++ kbd-2.10.0/aclocal.m4	2026-05-25 07:17:14.913600393 +0000
+@@ -640,7 +640,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff --no-dereference -Naur kbd-2.10.0.orig/config/ar-lib kbd-2.10.0/config/ar-lib
+--- kbd-2.10.0.orig/config/ar-lib	2026-05-25 07:17:16.194162740 +0000
++++ kbd-2.10.0/config/ar-lib	2026-05-25 07:17:16.194162740 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for Microsoft lib.exe
+ 
+ me=ar-lib
+diff --no-dereference -Naur kbd-2.10.0.orig/config/compile kbd-2.10.0/config/compile
+--- kbd-2.10.0.orig/config/compile	2026-05-25 07:17:16.196366529 +0000
++++ kbd-2.10.0/config/compile	2026-05-25 07:17:16.196366529 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff --no-dereference -Naur kbd-2.10.0.orig/config/config.guess kbd-2.10.0/config/config.guess
+--- kbd-2.10.0.orig/config/config.guess	2026-05-25 07:17:16.198396612 +0000
++++ kbd-2.10.0/config/config.guess	2026-05-25 07:17:16.198396612 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1020,7 +1020,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff --no-dereference -Naur kbd-2.10.0.orig/config/config.rpath kbd-2.10.0/config/config.rpath
+--- kbd-2.10.0.orig/config/config.rpath	2024-12-15 19:46:27.990227210 +0000
++++ kbd-2.10.0/config/config.rpath	2024-12-15 19:46:27.990227210 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in an executable.
+ #
+diff --no-dereference -Naur kbd-2.10.0.orig/config/config.sub kbd-2.10.0/config/config.sub
+--- kbd-2.10.0.orig/config/config.sub	2026-05-25 07:17:16.200565505 +0000
++++ kbd-2.10.0/config/config.sub	2026-05-25 07:17:16.200565505 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff --no-dereference -Naur kbd-2.10.0.orig/config/depcomp kbd-2.10.0/config/depcomp
+--- kbd-2.10.0.orig/config/depcomp	2026-05-25 07:17:16.811507639 +0000
++++ kbd-2.10.0/config/depcomp	2026-05-25 07:17:16.811507639 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff --no-dereference -Naur kbd-2.10.0.orig/config/install-sh kbd-2.10.0/config/install-sh
+--- kbd-2.10.0.orig/config/install-sh	2026-05-25 07:17:16.202448612 +0000
++++ kbd-2.10.0/config/install-sh	2026-05-25 07:17:16.202448612 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff --no-dereference -Naur kbd-2.10.0.orig/config/ltmain.sh kbd-2.10.0/config/ltmain.sh
+--- kbd-2.10.0.orig/config/ltmain.sh	2026-05-25 07:17:11.651091861 +0000
++++ kbd-2.10.0/config/ltmain.sh	2026-05-25 07:17:11.651091861 +0000
+@@ -332,7 +332,7 @@
+ : ${MKDIR="mkdir"}
+ : ${MV="mv -f"}
+ : ${RM="rm -f"}
+-: ${SHELL="${CONFIG_SHELL-/bin/sh}"}
++: ${SHELL="${CONFIG_SHELL-/sw/bash/bin/bash}"}
+ 
+ 
+ ## -------------------- ##
+@@ -1528,7 +1528,7 @@
+ # time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
+ # time-stamp-time-zone: "UTC"
+ # End:
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ 
+ # A portable, pluggable option parser for Bourne shell.
+ # Written by Gary V. Vaughan, 2010
+@@ -1562,7 +1562,7 @@
+ #
+ # For the simplest scripts you might need only:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . relative/path/to/funclib.sh
+ #   . relative/path/to/options-parser
+ #   scriptversion=1.0
+@@ -4480,7 +4480,7 @@
+ 
+     # There may be an optional sh(1) argument at the beginning of
+     # install_prog (especially on Windows NT).
+-    if test "$SHELL" = "$nonopt" || test /bin/sh = "$nonopt" ||
++    if test "$SHELL" = "$nonopt" || test /sw/bash/bin/bash = "$nonopt" ||
+        # Allow the use of GNU shtool's install command.
+        case $nonopt in *shtool*) :;; *) false;; esac
+     then
+diff --no-dereference -Naur kbd-2.10.0.orig/config/missing kbd-2.10.0/config/missing
+--- kbd-2.10.0.orig/config/missing	2026-05-25 07:17:16.204273381 +0000
++++ kbd-2.10.0/config/missing	2026-05-25 07:17:16.204273381 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff --no-dereference -Naur kbd-2.10.0.orig/config/ylwrap kbd-2.10.0/config/ylwrap
+--- kbd-2.10.0.orig/config/ylwrap	2026-05-25 07:17:16.521174590 +0000
++++ kbd-2.10.0/config/ylwrap	2026-05-25 07:17:16.521174590 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # ylwrap - wrapper for lex/yacc invocations.
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff --no-dereference -Naur kbd-2.10.0.orig/configure kbd-2.10.0/configure
+--- kbd-2.10.0.orig/configure	2026-05-25 07:17:15.399726452 +0000
++++ kbd-2.10.0/configure	2026-05-25 07:17:15.399726452 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.73 for kbd 2.10.0.
+ #
+@@ -295,7 +295,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -571,7 +571,7 @@
+ as_sed_sh="y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
+ as_tr_sh="eval sed '$as_sed_sh'" # deprecated
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ 
+ test -n "$DJDIR" || exec 7<&0 </dev/null
+@@ -3843,7 +3843,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@printf '%s\n' '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -5389,7 +5389,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -5617,7 +5617,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@printf '%s\n' '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -7030,7 +7030,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+@@ -15028,7 +15028,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -15041,7 +15041,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -15158,7 +15158,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -15171,7 +15171,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -15237,7 +15237,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -15250,7 +15250,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -15343,7 +15343,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -15465,7 +15465,7 @@
+ else case e in #(
+   e)
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff --no-dereference -Naur kbd-2.10.0.orig/contrib/font2psf kbd-2.10.0/contrib/font2psf
+--- kbd-2.10.0.orig/contrib/font2psf	2012-02-27 10:27:10.000000000 +0000
++++ kbd-2.10.0/contrib/font2psf	2012-02-27 10:27:10.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #written by Martin Lohner, SuSE GmbH, Dec 1998
+ echo "This script converts 256 character font to psf-fonts"
+ echo "It simply assumes that all files in the current directory"
+diff --no-dereference -Naur kbd-2.10.0.orig/contrib/psfsplit kbd-2.10.0/contrib/psfsplit
+--- kbd-2.10.0.orig/contrib/psfsplit	2012-02-27 10:27:10.000000000 +0000
++++ kbd-2.10.0/contrib/psfsplit	2012-02-27 10:27:10.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # (c) Ricardas Cepas <rch@pub.osf.lt>. Copying policy: GNU GPL V2.
+ set -o errexit
+ #set -x
+diff --no-dereference -Naur kbd-2.10.0.orig/contrib/showconsolefont kbd-2.10.0/contrib/showconsolefont
+--- kbd-2.10.0.orig/contrib/showconsolefont	2012-02-27 10:27:10.000000000 +0000
++++ kbd-2.10.0/contrib/showconsolefont	2012-02-27 10:27:10.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # From klaus.stehle@uni-tuebingen.de Tue Jan 25 07:24:02 2000
+ #
+diff --no-dereference -Naur kbd-2.10.0.orig/contrib/vtrgb-dec2hex.sh kbd-2.10.0/contrib/vtrgb-dec2hex.sh
+--- kbd-2.10.0.orig/contrib/vtrgb-dec2hex.sh	2024-12-15 19:29:44.959153011 +0000
++++ kbd-2.10.0/contrib/vtrgb-dec2hex.sh	2024-12-15 19:29:44.959153011 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/bash
++#!/sw/bash/bin/bash
+ # convert setvtrgb decimal file to hexadecimal
+ 
+ if [[ -z "$1" ]]; then
+diff --no-dereference -Naur kbd-2.10.0.orig/contrib/xkb-led-layout-state.sh kbd-2.10.0/contrib/xkb-led-layout-state.sh
+--- kbd-2.10.0.orig/contrib/xkb-led-layout-state.sh	2026-03-23 21:57:45.532202167 +0000
++++ kbd-2.10.0/contrib/xkb-led-layout-state.sh	2026-03-23 21:57:45.532202167 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ set -eu
+ 
+diff --no-dereference -Naur kbd-2.10.0.orig/data/compress.sh kbd-2.10.0/data/compress.sh
+--- kbd-2.10.0.orig/data/compress.sh	2026-03-18 13:49:48.272721550 +0000
++++ kbd-2.10.0/data/compress.sh	2026-03-18 13:49:48.272721550 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -eu
++#!/sw/bash/bin/bash -eu
+ # SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ COMPRESS="${COMPRESS?A command to compress files is required.}"
+diff --no-dereference -Naur kbd-2.10.0.orig/data/keymaps/i386/mk_modmap kbd-2.10.0/data/keymaps/i386/mk_modmap
+--- kbd-2.10.0.orig/data/keymaps/i386/mk_modmap	2023-08-09 11:57:23.877821517 +0000
++++ kbd-2.10.0/data/keymaps/i386/mk_modmap	2023-08-09 11:57:23.877821517 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # mk_modmap
+ # Tries to translate a keytable file into a file parseable by xmodmap
+ #
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/Makefile kbd-2.10.0/docs/Makefile
+--- kbd-2.10.0.orig/docs/Makefile	2026-05-25 07:17:52.705670103 +0000
++++ kbd-2.10.0/docs/Makefile	2026-05-25 07:17:52.705670103 +0000
+@@ -303,7 +303,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/man/Makefile kbd-2.10.0/docs/man/Makefile
+--- kbd-2.10.0.orig/docs/man/Makefile	2026-05-25 07:17:52.716311154 +0000
++++ kbd-2.10.0/docs/man/Makefile	2026-05-25 07:17:52.716311154 +0000
+@@ -304,7 +304,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/man/man1/Makefile kbd-2.10.0/docs/man/man1/Makefile
+--- kbd-2.10.0.orig/docs/man/man1/Makefile	2026-05-25 07:17:52.732977791 +0000
++++ kbd-2.10.0/docs/man/man1/Makefile	2026-05-25 07:17:52.732977791 +0000
+@@ -282,7 +282,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/man/man1misc/Makefile kbd-2.10.0/docs/man/man1misc/Makefile
+--- kbd-2.10.0.orig/docs/man/man1misc/Makefile	2026-05-25 07:17:52.749644429 +0000
++++ kbd-2.10.0/docs/man/man1misc/Makefile	2026-05-25 07:17:52.749644429 +0000
+@@ -275,7 +275,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/man/man5/Makefile kbd-2.10.0/docs/man/man5/Makefile
+--- kbd-2.10.0.orig/docs/man/man5/Makefile	2026-05-25 07:17:52.769263507 +0000
++++ kbd-2.10.0/docs/man/man5/Makefile	2026-05-25 07:17:52.769263507 +0000
+@@ -275,7 +275,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/man/man8/Makefile kbd-2.10.0/docs/man/man8/Makefile
+--- kbd-2.10.0.orig/docs/man/man8/Makefile	2026-05-25 07:17:52.779644375 +0000
++++ kbd-2.10.0/docs/man/man8/Makefile	2026-05-25 07:17:52.779644375 +0000
+@@ -281,7 +281,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/man/man8misc/Makefile kbd-2.10.0/docs/man/man8misc/Makefile
+--- kbd-2.10.0.orig/docs/man/man8misc/Makefile	2026-05-25 07:17:52.796311013 +0000
++++ kbd-2.10.0/docs/man/man8misc/Makefile	2026-05-25 07:17:52.796311013 +0000
+@@ -275,7 +275,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/reference/Makefile kbd-2.10.0/docs/reference/Makefile
+--- kbd-2.10.0.orig/docs/reference/Makefile	2026-05-25 07:17:52.815628072 +0000
++++ kbd-2.10.0/docs/reference/Makefile	2026-05-25 07:17:52.815628072 +0000
+@@ -303,7 +303,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/reference/libkeymap/Makefile kbd-2.10.0/docs/reference/libkeymap/Makefile
+--- kbd-2.10.0.orig/docs/reference/libkeymap/Makefile	2026-05-25 07:17:52.826310959 +0000
++++ kbd-2.10.0/docs/reference/libkeymap/Makefile	2026-05-25 07:17:52.826310959 +0000
+@@ -274,7 +274,7 @@
+ RANLIB = ranlib
+ SED = /usr/bin/sed
+ SET_MAKE = 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ STRIP = strip
+ TRANSDIR = consoletrans
+ UNIMAPDIR = unimaps
+diff --no-dereference -Naur kbd-2.10.0.orig/m4/lib-ld.m4 kbd-2.10.0/m4/lib-ld.m4
+--- kbd-2.10.0.orig/m4/lib-ld.m4	2023-08-09 11:57:23.907821223 +0000
++++ kbd-2.10.0/m4/lib-ld.m4	2023-08-09 11:57:23.907821223 +0000
+@@ -37,7 +37,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+diff --no-dereference -Naur kbd-2.10.0.orig/m4/lib-link.m4 kbd-2.10.0/m4/lib-link.m4
+--- kbd-2.10.0.orig/m4/lib-link.m4	2023-08-09 11:57:23.908821213 +0000
++++ kbd-2.10.0/m4/lib-link.m4	2023-08-09 11:57:23.908821213 +0000
+@@ -132,7 +132,7 @@
+   AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT]) dnl we use $ac_aux_dir
+   AC_CACHE_CHECK([for shared library run path origin], [acl_cv_rpath], [
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff --no-dereference -Naur kbd-2.10.0.orig/m4/libtool.m4 kbd-2.10.0/m4/libtool.m4
+--- kbd-2.10.0.orig/m4/libtool.m4	2026-05-25 07:17:11.665860305 +0000
++++ kbd-2.10.0/m4/libtool.m4	2026-05-25 07:17:11.665860305 +0000
+@@ -78,7 +78,7 @@
+ AC_REQUIRE([LTOBSOLETE_VERSION])dnl
+ m4_require([_LT_PROG_LTMAIN])dnl
+ 
+-_LT_SHELL_INIT([SHELL=${CONFIG_SHELL-/bin/sh}])
++_LT_SHELL_INIT([SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}])
+ 
+ dnl Parse OPTIONS
+ _LT_SET_OPTIONS([$0], [$1])
+@@ -1814,7 +1814,7 @@
+       for i in 1 2 3 4 5 6 7 8; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+diff --no-dereference -Naur kbd-2.10.0.orig/m4/progtest.m4 kbd-2.10.0/m4/progtest.m4
+--- kbd-2.10.0.orig/m4/progtest.m4	2023-08-09 11:57:23.908821213 +0000
++++ kbd-2.10.0/m4/progtest.m4	2023-08-09 11:57:23.908821213 +0000
+@@ -27,7 +27,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -40,7 +40,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+diff --no-dereference -Naur kbd-2.10.0.orig/po/Makefile.in.in kbd-2.10.0/po/Makefile.in.in
+--- kbd-2.10.0.orig/po/Makefile.in.in	2023-08-15 13:05:38.763142497 +0000
++++ kbd-2.10.0/po/Makefile.in.in	2023-08-15 13:05:38.763142497 +0000
+@@ -14,7 +14,7 @@
+ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
+ 
+ SED = @SED@
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ @SET_MAKE@
+ 
+ srcdir = @srcdir@
+@@ -471,7 +471,7 @@
+ # Recreate Makefile by invoking config.status. Explicitly invoke the shell,
+ # because execution permission bits may not work on the current file system.
+ # Use @SHELL@, which is the shell determined by autoconf for the use by its
+-# scripts, not $(SHELL) which is hardwired to /bin/sh and may be deficient.
++# scripts, not $(SHELL) which is hardwired to /sw/bash/bin/bash and may be deficient.
+ Makefile: Makefile.in.in Makevars $(top_builddir)/config.status @POMAKEFILEDEPS@
+ 	cd $(top_builddir) \
+ 	  && @SHELL@ ./config.status $(subdir)/$@.in po-directories
+diff --no-dereference -Naur kbd-2.10.0.orig/src/cad kbd-2.10.0/src/cad
+--- kbd-2.10.0.orig/src/cad	2024-12-15 19:29:45.012486092 +0000
++++ kbd-2.10.0/src/cad	2024-12-15 19:29:45.012486092 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ trap "" 0 1 2 15
+ 
+diff --no-dereference -Naur kbd-2.10.0.orig/src/unicode_start kbd-2.10.0/src/unicode_start
+--- kbd-2.10.0.orig/src/unicode_start	2024-12-15 19:29:45.032485996 +0000
++++ kbd-2.10.0/src/unicode_start	2024-12-15 19:29:45.032485996 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # 0. Check whether we're on a console
+ TTY=$(/usr/bin/tty)
+diff --no-dereference -Naur kbd-2.10.0.orig/src/unicode_stop kbd-2.10.0/src/unicode_stop
+--- kbd-2.10.0.orig/src/unicode_stop	2024-12-15 19:29:45.032485996 +0000
++++ kbd-2.10.0/src/unicode_stop	2024-12-15 19:29:45.032485996 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ TTY=$(/usr/bin/tty)
+ case "$TTY" in
+diff --no-dereference -Naur kbd-2.10.0.orig/tests/check-data-keymaps.sh kbd-2.10.0/tests/check-data-keymaps.sh
+--- kbd-2.10.0.orig/tests/check-data-keymaps.sh	2026-03-18 13:49:48.346054584 +0000
++++ kbd-2.10.0/tests/check-data-keymaps.sh	2026-03-18 13:49:48.346054584 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -efu
++#!/sw/bash/bin/bash -efu
+ 
+ TTY="${TTY:-/dev/tty60}"
+ 
+diff --no-dereference -Naur kbd-2.10.0.orig/tests/check.sh kbd-2.10.0/tests/check.sh
+--- kbd-2.10.0.orig/tests/check.sh	2026-03-18 13:49:48.346054584 +0000
++++ kbd-2.10.0/tests/check.sh	2026-03-18 13:49:48.346054584 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -efu
++#!/sw/bash/bin/bash -efu
+ 
+ TTY="${TTY:-/dev/tty60}"
+ 
+diff --no-dereference -Naur kbd-2.10.0.orig/tests/configure.sh kbd-2.10.0/tests/configure.sh
+--- kbd-2.10.0.orig/tests/configure.sh	2025-03-06 17:45:26.793349046 +0000
++++ kbd-2.10.0/tests/configure.sh	2025-03-06 17:45:26.793349046 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -efu
++#!/sw/bash/bin/bash -efu
+ 
+ testdir="$(readlink -f "$0")"
+ testdir="${testdir%/*}"
+diff --no-dereference -Naur kbd-2.10.0.orig/tests/strace.sh kbd-2.10.0/tests/strace.sh
+--- kbd-2.10.0.orig/tests/strace.sh	2026-03-18 13:49:48.372721142 +0000
++++ kbd-2.10.0/tests/strace.sh	2026-03-18 13:49:48.372721142 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -efu
++#!/sw/bash/bin/bash -efu
+ 
+ cwd="$(readlink -ev "${0%/*}")"
+ 
+diff --no-dereference -Naur kbd-2.10.0.orig/tests/valgrind.sh kbd-2.10.0/tests/valgrind.sh
+--- kbd-2.10.0.orig/tests/valgrind.sh	2026-03-18 13:49:48.376054462 +0000
++++ kbd-2.10.0/tests/valgrind.sh	2026-03-18 13:49:48.376054462 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -efu
++#!/sw/bash/bin/bash -efu
+ 
+ tool="$1"
+ shift

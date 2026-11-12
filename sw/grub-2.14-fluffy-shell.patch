@@ -1,0 +1,669 @@
+diff --no-dereference -Naur grub-2.14.orig/aclocal.m4 grub-2.14/aclocal.m4
+--- grub-2.14.orig/aclocal.m4	2026-01-14 18:26:51.000000000 +0000
++++ grub-2.14/aclocal.m4	2026-01-14 18:26:51.000000000 +0000
+@@ -682,7 +682,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff --no-dereference -Naur grub-2.14.orig/build-aux/compile grub-2.14/build-aux/compile
+--- grub-2.14.orig/build-aux/compile	2026-01-14 18:26:57.000000000 +0000
++++ grub-2.14/build-aux/compile	2026-01-14 18:26:57.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2018-03-07.03; # UTC
+diff --no-dereference -Naur grub-2.14.orig/build-aux/config.guess grub-2.14/build-aux/config.guess
+--- grub-2.14.orig/build-aux/config.guess	2026-01-14 18:25:42.000000000 +0000
++++ grub-2.14/build-aux/config.guess	2026-01-14 18:25:42.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2022 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -986,7 +986,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff --no-dereference -Naur grub-2.14.orig/build-aux/config.rpath grub-2.14/build-aux/config.rpath
+--- grub-2.14.orig/build-aux/config.rpath	2026-01-14 18:25:53.000000000 +0000
++++ grub-2.14/build-aux/config.rpath	2026-01-14 18:25:53.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in an executable.
+ #
+diff --no-dereference -Naur grub-2.14.orig/build-aux/config.sub grub-2.14/build-aux/config.sub
+--- grub-2.14.orig/build-aux/config.sub	2026-01-14 18:25:42.000000000 +0000
++++ grub-2.14/build-aux/config.sub	2026-01-14 18:25:42.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2021 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff --no-dereference -Naur grub-2.14.orig/build-aux/depcomp grub-2.14/build-aux/depcomp
+--- grub-2.14.orig/build-aux/depcomp	2026-01-14 18:25:42.000000000 +0000
++++ grub-2.14/build-aux/depcomp	2026-01-14 18:25:42.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2018-03-07.03; # UTC
+diff --no-dereference -Naur grub-2.14.orig/build-aux/gitlog-to-changelog grub-2.14/build-aux/gitlog-to-changelog
+--- grub-2.14.orig/build-aux/gitlog-to-changelog	2026-01-14 18:26:19.000000000 +0000
++++ grub-2.14/build-aux/gitlog-to-changelog	2026-01-14 18:26:19.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Convert git log output to ChangeLog format.
+diff --no-dereference -Naur grub-2.14.orig/build-aux/install-sh grub-2.14/build-aux/install-sh
+--- grub-2.14.orig/build-aux/install-sh	2026-01-14 18:25:42.000000000 +0000
++++ grub-2.14/build-aux/install-sh	2026-01-14 18:25:42.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2020-11-14.01; # UTC
+diff --no-dereference -Naur grub-2.14.orig/build-aux/mdate-sh grub-2.14/build-aux/mdate-sh
+--- grub-2.14.orig/build-aux/mdate-sh	2026-01-14 18:25:42.000000000 +0000
++++ grub-2.14/build-aux/mdate-sh	2026-01-14 18:25:42.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it.
+ 
+ scriptversion=2018-03-07.03; # UTC
+diff --no-dereference -Naur grub-2.14.orig/build-aux/missing grub-2.14/build-aux/missing
+--- grub-2.14.orig/build-aux/missing	2026-01-14 18:26:57.000000000 +0000
++++ grub-2.14/build-aux/missing	2026-01-14 18:26:57.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU programs.
+ 
+ scriptversion=2018-03-07.03; # UTC
+diff --no-dereference -Naur grub-2.14.orig/build-aux/test-driver grub-2.14/build-aux/test-driver
+--- grub-2.14.orig/build-aux/test-driver	2026-01-14 18:26:58.000000000 +0000
++++ grub-2.14/build-aux/test-driver	2026-01-14 18:26:58.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2018-03-07.03; # UTC
+diff --no-dereference -Naur grub-2.14.orig/configure grub-2.14/configure
+--- grub-2.14.orig/configure	2026-01-14 18:26:54.000000000 +0000
++++ grub-2.14/configure	2026-01-14 18:26:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.71 for GRUB 2.14.
+ #
+@@ -277,7 +277,7 @@
+ fi
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -6549,7 +6549,7 @@
+   printf %s "(cached) " >&6
+ else $as_nop
+   cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -6920,7 +6920,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -8020,7 +8020,7 @@
+   printf %s "(cached) " >&6
+ else $as_nop
+   cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -10538,7 +10538,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -10673,7 +10673,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -11311,7 +11311,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -11324,7 +11324,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -11439,7 +11439,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -11452,7 +11452,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -11517,7 +11517,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -11530,7 +11530,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -11621,7 +11621,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -11741,7 +11741,7 @@
+ else $as_nop
+ 
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+@@ -14513,10 +14513,10 @@
+ esac
+ 
+ 
+-# In some build environments like termux /bin/sh is not a valid
+-# shebang. Use $SHELL instead if it's executable and /bin/sh isn't
+-BUILD_SHEBANG=/bin/sh
+-for she in /bin/sh "$SHELL"; do
++# In some build environments like termux /sw/bash/bin/bash is not a valid
++# shebang. Use $SHELL instead if it's executable and /sw/bash/bin/bash isn't
++BUILD_SHEBANG=/sw/bash/bin/bash
++for she in /sw/bash/bin/bash "$SHELL"; do
+   if test -x "$she" ; then
+     BUILD_SHEBANG="$she"
+   fi
+diff --no-dereference -Naur grub-2.14.orig/docs/mdate-sh grub-2.14/docs/mdate-sh
+--- grub-2.14.orig/docs/mdate-sh	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/docs/mdate-sh	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it.
+ 
+ scriptversion=2007-03-30.02
+diff --no-dereference -Naur grub-2.14.orig/geninit.sh grub-2.14/geninit.sh
+--- grub-2.14.orig/geninit.sh	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/geninit.sh	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2002,2005,2007  Free Software Foundation, Inc.
+ #
+diff --no-dereference -Naur grub-2.14.orig/grub-core/genemuinit.sh grub-2.14/grub-core/genemuinit.sh
+--- grub-2.14.orig/grub-core/genemuinit.sh	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/grub-core/genemuinit.sh	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2002,2005,2007  Free Software Foundation, Inc.
+ #
+diff --no-dereference -Naur grub-2.14.orig/grub-core/genemuinitheader.sh grub-2.14/grub-core/genemuinitheader.sh
+--- grub-2.14.orig/grub-core/genemuinitheader.sh	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/grub-core/genemuinitheader.sh	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2005,2007  Free Software Foundation, Inc.
+ #
+diff --no-dereference -Naur grub-2.14.orig/grub-core/gensymlist.sh grub-2.14/grub-core/gensymlist.sh
+--- grub-2.14.orig/grub-core/gensymlist.sh	2022-03-21 17:47:00.000000000 +0000
++++ grub-2.14/grub-core/gensymlist.sh	2022-03-21 17:47:00.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2002,2006,2007,2008,2009,2010  Free Software Foundation, Inc.
+ #
+diff --no-dereference -Naur grub-2.14.orig/grub-core/lib/libgcrypt/configure grub-2.14/grub-core/lib/libgcrypt/configure
+--- grub-2.14.orig/grub-core/lib/libgcrypt/configure	2025-07-11 21:12:50.000000000 +0000
++++ grub-2.14/grub-core/lib/libgcrypt/configure	2025-07-11 21:12:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # From configure.ac Revision.
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.71 for libgcrypt 1.11.0.
+@@ -286,7 +286,7 @@
+ fi
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -596,7 +596,7 @@
+ # Sed expression to map a string onto a valid variable name.
+ as_tr_sh="eval sed 'y%*+%pp%;s%[^_$as_cr_alnum]%_%g'"
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ 
+ test -n "$DJDIR" || exec 7<&0 </dev/null
+@@ -3526,7 +3526,7 @@
+   printf %s "(cached) " >&6
+ else $as_nop
+   cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -5037,7 +5037,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -5311,7 +5311,7 @@
+   printf %s "(cached) " >&6
+ else $as_nop
+   cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -6189,7 +6189,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -6456,7 +6456,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -7586,7 +7586,7 @@
+       for i in 1 2 3 4 5 6 7 8 ; do
+         teststring=$teststring$teststring
+       done
+-      SHELL=${SHELL-${CONFIG_SHELL-/bin/sh}}
++      SHELL=${SHELL-${CONFIG_SHELL-/sw/bash/bin/bash}}
+       # If test is not a shell built-in, we'll probably end up computing a
+       # maximum length that is only half of the actual maximum length, but
+       # we can't tell.
+diff --no-dereference -Naur grub-2.14.orig/grub-core/lib/libgcrypt/mkinstalldirs grub-2.14/grub-core/lib/libgcrypt/mkinstalldirs
+--- grub-2.14.orig/grub-core/lib/libgcrypt/mkinstalldirs	2025-07-11 21:12:50.000000000 +0000
++++ grub-2.14/grub-core/lib/libgcrypt/mkinstalldirs	2025-07-11 21:12:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # mkinstalldirs --- make directory hierarchy
+ 
+ scriptversion=2006-05-11.19
+diff --no-dereference -Naur grub-2.14.orig/grub-core/lib/libgcrypt/src/gen-note-integrity.sh grub-2.14/grub-core/lib/libgcrypt/src/gen-note-integrity.sh
+--- grub-2.14.orig/grub-core/lib/libgcrypt/src/gen-note-integrity.sh	2025-07-11 21:12:50.000000000 +0000
++++ grub-2.14/grub-core/lib/libgcrypt/src/gen-note-integrity.sh	2025-07-11 21:12:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ #
+ # gen-note-integrity.sh - Build tool to generate hmac hash section
+diff --no-dereference -Naur grub-2.14.orig/grub-core/lib/libgcrypt/src/libgcrypt-config.in grub-2.14/grub-core/lib/libgcrypt/src/libgcrypt-config.in
+--- grub-2.14.orig/grub-core/lib/libgcrypt/src/libgcrypt-config.in	2025-07-11 21:12:50.000000000 +0000
++++ grub-2.14/grub-core/lib/libgcrypt/src/libgcrypt-config.in	2025-07-11 21:12:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 1999, 2002, 2003, 2004, 2011 Free Software Foundation, Inc.
+ #
+ # This file is free software; as a special exception the author gives
+diff --no-dereference -Naur grub-2.14.orig/linguas.sh grub-2.14/linguas.sh
+--- grub-2.14.orig/linguas.sh	2025-11-18 13:34:43.000000000 +0000
++++ grub-2.14/linguas.sh	2025-11-18 13:34:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ SDIR=$(realpath -e "$0")
+ SDIR=${SDIR%/*}
+diff --no-dereference -Naur grub-2.14.orig/m4/lib-ld.m4 grub-2.14/m4/lib-ld.m4
+--- grub-2.14.orig/m4/lib-ld.m4	2026-01-14 18:25:54.000000000 +0000
++++ grub-2.14/m4/lib-ld.m4	2026-01-14 18:25:54.000000000 +0000
+@@ -37,7 +37,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+diff --no-dereference -Naur grub-2.14.orig/m4/lib-link.m4 grub-2.14/m4/lib-link.m4
+--- grub-2.14.orig/m4/lib-link.m4	2026-01-14 18:25:54.000000000 +0000
++++ grub-2.14/m4/lib-link.m4	2026-01-14 18:25:54.000000000 +0000
+@@ -132,7 +132,7 @@
+   AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT]) dnl we use $ac_aux_dir
+   AC_CACHE_CHECK([for shared library run path origin], [acl_cv_rpath], [
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff --no-dereference -Naur grub-2.14.orig/m4/progtest.m4 grub-2.14/m4/progtest.m4
+--- grub-2.14.orig/m4/progtest.m4	2026-01-14 18:25:54.000000000 +0000
++++ grub-2.14/m4/progtest.m4	2026-01-14 18:25:54.000000000 +0000
+@@ -27,7 +27,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -40,7 +40,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+diff --no-dereference -Naur grub-2.14.orig/po/Makefile.in.in grub-2.14/po/Makefile.in.in
+--- grub-2.14.orig/po/Makefile.in.in	2026-01-14 18:26:40.000000000 +0000
++++ grub-2.14/po/Makefile.in.in	2026-01-14 18:26:40.000000000 +0000
+@@ -466,7 +466,7 @@
+ # Recreate Makefile by invoking config.status. Explicitly invoke the shell,
+ # because execution permission bits may not work on the current file system.
+ # Use @SHELL@, which is the shell determined by autoconf for the use by its
+-# scripts, not $(SHELL) which is hardwired to /bin/sh and may be deficient.
++# scripts, not $(SHELL) which is hardwired to /sw/bash/bin/bash and may be deficient.
+ Makefile: Makefile.in.in Makevars $(top_builddir)/config.status @POMAKEFILEDEPS@
+ 	cd $(top_builddir) \
+ 	  && @SHELL@ ./config.status $(subdir)/$@.in po-directories
+diff --no-dereference -Naur grub-2.14.orig/util/grub-kbdcomp.in grub-2.14/util/grub-kbdcomp.in
+--- grub-2.14.orig/util/grub-kbdcomp.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub-kbdcomp.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ prefix="@prefix@"
+ exec_prefix="@exec_prefix@"
+diff --no-dereference -Naur grub-2.14.orig/util/grub-mkconfig.in grub-2.14/util/grub-mkconfig.in
+--- grub-2.14.orig/util/grub-mkconfig.in	2025-11-18 11:49:31.000000000 +0000
++++ grub-2.14/util/grub-mkconfig.in	2025-11-18 11:49:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # Generate grub.cfg by inspecting /boot contents.
+diff --no-dereference -Naur grub-2.14.orig/util/grub-reboot.in grub-2.14/util/grub-reboot.in
+--- grub-2.14.orig/util/grub-reboot.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub-reboot.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Set a default boot entry for GRUB, for the next boot only.
+ # Copyright (C) 2004,2009  Free Software Foundation, Inc.
+diff --no-dereference -Naur grub-2.14.orig/util/grub-set-default.in grub-2.14/util/grub-set-default.in
+--- grub-2.14.orig/util/grub-set-default.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub-set-default.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Set a default boot entry for GRUB.
+ # Copyright (C) 2004,2009  Free Software Foundation, Inc.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/00_header.in grub-2.14/util/grub.d/00_header.in
+--- grub-2.14.orig/util/grub.d/00_header.in	2025-11-18 11:49:31.000000000 +0000
++++ grub-2.14/util/grub.d/00_header.in	2025-11-18 11:49:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_hurd.in grub-2.14/util/grub.d/10_hurd.in
+--- grub-2.14.orig/util/grub.d/10_hurd.in	2024-01-25 17:22:59.000000000 +0000
++++ grub-2.14/util/grub.d/10_hurd.in	2024-01-25 17:22:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_illumos.in grub-2.14/util/grub.d/10_illumos.in
+--- grub-2.14.orig/util/grub.d/10_illumos.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub.d/10_illumos.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_kfreebsd.in grub-2.14/util/grub.d/10_kfreebsd.in
+--- grub-2.14.orig/util/grub.d/10_kfreebsd.in	2022-11-14 15:52:54.000000000 +0000
++++ grub-2.14/util/grub.d/10_kfreebsd.in	2022-11-14 15:52:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_linux.in grub-2.14/util/grub.d/10_linux.in
+--- grub-2.14.orig/util/grub.d/10_linux.in	2025-08-14 22:27:02.000000000 +0000
++++ grub-2.14/util/grub.d/10_linux.in	2025-08-14 22:27:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_netbsd.in grub-2.14/util/grub.d/10_netbsd.in
+--- grub-2.14.orig/util/grub.d/10_netbsd.in	2022-11-14 15:52:54.000000000 +0000
++++ grub-2.14/util/grub.d/10_netbsd.in	2022-11-14 15:52:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_windows.in grub-2.14/util/grub.d/10_windows.in
+--- grub-2.14.orig/util/grub.d/10_windows.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub.d/10_windows.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_xnu.in grub-2.14/util/grub.d/10_xnu.in
+--- grub-2.14.orig/util/grub.d/10_xnu.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub.d/10_xnu.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/20_linux_xen.in grub-2.14/util/grub.d/20_linux_xen.in
+--- grub-2.14.orig/util/grub.d/20_linux_xen.in	2025-08-14 22:27:02.000000000 +0000
++++ grub-2.14/util/grub.d/20_linux_xen.in	2025-08-14 22:27:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/25_bli.in grub-2.14/util/grub.d/25_bli.in
+--- grub-2.14.orig/util/grub.d/25_bli.in	2023-08-14 15:10:42.000000000 +0000
++++ grub-2.14/util/grub.d/25_bli.in	2023-08-14 15:10:42.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/30_os-prober.in grub-2.14/util/grub.d/30_os-prober.in
+--- grub-2.14.orig/util/grub.d/30_os-prober.in	2025-03-05 10:50:06.000000000 +0000
++++ grub-2.14/util/grub.d/30_os-prober.in	2025-03-05 10:50:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/30_uefi-firmware.in grub-2.14/util/grub.d/30_uefi-firmware.in
+--- grub-2.14.orig/util/grub.d/30_uefi-firmware.in	2022-12-07 22:38:26.000000000 +0000
++++ grub-2.14/util/grub.d/30_uefi-firmware.in	2022-12-07 22:38:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/40_custom.in grub-2.14/util/grub.d/40_custom.in
+--- grub-2.14.orig/util/grub.d/40_custom.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub.d/40_custom.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec tail -n +3 $0
+ # This file provides an easy way to add custom menu entries.  Simply type the
+ # menu entries you want to add after this comment.  Be careful not to change
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/41_custom.in grub-2.14/util/grub.d/41_custom.in
+--- grub-2.14.orig/util/grub.d/41_custom.in	2020-09-11 13:51:21.000000000 +0000
++++ grub-2.14/util/grub.d/41_custom.in	2020-09-11 13:51:21.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ cat <<EOF
+ if [ -f  \${config_directory}/custom.cfg ]; then
+   source \${config_directory}/custom.cfg
+diff --no-dereference -Naur grub-2.14.orig/util/i386/efi/grub-dumpdevtree grub-2.14/util/i386/efi/grub-dumpdevtree
+--- grub-2.14.orig/util/i386/efi/grub-dumpdevtree	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/i386/efi/grub-dumpdevtree	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2009  Free Software Foundation, Inc.
+ #

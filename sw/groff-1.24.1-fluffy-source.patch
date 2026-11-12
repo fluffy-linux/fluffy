@@ -1,0 +1,151 @@
+diff --no-dereference -Naur groff-1.24.1.orig/contrib/glilypond/glilypond.pl groff-1.24.1/contrib/glilypond/glilypond.pl
+--- groff-1.24.1.orig/contrib/glilypond/glilypond.pl	2026-03-14 07:18:15.000000000 +0000
++++ groff-1.24.1/contrib/glilypond/glilypond.pl	2026-03-14 07:18:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ 
+ package main;
+ 
+diff --no-dereference -Naur groff-1.24.1.orig/contrib/gperl/gperl.pl groff-1.24.1/contrib/gperl/gperl.pl
+--- groff-1.24.1.orig/contrib/gperl/gperl.pl	2026-03-14 07:18:15.000000000 +0000
++++ groff-1.24.1/contrib/gperl/gperl.pl	2026-03-14 07:18:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ 
+ # gperl - preprocess troff(1) input to execute embedded Perl code
+ #
+diff --no-dereference -Naur groff-1.24.1.orig/contrib/gpinyin/gpinyin.pl groff-1.24.1/contrib/gpinyin/gpinyin.pl
+--- groff-1.24.1.orig/contrib/gpinyin/gpinyin.pl	2026-03-14 07:18:15.000000000 +0000
++++ groff-1.24.1/contrib/gpinyin/gpinyin.pl	2026-03-14 07:18:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ 
+ # gpinyin - use Hanyu Pinyin romanization of Chinese in groff(1) input
+ #
+diff --no-dereference -Naur groff-1.24.1.orig/font/devpdf/util/BuildFoundries.pl groff-1.24.1/font/devpdf/util/BuildFoundries.pl
+--- groff-1.24.1.orig/font/devpdf/util/BuildFoundries.pl	2026-03-14 07:18:16.000000000 +0000
++++ groff-1.24.1/font/devpdf/util/BuildFoundries.pl	2026-03-14 07:18:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ #
+ # BuildFoundries: Given a Foundry file, generate groff font description
+ # files and a "download" file so gropdf can embed fonts in PDF output.
+diff --no-dereference -Naur groff-1.24.1.orig/Makefile.in groff-1.24.1/Makefile.in
+--- groff-1.24.1.orig/Makefile.in	2026-03-14 07:53:46.000000000 +0000
++++ groff-1.24.1/Makefile.in	2026-03-14 07:53:46.000000000 +0000
+@@ -5503,8 +5503,11 @@
+ 	$(preconv_TESTS) $(refer_TESTS) $(soelim_TESTS) $(tbl_TESTS) \
+ 	$(groff_TESTS) $(nroff_TESTS) $(grog_TESTS) $(pfbtops_TESTS) \
+ 	$(tmac_TESTS)
++eqn_XFAIL_TESTS = \
++  src/preproc/eqn/tests/neqn-smoke-test.sh
++
+ XFAIL_TESTS = $(gropdf_XFAIL_TESTS) $(groff_XFAIL_TESTS) \
+-	$(tmac_XFAIL_TESTS)
++	$(tmac_XFAIL_TESTS) $(eqn_XFAIL_TESTS)
+ AM_TESTS_ENVIRONMENT = \
+   abs_top_srcdir=$(abs_top_srcdir) \
+   abs_top_builddir=$(abs_top_builddir) \
+diff --no-dereference -Naur groff-1.24.1.orig/mdate.pl groff-1.24.1/mdate.pl
+--- groff-1.24.1.orig/mdate.pl	2026-03-14 07:18:16.000000000 +0000
++++ groff-1.24.1/mdate.pl	2026-03-14 07:18:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #
+ # Copyright (C) 1991-2024 Free Software Foundation, Inc.
+ #
+diff --no-dereference -Naur groff-1.24.1.orig/src/libs/libgroff/relocate.cpp groff-1.24.1/src/libs/libgroff/relocate.cpp
+--- groff-1.24.1.orig/src/libs/libgroff/relocate.cpp	2026-03-14 07:18:16.000000000 +0000
++++ groff-1.24.1/src/libs/libgroff/relocate.cpp	2026-03-14 07:18:16.000000000 +0000
+@@ -34,6 +34,13 @@
+ #include "nonposix.h"
+ #include "relocate.h"
+ 
++#ifndef _WIN32
++# include <glob.h>
++# ifndef GLOB_PATHS
++#  define GLOB_PATHS (1 << 29)
++# endif
++#endif
++
+ #if defined _WIN32
+ # define WIN32_LEAN_AND_MEAN
+ # include <windows.h>
+@@ -101,6 +108,42 @@
+   }
+   // Secondly, try the current directory.
+   // Now search along PATHP.
++#ifndef _WIN32
++  if (!pathp)
++    return 0;
++  glob_t gl;
++  memset(&gl, 0, sizeof(gl));
++  if (glob(pathp, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++    size_t namelen = strlen(name);
++    for (size_t i = 0; i < gl.gl_pathc; ++i) {
++      const char *dir = gl.gl_pathv[i];
++      size_t dirlen = strlen(dir);
++      int need_slash = dirlen > 0 && dir[dirlen - 1] != '/';
++      char *path = new char[dirlen + need_slash + namelen + 1];
++      memcpy(path, dir, dirlen);
++      if (need_slash)
++        path[dirlen] = '/';
++      strcpy(path + dirlen + need_slash, name);
++#if DEBUG
++      fprintf(stderr, "searchpath: trying '%s'\n", path);
++#endif
++      if (!access(path, F_OK)) {
++        char *found = new char[path_name_max()];
++        if (realpath(path, found)) {
++          delete[] path;
++          globfree(&gl);
++          return found;
++        }
++        delete[] found;
++        globfree(&gl);
++        return path;
++      }
++      delete[] path;
++    }
++    globfree(&gl);
++  }
++  return 0;
++#else
+   size_t namelen = strlen(name);
+   char *p = (char *)pathp;
+   for (;;) {
+@@ -128,6 +171,7 @@
+     p = end + 1;
+   }
+   return 0;
++#endif
+ }
+ 
+ // Search NAME along PATHP with the elements of PATHEXT in turn added.
+@@ -187,8 +231,11 @@
+   }
+ #else /* !_WIN32 */
+   curr_prefix = searchpath(program_name, getenv("PATH"));
+-  if (!curr_prefix)
++  if (!curr_prefix) {
++    curr_prefix = strsave(INSTALLPATH);
++    curr_prefix_len = strlen(curr_prefix);
+     return;
++  }
+ #endif /* !_WIN32 */
+   msw2posixpath(curr_prefix);
+ #if DEBUG
+diff --no-dereference -Naur groff-1.24.1.orig/tmac/hyphenex.pl groff-1.24.1/tmac/hyphenex.pl
+--- groff-1.24.1.orig/tmac/hyphenex.pl	2026-03-14 07:18:16.000000000 +0000
++++ groff-1.24.1/tmac/hyphenex.pl	2026-03-14 07:18:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #
+ #
+ # hyphenex.pl

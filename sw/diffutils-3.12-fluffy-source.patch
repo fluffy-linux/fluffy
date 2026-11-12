@@ -1,0 +1,32 @@
+diff --no-dereference -Naur diffutils-3.12.orig/src/util.c diffutils-3.12/src/util.c
+--- diffutils-3.12.orig/src/util.c	2025-01-12 18:27:47.000000000 +0000
++++ diffutils-3.12/src/util.c	2025-01-12 18:27:47.000000000 +0000
+@@ -846,7 +846,7 @@
+ 	      close (pipes[0]);
+ 	    }
+ 
+-	  execv (pr_program, (char **) argv);
++	  execvp (pr_program, (char **) argv);
+ 	  _exit (errno == ENOENT ? 127 : 126);
+ 	}
+       else
+diff --no-dereference -Naur diffutils-3.12.orig/tests/basic diffutils-3.12/tests/basic
+--- diffutils-3.12.orig/tests/basic	2024-09-10 22:21:55.000000000 +0000
++++ diffutils-3.12/tests/basic	2024-09-10 22:21:55.000000000 +0000
+@@ -39,4 +39,16 @@
+   compare exp-$(echo $opt|tr ' ' _) out || fail=1
+ done
+ 
++# Verify -l (--paginate) resolves pr through wildcard PATH entries.
++mkdir -p wroot/pkg/bin || fail=1
++cat <<'EOF' > wroot/pkg/bin/pr || fail=1
++#!/sw/bash/bin/bash
++echo "PAGINATED:$1:$2"
++cat
++EOF
++chmod +x wroot/pkg/bin/pr || fail=1
++returns_ 1 env PATH="$(pwd)/wroot/*/bin:$PATH" diff -l a b > out-pr 2> err-pr || fail=1
++grep '^PAGINATED:-h:diff -l a b$' out-pr >/dev/null || fail=1
++rm -rf wroot out-pr err-pr
++
+ Exit $fail

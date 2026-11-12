@@ -1,0 +1,80 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=3.12
+
+ARCHIVES=(
+    7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd https://ftpmirror.gnu.org/diffutils/diffutils-$VERSION.tar.xz
+    233a5d9473016ffae09cf2cbd69fa1b622a822df2249066d439c1c30b3ac2093 file://diffutils-$VERSION-fluffy-shell.patch
+    2c4c91b6a6779c5655aff3778e76992539a21758185674e9347c07970c3cf6e4 file://diffutils-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        perl
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        perl
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i diffutils-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i diffutils-$VERSION-fluffy-source.patch
+
+    ac_cv_path_PR_PROGRAM=pr CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/diffutils
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

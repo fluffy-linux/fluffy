@@ -1,0 +1,180 @@
+diff --no-dereference -Naur iproute2-7.1.0.orig/configure iproute2-7.1.0/configure
+--- iproute2-7.1.0.orig/configure	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/configure	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: GPL-2.0
+ # This is not an autoconf generated configure
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/scripts/iproute2-import-uapi iproute2-7.1.0/scripts/iproute2-import-uapi
+--- iproute2-7.1.0.orig/scripts/iproute2-import-uapi	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/scripts/iproute2-import-uapi	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash -e
++#!/sw/bash/bin/bash -e
+ #
+ # iproute2-import-uapi [commit]
+ #
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/bridge/vlan/show.t iproute2-7.1.0/testsuite/tests/bridge/vlan/show.t
+--- iproute2-7.1.0.orig/testsuite/tests/bridge/vlan/show.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/bridge/vlan/show.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/bridge/vlan/tunnelshow.t iproute2-7.1.0/testsuite/tests/bridge/vlan/tunnelshow.t
+--- iproute2-7.1.0.orig/testsuite/tests/bridge/vlan/tunnelshow.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/bridge/vlan/tunnelshow.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/link/add_type_bareudp.t iproute2-7.1.0/testsuite/tests/ip/link/add_type_bareudp.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/link/add_type_bareudp.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/link/add_type_bareudp.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/link/add_type_xfrm.t iproute2-7.1.0/testsuite/tests/ip/link/add_type_xfrm.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/link/add_type_xfrm.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/link/add_type_xfrm.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/link/new_link.t iproute2-7.1.0/testsuite/tests/ip/link/new_link.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/link/new_link.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/link/new_link.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/link/show_dev_wo_vf_rate.t iproute2-7.1.0/testsuite/tests/ip/link/show_dev_wo_vf_rate.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/link/show_dev_wo_vf_rate.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/link/show_dev_wo_vf_rate.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/neigh/basic.t iproute2-7.1.0/testsuite/tests/ip/neigh/basic.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/neigh/basic.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/neigh/basic.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/netns/set_nsid.t iproute2-7.1.0/testsuite/tests/ip/netns/set_nsid.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/netns/set_nsid.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/netns/set_nsid.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/netns/set_nsid_batch.t iproute2-7.1.0/testsuite/tests/ip/netns/set_nsid_batch.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/netns/set_nsid_batch.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/netns/set_nsid_batch.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/route/add_default_route.t iproute2-7.1.0/testsuite/tests/ip/route/add_default_route.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/route/add_default_route.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/route/add_default_route.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/rule/dsfield.t iproute2-7.1.0/testsuite/tests/ip/rule/dsfield.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/rule/dsfield.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/rule/dsfield.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ip/tunnel/add_tunnel.t iproute2-7.1.0/testsuite/tests/ip/tunnel/add_tunnel.t
+--- iproute2-7.1.0.orig/testsuite/tests/ip/tunnel/add_tunnel.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ip/tunnel/add_tunnel.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/ss/ssfilter.t iproute2-7.1.0/testsuite/tests/ss/ssfilter.t
+--- iproute2-7.1.0.orig/testsuite/tests/ss/ssfilter.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/ss/ssfilter.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/tc/batch.t iproute2-7.1.0/testsuite/tests/tc/batch.t
+--- iproute2-7.1.0.orig/testsuite/tests/tc/batch.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/tc/batch.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ . lib/generic.sh
+ 
+ DEV="$(rand_dev)"
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/tc/flower_mpls.t iproute2-7.1.0/testsuite/tests/tc/flower_mpls.t
+--- iproute2-7.1.0.orig/testsuite/tests/tc/flower_mpls.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/tc/flower_mpls.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/tc/mpls.t iproute2-7.1.0/testsuite/tests/tc/mpls.t
+--- iproute2-7.1.0.orig/testsuite/tests/tc/mpls.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/tc/mpls.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/tc/pedit.t iproute2-7.1.0/testsuite/tests/tc/pedit.t
+--- iproute2-7.1.0.orig/testsuite/tests/tc/pedit.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/tc/pedit.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 
+diff --no-dereference -Naur iproute2-7.1.0.orig/testsuite/tests/tc/vlan.t iproute2-7.1.0/testsuite/tests/tc/vlan.t
+--- iproute2-7.1.0.orig/testsuite/tests/tc/vlan.t	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/testsuite/tests/tc/vlan.t	2026-06-15 22:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . lib/generic.sh
+ 

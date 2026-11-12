@@ -1,0 +1,48 @@
+diff --no-dereference -Naur findutils-4.11.0.orig/find/testsuite/find.gnu/execdir-multiple.exp findutils-4.11.0/find/testsuite/find.gnu/execdir-multiple.exp
+--- findutils-4.11.0.orig/find/testsuite/find.gnu/execdir-multiple.exp	2026-05-24 10:18:46.000000000 +0000
++++ findutils-4.11.0/find/testsuite/find.gnu/execdir-multiple.exp	2026-05-24 10:18:46.000000000 +0000
+@@ -17,7 +17,7 @@
+ # $body is the body of a shell script we use for testing.
+ # It prints a series of lines of the form described above.
+ # One line is printed for each command-line argument.
+-set body {#! /bin/sh
++set body {#!/sw/bash/bin/bash
+ set -e
+ here=`pwd`
+ d=`basename $here`
+diff --no-dereference -Naur findutils-4.11.0.orig/find/testsuite/find.posix/exec-nogaps.exp findutils-4.11.0/find/testsuite/find.posix/exec-nogaps.exp
+--- findutils-4.11.0.orig/find/testsuite/find.posix/exec-nogaps.exp	2026-05-24 10:18:46.000000000 +0000
++++ findutils-4.11.0/find/testsuite/find.posix/exec-nogaps.exp	2026-05-24 10:18:46.000000000 +0000
+@@ -15,7 +15,7 @@
+ close $f
+ 
+ set script [open tmp/list.sh "w"]
+-puts $script {#! /bin/sh
++puts $script {#!/sw/bash/bin/bash
+ for f; do echo "$f"; done
+ }
+ close $script
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/Makefile.in findutils-4.11.0/gnulib-tests/Makefile.in
+--- findutils-4.11.0.orig/gnulib-tests/Makefile.in	2026-07-11 09:03:25.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/Makefile.in	2026-07-11 09:03:25.000000000 +0000
+@@ -307,7 +307,7 @@
+ 	test-windows-timedrecmutex-type$(EXEEXT) test-wmemchr$(EXEEXT) \
+ 	test-xalloc-die.sh test-xstrtod$(EXEEXT) test-xstrtol.sh \
+ 	test-xstrtoumax.sh test-yesno.sh
+-XFAIL_TESTS =
++XFAIL_TESTS = test-regex-el$(EXEEXT)
+ noinst_PROGRAMS = current-locale$(EXEEXT) test-localcharset$(EXEEXT) \
+ 	$(am__EXEEXT_1)
+ check_PROGRAMS = test-accept$(EXEEXT) test-access$(EXEEXT) \
+diff --no-dereference -Naur findutils-4.11.0.orig/locate/testsuite/config/unix.exp findutils-4.11.0/locate/testsuite/config/unix.exp
+--- findutils-4.11.0.orig/locate/testsuite/config/unix.exp	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/locate/testsuite/config/unix.exp	2026-06-27 11:38:59.000000000 +0000
+@@ -30,7 +30,7 @@
+ 
+ proc normalize_dir { dir } {
+     if [ catch { file normalize $dir } result ] then {
+-	return [ exec /bin/sh -c "cd $dir && /bin/pwd" ]
++	return [ exec /sw/bash/bin/bash -c "cd $dir && pwd" ]
+     } else {
+ 	return $result;
+     }

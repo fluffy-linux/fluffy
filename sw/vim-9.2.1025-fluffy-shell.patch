@@ -1,0 +1,443 @@
+diff --no-dereference -Naur vim-9.2.1025.orig/ci/setup-weston.sh vim-9.2.1025/ci/setup-weston.sh
+--- vim-9.2.1025.orig/ci/setup-weston.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/ci/setup-weston.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ set -e
+ 
+ apt-get install -y weston
+diff --no-dereference -Naur vim-9.2.1025.orig/ci/setup-xvfb.sh vim-9.2.1025/ci/setup-xvfb.sh
+--- vim-9.2.1025.orig/ci/setup-xvfb.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/ci/setup-xvfb.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ set -e
+ 
+ apt-get install -y xvfb
+diff --no-dereference -Naur vim-9.2.1025.orig/configure vim-9.2.1025/configure
+--- vim-9.2.1025.orig/configure	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/configure	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # This is just a stub for the Unix configure script, to provide support for
+ # doing "./configure" in the top Vim directory.
+diff --no-dereference -Naur vim-9.2.1025.orig/pixmaps/gen-inline-pixbufs.sh vim-9.2.1025/pixmaps/gen-inline-pixbufs.sh
+--- vim-9.2.1025.orig/pixmaps/gen-inline-pixbufs.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/pixmaps/gen-inline-pixbufs.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ prefix=stock_
+ list=
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/indent/testdir/bash.in vim-9.2.1025/runtime/indent/testdir/bash.in
+--- vim-9.2.1025.orig/runtime/indent/testdir/bash.in	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/indent/testdir/bash.in	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # vim: set ft=bash sw=2 noet:
+ 
+ # START_INDENT
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/indent/testdir/bash.ok vim-9.2.1025/runtime/indent/testdir/bash.ok
+--- vim-9.2.1025.orig/runtime/indent/testdir/bash.ok	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/indent/testdir/bash.ok	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # vim: set ft=bash sw=2 noet:
+ 
+ # START_INDENT
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/macros/less.sh vim-9.2.1025/runtime/macros/less.sh
+--- vim-9.2.1025.orig/runtime/macros/less.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/macros/less.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Shell script to start Vim with less.vim.
+ # Read stdin if no arguments were given and stdin was redirected.
+ 
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_10.sh vim-9.2.1025/runtime/syntax/testdir/input/sh_10.sh
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_10.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_10.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ curl --http2 --tlsv1.2 -O https://example.com/file.txt
+ wget --inet6-only https://example.com/file.txt
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_11.sh vim-9.2.1025/runtime/syntax/testdir/input/sh_11.sh
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_11.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_11.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ # Issue #962
+ 
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_12.sh vim-9.2.1025/runtime/syntax/testdir/input/sh_12.sh
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_12.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_12.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # VIM_TEST_SETUP highlight link shArrayValue Identifier
+ # VIM_TEST_SETUP highlight link shBracketExprDelim Structure
+ # VIM_TEST_SETUP highlight link shCharClass Todo
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_14.sh vim-9.2.1025/runtime/syntax/testdir/input/sh_14.sh
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_14.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_14.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # Issue #17221 (sh syntax: escaped square brackets don't work in [[ ]])
+ 
+ [[ foo == [bar] ]]
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_15.sh vim-9.2.1025/runtime/syntax/testdir/input/sh_15.sh
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_15.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_15.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # Issue #19053 (sh syntax: escaped characters followed by # in double quotes)
+ 
+ CLEANURL='http://localhost:8077/test'
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_bash.bash vim-9.2.1025/runtime/syntax/testdir/input/sh_bash.bash
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_bash.bash	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_bash.bash	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ # bash 5.3+ supports command substitution that is very similar
+ # (but not identical) to ksh/mksh.
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_bash_alias.sh vim-9.2.1025/runtime/syntax/testdir/input/sh_bash_alias.sh
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_bash_alias.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_bash_alias.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/usr/bin/bash
++#!/sw/bash/bin/bash
+ 
+ alias ls='ls --color=auto'
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_bash_array.bash vim-9.2.1025/runtime/syntax/testdir/input/sh_bash_array.bash
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_bash_array.bash	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_bash_array.bash	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ # Issue #18712
+ 
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_functions_bash.sh vim-9.2.1025/runtime/syntax/testdir/input/sh_functions_bash.sh
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_functions_bash.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_functions_bash.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # VIM_TEST_SETUP setlocal fen fdc=2 fdl=8 fdm=syntax
+ # VIM_TEST_SETUP let g:sh_fold_enabled = 1 + 2 + 4
+ # VIM_TEST_SETUP highlight link shFunctionExprRegion Todo
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_sundrous.bash vim-9.2.1025/runtime/syntax/testdir/input/sh_sundrous.bash
+--- vim-9.2.1025.orig/runtime/syntax/testdir/input/sh_sundrous.bash	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/input/sh_sundrous.bash	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ basename
+ cat
+ chgrp
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/tools/maketestdeps vim-9.2.1025/runtime/syntax/testdir/tools/maketestdeps
+--- vim-9.2.1025.orig/runtime/syntax/testdir/tools/maketestdeps	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/tools/maketestdeps	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # This script generates auxiliary recipes for 'make test': e.g. in the case of JAVA,
+ # - a phony target 'java' depends on all of the testdir/input/java*.java
+ # - when the syntax file is changed, timestamps of the JAVA files are updated so that the tests will
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/syntax/testdir/tools/regenerate_screendumps.sh vim-9.2.1025/runtime/syntax/testdir/tools/regenerate_screendumps.sh
+--- vim-9.2.1025.orig/runtime/syntax/testdir/tools/regenerate_screendumps.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/syntax/testdir/tools/regenerate_screendumps.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ #
+ # The following steps are to be taken by this script:
+ # 1) Remove all files from the "dumps" directory.
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/tools/ref vim-9.2.1025/runtime/tools/ref
+--- vim-9.2.1025.orig/runtime/tools/ref	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/tools/ref	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # ref - Check spelling of the arguments
+ #
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/tools/vimm vim-9.2.1025/runtime/tools/vimm
+--- vim-9.2.1025.orig/runtime/tools/vimm	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/tools/vimm	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # enable DEC locator input model on remote terminal
+ printf  "\033[1;2'z\033[1;3'{\c"
+ vim "$@"
+diff --no-dereference -Naur vim-9.2.1025.orig/runtime/tools/vimspell.sh vim-9.2.1025/runtime/tools/vimspell.sh
+--- vim-9.2.1025.orig/runtime/tools/vimspell.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/runtime/tools/vimspell.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Spell a file & generate the syntax statements necessary to
+ # highlight in vim.  Based on a program from Krishna Gadepalli
+diff --no-dereference -Naur vim-9.2.1025.orig/src/Makefile vim-9.2.1025/src/Makefile
+--- vim-9.2.1025.orig/src/Makefile	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/Makefile	2026-08-30 21:19:06.000000000 +0000
+@@ -1376,7 +1376,7 @@
+ ##   no changes required below this line      ##
+ ################################################
+ 
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ 
+ # We would normally use "mkdir -p" but it doesn't work properly everywhere.
+ # Using AC_PROG_MKDIR_P in configure.ac has a problem with the "auto"
+@@ -3869,7 +3869,7 @@
+ 	@catattr -r "BEOS:ICON" $(DEST_BIN)/$(GVIMTARGET) > ~icon.attr
+ 	for i in $(HAIKU_GLINKS); do \
+ 		rm $$i ; \
+-		echo "#!/bin/sh" > $$i ; \
++		echo "#!/sw/bash/bin/bash" > $$i ; \
+ 		case $$i in \
+ 			$(DEST_BIN)/$(GVIMTARGET)) \
+ 				cp $(DEST_BIN)/$(VIMTARGET) $$i ; \
+diff --no-dereference -Naur vim-9.2.1025.orig/src/auto/configure vim-9.2.1025/src/auto/configure
+--- vim-9.2.1025.orig/src/auto/configure	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/auto/configure	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72.
+ #
+@@ -278,7 +278,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -2988,7 +2988,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+diff --no-dereference -Naur vim-9.2.1025.orig/src/configure vim-9.2.1025/src/configure
+--- vim-9.2.1025.orig/src/configure	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/configure	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # run the automatically generated configure script
+ CONFIG_STATUS=auto/config.status \
+ 	auto/configure "$@" --srcdir="${srcdir:-.}" --cache-file=auto/config.cache
+diff --no-dereference -Naur vim-9.2.1025.orig/src/gvimtutor vim-9.2.1025/src/gvimtutor
+--- vim-9.2.1025.orig/src/gvimtutor	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/gvimtutor	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Start GUI Vim on a copy of the tutor file.
+ 
+diff --no-dereference -Naur vim-9.2.1025.orig/src/install-sh vim-9.2.1025/src/install-sh
+--- vim-9.2.1025.orig/src/install-sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/install-sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2013-12-25.23; # UTC
+diff --no-dereference -Naur vim-9.2.1025.orig/src/installman.sh vim-9.2.1025/src/installman.sh
+--- vim-9.2.1025.orig/src/installman.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/installman.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # installman.sh --- install or uninstall manpages for Vim
+ #
+ # arguments:
+@@ -39,7 +39,7 @@
+ if test $what = "install" -o $what = "xxd"; then
+    if test ! -d $destdir; then
+       echo creating $destdir
+-      /bin/sh install-sh -c -d $destdir
++      /sw/bash/bin/bash install-sh -c -d $destdir
+       chmod 755 $destdir
+    fi
+ fi
+diff --no-dereference -Naur vim-9.2.1025.orig/src/installml.sh vim-9.2.1025/src/installml.sh
+--- vim-9.2.1025.orig/src/installml.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/installml.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # installml.sh --- install or uninstall manpage links for Vim
+ #
+ # arguments:
+@@ -49,7 +49,7 @@
+ if test $what = "install" -a \( -f $destdir/$vimname.1 -o -f $destdir/$vimdiffname.1 -o -f $destdir/$eviewname.1 \); then
+    if test ! -d $destdir; then
+       echo creating $destdir
+-      /bin/sh install-sh -c -d $destdir
++      /sw/bash/bin/bash install-sh -c -d $destdir
+    fi
+ 
+    # ex
+diff --no-dereference -Naur vim-9.2.1025.orig/src/link.sh vim-9.2.1025/src/link.sh
+--- vim-9.2.1025.orig/src/link.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/link.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # link.sh -- try linking Vim with different sets of libraries, finding the
+ # minimal set for fastest startup.  The problem is that configure adds a few
+diff --no-dereference -Naur vim-9.2.1025.orig/src/osdef.sh vim-9.2.1025/src/osdef.sh
+--- vim-9.2.1025.orig/src/osdef.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/osdef.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # osdef.sh -- copy osdef.h.in to osdef.h while removing declarations
+ # found in the system header files. Caution: weird sed magic going on here.
+diff --no-dereference -Naur vim-9.2.1025.orig/src/pathdef.sh vim-9.2.1025/src/pathdef.sh
+--- vim-9.2.1025.orig/src/pathdef.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/pathdef.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # pathdef.sh: adjust pathdef.c for auto/link.sed, if it exists
+ #
+diff --no-dereference -Naur vim-9.2.1025.orig/src/po/Makefile vim-9.2.1025/src/po/Makefile
+--- vim-9.2.1025.orig/src/po/Makefile	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/po/Makefile	2026-08-30 21:19:06.000000000 +0000
+@@ -10,7 +10,7 @@
+ # not installed on Unix.
+ 
+ PACKAGE = vim
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ VIMPROG = ../vim
+ 
+ # MacOS sed is locale aware, set $LANG to avoid problems.
+diff --no-dereference -Naur vim-9.2.1025.orig/src/testdir/Makefile vim-9.2.1025/src/testdir/Makefile
+--- vim-9.2.1025.orig/src/testdir/Makefile	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/testdir/Makefile	2026-08-30 21:19:06.000000000 +0000
+@@ -49,7 +49,7 @@
+ 
+ report:
+ 	@# without the +eval feature test_result.log is a copy of test.log
+-	@/bin/sh -c "if test -f test.log; \
++	@/sw/bash/bin/bash -c "if test -f test.log; \
+ 		then cp test.log test_result.log; \
+ 		else echo No failures reported > test_result.log; \
+ 		fi"
+@@ -58,7 +58,7 @@
+ 	@echo
+ 	@echo 'Test results:'
+ 	@cat test_result.log
+-	@/bin/sh -c "if test -f test.log; \
++	@/sw/bash/bin/bash -c "if test -f test.log; \
+ 		then echo TEST FAILURE; exit 1; \
+ 		else echo ALL DONE; \
+ 		fi"
+@@ -130,7 +130,7 @@
+ 	@# Sleep a moment to avoid that the xterm title is messed up.
+ 	@# 200 msec is sufficient, but only modern sleep supports a fraction of
+ 	@# a second, fall back to a second if it fails.
+-	@-/bin/sh -c "sleep .2 > /dev/null 2>&1 || sleep 1"
++	@-/sw/bash/bin/bash -c "sleep .2 > /dev/null 2>&1 || sleep 1"
+ 	if test -n "$${ASAN_OPTIONS}"; then \
+ 		ASAN_OPTIONS="$${ASAN_OPTIONS}_$*" UBSAN_OPTIONS="$${UBSAN_OPTIONS}_$*" $(RUN_VIMPROG) $*.in $(REDIR_TEST_TO_NULL) ; \
+ 	else \
+@@ -138,14 +138,14 @@
+ 	fi
+ 
+ 	@# Check if the test.out file matches test.ok.
+-	@/bin/sh -c "if test -f test.out; then \
++	@/sw/bash/bin/bash -c "if test -f test.out; then \
+ 		  if diff test.out $*.ok; \
+ 		  then mv -f test.out $*.out; \
+ 		  else echo $* FAILED >>test.log; mv -f test.out $*.failed; \
+ 		  fi \
+ 		else echo $* NO OUTPUT >>test.log; \
+ 		fi"
+-	@/bin/sh -c "if test -f valgrind; then\
++	@/sw/bash/bin/bash -c "if test -f valgrind; then\
+ 		  mv -f valgrind valgrind.$*; \
+ 		fi"
+ 	-rm -rf X* test.ok viminfo
+@@ -158,7 +158,7 @@
+ RUN_VIMTEST = VIMRUNTIME=$(SCRIPTSOURCE) $(VALGRIND) $(VIMPROG) -f $(GUI_FLAG) -u util/unix.vim --gui-dialog-file guidialog
+ 
+ newtests: newtestssilent
+-	@/bin/sh -c "if test -f messages; then cat messages; fi"
++	@/sw/bash/bin/bash -c "if test -f messages; then cat messages; fi"
+ 
+ newtestssilent: $(NEW_TESTS_RES)
+ 
+@@ -219,10 +219,10 @@
+ 	@# Sleep a moment to avoid that the xterm title is messed up.
+ 	@# 200 msec is sufficient, but only modern sleep supports a fraction of
+ 	@# a second, fall back to a second if it fails.
+-	@-/bin/sh -c "sleep .2 > /dev/null 2>&1 || sleep 1"
++	@-/sw/bash/bin/bash -c "sleep .2 > /dev/null 2>&1 || sleep 1"
+ 	if test -n "$${ASAN_OPTIONS}"; then \
+ 		ASAN_OPTIONS="$${ASAN_OPTIONS}_$*" UBSAN_OPTIONS="$${UBSAN_OPTIONS}_$*" $(RUN_VIMTEST) $(NO_INITS) -S runtest.vim $*.vim $(REDIR_TEST_TO_NULL) ; \
+ 	else \
+ 		$(RUN_VIMTEST) $(NO_INITS) -S runtest.vim $*.vim $(REDIR_TEST_TO_NULL) ; \
+ 	fi
+-	@/bin/sh -c "if test -f benchmark.out; then cat benchmark.out; fi"
++	@/sw/bash/bin/bash -c "if test -f benchmark.out; then cat benchmark.out; fi"
+diff --no-dereference -Naur vim-9.2.1025.orig/src/toolcheck vim-9.2.1025/src/toolcheck
+--- vim-9.2.1025.orig/src/toolcheck	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/toolcheck	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # toolcheck -- check for tools that have severe bugs. Good that all the buggy
+ #	       tools identify by version numbers. This is the spirit of GNU :-)
+ #
+diff --no-dereference -Naur vim-9.2.1025.orig/src/vimtutor vim-9.2.1025/src/vimtutor
+--- vim-9.2.1025.orig/src/vimtutor	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/vimtutor	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Start Vim on a copy of the tutor file.
+ 
+diff --no-dereference -Naur vim-9.2.1025.orig/src/which.sh vim-9.2.1025/src/which.sh
+--- vim-9.2.1025.orig/src/which.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/which.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # which.sh -- find where an executable is located.  It's here because the
+ # "which" command is not supported everywhere.  Used by Makefile.

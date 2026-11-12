@@ -1,0 +1,49 @@
+diff --no-dereference -Naur tar-1.35.orig/src/system.c tar-1.35/src/system.c
+--- tar-1.35.orig/src/system.c	2023-07-10 07:29:17.000000000 +0000
++++ tar-1.35/src/system.c	2023-07-10 07:29:17.000000000 +0000
+@@ -27,14 +27,25 @@
+ static _Noreturn void
+ xexec (const char *cmd)
+ {
++  const char *sh = "/bin/sh";
+   char *argv[4];
+ 
+-  argv[0] = (char *) "/bin/sh";
++  if (access (sh, X_OK) != 0)
++    {
++      if (access ("/sw/bash/bin/sh", X_OK) == 0)
++        sh = "/sw/bash/bin/sh";
++      else if (access ("/sw/bash/bin/bash", X_OK) == 0)
++        sh = "/sw/bash/bin/bash";
++      else
++        sh = "sh";
++    }
++
++  argv[0] = (char *) sh;
+   argv[1] = (char *) "-c";
+   argv[2] = (char *) cmd;
+   argv[3] = NULL;
+ 
+-  execv ("/bin/sh", argv);
++  execvp (sh, argv);
+   exec_fatal (cmd);
+ }
+ 
+@@ -231,7 +242,16 @@
+   pid_t child;
+   const char *shell = getenv ("SHELL");
+   if (! shell)
+-    shell = "/bin/sh";
++    {
++      if (access ("/bin/sh", X_OK) == 0)
++        shell = "/bin/sh";
++      else if (access ("/sw/bash/bin/sh", X_OK) == 0)
++        shell = "/sw/bash/bin/sh";
++      else if (access ("/sw/bash/bin/bash", X_OK) == 0)
++        shell = "/sw/bash/bin/bash";
++      else
++        shell = "sh";
++    }
+   child = xfork ();
+   if (child == 0)
+     {

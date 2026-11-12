@@ -1,0 +1,553 @@
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/ar-lib man-db-2.13.1/build-aux/ar-lib
+--- man-db-2.13.1.orig/build-aux/ar-lib	2025-05-02 12:53:49.000000000 +0000
++++ man-db-2.13.1/build-aux/ar-lib	2025-05-02 12:53:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for Microsoft lib.exe
+ 
+ me=ar-lib
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/compile man-db-2.13.1/build-aux/compile
+--- man-db-2.13.1.orig/build-aux/compile	2025-05-02 12:53:49.000000000 +0000
++++ man-db-2.13.1/build-aux/compile	2025-05-02 12:53:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/config.guess man-db-2.13.1/build-aux/config.guess
+--- man-db-2.13.1.orig/build-aux/config.guess	2025-05-02 12:52:50.000000000 +0000
++++ man-db-2.13.1/build-aux/config.guess	2025-05-02 12:52:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/config.rpath man-db-2.13.1/build-aux/config.rpath
+--- man-db-2.13.1.orig/build-aux/config.rpath	2025-05-02 12:53:14.000000000 +0000
++++ man-db-2.13.1/build-aux/config.rpath	2025-05-02 12:53:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/config.sub man-db-2.13.1/build-aux/config.sub
+--- man-db-2.13.1.orig/build-aux/config.sub	2025-05-02 12:52:50.000000000 +0000
++++ man-db-2.13.1/build-aux/config.sub	2025-05-02 12:52:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/depcomp man-db-2.13.1/build-aux/depcomp
+--- man-db-2.13.1.orig/build-aux/depcomp	2025-05-02 12:53:52.000000000 +0000
++++ man-db-2.13.1/build-aux/depcomp	2025-05-02 12:53:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/gitlog-to-changelog man-db-2.13.1/build-aux/gitlog-to-changelog
+--- man-db-2.13.1.orig/build-aux/gitlog-to-changelog	2025-05-02 12:53:14.000000000 +0000
++++ man-db-2.13.1/build-aux/gitlog-to-changelog	2025-05-02 12:53:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Convert git log output to ChangeLog format.
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/gnupload man-db-2.13.1/build-aux/gnupload
+--- man-db-2.13.1.orig/build-aux/gnupload	2025-05-02 12:53:14.000000000 +0000
++++ man-db-2.13.1/build-aux/gnupload	2025-05-02 12:53:14.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2022-01-27.18; # UTC
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/install-sh man-db-2.13.1/build-aux/install-sh
+--- man-db-2.13.1.orig/build-aux/install-sh	2025-05-02 12:53:49.000000000 +0000
++++ man-db-2.13.1/build-aux/install-sh	2025-05-02 12:53:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/missing man-db-2.13.1/build-aux/missing
+--- man-db-2.13.1.orig/build-aux/missing	2025-05-02 12:53:49.000000000 +0000
++++ man-db-2.13.1/build-aux/missing	2025-05-02 12:53:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2024-06-07.14; # UTC
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/test-driver man-db-2.13.1/build-aux/test-driver
+--- man-db-2.13.1.orig/build-aux/test-driver	2025-05-02 12:53:52.000000000 +0000
++++ man-db-2.13.1/build-aux/test-driver	2025-05-02 12:53:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff --no-dereference -Naur man-db-2.13.1.orig/build-aux/ylwrap man-db-2.13.1/build-aux/ylwrap
+--- man-db-2.13.1.orig/build-aux/ylwrap	2025-05-02 12:53:52.000000000 +0000
++++ man-db-2.13.1/build-aux/ylwrap	2025-05-02 12:53:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # ylwrap - wrapper for lex/yacc invocations.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff --no-dereference -Naur man-db-2.13.1.orig/configure man-db-2.13.1/configure
+--- man-db-2.13.1.orig/configure	2025-05-02 12:53:47.000000000 +0000
++++ man-db-2.13.1/configure	2025-05-02 12:53:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for man-db 2.13.1.
+ #
+@@ -289,7 +289,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -588,7 +588,7 @@
+ as_sed_sh="y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
+ as_tr_sh="eval sed '$as_sed_sh'" # deprecated
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ 
+ test -n "$DJDIR" || exec 7<&0 </dev/null
+@@ -5646,7 +5646,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+diff --no-dereference -Naur man-db-2.13.1.orig/init/systemd/man-db.service.in man-db-2.13.1/init/systemd/man-db.service.in
+--- man-db-2.13.1.orig/init/systemd/man-db.service.in	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/init/systemd/man-db.service.in	2025-05-02 12:49:29.000000000 +0000
+@@ -6,7 +6,7 @@
+ [Service]
+ Type=oneshot
+ # Recover from deletion, per FHS.
+-ExecStart=+/usr/bin/install -d -o @cache_top_owner@ -g @cache_top_owner@ -m 0755 /var/cache/man
++ExecStart=+install -d -o @cache_top_owner@ -g @cache_top_owner@ -m 0755 /var/cache/man
+ # Regenerate man database.
+ ExecStart=@bindir@/mandb --quiet
+ User=@cache_top_owner@
+diff --no-dereference -Naur man-db-2.13.1.orig/man/check-man man-db-2.13.1/man/check-man
+--- man-db-2.13.1.orig/man/check-man	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/man/check-man	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # Check that a manual page formats without errors. Lintian does something
+diff --no-dereference -Naur man-db-2.13.1.orig/manual/print-options man-db-2.13.1/manual/print-options
+--- man-db-2.13.1.orig/manual/print-options	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/manual/print-options	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ LC_ALL=C LANGUAGE='' nroff -c -me options-only.me | col -bpx | perl -ne '
+     $match = /^MAN-OPTIONS-BEGIN/ ... /^MAN-OPTIONS-END/;
+     if ($match > 1 and $match !~ /E0/) {
+diff --no-dereference -Naur man-db-2.13.1.orig/src/man.c man-db-2.13.1/src/man.c
+--- man-db-2.13.1.orig/src/man.c	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/man.c	2025-05-02 12:49:29.000000000 +0000
+@@ -1535,7 +1535,7 @@
+ 		free (esc_file);
+ 	}
+ 
+-	cmd = pipecmd_new_args ("/bin/sh", "-c", browser, nullptr);
++	cmd = pipecmd_new_args ("/sw/bash/bin/bash", "-c", browser, nullptr);
+ 	pipecmd_pre_exec (cmd, drop_privs, NULL, NULL);
+ 	p = pipeline_new_commands (cmd, nullptr);
+ 	pipeline_ignore_signals (p, 1);
+diff --no-dereference -Naur man-db-2.13.1.orig/src/man_db.conf.in man-db-2.13.1/src/man_db.conf.in
+--- man-db-2.13.1.orig/src/man_db.conf.in	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/man_db.conf.in	2025-05-02 12:49:29.000000000 +0000
+@@ -17,9 +17,10 @@
+ #
+ #MANDATORY_MANPATH 			/usr/src/pvm3/man
+ #
+-MANDATORY_MANPATH			/usr/man
+-MANDATORY_MANPATH			/usr/share/man
+-MANDATORY_MANPATH			/usr/local/share/man
++#MANDATORY_MANPATH			/usr/man
++MANDATORY_MANPATH			/sw/man-pages/share/man
++MANDATORY_MANPATH			/sw/*/share/man
++#MANDATORY_MANPATH			/usr/local/share/man
+ #---------------------------------------------------------
+ # set up PATH to MANPATH mapping
+ # ie. what man tree holds man pages for what binary directory.
+@@ -63,6 +64,7 @@
+ #
+ #		*MANPATH*     ->	*CATPATH*
+ #
++MANDB_MAP	/sw			/var/cache/man
+ MANDB_MAP	/usr/man		/var/cache/man/fsstnd
+ MANDB_MAP	/usr/share/man		/var/cache/man
+ MANDB_MAP	/usr/local/man		/var/cache/man/oldlocal
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/lexgrog-backslash-dash-rhs man-db-2.13.1/src/tests/lexgrog-backslash-dash-rhs
+--- man-db-2.13.1.orig/src/tests/lexgrog-backslash-dash-rhs	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/lexgrog-backslash-dash-rhs	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test handling of \- in the right-hand side of a NAME section.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/lexgrog-basic man-db-2.13.1/src/tests/lexgrog-basic
+--- man-db-2.13.1.orig/src/tests/lexgrog-basic	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/lexgrog-basic	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Basic lexgrog tests.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/lexgrog-multiple-whatis man-db-2.13.1/src/tests/lexgrog-multiple-whatis
+--- man-db-2.13.1.orig/src/tests/lexgrog-multiple-whatis	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/lexgrog-multiple-whatis	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test multiple whatis definitions.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-deleted-directory man-db-2.13.1/src/tests/man-deleted-directory
+--- man-db-2.13.1.orig/src/tests/man-deleted-directory	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-deleted-directory	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test that man can run from a deleted directory.
+ #   https://bugs.debian.org/764384
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-exact-section-matches man-db-2.13.1/src/tests/man-exact-section-matches
+--- man-db-2.13.1.orig/src/tests/man-exact-section-matches	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-exact-section-matches	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for:
+ #   https://bugzilla.redhat.com/show_bug.cgi?id=684977
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-executable-page-on-path man-db-2.13.1/src/tests/man-executable-page-on-path
+--- man-db-2.13.1.orig/src/tests/man-executable-page-on-path	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-executable-page-on-path	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for:
+ #   https://bugs.debian.org/608490
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-invalid-db-entry man-db-2.13.1/src/tests/man-invalid-db-entry
+--- man-db-2.13.1.orig/src/tests/man-invalid-db-entry	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-invalid-db-entry	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for invalid DB entry.
+ #   https://bugzilla.redhat.com/show_bug.cgi?id=841431
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-language-specific-requests man-db-2.13.1/src/tests/man-language-specific-requests
+--- man-db-2.13.1.orig/src/tests/man-language-specific-requests	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-language-specific-requests	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test additional language-specific requests for localized man pages.
+ 
+@@ -14,7 +14,7 @@
+ export MANPATH
+ 
+ cat >"$tmpdir/fake-program" <<EOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exec cat
+ EOF
+ chmod +x "$tmpdir/fake-program"
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-mandatory-manpath man-db-2.13.1/src/tests/man-mandatory-manpath
+--- man-db-2.13.1.orig/src/tests/man-mandatory-manpath	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-mandatory-manpath	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for wildcards in MANDATORY_MANPATH in config file and in MANPATH.
+ #   https://bugzilla.redhat.com/show_bug.cgi?id=677669
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-missing-locales man-db-2.13.1/src/tests/man-missing-locales
+--- man-db-2.13.1.orig/src/tests/man-missing-locales	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-missing-locales	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Testing empty locales on systems without /usr/share/i18n/SUPPORTED file.
+ #   https://bugzilla.redhat.com/show_bug.cgi?id=657409
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-override-dir man-db-2.13.1/src/tests/man-override-dir
+--- man-db-2.13.1.orig/src/tests/man-override-dir	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-override-dir	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Testing override dir. This test covers both use cases - when override dir is
+ # enabled and when it's not.
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-recode-in-place man-db-2.13.1/src/tests/man-recode-in-place
+--- man-db-2.13.1.orig/src/tests/man-recode-in-place	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-recode-in-place	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test man-recode's --in-place behaviour.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-recode-suffix man-db-2.13.1/src/tests/man-recode-suffix
+--- man-db-2.13.1.orig/src/tests/man-recode-suffix	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-recode-suffix	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test man-recode's --suffix behaviour.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-so-links-same-section man-db-2.13.1/src/tests/man-so-links-same-section
+--- man-db-2.13.1.orig/src/tests/man-so-links-same-section	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-so-links-same-section	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for relative .so links between man pages in the same section (e.g. ".so bar.1").
+ #   https://bugzilla.redhat.com/show_bug.cgi?id=693458
+@@ -15,7 +15,7 @@
+ export MANPATH
+ 
+ cat >"$tmpdir/fake-program" <<EOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exec cat
+ EOF
+ chmod +x "$tmpdir/fake-program"
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-suffixed-extension man-db-2.13.1/src/tests/man-suffixed-extension
+--- man-db-2.13.1.orig/src/tests/man-suffixed-extension	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-suffixed-extension	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for:
+ #   man chmod.2 => man 2 chmod
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-symlinks-with-matching-names man-db-2.13.1/src/tests/man-symlinks-with-matching-names
+--- man-db-2.13.1.orig/src/tests/man-symlinks-with-matching-names	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-symlinks-with-matching-names	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for:
+ #   https://bugs.debian.org/163347
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/manconv-coding-tags man-db-2.13.1/src/tests/manconv-coding-tags
+--- man-db-2.13.1.orig/src/tests/manconv-coding-tags	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/manconv-coding-tags	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test manconv's support for Emacs-style coding: tags.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/manconv-guess-from-encoding man-db-2.13.1/src/tests/manconv-guess-from-encoding
+--- man-db-2.13.1.orig/src/tests/manconv-guess-from-encoding	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/manconv-guess-from-encoding	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test manconv's support for guessing the input encoding if it is not
+ # explicitly specified.
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/manconv-incomplete-char-at-eof man-db-2.13.1/src/tests/manconv-incomplete-char-at-eof
+--- man-db-2.13.1.orig/src/tests/manconv-incomplete-char-at-eof	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/manconv-incomplete-char-at-eof	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test manconv's handling of incomplete characters at end of file.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/manconv-odd-combinations man-db-2.13.1/src/tests/manconv-odd-combinations
+--- man-db-2.13.1.orig/src/tests/manconv-odd-combinations	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/manconv-odd-combinations	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test manconv's handling of various odd encoding combinations.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-basic man-db-2.13.1/src/tests/mandb-basic
+--- man-db-2.13.1.orig/src/tests/mandb-basic	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-basic	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Basic mandb tests.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-bogus-symlink man-db-2.13.1/src/tests/mandb-bogus-symlink
+--- man-db-2.13.1.orig/src/tests/mandb-bogus-symlink	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-bogus-symlink	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for double free or corruption crash with bogus filename and symlink of man page.
+ #   https://bugzilla.redhat.com/show_bug.cgi?id=702904
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-cachedir-tag man-db-2.13.1/src/tests/mandb-cachedir-tag
+--- man-db-2.13.1.orig/src/tests/mandb-cachedir-tag	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-cachedir-tag	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Don't create CACHEDIR.TAG in manpath
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-empty-page man-db-2.13.1/src/tests/mandb-empty-page
+--- man-db-2.13.1.orig/src/tests/mandb-empty-page	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-empty-page	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test handling of empty files.
+ #   https://bugs.debian.org/622104
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-purge-updates-timestamp man-db-2.13.1/src/tests/mandb-purge-updates-timestamp
+--- man-db-2.13.1.orig/src/tests/mandb-purge-updates-timestamp	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-purge-updates-timestamp	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # If mandb purges missing pages, it updates the database's timestamp,
+ # without confusing itself into not scanning for newer pages.
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-regular-file-symlink-changes man-db-2.13.1/src/tests/mandb-regular-file-symlink-changes
+--- man-db-2.13.1.orig/src/tests/mandb-regular-file-symlink-changes	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-regular-file-symlink-changes	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # What happens when a manual page changes from a regular file to a symbolic
+ # link and back?
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-symlink-beats-whatis-ref man-db-2.13.1/src/tests/mandb-symlink-beats-whatis-ref
+--- man-db-2.13.1.orig/src/tests/mandb-symlink-beats-whatis-ref	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-symlink-beats-whatis-ref	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for:
+ #   https://bugs.debian.org/204249
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-symlink-target-timestamp man-db-2.13.1/src/tests/mandb-symlink-target-timestamp
+--- man-db-2.13.1.orig/src/tests/mandb-symlink-target-timestamp	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-symlink-target-timestamp	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # mandb stores the mtime for a symlink target as the mtime of the target
+ # file, not the mtime of the symlink.
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/mandb-whatis-broken-link-changes man-db-2.13.1/src/tests/mandb-whatis-broken-link-changes
+--- man-db-2.13.1.orig/src/tests/mandb-whatis-broken-link-changes	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/mandb-whatis-broken-link-changes	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Ensure that we don't repeatedly rescan when a whatis entry turns into a
+ # broken link.
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/manpath-slash man-db-2.13.1/src/tests/manpath-slash
+--- man-db-2.13.1.orig/src/tests/manpath-slash	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/manpath-slash	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ : "${srcdir=.}"
+ # shellcheck source-path=SCRIPTDIR
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/whatis-path-to-executable man-db-2.13.1/src/tests/whatis-path-to-executable
+--- man-db-2.13.1.orig/src/tests/whatis-path-to-executable	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/whatis-path-to-executable	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test that whatis behaves appropriately when given a path to an executable.
+ 
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/zsoelim-so-includes man-db-2.13.1/src/tests/zsoelim-so-includes
+--- man-db-2.13.1.orig/src/tests/zsoelim-so-includes	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/zsoelim-so-includes	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test for:
+ #   https://bugs.debian.org/503472
+@@ -15,7 +15,7 @@
+ export MANPATH
+ 
+ cat >"$tmpdir/fake-program" <<EOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exec cat
+ EOF
+ chmod +x "$tmpdir/fake-program"
+diff --no-dereference -Naur man-db-2.13.1.orig/tools/checkman man-db-2.13.1/tools/checkman
+--- man-db-2.13.1.orig/tools/checkman	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/tools/checkman	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 1995 Graeme W. Wilford. (Wilf.)
+ #
+diff --no-dereference -Naur man-db-2.13.1.orig/tools/mandb_fmt-script man-db-2.13.1/tools/mandb_fmt-script
+--- man-db-2.13.1.orig/tools/mandb_fmt-script	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/tools/mandb_fmt-script	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # $1 : the source file
+ # $2 : the preprocessor string
+ # $3 : the output device (optional)
+diff --no-dereference -Naur man-db-2.13.1.orig/tools/mkcatdirs man-db-2.13.1/tools/mkcatdirs
+--- man-db-2.13.1.orig/tools/mkcatdirs	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/tools/mkcatdirs	2025-05-02 12:49:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 1995 Graeme Wilford.
+ #

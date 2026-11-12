@@ -1,0 +1,74 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.8
+
+ARCHIVES=(
+    f87cee69eec2b4fcbf60a396b030ad6aa3415f192aa5f7ee84cad5e11f7f5ae3 https://ftpmirror.gnu.org/patch/patch-$VERSION.tar.xz
+    baa7c9573f451e9688c11d6164a823c248b23232bcc42502f46bb1f9beb16ea5 file://patch-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed
+        tar-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i patch-$VERSION-fluffy-shell.patch
+
+    ./configure \
+        --prefix=/sw/patch
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

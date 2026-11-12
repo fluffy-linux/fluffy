@@ -1,0 +1,902 @@
+diff --no-dereference -Naur coreutils-9.11.orig/lib/findprog-in.c coreutils-9.11/lib/findprog-in.c
+--- coreutils-9.11.orig/lib/findprog-in.c	2026-01-03 14:27:29.000000000 +0000
++++ coreutils-9.11/lib/findprog-in.c	2026-01-03 14:27:29.000000000 +0000
+@@ -26,6 +26,9 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <sys/stat.h>
++#if !(defined _WIN32 && !defined __CYGWIN__)
++# include <glob.h>
++#endif
+ 
+ #include "filename.h"
+ #include "concat-filename.h"
+@@ -250,82 +253,121 @@
+             dir_as_prefix = dir;
+           }
+ 
+-        /* Try all platform-dependent suffixes.  */
+-        for (size_t i = 0; i < sizeof (suffixes) / sizeof (suffixes[0]); i++)
++        #if !(defined _WIN32 && !defined __CYGWIN__)
++        glob_t pglob;
++        bool used_glob = false;
++        #endif
++        const char *single_dir = dir_as_prefix;
++        char * const *dirs = (char * const *) &single_dir;
++        size_t ndirs = 1;
++        #if !(defined _WIN32 && !defined __CYGWIN__)
++        if (strpbrk (dir_as_prefix, "*?[") != NULL
++            && glob (dir_as_prefix, GLOB_NOCHECK | GLOB_NOESCAPE | GLOB_ONLYDIR,
++                     NULL, &pglob) == 0)
+           {
+-            const char *suffix = suffixes[i];
++            used_glob = true;
++            dirs = pglob.gl_pathv;
++            ndirs = pglob.gl_pathc;
++          }
++        #endif
+ 
+-            #if defined _WIN32 && !defined __CYGWIN__ /* Native Windows */
+-            /* File names without a '.' are not considered executable, and
+-               for file names with a '.' no additional suffix is tried.  */
+-            if ((*suffix != '\0') != progname_has_dot)
+-            #endif
++        for (size_t di = 0; di < ndirs; di++)
++          {
++            const char *cand_dir = dirs[di];
++
++            /* Try all platform-dependent suffixes.  */
++            for (size_t i = 0; i < sizeof (suffixes) / sizeof (suffixes[0]); i++)
+               {
+-                /* Concatenate dir_as_prefix, progname, and suffix.  */
+-                char *progpathname =
+-                  concatenated_filename (dir_as_prefix, progname, suffix);
++                const char *suffix = suffixes[i];
+ 
+-                if (progpathname == NULL)
++                #if defined _WIN32 && !defined __CYGWIN__ /* Native Windows */
++                /* File names without a '.' are not considered executable, and
++                   for file names with a '.' no additional suffix is tried.  */
++                if ((*suffix != '\0') != progname_has_dot)
++                #endif
+                   {
+-                    /* errno is set here.  */
+-                    failure_errno = errno;
+-                    free (dir_as_prefix_to_free);
+-                    goto failed;
+-                  }
++                    /* Concatenate cand_dir, progname, and suffix.  */
++                    char *progpathname =
++                      concatenated_filename (cand_dir, progname, suffix);
+ 
+-                /* On systems which have the eaccess() system call, let's
+-                   use it.  On other systems, let's hope that this program
+-                   is not installed setuid or setgid, so that it is ok to
+-                   call access() despite its design flaw.  */
+-                if (eaccess (progpathname, X_OK) == 0)
+-                  {
+-                    /* Check that the progpathname does not point to a
+-                       directory.  */
+-                    struct stat statbuf;
++                    if (progpathname == NULL)
++                      {
++                        /* errno is set here.  */
++                        failure_errno = errno;
++                        #if !(defined _WIN32 && !defined __CYGWIN__)
++                    if (used_glob)
++                      globfree (&pglob);
++                    #endif
++                    free (dir_as_prefix_to_free);
++                        goto failed;
++                      }
+ 
+-                    if (stat (progpathname, &statbuf) >= 0)
++                    /* On systems which have the eaccess() system call, let's
++                       use it.  On other systems, let's hope that this program
++                       is not installed setuid or setgid, so that it is ok to
++                       call access() despite its design flaw.  */
++                    if (eaccess (progpathname, X_OK) == 0)
+                       {
+-                        if (! S_ISDIR (statbuf.st_mode))
++                        /* Check that the progpathname does not point to a
++                           directory.  */
++                        struct stat statbuf;
++
++                        if (stat (progpathname, &statbuf) >= 0)
+                           {
+-                            /* Found!  */
+-                            if (streq (progpathname, progname))
++                            if (! S_ISDIR (statbuf.st_mode))
+                               {
+-                                free (progpathname);
+-
+-                                /* Add the "./" prefix for real, that
+-                                   concatenated_filename() optimized away.
+-                                   This avoids a second PATH search when the
+-                                   caller uses execl/execv/execlp/execvp.  */
+-                                progpathname =
+-                                  (char *) malloc (2 + strlen (progname) + 1);
+-                                if (progpathname == NULL)
++                                /* Found!  */
++                                if (streq (progpathname, progname))
+                                   {
+-                                    /* errno is set here.  */
+-                                    failure_errno = errno;
+-                                    free (dir_as_prefix_to_free);
+-                                    goto failed;
++                                    free (progpathname);
++
++                                    /* Add the "./" prefix for real, that
++                                       concatenated_filename() optimized away.
++                                       This avoids a second PATH search when the
++                                       caller uses execl/execv/execlp/execvp.  */
++                                    progpathname =
++                                      (char *) malloc (2 + strlen (progname) + 1);
++                                    if (progpathname == NULL)
++                                      {
++                                        /* errno is set here.  */
++                                        failure_errno = errno;
++                                        #if !(defined _WIN32 && !defined __CYGWIN__)
++                    if (used_glob)
++                      globfree (&pglob);
++                    #endif
++                    free (dir_as_prefix_to_free);
++                                        goto failed;
++                                      }
++                                    progpathname[0] = '.';
++                                    progpathname[1] = NATIVE_SLASH;
++                                    memcpy (progpathname + 2, progname,
++                                            strlen (progname) + 1);
+                                   }
+-                                progpathname[0] = '.';
+-                                progpathname[1] = NATIVE_SLASH;
+-                                memcpy (progpathname + 2, progname,
+-                                        strlen (progname) + 1);
++
++                                #if !(defined _WIN32 && !defined __CYGWIN__)
++                    if (used_glob)
++                      globfree (&pglob);
++                    #endif
++                    free (dir_as_prefix_to_free);
++                                free (path_copy);
++                                return progpathname;
+                               }
+ 
+-                            free (dir_as_prefix_to_free);
+-                            free (path_copy);
+-                            return progpathname;
++                            errno = EACCES;
+                           }
+-
+-                        errno = EACCES;
+                       }
+-                  }
+ 
+-                if (errno != ENOENT)
+-                  failure_errno = errno;
++                    if (errno != ENOENT)
++                      failure_errno = errno;
+ 
+-                free (progpathname);
++                    free (progpathname);
++                  }
+               }
+           }
++        #if !(defined _WIN32 && !defined __CYGWIN__)
++        if (used_glob)
++          globfree (&pglob);
++        #endif
+         #if defined _WIN32 && !defined __CYGWIN__ /* Native Windows */
+         if (failure_errno == ENOENT && !progname_has_dot)
+           {
+diff --no-dereference -Naur coreutils-9.11.orig/man/help2man coreutils-9.11/man/help2man
+--- coreutils-9.11.orig/man/help2man	2026-01-22 12:20:15.000000000 +0000
++++ coreutils-9.11/man/help2man	2026-01-22 12:20:15.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl -w
++#!/sw/perl/bin/perl -w
+ 
+ # Generate a short man page from --help and --version output.
+ # Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2009,
+diff --no-dereference -Naur coreutils-9.11.orig/src/chroot.c coreutils-9.11/src/chroot.c
+--- coreutils-9.11.orig/src/chroot.c	2026-01-21 13:51:40.000000000 +0000
++++ coreutils-9.11/src/chroot.c	2026-01-21 13:51:40.000000000 +0000
+@@ -339,7 +339,7 @@
+       /* No command.  Run an interactive shell.  */
+       char *shell = getenv ("SHELL");
+       if (shell == NULL)
+-        shell = bad_cast ("/bin/sh");
++        shell = bad_cast ("/sw/bash/bin/bash");
+       argv[0] = shell;
+       argv[1] = bad_cast ("-i");
+       argv[2] = NULL;
+diff --no-dereference -Naur coreutils-9.11.orig/src/dcgen coreutils-9.11/src/dcgen
+--- coreutils-9.11.orig/src/dcgen	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/src/dcgen	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl -w
++#!/sw/perl/bin/perl -w
+ # dcgen -- convert dircolors.hin to dircolors.h.
+ 
+ # Copyright (C) 1996-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/src/extract-magic coreutils-9.11/src/extract-magic
+--- coreutils-9.11.orig/src/extract-magic	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/src/extract-magic	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl -w
++#!/sw/perl/bin/perl -w
+ # Derive #define directives from specially formatted 'case ...:' statements.
+ 
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/src/split.c coreutils-9.11/src/split.c
+--- coreutils-9.11.orig/src/split.c	2026-04-09 21:14:27.000000000 +0000
++++ coreutils-9.11/src/split.c	2026-04-09 21:14:27.000000000 +0000
+@@ -594,7 +594,7 @@
+ 
+       char const *shell_prog = getenv ("SHELL");
+       if (shell_prog == NULL)
+-        shell_prog = "/bin/sh";
++        shell_prog = "/sw/bash/bin/bash";
+       char const *const argv[] = { last_component (shell_prog), "-c",
+                                    filter_command, NULL };
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/basenc/base64.pl coreutils-9.11/tests/basenc/base64.pl
+--- coreutils-9.11.orig/tests/basenc/base64.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/basenc/base64.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise base{32,64}.
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/basenc/basenc.pl coreutils-9.11/tests/basenc/basenc.pl
+--- coreutils-9.11.orig/tests/basenc/basenc.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/basenc/basenc.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise basenc.
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/cksum-base64.pl coreutils-9.11/tests/cksum/cksum-base64.pl
+--- coreutils-9.11.orig/tests/cksum/cksum-base64.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/cksum-base64.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise cksum's --base64 option.
+ 
+ # Copyright (C) 2023-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/md5sum-newline.pl coreutils-9.11/tests/cksum/md5sum-newline.pl
+--- coreutils-9.11.orig/tests/cksum/md5sum-newline.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/md5sum-newline.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Newline tests for "md5sum".
+ 
+ # Copyright (C) 1999-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/md5sum.pl coreutils-9.11/tests/cksum/md5sum.pl
+--- coreutils-9.11.orig/tests/cksum/md5sum.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/md5sum.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Basic tests for "md5sum".
+ 
+ # Copyright (C) 1998-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/sha1sum-vec.pl coreutils-9.11/tests/cksum/sha1sum-vec.pl
+--- coreutils-9.11.orig/tests/cksum/sha1sum-vec.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/sha1sum-vec.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Sample vectors for "sha1sum".
+ 
+ # Copyright (C) 2000-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/sha1sum.pl coreutils-9.11/tests/cksum/sha1sum.pl
+--- coreutils-9.11.orig/tests/cksum/sha1sum.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/sha1sum.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "sha1sum".
+ 
+ # Copyright (C) 2000-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/sha224sum.pl coreutils-9.11/tests/cksum/sha224sum.pl
+--- coreutils-9.11.orig/tests/cksum/sha224sum.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/sha224sum.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "sha224sum".
+ 
+ # Copyright (C) 2005-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/sha256sum.pl coreutils-9.11/tests/cksum/sha256sum.pl
+--- coreutils-9.11.orig/tests/cksum/sha256sum.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/sha256sum.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "sha256sum".
+ 
+ # Copyright (C) 2005-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/sha384sum.pl coreutils-9.11/tests/cksum/sha384sum.pl
+--- coreutils-9.11.orig/tests/cksum/sha384sum.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/sha384sum.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "sha384sum".
+ 
+ # Copyright (C) 2005-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/sha512sum.pl coreutils-9.11/tests/cksum/sha512sum.pl
+--- coreutils-9.11.orig/tests/cksum/sha512sum.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/sha512sum.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "sha512sum".
+ 
+ # Copyright (C) 2005-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/sm3sum.pl coreutils-9.11/tests/cksum/sm3sum.pl
+--- coreutils-9.11.orig/tests/cksum/sm3sum.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/sm3sum.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "cksum -a sm3".
+ 
+ # Copyright (C) 2021-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cksum/sum.pl coreutils-9.11/tests/cksum/sum.pl
+--- coreutils-9.11.orig/tests/cksum/sum.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/cksum/sum.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "sum".
+ 
+ # Copyright (C) 2000-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/csplit/csplit-suppress-matched.pl coreutils-9.11/tests/csplit/csplit-suppress-matched.pl
+--- coreutils-9.11.orig/tests/csplit/csplit-suppress-matched.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/csplit/csplit-suppress-matched.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ 
+ # Copyright (C) 2013-2026 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/cut/cut.pl coreutils-9.11/tests/cut/cut.pl
+--- coreutils-9.11.orig/tests/cut/cut.pl	2026-04-06 14:52:58.000000000 +0000
++++ coreutils-9.11/tests/cut/cut.pl	2026-04-06 14:52:58.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "cut".
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/d_type-check coreutils-9.11/tests/d_type-check
+--- coreutils-9.11.orig/tests/d_type-check	2016-03-09 10:15:39.000000000 +0000
++++ coreutils-9.11/tests/d_type-check	2016-03-09 10:15:39.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/sw/python/bin/python3
+ # Exit 0 if "." and "./tempfile" have useful d_type information, else 1.
+ # Intended to exit 0 only on Linux/GNU systems.
+ import os
+diff --no-dereference -Naur coreutils-9.11.orig/tests/date/date-next-dow.pl coreutils-9.11/tests/date/date-next-dow.pl
+--- coreutils-9.11.orig/tests/date/date-next-dow.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/date/date-next-dow.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "date".
+ 
+ # Copyright (C) 2005-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/date/date.pl coreutils-9.11/tests/date/date.pl
+--- coreutils-9.11.orig/tests/date/date.pl	2026-04-07 22:16:56.000000000 +0000
++++ coreutils-9.11/tests/date/date.pl	2026-04-07 22:16:56.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "date".
+ 
+ # Copyright (C) 2005-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/dd/skip-seek.pl coreutils-9.11/tests/dd/skip-seek.pl
+--- coreutils-9.11.orig/tests/dd/skip-seek.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/dd/skip-seek.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test dd's skip and seek options.
+ 
+ # Copyright (C) 2000-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/dd/unblock.pl coreutils-9.11/tests/dd/unblock.pl
+--- coreutils-9.11.orig/tests/dd/unblock.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/dd/unblock.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise dd's conv=unblock mode
+ 
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/du/files0-from.pl coreutils-9.11/tests/du/files0-from.pl
+--- coreutils-9.11.orig/tests/du/files0-from.pl	2026-03-03 15:31:04.000000000 +0000
++++ coreutils-9.11/tests/du/files0-from.pl	2026-03-03 15:31:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise du's --files0-from option.
+ # FIXME: keep this file in sync with tests/misc/wc-files0-from.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/du/move-dir-while-traversing.sh coreutils-9.11/tests/du/move-dir-while-traversing.sh
+--- coreutils-9.11.orig/tests/du/move-dir-while-traversing.sh	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/du/move-dir-while-traversing.sh	2026-01-19 12:16:08.000000000 +0000
+@@ -33,7 +33,7 @@
+ # rename syscall before du finishes processing the subtree under D/.
+ 
+ cat <<'EOF' > inotify-watch-for-dir-access.py
+-#!/usr/bin/env python
++#!/sw/python/bin/python3
+ import pyinotify as pn
+ import os,sys
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/env/env-S.pl coreutils-9.11/tests/env/env-S.pl
+--- coreutils-9.11.orig/tests/env/env-S.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/env/env-S.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test 'env -S' feature
+ 
+ # Copyright (C) 2018-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/expand/expand.pl coreutils-9.11/tests/expand/expand.pl
+--- coreutils-9.11.orig/tests/expand/expand.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/expand/expand.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise expand.
+ 
+ # Copyright (C) 2004-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/expr/expr-multibyte.pl coreutils-9.11/tests/expr/expr-multibyte.pl
+--- coreutils-9.11.orig/tests/expr/expr-multibyte.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/expr/expr-multibyte.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise expr with multibyte input
+ 
+ # Copyright (C) 2017-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/expr/expr.pl coreutils-9.11/tests/expr/expr.pl
+--- coreutils-9.11.orig/tests/expr/expr.pl	2026-04-06 18:35:17.000000000 +0000
++++ coreutils-9.11/tests/expr/expr.pl	2026-04-06 18:35:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Basic tests for "expr".
+ 
+ # Copyright (C) 2001-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/factor/factor.pl coreutils-9.11/tests/factor/factor.pl
+--- coreutils-9.11.orig/tests/factor/factor.pl	2026-02-25 14:52:57.000000000 +0000
++++ coreutils-9.11/tests/factor/factor.pl	2026-02-25 14:52:57.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Basic tests for "factor".
+ 
+ # Copyright (C) 1998-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/fmt/base.pl coreutils-9.11/tests/fmt/base.pl
+--- coreutils-9.11.orig/tests/fmt/base.pl	2026-02-18 18:31:54.000000000 +0000
++++ coreutils-9.11/tests/fmt/base.pl	2026-02-18 18:31:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Basic tests for "fmt".
+ 
+ # Copyright (C) 2001-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/fold/fold.pl coreutils-9.11/tests/fold/fold.pl
+--- coreutils-9.11.orig/tests/fold/fold.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/fold/fold.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise fold.
+ 
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/head/head-elide-tail.pl coreutils-9.11/tests/head/head-elide-tail.pl
+--- coreutils-9.11.orig/tests/head/head-elide-tail.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/head/head-elide-tail.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise head's --bytes=-N option.
+ 
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/head/head.pl coreutils-9.11/tests/head/head.pl
+--- coreutils-9.11.orig/tests/head/head.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/head/head.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # test head
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/i18n/sort.sh coreutils-9.11/tests/i18n/sort.sh
+--- coreutils-9.11.orig/tests/i18n/sort.sh	2026-02-08 00:28:47.473995440 +0000
++++ coreutils-9.11/tests/i18n/sort.sh	2026-02-08 00:28:47.473995440 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify sort's multi-byte support.
+ 
+ . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
+diff --no-dereference -Naur coreutils-9.11.orig/tests/join/join.pl coreutils-9.11/tests/join/join.pl
+--- coreutils-9.11.orig/tests/join/join.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/join/join.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test join.
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/ls/ls-misc.pl coreutils-9.11/tests/ls/ls-misc.pl
+--- coreutils-9.11.orig/tests/ls/ls-misc.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/ls/ls-misc.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ 
+ # Copyright (C) 1998-2026 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/basename.pl coreutils-9.11/tests/misc/basename.pl
+--- coreutils-9.11.orig/tests/misc/basename.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/misc/basename.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test basename.
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/comm.pl coreutils-9.11/tests/misc/comm.pl
+--- coreutils-9.11.orig/tests/misc/comm.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/misc/comm.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # -*- perl -*-
+ # Test comm
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/dircolors.pl coreutils-9.11/tests/misc/dircolors.pl
+--- coreutils-9.11.orig/tests/misc/dircolors.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/misc/dircolors.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Simple dircolors tests.
+ 
+ # Copyright (C) 1998-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/dirname.pl coreutils-9.11/tests/misc/dirname.pl
+--- coreutils-9.11.orig/tests/misc/dirname.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/misc/dirname.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "dirname".
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/invalid-opt.pl coreutils-9.11/tests/misc/invalid-opt.pl
+--- coreutils-9.11.orig/tests/misc/invalid-opt.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/misc/invalid-opt.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # exercise the 'invalid option' handling code in each program
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/sort-mb-tests.sh coreutils-9.11/tests/misc/sort-mb-tests.sh
+--- coreutils-9.11.orig/tests/misc/sort-mb-tests.sh	2026-02-08 00:28:47.474193452 +0000
++++ coreutils-9.11/tests/misc/sort-mb-tests.sh	2026-02-08 00:28:47.474193452 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify sort's multi-byte support.
+ 
+ . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/tsort.pl coreutils-9.11/tests/misc/tsort.pl
+--- coreutils-9.11.orig/tests/misc/tsort.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/misc/tsort.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "tsort".
+ 
+ # Copyright (C) 1999-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/tty-eof.pl coreutils-9.11/tests/misc/tty-eof.pl
+--- coreutils-9.11.orig/tests/misc/tty-eof.pl	2026-04-15 12:40:10.000000000 +0000
++++ coreutils-9.11/tests/misc/tty-eof.pl	2026-04-15 12:40:10.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test whether programs exit upon a single EOF from a tty.
+ # Ensure that e.g., cat exits upon a single configured EOF from a tty.
+ # Do the same for all programs that can read stdin,
+diff --no-dereference -Naur coreutils-9.11.orig/tests/misc/xstrtol.pl coreutils-9.11/tests/misc/xstrtol.pl
+--- coreutils-9.11.orig/tests/misc/xstrtol.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/misc/xstrtol.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # exercise xstrtol's diagnostics via pr
+ 
+ # Copyright (C) 2007-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/mktemp/mktemp.pl coreutils-9.11/tests/mktemp/mktemp.pl
+--- coreutils-9.11.orig/tests/mktemp/mktemp.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/mktemp/mktemp.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "mktemp".
+ 
+ # Copyright (C) 2007-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/mv/i-1.pl coreutils-9.11/tests/mv/i-1.pl
+--- coreutils-9.11.orig/tests/mv/i-1.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/mv/i-1.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Make sure a 'n' reply to 'mv -i...' aborts the move operation.
+ 
+ # Copyright (C) 2001-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/numfmt/numfmt.pl coreutils-9.11/tests/numfmt/numfmt.pl
+--- coreutils-9.11.orig/tests/numfmt/numfmt.pl	2026-04-16 20:41:32.000000000 +0000
++++ coreutils-9.11/tests/numfmt/numfmt.pl	2026-04-16 20:41:32.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Basic tests for "numfmt".
+ 
+ # Copyright (C) 2012-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/od/od.pl coreutils-9.11/tests/od/od.pl
+--- coreutils-9.11.orig/tests/od/od.pl	2026-02-18 18:31:54.000000000 +0000
++++ coreutils-9.11/tests/od/od.pl	2026-02-18 18:31:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise od
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/paste/paste.pl coreutils-9.11/tests/paste/paste.pl
+--- coreutils-9.11.orig/tests/paste/paste.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/paste/paste.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test paste.
+ 
+ # Copyright (C) 2003-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/pr/pr-tests.pl coreutils-9.11/tests/pr/pr-tests.pl
+--- coreutils-9.11.orig/tests/pr/pr-tests.pl	2026-02-08 00:28:47.474231855 +0000
++++ coreutils-9.11/tests/pr/pr-tests.pl	2026-02-08 00:28:47.474231855 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test pr.
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/printf/printf-cov.pl coreutils-9.11/tests/printf/printf-cov.pl
+--- coreutils-9.11.orig/tests/printf/printf-cov.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/printf/printf-cov.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # improve printf.c test coverage
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/ptx/ptx.pl coreutils-9.11/tests/ptx/ptx.pl
+--- coreutils-9.11.orig/tests/ptx/ptx.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/ptx/ptx.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/rm/empty-name.pl coreutils-9.11/tests/rm/empty-name.pl
+--- coreutils-9.11.orig/tests/rm/empty-name.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/rm/empty-name.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Make sure that rm -r '' fails.
+ 
+ # Copyright (C) 1998-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/rm/unreadable.pl coreutils-9.11/tests/rm/unreadable.pl
+--- coreutils-9.11.orig/tests/rm/unreadable.pl	2026-02-18 18:31:54.000000000 +0000
++++ coreutils-9.11/tests/rm/unreadable.pl	2026-02-18 18:31:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "rm" and unreadable directories.
+ 
+ # Copyright (C) 1998-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/seq/seq.pl coreutils-9.11/tests/seq/seq.pl
+--- coreutils-9.11.orig/tests/seq/seq.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/seq/seq.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "seq".
+ 
+ # Copyright (C) 1999-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/sort/sort-compress.sh coreutils-9.11/tests/sort/sort-compress.sh
+--- coreutils-9.11.orig/tests/sort/sort-compress.sh	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/sort/sort-compress.sh	2026-01-19 12:16:08.000000000 +0000
+@@ -78,4 +78,17 @@
+ compare exp out || fail=1
+ compare exp-err err || fail=1
+ 
++# Verify --compress-program resolves through wildcard PATH entries.
++mkdir -p wroot/pkg/bin || framework_failure_
++cat <<EOF > wroot/pkg/bin/wzip || framework_failure_
++#!$SHELL
++tr 41 14
++touch ok-wild
++EOF
++chmod +x wroot/pkg/bin/wzip || framework_failure_
++PATH="$(pwd)/wroot/*/bin:$PATH" sort --compress-program=wzip -S 1k in > out || fail=1
++compare exp out || fail=1
++test -f ok-wild || fail=1
++rm -rf wroot ok-wild
++
+ Exit $fail
+diff --no-dereference -Naur coreutils-9.11.orig/tests/sort/sort-files0-from.pl coreutils-9.11/tests/sort/sort-files0-from.pl
+--- coreutils-9.11.orig/tests/sort/sort-files0-from.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/sort/sort-files0-from.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise sort's --files0-from option.
+ # FIXME: keep this file in sync with tests/du/files0-from.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/sort/sort-merge.pl coreutils-9.11/tests/sort/sort-merge.pl
+--- coreutils-9.11.orig/tests/sort/sort-merge.pl	2026-02-08 00:28:47.474282863 +0000
++++ coreutils-9.11/tests/sort/sort-merge.pl	2026-02-08 00:28:47.474282863 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "sort -m".
+ 
+ # Copyright (C) 2002-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/sort/sort.pl coreutils-9.11/tests/sort/sort.pl
+--- coreutils-9.11.orig/tests/sort/sort.pl	2026-02-08 00:28:47.474324591 +0000
++++ coreutils-9.11/tests/sort/sort.pl	2026-02-08 00:28:47.474324591 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/split/filter.sh coreutils-9.11/tests/split/filter.sh
+--- coreutils-9.11.orig/tests/split/filter.sh	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/split/filter.sh	2026-01-19 12:16:08.000000000 +0000
+@@ -77,4 +77,11 @@
+     "yes | split --filter='head -c1 >/dev/null' -b $buf" || fail=1
+ done
+ 
++# Verify --filter works when SHELL is unset (default shell fallback).
++seq 5 > in-noshell || framework_failure_
++env -u SHELL split -l2 --filter='cat > $FILE.out' in-noshell ns- || fail=1
++cat ns-*.out > out-noshell || fail=1
++compare in-noshell out-noshell || fail=1
++rm -f in-noshell out-noshell ns-*
++
+ Exit $fail
+diff --no-dereference -Naur coreutils-9.11.orig/tests/stat/stat-printf.pl coreutils-9.11/tests/stat/stat-printf.pl
+--- coreutils-9.11.orig/tests/stat/stat-printf.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/stat/stat-printf.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "stat --printf".
+ 
+ # Copyright (C) 2005-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/tac/tac.pl coreutils-9.11/tests/tac/tac.pl
+--- coreutils-9.11.orig/tests/tac/tac.pl	2026-01-27 11:11:48.000000000 +0000
++++ coreutils-9.11/tests/tac/tac.pl	2026-01-27 11:11:48.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/tail/tail.pl coreutils-9.11/tests/tail/tail.pl
+--- coreutils-9.11.orig/tests/tail/tail.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/tail/tail.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test tail.
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/test/test-diag.pl coreutils-9.11/tests/test/test-diag.pl
+--- coreutils-9.11.orig/tests/test/test-diag.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/test/test-diag.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test the diagnostics of "test".
+ 
+ # Copyright (C) 2006-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/test/test.pl coreutils-9.11/tests/test/test.pl
+--- coreutils-9.11.orig/tests/test/test.pl	2026-01-21 13:51:39.000000000 +0000
++++ coreutils-9.11/tests/test/test.pl	2026-01-21 13:51:39.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/timeout/timeout-blocked.pl coreutils-9.11/tests/timeout/timeout-blocked.pl
+--- coreutils-9.11.orig/tests/timeout/timeout-blocked.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/timeout/timeout-blocked.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test that timeout handles blocked SIGALRM from its parent.
+ 
+ # Copyright (C) 2013-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/tr/tr.pl coreutils-9.11/tests/tr/tr.pl
+--- coreutils-9.11.orig/tests/tr/tr.pl	2026-03-23 12:53:16.000000000 +0000
++++ coreutils-9.11/tests/tr/tr.pl	2026-03-23 12:53:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/unexpand/unexpand.pl coreutils-9.11/tests/unexpand/unexpand.pl
+--- coreutils-9.11.orig/tests/unexpand/unexpand.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/unexpand/unexpand.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test "unexpand".
+ 
+ # Copyright (C) 2000-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/uniq/uniq.pl coreutils-9.11/tests/uniq/uniq.pl
+--- coreutils-9.11.orig/tests/uniq/uniq.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/uniq/uniq.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Test uniq.
+ 
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/tests/wc/wc-files0-from.pl coreutils-9.11/tests/wc/wc-files0-from.pl
+--- coreutils-9.11.orig/tests/wc/wc-files0-from.pl	2026-03-03 15:31:04.000000000 +0000
++++ coreutils-9.11/tests/wc/wc-files0-from.pl	2026-03-03 15:31:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Exercise wc's --files0-from option.
+ # FIXME: keep this file in sync with tests/du/files0-from.
+ 
+diff --no-dereference -Naur coreutils-9.11.orig/tests/wc/wc.pl coreutils-9.11/tests/wc/wc.pl
+--- coreutils-9.11.orig/tests/wc/wc.pl	2026-01-19 12:16:08.000000000 +0000
++++ coreutils-9.11/tests/wc/wc.pl	2026-01-19 12:16:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/sw/perl/bin/perl
+ # Basic tests for "wc".
+ 
+ # Copyright (C) 1997-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur coreutils-9.11.orig/thanks-gen coreutils-9.11/thanks-gen
+--- coreutils-9.11.orig/thanks-gen	2012-05-28 08:02:48.000000000 +0000
++++ coreutils-9.11/thanks-gen	2012-05-28 08:02:48.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl -nl
++#!/sw/perl/bin/perl -nl
+ # Use Perl's multi-byte alignment code, via sprintf, while
+ # performing a rudimentary check for duplicate names and
+ # removing duplicate name,email pairs.

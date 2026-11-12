@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lelf
 
 ARCHIVES=(
     37629fdf7f1f3dc2818e138fca2b8094177d6c2d0f701d3bb650a561218dc026 https://sourceware.org/ftp/elfutils/$VERSION/elfutils-$VERSION.tar.bz2
-    5cb6a586e62b5634d14bf5f0ffbe226fa6f223192415869f558d5976c5b385ee file://elfutils-$VERSION-fluffy.patch
+    9c66b11fb8210d288c7baab64f388d8489284972d97b280299c4a4e48a724f8b file://elfutils-$VERSION-fluffy.patch
 )
 
 NEEDS=(
