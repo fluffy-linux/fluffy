@@ -571,7 +571,7 @@ lockdown_exec() {
         fi
 
         call mount / / $NULL $(( MS_BIND | MS_REC )) $NULL
-        call chroot /
+        call chroot /..
         call chdir "$wd"
         call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
 
