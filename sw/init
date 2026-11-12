@@ -1,0 +1,40 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.0
+
+ARCHIVES=(
+    d8d38e46398c41c380cc3d4dbbda9b8259c4e29fde52fb8db6c51661dbcd9894 file://init.c
+)
+
+NEEDS=()
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        binutils
+        gcc
+        glibc
+        linux-headers
+    )
+else
+    BUILD_NEEDS=(
+        binutils
+        gcc
+        glibc
+        linux-headers
+    )
+fi
+
+MAKE() {
+    gcc -static -O2 -Wall -Wextra -Werror init.c -o init
+}
+
+INSTALL() {
+    mkdir -p $DESTDIR/sw/init/bin
+    cp -v init $DESTDIR/sw/init/bin/init
+}

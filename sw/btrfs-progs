@@ -1,0 +1,99 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=7.1
+
+HAS_LDFLAGS="-lbtrfs -lbtrfsutil"
+
+ARCHIVES=(
+    d1f55cc2971398c9142eaa79d203e63d586a3b4b867f956664a1d68322cd4e34 https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v$VERSION.tar.xz
+    574be7b1cd870b55e295146352ad9b1544255e53645219881aeea0f10c43a63b file://btrfs-progs-v$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    e2fsprogs
+    glibc
+    libgcc
+    systemd
+    util-linux
+    zlib
+    zstd
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        e2fsprogs
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        systemd
+        tar
+        util-linux
+        xz
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        e2fsprogs
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        systemd
+        tar
+        util-linux
+        xz
+        zlib
+        zstd
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i btrfs-progs-v$VERSION-fluffy-shell.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site \
+    PKG_CONFIG="false" \
+    ./configure \
+        --prefix=/sw/btrfs-progs \
+        --bindir=/sw/btrfs-progs/bin \
+        --sbindir=/sw/btrfs-progs/bin \
+        --disable-static \
+        --disable-documentation \
+        --disable-python \
+        --disable-lzo
+    make
+}
+
+INSTALL() {
+    make install
+    find $DESTDIR/sw/btrfs-progs -name '*.la' -delete
+}

@@ -12,6 +12,7 @@ HAS_LDFLAGS="-ldbus-1"
 
 ARCHIVES=(
     0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2 https://dbus.freedesktop.org/releases/dbus/dbus-$VERSION.tar.xz
+    97f83dbc7d7e963e2b4d0a1b4597e0f1467e980f6eefac95c6c9f9a24a5b804f file://dbus-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -72,6 +73,8 @@ else
 fi
 
 MAKE() {
+    patch -Z -Np1 -i dbus-$VERSION-fluffy-source.patch
+
     mkdir -p build
     cd build
 
@@ -95,6 +98,7 @@ CHECK() {
 INSTALL() {
     DESTDIR=$DESTDIR ninja -C build install
 
+    rm -rf $DESTDIR/sw/dbus/lib/tmpfiles.d
     mkdir -p $DESTDIR/sw/dbus/var/lib/dbus
     ln -sf /etc/machine-id $DESTDIR/sw/dbus/var/lib/dbus/machine-id
 }

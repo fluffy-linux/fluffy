@@ -1,5 +1,5 @@
-diff --no-dereference -Naur grub-2.14/configure grub-2.14/configure
---- grub-2.14/configure	2026-01-14 13:26:54.000000000 -0500
+diff --no-dereference -Naur grub-2.14.orig/configure grub-2.14/configure
+--- grub-2.14.orig/configure	2026-01-14 13:26:54.000000000 -0500
 +++ grub-2.14/configure	2026-01-14 13:26:54.000000000 -0500
 @@ -40919,15 +40919,15 @@
  
@@ -20,8 +20,8 @@ diff --no-dereference -Naur grub-2.14/configure grub-2.14/configure
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
  /* end confdefs.h.  */
  
-diff --no-dereference -Naur grub-2.14/gentpl.py grub-2.14/gentpl.py
---- grub-2.14/gentpl.py	2024-09-05 11:24:01.000000000 -0400
+diff --no-dereference -Naur grub-2.14.orig/gentpl.py grub-2.14/gentpl.py
+--- grub-2.14.orig/gentpl.py	2024-09-05 11:24:01.000000000 -0400
 +++ grub-2.14/gentpl.py	2024-09-05 11:24:01.000000000 -0400
 @@ -1,4 +1,4 @@
 -#! /usr/bin/python
@@ -29,3 +29,162 @@ diff --no-dereference -Naur grub-2.14/gentpl.py grub-2.14/gentpl.py
  #  GRUB  --  GRand Unified Bootloader
  #  Copyright (C) 2010,2011,2012,2013  Free Software Foundation, Inc.
  #
+diff --no-dereference -Naur grub-2.14.orig/grub-core/fs/squash4.c grub-2.14/grub-core/fs/squash4.c
+--- grub-2.14.orig/grub-core/fs/squash4.c	2025-02-18 09:14:54.000000000 -0500
++++ grub-2.14/grub-core/fs/squash4.c	2025-02-18 09:14:54.000000000 -0500
+@@ -32,6 +32,9 @@
+ #include "xz.h"
+ #include "xz_stream.h"
+ 
++#define ZSTD_STATIC_LINKING_ONLY
++#include <zstd.h>
++
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ /*
+@@ -184,6 +187,7 @@
+     COMPRESSION_ZLIB = 1,
+     COMPRESSION_LZO = 3,
+     COMPRESSION_XZ = 4,
++    COMPRESSION_ZSTD = 6,
+   };
+ 
+ 
+@@ -203,6 +207,7 @@
+ 			      struct grub_squash_data *data);
+   struct xz_dec *xzdec;
+   char *xzbuf;
++  ZSTD_DCtx *zstd_dctx;
+ };
+ 
+ struct grub_fshelp_node
+@@ -320,6 +325,67 @@
+   return len;
+ }
+ 
++
++static void *
++grub_squash_zstd_malloc (void *state __attribute__((unused)), size_t size)
++{
++  return grub_malloc (size);
++}
++
++static void
++grub_squash_zstd_free (void *state __attribute__((unused)), void *address)
++{
++  grub_free (address);
++}
++
++static ZSTD_customMem
++grub_squash_zstd_allocator (void)
++{
++  ZSTD_customMem allocator;
++
++  allocator.customAlloc = &grub_squash_zstd_malloc;
++  allocator.customFree = &grub_squash_zstd_free;
++  allocator.opaque = NULL;
++
++  return allocator;
++}
++
++static grub_ssize_t
++zstd_decompress (char *inbuf, grub_size_t insize, grub_off_t off,
++		 char *outbuf, grub_size_t len, struct grub_squash_data *data)
++{
++  grub_size_t usize = data->blksz;
++  char *udata;
++  grub_size_t zstd_ret;
++
++  if (usize < 8192)
++    usize = 8192;
++
++  udata = grub_malloc (usize);
++  if (!udata)
++    return -1;
++
++  insize = ZSTD_findFrameCompressedSize (inbuf, insize);
++  if (ZSTD_isError (insize))
++    {
++      grub_error (GRUB_ERR_BAD_COMPRESSED_DATA, "zstd data corrupted");
++      grub_free (udata);
++      return -1;
++    }
++
++  zstd_ret = ZSTD_decompressDCtx (data->zstd_dctx, udata, usize, inbuf, insize);
++  if (ZSTD_isError (zstd_ret))
++    {
++      grub_error (GRUB_ERR_BAD_FS, "incorrect zstd compressed chunk");
++      grub_free (udata);
++      return -1;
++    }
++
++  grub_memcpy (outbuf, udata + off, len);
++  grub_free (udata);
++  return len;
++}
++
+ static grub_ssize_t
+ xz_decompress (char *inbuf, grub_size_t insize, grub_off_t off,
+ 	       char *outbuf, grub_size_t len, struct grub_squash_data *data)
+@@ -440,6 +506,16 @@
+ 	  return NULL;
+ 	}
+       break;
++    case grub_cpu_to_le16_compile_time (COMPRESSION_ZSTD):
++      data->decompress = zstd_decompress;
++      data->zstd_dctx = ZSTD_createDCtx_advanced (grub_squash_zstd_allocator ());
++      if (!data->zstd_dctx)
++	{
++	  grub_free (data);
++	  grub_error (GRUB_ERR_OUT_OF_MEMORY, "failed to create zstd context");
++	  return NULL;
++	}
++      break;
+     default:
+       grub_free (data);
+       grub_error (GRUB_ERR_BAD_FS, "unsupported compression %d",
+@@ -671,6 +747,8 @@
+ {
+   if (data->xzdec)
+     xz_dec_end (data->xzdec);
++  if (data->zstd_dctx)
++    ZSTD_freeDCtx (data->zstd_dctx);
+   grub_free (data->xzbuf);
+   grub_free (data->ino.cumulated_block_sizes);
+   grub_free (data->ino.block_sizes);
+diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.core.am grub-2.14/grub-core/Makefile.core.am
+--- grub-2.14.orig/grub-core/Makefile.core.am	2026-01-14 13:26:44.000000000 -0500
++++ grub-2.14/grub-core/Makefile.core.am	2026-01-14 13:26:44.000000000 -0500
+@@ -12669,7 +12669,7 @@
+ squash4_module_LDADD  = 
+ squash4_module_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_MODULE) $(CFLAGS_POSIX) -Wno-undef 
+ squash4_module_LDFLAGS  = $(AM_LDFLAGS) $(LDFLAGS_MODULE) 
+-squash4_module_CPPFLAGS  = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H 
++squash4_module_CPPFLAGS  = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H 
+ squash4_module_CCASFLAGS  = $(AM_CCASFLAGS) $(CCASFLAGS_MODULE) 
+ squash4_module_DEPENDENCIES  = $(TARGET_OBJ2ELF) 
+ dist_noinst_DATA += 
+diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.core.def grub-2.14/grub-core/Makefile.core.def
+--- grub-2.14.orig/grub-core/Makefile.core.def	2026-01-08 13:22:14.000000000 -0500
++++ grub-2.14/grub-core/Makefile.core.def	2026-01-08 13:22:14.000000000 -0500
+@@ -1601,7 +1601,7 @@
+   name = squash4;
+   common = fs/squash4.c;
+   cflags = '$(CFLAGS_POSIX) -Wno-undef';
+-  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
++  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
+ };
+ 
+ module = {
+diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.in grub-2.14/grub-core/Makefile.in
+--- grub-2.14.orig/grub-core/Makefile.in	2026-01-14 13:27:11.000000000 -0500
++++ grub-2.14/grub-core/Makefile.in	2026-01-14 13:27:11.000000000 -0500
+@@ -26434,7 +26434,7 @@
+ squash4_module_LDADD = 
+ squash4_module_CFLAGS = $(AM_CFLAGS) $(CFLAGS_MODULE) $(CFLAGS_POSIX) -Wno-undef 
+ squash4_module_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS_MODULE) 
+-squash4_module_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H 
++squash4_module_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H 
+ squash4_module_CCASFLAGS = $(AM_CCASFLAGS) $(CCASFLAGS_MODULE) 
+ squash4_module_DEPENDENCIES = $(TARGET_OBJ2ELF) 
+ tar_module_SOURCES = fs/tar.c  ## platform sources
