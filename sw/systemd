@@ -13,7 +13,7 @@ ARCHIVES=(
     ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec https://github.com/systemd/systemd/archive/v$VERSION/systemd-$VERSION.tar.gz
     9be13865c9c7f9fecba7b86fc5185aecef00164c87ed68b4f6884283aefebe50 https://anduin.linuxfromscratch.org/LFS/systemd-man-pages-$VERSION.tar.xz
     7b62b8271aa5532fcf9011d8d6d0fd5c01070dab862c482741d3f600f8f51962 file://systemd-$VERSION-fluffy-shell.patch
-    4aedbdfd86940cc389adcfeb3452f51c1eb018ccd1a1a3a9ee97d1c85223fdad file://systemd-$VERSION-fluffy-source.patch
+    e61b327818771fd0df28e4e22a10cfa4b1c9134c040aa6c9999814bc6cba0894 file://systemd-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -134,20 +134,26 @@ MAKE() {
         -Dsplit-bin=false \
         -Duser-path=/sw/*/bin \
         -Ddebug-shell=/sw/bash/bin/bash \
+        -Dagetty-path=agetty \
+        -Dkexec-path=kexec \
         -Dkmod-path=kmod \
-        -Dmount-path=mount \
-        -Dumount-path=umount \
         -Dloadkeys-path=loadkeys \
+        -Dmount-path=mount \
+        -Dnologin-path=nologin \
+        -Dquotacheck-path=quotacheck \
+        -Dquotaon-path=quotaon \
         -Dsetfont-path=setfont \
         -Dsulogin-path=sulogin \
-        -Dnologin-path=nologin \
+        -Dswapoff-path=swapoff \
+        -Dswapon-path=swapon \
+        -Dumount-path=umount \
         -Ddocdir=/sw/systemd/share/doc/systemd-$VERSION
 
     ninja
 }
 
 CHECK() {
-    meson test -C build test-path-util test-path-lookup --print-errorlogs
+    meson test -C build test-path-util test-path-lookup test-condition test-conf-files --print-errorlogs
 }
 
 INSTALL() {

@@ -1,0 +1,100 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.47.4
+
+HAS_LDFLAGS="-lext2fs -lcom_err"
+
+ARCHIVES=(
+    da274408bebbfd13a5a2fc3cfc66e3ffff17c48534673aa67f88d49b99123b96 https://kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v$VERSION/e2fsprogs-$VERSION.tar.gz
+    75d42e058c7a0af47cb85676b9863a06762e51bad320b6530e405254a98453d9 file://e2fsprogs-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    libgcc
+    util-linux
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        texinfo
+        util-linux
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        texinfo
+        util-linux
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i e2fsprogs-$VERSION-fluffy-shell.patch
+
+    mkdir -p build
+    cd build
+
+    CONFIG_SITE=/sw/glibc/share/config.site \
+    PKG_CONFIG="false" \
+    ../configure \
+        --prefix=/sw/e2fsprogs \
+        --bindir=/sw/e2fsprogs/bin \
+        --sbindir=/sw/e2fsprogs/bin \
+        --sysconfdir=/sw/e2fsprogs/etc \
+        --enable-elf-shlibs \
+        --disable-libblkid \
+        --disable-libuuid \
+        --disable-uuidd \
+        --disable-fsck \
+        --with-systemd-unit-dir=/sw/e2fsprogs/lib/systemd/system \
+        --with-udev-rules-dir=/sw/e2fsprogs/lib/udev/rules.d \
+        --without-crond-dir
+    make
+}
+
+INSTALL() {
+    cd build
+    make install
+    make install-libs
+    rm -fv $DESTDIR/sw/e2fsprogs/lib/{libcom_err,libe2p,libext2fs,libss}.a
+    chmod -v u+w $DESTDIR/sw/e2fsprogs/lib/{libcom_err,libe2p,libext2fs,libss}.so.* 2>/dev/null || true
+}

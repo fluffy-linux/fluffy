@@ -1,0 +1,124 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.42.2
+
+HAS_LDFLAGS="-lblkid -luuid"
+
+ARCHIVES=(
+    03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a https://www.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-$VERSION.tar.xz
+    9da6f079d0f3cd656ccfc801a1cd18de01565db9b5a3f845408c27e501d704e0 file://util-linux-$VERSION-fluffy-shell.patch
+    adeaa17ae7c1170d8b74ad0412738e0dfbee98a00140f4f6aadd7644cf11d777 file://util-linux-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc
+    libgcc
+    ncurses
+    systemd
+    zlib
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        systemd
+        tar
+        xz
+        zlib
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        systemd
+        tar
+        xz
+        zlib
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i util-linux-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i util-linux-$VERSION-fluffy-source.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site \
+    PKG_CONFIG="false" \
+    SYSTEMD_CFLAGS=" " \
+    SYSTEMD_LIBS="-lsystemd" \
+    ./configure \
+        --prefix=/sw/util-linux \
+        --sbindir=/sw/util-linux/bin \
+        --runstatedir=/run \
+        --enable-fs-paths-default='/sw/*/bin' \
+        --disable-chfn-chsh \
+        --disable-login \
+        --disable-nologin \
+        --disable-su \
+        --disable-setpriv \
+        --disable-runuser \
+        --disable-pylibmount \
+        --disable-liblastlog2 \
+        --disable-pam-lastlog2 \
+        --disable-static \
+        --disable-bash-completion \
+        --disable-makeinstall-chown \
+        --disable-makeinstall-setuid \
+        --without-python \
+        --with-systemd \
+        --with-systemdsystemunitdir=/sw/util-linux/lib/systemd/system \
+        --with-tmpfilesdir=/sw/util-linux/lib/tmpfiles.d \
+        --with-sysusersdir=/sw/util-linux/lib/sysusers.d \
+        --without-tinfo \
+        ADJTIME_PATH=/var/lib/hwclock/adjtime \
+        --docdir=/sw/util-linux/share/doc/util-linux-$VERSION
+    make
+}
+
+CHECK() {
+    make test_pathnames test_mount_context
+    test "$(./test_pathnames _PATH_LOGIN)" = "login"
+    test "$(./test_pathnames _PATH_DEFPATH)" = "/sw/*/bin"
+    test "$(./test_pathnames _PATH_DEFPATH_ROOT)" = "/sw/*/bin"
+}
+
+INSTALL() {
+    make install
+    find $DESTDIR/sw/util-linux -name '*.la' -delete
+}

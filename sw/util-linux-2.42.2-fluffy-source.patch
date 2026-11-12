@@ -1,0 +1,281 @@
+diff --no-dereference -Naur util-linux-2.42.2.orig/disk-utils/fsck.c util-linux-2.42.2/disk-utils/fsck.c
+--- util-linux-2.42.2.orig/disk-utils/fsck.c	2026-06-16 11:39:44.416424519 +0000
++++ util-linux-2.42.2/disk-utils/fsck.c	2026-06-16 11:39:44.416424519 +0000
+@@ -43,6 +43,7 @@
+ #include <time.h>
+ #include <stdlib.h>
+ #include <paths.h>
++#include <glob.h>
+ #include <unistd.h>
+ #include <errno.h>
+ #include <signal.h>
+@@ -159,7 +160,7 @@
+ static char *fstype;
+ static struct fsck_instance *instance_list;
+ 
+-#define FSCK_DEFAULT_PATH "/sbin"
++#define FSCK_DEFAULT_PATH _PATH_DEFPATH
+ static char *fsck_path;
+ 
+ 
+@@ -555,13 +556,18 @@
+ 	/* Are we looking for a program or just a type? */
+ 	tpl = (strncmp(type, "fsck.", 5) ? "%s/fsck.%s" : "%s/%s");
+ 
+-	for(s = strtok(p, ":"); s; s = strtok(NULL, ":")) {
+-		xasprintf(&prog, tpl, s, type);
+-		if (access(prog, X_OK) == 0)
+-			break;
+-		free(prog);
+-		prog = NULL;
++	glob_t g = { 0 };
++	if (glob(p, GLOB_PATHS | GLOB_NOCHECK, NULL, &g) == 0) {
++		for (size_t i = 0; i < g.gl_pathc; i++) {
++			xasprintf(&prog, tpl, g.gl_pathv[i], type);
++			if (access(prog, X_OK) == 0)
++				break;
++			free(prog);
++			prog = NULL;
++		}
+ 	}
++	globfree(&g);
++	(void) s;
+ 
+ 	free(p);
+ 	rc = prog ? 1 : 0;
+diff --no-dereference -Naur util-linux-2.42.2.orig/include/pathnames.h util-linux-2.42.2/include/pathnames.h
+--- util-linux-2.42.2.orig/include/pathnames.h	2026-06-16 11:39:44.419424506 +0000
++++ util-linux-2.42.2/include/pathnames.h	2026-06-16 11:39:44.419424506 +0000
+@@ -16,21 +16,12 @@
+ /* used by kernel in /proc (e.g. /proc/swaps) for deleted files */
+ #define PATH_DELETED_SUFFIX	" (deleted)"
+ 
+-/* DEFPATHs from <paths.h> don't include /usr/local */
+-#undef _PATH_DEFPATH
+-
+-#ifdef USE_USRDIR_PATHS_ONLY
+-# define _PATH_DEFPATH	        "/usr/local/bin:/usr/bin"
+-#else
+-# define _PATH_DEFPATH	        "/usr/local/bin:/bin:/usr/bin"
++#ifndef _PATH_DEFPATH
++# define _PATH_DEFPATH	        "/sw/*/bin"
+ #endif
+ 
+-#undef _PATH_DEFPATH_ROOT
+-
+-#ifdef USE_USRDIR_PATHS_ONLY
+-# define _PATH_DEFPATH_ROOT	"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+-#else
+-# define _PATH_DEFPATH_ROOT	"/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
++#ifndef _PATH_DEFPATH_ROOT
++# define _PATH_DEFPATH_ROOT	_PATH_DEFPATH
+ #endif
+ 
+ #define	_PATH_HUSHLOGIN		".hushlogin"
+@@ -48,10 +39,10 @@
+ #define	_PATH_VAR_NOLOGIN	"/var/run/nologin"
+ 
+ #ifndef _PATH_LOGIN
+-# define _PATH_LOGIN		"/bin/login"
++# define _PATH_LOGIN		"login"
+ #endif
+-#define _PATH_SHUTDOWN		"/sbin/shutdown"
+-#define _PATH_POWEROFF		"/sbin/poweroff"
++#define _PATH_SHUTDOWN		"shutdown"
++#define _PATH_POWEROFF		"poweroff"
+ 
+ #define _PATH_TERMCOLORS_DIRNAME "terminal-colors.d"
+ #define _PATH_TERMCOLORS_DIR	"/etc/" _PATH_TERMCOLORS_DIRNAME
+diff --no-dereference -Naur util-linux-2.42.2.orig/lib/logindefs.c util-linux-2.42.2/lib/logindefs.c
+--- util-linux-2.42.2.orig/lib/logindefs.c	2026-06-16 11:39:44.422424493 +0000
++++ util-linux-2.42.2/lib/logindefs.c	2026-06-16 11:39:44.422424493 +0000
+@@ -22,6 +22,7 @@
+ #include <assert.h>
+ #include <ctype.h>
+ #include <errno.h>
++#include <glob.h>
+ #include <limits.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -157,10 +158,20 @@
+ 
+ static void load_defaults(void)
+ {
+-	if (logindefs_loader)
++	if (logindefs_loader) {
+ 		logindefs_loader(logindefs_loader_data);
+-	else
++		return;
++	}
++	if (access(_PATH_LOGINDEFS, R_OK) == 0) {
+ 		logindefs_load_file(_PATH_LOGINDEFS);
++	} else {
++		glob_t g = { 0 };
++		if (glob("/sw/*/etc/login.defs", 0, NULL, &g) == 0) {
++			for (size_t i = 0; i < g.gl_pathc; i++)
++				logindefs_load_file(g.gl_pathv[i]);
++		}
++		globfree(&g);
++	}
+ }
+ 
+ static struct item *search(const char *name)
+diff --no-dereference -Naur util-linux-2.42.2.orig/libmount/src/context.c util-linux-2.42.2/libmount/src/context.c
+--- util-linux-2.42.2.orig/libmount/src/context.c	2026-06-16 11:39:44.431424453 +0000
++++ util-linux-2.42.2/libmount/src/context.c	2026-06-16 11:39:44.431424453 +0000
+@@ -36,6 +36,7 @@
+  *
+  */
+ 
++#include <glob.h>
+ #include "mountP.h"
+ #include "fileutils.h"
+ #include "strutils.h"
+@@ -2272,14 +2273,16 @@
+ 
+ 	/* Ignore errors when search in $PATH and do not modify @rc
+ 	 */
+-	path = strtok_r(search_path, ":", &p);
+-	while (path) {
++	(void) p;
++	glob_t g = { 0 };
++	if (glob(search_path, GLOB_PATHS | GLOB_NOCHECK, NULL, &g) == 0) {
++	for (size_t gi = 0; gi < g.gl_pathc; gi++) {
+ 		char helper[PATH_MAX];
+ 		int len, found = 0;
+ 
++		path = g.gl_pathv[gi];
+ 		len = snprintf(helper, sizeof(helper), "%s/%s.%s",
+ 						path, name, type);
+-		path = strtok_r(NULL, ":", &p);
+ 
+ 		if (len < 0 || (size_t) len >= sizeof(helper))
+ 			continue;
+@@ -2302,6 +2305,8 @@
+ 		rc = strdup_to_struct_member(cxt, helper, helper);
+ 		break;
+ 	}
++	}
++	globfree(&g);
+ 
+ 	if (!mnt_context_switch_ns(cxt, ns_old))
+ 		rc = -MNT_ERR_NAMESPACE;
+diff --no-dereference -Naur util-linux-2.42.2.orig/sys-utils/eject.c util-linux-2.42.2/sys-utils/eject.c
+--- util-linux-2.42.2.orig/sys-utils/eject.c	2026-06-16 11:39:44.535424002 +0000
++++ util-linux-2.42.2/sys-utils/eject.c	2026-06-16 11:39:44.535424002 +0000
+@@ -670,11 +670,11 @@
+ 		if (drop_permissions() != 0)
+ 			err(EXIT_FAILURE, _("drop permissions failed"));
+ 		if (ctl->p_option)
+-			execl("/bin/umount", "/bin/umount", name, "-n", (char *)NULL);
++			execlp("umount", "umount", name, "-n", (char *)NULL);
+ 		else
+-			execl("/bin/umount", "/bin/umount", name, (char *)NULL);
++			execlp("umount", "umount", name, (char *)NULL);
+ 
+-		errexec("/bin/umount");
++		errexec("umount");
+ 
+ 	case -1:
+ 		warn( _("unable to fork"));
+diff --no-dereference -Naur util-linux-2.42.2.orig/sys-utils/rtcwake.c util-linux-2.42.2/sys-utils/rtcwake.c
+--- util-linux-2.42.2.orig/sys-utils/rtcwake.c	2026-06-16 09:34:39.436347756 +0000
++++ util-linux-2.42.2/sys-utils/rtcwake.c	2026-06-16 09:34:39.436347756 +0000
+@@ -610,25 +610,21 @@
+ 		char *arg[5];
+ 		int i = 0;
+ 
+-		if (!access(_PATH_SHUTDOWN, X_OK)) {
+-			arg[i++] = _PATH_SHUTDOWN;
+-			arg[i++] = "-h";
+-			arg[i++] = "-P";
+-			arg[i++] = "now";
+-			arg[i]   = NULL;
+-		} else if (!access(_PATH_POWEROFF, X_OK)) {
+-			arg[i++] = _PATH_POWEROFF;
+-			arg[i]   = NULL;
+-		} else {
+-			arg[i] 	 = NULL;
+-		}
++		arg[i++] = _PATH_SHUTDOWN;
++		arg[i++] = "-h";
++		arg[i++] = "-P";
++		arg[i++] = "now";
++		arg[i]   = NULL;
+ 
+ 		if (arg[0]) {
+ 			if (ctl.verbose)
+ 				printf(_("suspend mode: off; executing %s\n"),
+ 						arg[0]);
+ 			if (!ctl.dryrun) {
+-				execv(arg[0], arg);
++				execvp(arg[0], arg);
++				arg[0] = _PATH_POWEROFF;
++				arg[1] = NULL;
++				execvp(arg[0], arg);
+ 				warn(_("failed to execute %s"), arg[0]);
+ 				rc = EX_EXEC_ENOENT;
+ 			}
+diff --no-dereference -Naur util-linux-2.42.2.orig/sys-utils/setarch.c util-linux-2.42.2/sys-utils/setarch.c
+--- util-linux-2.42.2.orig/sys-utils/setarch.c	2026-06-16 11:39:44.541423976 +0000
++++ util-linux-2.42.2/sys-utils/setarch.c	2026-06-16 11:39:44.541423976 +0000
+@@ -34,6 +34,7 @@
+ #include <sys/utsname.h>
+ #include "nls.h"
+ #include "c.h"
++#include "pathnames.h"
+ #include "closestream.h"
+ #include "sysfs.h"
+ #include "strutils.h"
+@@ -505,7 +506,7 @@
+ 		/* Don't use ifdef sparc here, we get "Unrecognized architecture"
+ 		 * error message later if necessary */
+ 		if (strcmp(arch, "sparc32bash") == 0) {
+-			shell = "/bin/bash";
++			shell = _PATH_BSHELL;
+ 			shell_arg = "";
+ 			goto set_arch;
+ 		}
+@@ -652,7 +653,7 @@
+ 		verify_arch_domain(doms, target, arch);
+ 
+ 	if (!argc) {
+-		shell = "/bin/sh";
++		shell = _PATH_BSHELL;
+ 		shell_arg = "-sh";
+ 	}
+ 	if (verbose) {
+diff --no-dereference -Naur util-linux-2.42.2.orig/term-utils/agetty.c util-linux-2.42.2/term-utils/agetty.c
+--- util-linux-2.42.2.orig/term-utils/agetty.c	2026-06-16 11:39:44.542423972 +0000
++++ util-linux-2.42.2/term-utils/agetty.c	2026-06-16 11:39:44.542423972 +0000
+@@ -576,7 +576,9 @@
+ #endif
+ 
+ 	/* Let the login program take care of password validation. */
+-	execv(options.login, login_argv);
++	if (!getenv("PATH"))
++		setenv("PATH", _PATH_DEFPATH, 1);
++	execvp(options.login, login_argv);
+ 
+ 	free(options.osrelease);
+ 	free(options.autolog);
+diff --no-dereference -Naur util-linux-2.42.2.orig/text-utils/pg.c util-linux-2.42.2/text-utils/pg.c
+--- util-linux-2.42.2.orig/text-utils/pg.c	2026-06-16 11:39:44.565423872 +0000
++++ util-linux-2.42.2/text-utils/pg.c	2026-06-16 11:39:44.565423872 +0000
+@@ -56,6 +56,7 @@
+ #include <ctype.h>
+ #include <errno.h>
+ #include <unistd.h>
++#include <paths.h>
+ #include <signal.h>
+ #include <setjmp.h>
+ 
+@@ -1372,7 +1373,7 @@
+ 					{
+ 						const char *sh = getenv("SHELL");
+ 						if (!sh)
+-							sh = "/bin/sh";
++							sh = _PATH_BSHELL;
+ 						if (!nobuf)
+ 							fclose(fbuf);
+ 						fclose(find);

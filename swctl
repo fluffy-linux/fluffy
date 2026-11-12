@@ -571,6 +571,8 @@ lockdown_exec() {
         fi
 
         call mount / / $NULL $(( MS_BIND | MS_REC )) $NULL
+        call chroot /
+        call chdir "$wd"
         call mount none / $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
 
         if test "$1" == SQUASHFS
@@ -775,7 +777,7 @@ build_single_pkg() {
                 call chdir "$root"
 
                 unset FLUFFY
-                export PATH='/sw/*/bin' FLUFFY_IN_CHROOT=1
+                export PATH='/sw/*/bin' FLUFFY_BUILD_SINGLE=1
                 /sw/bash/bin/bash "$root/swctl" build "$pkg"
             )
             exit 0
@@ -922,14 +924,20 @@ format_recipe_mime() {
 }
 
 plan_pkgs() {
-    local tmp_plan
+    local plan_mode="$1" tmp_plan
+    shift
     tmp_plan="$(mktemp)"
     (
-        declare -a order=()
-        declare -A pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_needs=() pkg_deps=() pkg_bneeds=() pkg_includes=()
+        declare -a order=() root_nodes=()
+        declare -A pkg_loaded=() pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_needs=() pkg_bneeds=() pkg_includes=()
 
-        build_step() {
+        load_pkg_meta() {
             local pkg_name="$1" recipe_file="sw/$1"
+
+            if test -n "${pkg_loaded[$pkg_name]:-}"
+            then
+                return 0
+            fi
 
             if test ! -f "$recipe_file"
             then
@@ -954,6 +962,17 @@ plan_pkgs() {
             unset current_eval_pkg
             unset -f MAKE CHECK INSTALL
 
+            local need_pkg
+            for need_pkg in "${NEEDS[@]}"
+            do
+                need_pkg="${need_pkg##*/}"
+                if test ! -f "sw/$need_pkg"
+                then
+                    fatal "recipe file not found: sw/$need_pkg (in NEEDS of $pkg_name)"
+                fi
+            done
+
+            pkg_loaded["$pkg_name"]=1
             pkg_ver["$pkg_name"]="$VERSION"
             pkg_cflags["$pkg_name"]="${HAS_CFLAGS:-}"
             pkg_ldflags["$pkg_name"]="${HAS_LDFLAGS:-}"
@@ -962,22 +981,54 @@ plan_pkgs() {
             local -a direct_bneeds=()
             if test "$ON" != host-build && test "$ON" != "$pkg_name"
             then
-                step_deps+=("$ON")
                 direct_bneeds+=("$ON")
             fi
-            step_deps+=("${NEEDS[@]}" "${BUILD_NEEDS[@]}")
             direct_bneeds+=("${BUILD_NEEDS[@]}")
-            pkg_deps["$pkg_name"]="${step_deps[*]}"
             pkg_bneeds["$pkg_name"]="${direct_bneeds[*]}"
 
             unset ON VERSION HAS_CFLAGS HAS_LDFLAGS ARCHIVES NEEDS BUILD_NEEDS
         }
 
-        dfs build_step "$@"
+        build_step() {
+            local mode="${1%%:*}" pkg_name="${1#*:}" dep
+            load_pkg_meta "$pkg_name"
 
-        local pkg
-        for pkg in "${order[@]}"
+            case "$mode" in
+                build)
+                    for dep in ${pkg_bneeds[$pkg_name]}
+                    do
+                        step_deps+=("run:${dep##*/}")
+                    done
+                    ;;
+                run)
+                    step_deps+=("build:$pkg_name")
+                    for dep in ${pkg_needs[$pkg_name]}
+                    do
+                        step_deps+=("run:${dep##*/}")
+                    done
+                    ;;
+                *)
+                    fatal "unknown plan mode: $mode"
+                    ;;
+            esac
+        }
+
+        local arg
+        for arg in "$@"
         do
+            root_nodes+=("$plan_mode:${arg##*/}")
+        done
+
+        dfs build_step "${root_nodes[@]}"
+
+        local node pkg
+        for node in "${order[@]}"
+        do
+            if [[ "$node" != build:* ]]
+            then
+                continue
+            fi
+            pkg="${node#build:}"
             printf '%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}" "${pkg_cflags[$pkg]:-}" "${pkg_ldflags[$pkg]:-}"
         done
     ) > "$tmp_plan"
@@ -1003,6 +1054,13 @@ plan_pkgs() {
 }
 
 build_pkgs() {
+    local plan_mode=build
+    if test "${1:-}" == "--run"
+    then
+        plan_mode=run
+        shift
+    fi
+
     if test $# -lt 1
     then
         fatal "Usage: $0 build <package...>"
@@ -1017,15 +1075,16 @@ build_pkgs() {
     dlcall setpriority int:0 int:0 int:9
     dlcall syscall long:251 int:1 int:0 int:24576
 
-    if test "${FLUFFY_IN_CHROOT:-0}" -eq 1
+    if test "${FLUFFY_BUILD_SINGLE:-0}" -eq 1
     then
+        unset FLUFFY_BUILD_SINGLE
         build_single_pkg "$1"
         return 0
     fi
 
     local -a order=()
     local -A pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
-    plan_pkgs "$@"
+    plan_pkgs "$plan_mode" "$@"
 
     local total="${#order[@]}" idx=0 pkg
     for pkg in "${order[@]}"
@@ -1119,7 +1178,7 @@ refresh_recipe_checksums() {
 
     local -a order=()
     local -A pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
-    plan_pkgs "${target_pkgs[@]}"
+    plan_pkgs build "${target_pkgs[@]}"
 
     local total="${#order[@]}" idx=0 pkg
     for pkg in "${order[@]}"
@@ -1182,6 +1241,54 @@ refresh-checksums)
 install)
     shift
     install_targets "$@"
+    ;;
+run)
+    shift
+    if test $# -lt 2
+    then
+        fatal "Usage: $0 run <package> <command> [args...]"
+    fi
+    target="$1"
+    shift
+    (
+        build_pkgs --run bash "$target"
+    ) < /dev/null
+    reload_fstab
+    if test -n "${FLUFFY:-}"
+    then
+        root="$PWD"
+        mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp,"$root"}
+        call mount /dev "$FLUFFY/dev" $NULL $MS_BIND $NULL
+        call mount /dev/pts "$FLUFFY/dev/pts" $NULL $MS_BIND $NULL
+        call mount proc "$FLUFFY/proc" proc 0 $NULL
+        call mount sysfs "$FLUFFY/sys" sysfs 0 $NULL
+        call mount tmpfs "$FLUFFY/run" tmpfs 0 $NULL
+        call mount tmpfs "$FLUFFY/tmp" tmpfs 0 $NULL
+        if test -h "$FLUFFY/dev/shm"
+        then
+            mkdir -p "$FLUFFY$(realpath /dev/shm)"
+            chmod 1777 "$FLUFFY$(realpath /dev/shm)"
+        else
+            call mount tmpfs "$FLUFFY/dev/shm" tmpfs $(( MS_NOSUID | MS_NODEV )) $NULL
+        fi
+        if test -f /etc/resolv.conf
+        then
+            touch "$FLUFFY/etc/resolv.conf"
+            call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
+        fi
+        call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
+        install_targets bash "$target"
+        call mount /sw "$FLUFFY/sw" $NULL $(( MS_BIND | MS_REC )) $NULL
+        call chroot "$FLUFFY"
+        call chdir "$root"
+        unset FLUFFY
+        export PATH='/sw/*/bin'
+        exec /sw/bash/bin/bash -c 'exec "$@"' bash "$@"
+    else
+        install_targets bash "$target"
+        export PATH='/sw/*/bin'
+        exec /sw/bash/bin/bash -c 'exec "$@"' bash "$@"
+    fi
     ;;
 *)
     fatal "unknown command: $1"

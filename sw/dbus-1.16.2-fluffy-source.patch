@@ -1,0 +1,700 @@
+diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus/config-parser.c
+--- dbus-1.16.2.orig/bus/config-parser.c	2025-02-27 16:29:06.000000000 +0000
++++ dbus-1.16.2/bus/config-parser.c	2025-02-27 16:29:06.000000000 +0000
+@@ -37,6 +37,9 @@
+ #include <dbus/dbus-sysdeps.h>
+ #include <dbus/dbus-test-tap.h>
+ #include <string.h>
++#ifndef DBUS_WIN
++#include <glob.h>
++#endif
+ 
+ typedef enum
+ {
+@@ -346,6 +349,42 @@
+   return TRUE;
+ }
+ 
++static const char *
++conf_dirs_find_dir (DBusList  **conf_dirs,
++                    const char *dir)
++{
++  DBusList *link;
++
++  _dbus_assert (dir != NULL);
++
++  for (link = *conf_dirs; link; link = _dbus_list_get_next_link (conf_dirs, link))
++    {
++      const char *link_dir = link->data;
++
++      if (strcmp (dir, link_dir) == 0)
++        return link_dir;
++    }
++
++  return NULL;
++}
++
++static void
++conf_dirs_append_link_unique_or_free (DBusList **conf_dirs,
++                                      DBusList  *dir_link)
++{
++  const char *dir = dir_link->data;
++
++  if (conf_dirs_find_dir (conf_dirs, dir) == NULL)
++    {
++      _dbus_list_append_link (conf_dirs, dir_link);
++    }
++  else
++    {
++      dbus_free (dir_link->data);
++      _dbus_list_free_link (dir_link);
++    }
++}
++
+ static dbus_bool_t
+ merge_included (BusConfigParser *parser,
+                 BusConfigParser *included,
+@@ -414,7 +453,7 @@
+     service_dirs_append_link_unique_or_free (&parser->service_dirs, link);
+ 
+   while ((link = _dbus_list_pop_first_link (&included->conf_dirs)))
+-    _dbus_list_append_link (&parser->conf_dirs, link);
++    conf_dirs_append_link_unique_or_free (&parser->conf_dirs, link);
+   
+   return TRUE;
+ }
+@@ -2487,6 +2526,10 @@
+   DBusDirIter *dir;
+   char *s;
+   
++  if (conf_dirs_find_dir (&parser->conf_dirs,
++                          _dbus_string_get_const_data (dirname)) != NULL)
++    return TRUE;
++
+   if (!_dbus_string_init (&filename))
+     {
+       BUS_SET_OOM (error);
+@@ -2742,6 +2785,43 @@
+             _dbus_string_free (&full_path);
+             goto nomem;
+           }
++
++#ifndef DBUS_WIN
++        if (strpbrk (_dbus_string_get_const_data (&full_path), "*?[") != NULL)
++          {
++            glob_t gl;
++            int rc;
++
++            memset (&gl, 0, sizeof (gl));
++            rc = glob (_dbus_string_get_const_data (&full_path), 0, NULL, &gl);
++            _dbus_string_free (&full_path);
++
++            if (rc == 0)
++              {
++                size_t j;
++
++                for (j = 0; j < gl.gl_pathc; j++)
++                  {
++                    DBusString matched_path;
++
++                    _dbus_string_init_const (&matched_path, gl.gl_pathv[j]);
++                    if (!include_dir (parser, &matched_path, error))
++                      {
++                        globfree (&gl);
++                        return FALSE;
++                      }
++                  }
++              }
++            else if (rc == GLOB_NOSPACE)
++              {
++                globfree (&gl);
++                goto nomem;
++              }
++
++            globfree (&gl);
++            break;
++          }
++#endif
+         
+         if (!include_dir (parser, &full_path, error))
+           {
+@@ -2834,6 +2914,59 @@
+             _dbus_string_free (&full_path);
+             goto nomem;
+           }
++
++#ifndef DBUS_WIN
++        if (strpbrk (_dbus_string_get_const_data (&full_path), "*?[") != NULL)
++          {
++            glob_t gl;
++            int rc;
++
++            memset (&gl, 0, sizeof (gl));
++            rc = glob (_dbus_string_get_const_data (&full_path), 0, NULL, &gl);
++            _dbus_string_free (&full_path);
++
++            if (rc == 0)
++              {
++                size_t j;
++
++                for (j = 0; j < gl.gl_pathc; j++)
++                  {
++                    s = _dbus_strdup (gl.gl_pathv[j]);
++                    if (s == NULL)
++                      {
++                        globfree (&gl);
++                        goto nomem;
++                      }
++
++                    dir = bus_config_service_dir_new_take (s, BUS_SERVICE_DIR_FLAGS_NONE);
++                    if (dir == NULL)
++                      {
++                        dbus_free (s);
++                        globfree (&gl);
++                        goto nomem;
++                      }
++
++                    link = _dbus_list_alloc_link (dir);
++                    if (link == NULL)
++                      {
++                        bus_config_service_dir_free (dir);
++                        globfree (&gl);
++                        goto nomem;
++                      }
++
++                    service_dirs_append_link_unique_or_free (&parser->service_dirs, link);
++                  }
++              }
++            else if (rc == GLOB_NOSPACE)
++              {
++                globfree (&gl);
++                goto nomem;
++              }
++
++            globfree (&gl);
++            break;
++          }
++#endif
+         
+         if (!_dbus_string_copy_data (&full_path, &s))
+           {
+@@ -3993,6 +4126,13 @@
+   while ((link = _dbus_list_pop_first_link (&dirs)))
+     {
+       _dbus_test_diag ("    test service dir: %s", (char *)link->data);
++      if (i == 0 && strncmp ((char *) link->data, "/sw/", 4) == 0 &&
++          strcmp ((char *) link->data, test_system_service_dir_matches[0]) != 0)
++        {
++          dbus_free (link->data);
++          _dbus_list_free_link (link);
++          continue;
++        }
+       if (test_system_service_dir_matches[i] == NULL)
+         {
+           _dbus_test_diag ("more directories parsed than in match set");
+diff --no-dereference -Naur dbus-1.16.2.orig/bus/session.conf.in dbus-1.16.2/bus/session.conf.in
+--- dbus-1.16.2.orig/bus/session.conf.in	2025-02-27 16:29:06.000000000 +0000
++++ dbus-1.16.2/bus/session.conf.in	2025-02-27 16:29:06.000000000 +0000
+@@ -37,16 +37,21 @@
+ 
+   <!-- Include legacy configuration location -->
+   <include ignore_missing="yes">@SYSCONFDIR_FROM_PKGDATADIR@/dbus-1/session.conf</include>
++  <include ignore_missing="yes">/etc/dbus-1/session.conf</include>
+ 
+   <!-- Config files are placed here that among other things, 
+        further restrict the above policy for specific services. -->
+   <includedir>session.d</includedir>
++  <includedir>/sw/*/share/dbus-1/session.d</includedir>
+ 
+   <includedir>@SYSCONFDIR_FROM_PKGDATADIR@/dbus-1/session.d</includedir>
++  <includedir>/sw/*/etc/dbus-1/session.d</includedir>
++  <includedir>/etc/dbus-1/session.d</includedir>
+ 
+   <!-- This is included last so local configuration can override what's 
+        in this standard file -->
+   <include ignore_missing="yes">@SYSCONFDIR_FROM_PKGDATADIR@/dbus-1/session-local.conf</include>
++  <include ignore_missing="yes">/etc/dbus-1/session-local.conf</include>
+ 
+   <include if_selinux_enabled="yes" selinux_root_relative="yes">contexts/dbus_contexts</include>
+ 
+diff --no-dereference -Naur dbus-1.16.2.orig/bus/system.conf.in dbus-1.16.2/bus/system.conf.in
+--- dbus-1.16.2.orig/bus/system.conf.in	2025-02-27 16:29:06.000000000 +0000
++++ dbus-1.16.2/bus/system.conf.in	2025-02-27 16:29:06.000000000 +0000
+@@ -103,6 +103,7 @@
+ 
+   <!-- Include legacy configuration location -->
+   <include ignore_missing="yes">@SYSCONFDIR_FROM_PKGDATADIR@/dbus-1/system.conf</include>
++  <include ignore_missing="yes">/etc/dbus-1/system.conf</include>
+ 
+   <!-- The defaults for these limits are hard-coded in dbus-daemon.
+        Some clarifications:
+@@ -130,12 +131,16 @@
+   <!-- Config files are placed here that among other things, punch 
+        holes in the above policy for specific services. -->
+   <includedir>system.d</includedir>
++  <includedir>/sw/*/share/dbus-1/system.d</includedir>
+ 
+   <includedir>@SYSCONFDIR_FROM_PKGDATADIR@/dbus-1/system.d</includedir>
++  <includedir>/sw/*/etc/dbus-1/system.d</includedir>
++  <includedir>/etc/dbus-1/system.d</includedir>
+ 
+   <!-- This is included last so local configuration can override what's 
+        in this standard file -->
+   <include ignore_missing="yes">@SYSCONFDIR_FROM_PKGDATADIR@/dbus-1/system-local.conf</include>
++  <include ignore_missing="yes">/etc/dbus-1/system-local.conf</include>
+ 
+   <include if_selinux_enabled="yes" selinux_root_relative="yes">contexts/dbus_contexts</include>
+ 
+diff --no-dereference -Naur dbus-1.16.2.orig/dbus/dbus-sysdeps-util-unix.c dbus-1.16.2/dbus/dbus-sysdeps-util-unix.c
+--- dbus-1.16.2.orig/dbus/dbus-sysdeps-util-unix.c	2025-02-27 16:29:06.000000000 +0000
++++ dbus-1.16.2/dbus/dbus-sysdeps-util-unix.c	2025-02-27 16:29:06.000000000 +0000
+@@ -53,6 +53,7 @@
+ #include <grp.h>
+ #include <sys/socket.h>
+ #include <dirent.h>
++#include <glob.h>
+ #include <sys/un.h>
+ 
+ #ifdef HAVE_SYS_PRCTL_H
+@@ -1256,6 +1257,69 @@
+ #define DBUS_UNIX_STANDARD_SESSION_SERVICEDIR "/dbus-1/services"
+ #define DBUS_UNIX_STANDARD_SYSTEM_SERVICEDIR "/dbus-1/system-services"
+ 
++static dbus_bool_t
++_dbus_split_glob_paths_and_append (DBusString *dirs,
++                                   const char *suffix,
++                                   DBusList  **dir_list)
++{
++  DBusList *raw_dirs = NULL;
++  DBusList *link;
++
++  if (!_dbus_split_paths_and_append (dirs, suffix, &raw_dirs))
++    return FALSE;
++
++  while ((link = _dbus_list_pop_first_link (&raw_dirs)) != NULL)
++    {
++      char *cpath = link->data;
++
++      if (strpbrk (cpath, "*?[") != NULL)
++        {
++          glob_t gl;
++          int rc;
++
++          _dbus_list_free_link (link);
++          memset (&gl, 0, sizeof (gl));
++          rc = glob (cpath, 0, NULL, &gl);
++          dbus_free (cpath);
++
++          if (rc == 0)
++            {
++              size_t j;
++
++              for (j = 0; j < gl.gl_pathc; j++)
++                {
++                  char *matched = _dbus_strdup (gl.gl_pathv[j]);
++
++                  if (matched == NULL || !_dbus_list_append (dir_list, matched))
++                    {
++                      dbus_free (matched);
++                      globfree (&gl);
++                      goto oom;
++                    }
++                }
++            }
++          else if (rc == GLOB_NOSPACE)
++            {
++              globfree (&gl);
++              goto oom;
++            }
++
++          globfree (&gl);
++        }
++      else
++        {
++          _dbus_list_append_link (dir_list, link);
++        }
++    }
++
++  return TRUE;
++
++oom:
++  _dbus_list_clear_full (&raw_dirs, dbus_free);
++  _dbus_list_clear_full (dir_list, dbus_free);
++  return FALSE;
++}
++
+ /**
+  * Returns the standard directories for a session bus to look for
+  * transient service activation files.
+@@ -1407,7 +1471,7 @@
+     }
+   else
+     {
+-      if (!_dbus_string_append (&servicedir_path, "/usr/local/share:/usr/share:"))
++      if (!_dbus_string_append (&servicedir_path, "/sw/*/share:/usr/local/share:/usr/share:"))
+         goto oom;
+     }
+ 
+@@ -1420,9 +1484,9 @@
+   if (!_dbus_string_append (&servicedir_path, DBUS_DATADIR))
+     goto oom;
+ 
+-  if (!_dbus_split_paths_and_append (&servicedir_path,
+-                                     DBUS_UNIX_STANDARD_SESSION_SERVICEDIR,
+-                                     dirs))
++  if (!_dbus_split_glob_paths_and_append (&servicedir_path,
++                                          DBUS_UNIX_STANDARD_SESSION_SERVICEDIR,
++                                          dirs))
+     goto oom;
+ 
+   _dbus_string_free (&servicedir_path);
+@@ -1465,6 +1529,7 @@
+    * be available.
+    */
+   static const char standard_search_path[] =
++    "/sw/*/share:"
+     "/usr/local/share:"
+     "/usr/share:"
+     DBUS_DATADIR ":"
+@@ -1473,9 +1538,9 @@
+ 
+   _dbus_string_init_const (&servicedir_path, standard_search_path);
+ 
+-  return _dbus_split_paths_and_append (&servicedir_path,
+-                                       DBUS_UNIX_STANDARD_SYSTEM_SERVICEDIR,
+-                                       dirs);
++  return _dbus_split_glob_paths_and_append (&servicedir_path,
++                                            DBUS_UNIX_STANDARD_SYSTEM_SERVICEDIR,
++                                            dirs);
+ }
+ 
+ 
+@@ -1496,14 +1561,15 @@
+ {
+   static const char standard_search_path[] =
+     "/etc:"
+-    "/run";
++    "/run:"
++    "/sw/*/etc";
+   DBusString servicedir_path;
+ 
+   _dbus_string_init_const (&servicedir_path, standard_search_path);
+ 
+-  return _dbus_split_paths_and_append (&servicedir_path,
+-                                       DBUS_UNIX_STANDARD_SYSTEM_SERVICEDIR,
+-                                       dirs);
++  return _dbus_split_glob_paths_and_append (&servicedir_path,
++                                            DBUS_UNIX_STANDARD_SYSTEM_SERVICEDIR,
++                                            dirs);
+ }
+ 
+ /**
+diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus-1.16.2/test/internals/fluffy-config.c
+--- dbus-1.16.2.orig/test/internals/fluffy-config.c	1970-01-01 00:00:00.000000000 +0000
++++ dbus-1.16.2/test/internals/fluffy-config.c	2025-02-27 16:29:06.000000000 +0000
+@@ -0,0 +1,281 @@
++/*
++ * SPDX-License-Identifier: MIT
++ */
++
++#include <config.h>
++
++#include "bus/config-parser.h"
++#include "dbus/dbus-internals.h"
++#include "dbus/dbus-list.h"
++#include "dbus/dbus-string.h"
++#include "dbus/dbus-sysdeps.h"
++#include "dbus/dbus-sysdeps-unix.h"
++#include "dbus/dbus-test-tap.h"
++#include "test/test-utils.h"
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <unistd.h>
++
++static void
++mkdir_p (const char *path)
++{
++  char *copy;
++  char *p;
++
++  copy = strdup (path);
++  if (copy == NULL)
++    _dbus_test_fatal ("out of memory");
++
++  for (p = copy + 1; *p != '\0'; p++)
++    {
++      if (*p == '/')
++        {
++          *p = '\0';
++          (void) mkdir (copy, 0755);
++          *p = '/';
++        }
++    }
++
++  (void) mkdir (copy, 0755);
++  free (copy);
++}
++
++static void
++write_text_file (const char *path,
++                 const char *contents)
++{
++  FILE *fp;
++
++  fp = fopen (path, "w");
++  if (fp == NULL)
++    _dbus_test_fatal ("failed to open %s for writing", path);
++
++  if (fputs (contents, fp) == EOF)
++    _dbus_test_fatal ("failed to write %s", path);
++
++  if (fclose (fp) != 0)
++    _dbus_test_fatal ("failed to close %s", path);
++}
++
++static dbus_bool_t
++test_fluffy_glob_config (const char *test_data_dir _DBUS_GNUC_UNUSED)
++{
++  char root_template[] = "/tmp/dbus-fluffy-test-XXXXXX";
++  char *root;
++  char path_buf[2048];
++  char conf_xml[8192];
++  char pkg_a_sysd[1024];
++  char pkg_b_sysd[1024];
++  char pkg_a_svc[1024];
++  char pkg_b_svc[1024];
++  char main_conf[1024];
++  char xdg_glob[1024];
++  const char *old_xdg_raw;
++  char *old_xdg_copy = NULL;
++  DBusString conf_path;
++  DBusError error = DBUS_ERROR_INIT;
++  BusConfigParser *parser = NULL;
++  DBusList **conf_dirs;
++  DBusList **service_dirs;
++  DBusList *session_dirs = NULL;
++  DBusList *link;
++  int count;
++  dbus_bool_t found_pkg_a = FALSE;
++  dbus_bool_t found_pkg_b = FALSE;
++  dbus_bool_t ret = FALSE;
++
++  root = mkdtemp (root_template);
++  if (root == NULL)
++    _dbus_test_fatal ("mkdtemp failed");
++
++  snprintf (pkg_a_sysd, sizeof (pkg_a_sysd), "%s/sw/dbus/share/dbus-1/system.d", root);
++  snprintf (pkg_b_sysd, sizeof (pkg_b_sysd), "%s/sw/systemd/share/dbus-1/system.d", root);
++  snprintf (pkg_a_svc, sizeof (pkg_a_svc), "%s/sw/dbus/share/dbus-1/system-services", root);
++  snprintf (pkg_b_svc, sizeof (pkg_b_svc), "%s/sw/systemd/share/dbus-1/system-services", root);
++
++  mkdir_p (pkg_a_sysd);
++  mkdir_p (pkg_b_sysd);
++  mkdir_p (pkg_a_svc);
++  mkdir_p (pkg_b_svc);
++
++  snprintf (path_buf, sizeof (path_buf), "%s/sw/dbus/share/dbus-1/services", root);
++  mkdir_p (path_buf);
++  snprintf (path_buf, sizeof (path_buf), "%s/sw/systemd/share/dbus-1/services", root);
++  mkdir_p (path_buf);
++  /* Package without dbus-1 subdir should be ignored by glob */
++  snprintf (path_buf, sizeof (path_buf), "%s/sw/bash/share/doc", root);
++  mkdir_p (path_buf);
++
++  snprintf (path_buf, sizeof (path_buf), "%s/00-dbus.conf", pkg_a_sysd);
++  write_text_file (path_buf,
++                   "<!DOCTYPE busconfig PUBLIC \"-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN\"\n"
++                   " \"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"
++                   "<busconfig>\n"
++                   "  <pidfile>/run/pkg-a.pid</pidfile>\n"
++                   "</busconfig>\n");
++
++  snprintf (path_buf, sizeof (path_buf), "%s/org.freedesktop.login1.conf", pkg_b_sysd);
++  write_text_file (path_buf,
++                   "<!DOCTYPE busconfig PUBLIC \"-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN\"\n"
++                   " \"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"
++                   "<busconfig>\n"
++                   "  <pidfile>/run/systemd-login1.pid</pidfile>\n"
++                   "  <policy user=\"root\">\n"
++                   "    <allow own=\"org.freedesktop.login1\"/>\n"
++                   "  </policy>\n"
++                   "</busconfig>\n");
++
++  snprintf (main_conf, sizeof (main_conf), "%s/sw/dbus/share/dbus-1/system.conf", root);
++  snprintf (conf_xml, sizeof (conf_xml),
++            "<!DOCTYPE busconfig PUBLIC \"-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN\"\n"
++            " \"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"
++            "<busconfig>\n"
++            "  <type>system</type>\n"
++            "  <listen>unix:path=%s/system_bus_socket</listen>\n"
++            "  <servicedir>%s/sw/*/share/dbus-1/system-services</servicedir>\n"
++            "  <servicedir>%s/sw/*/nonexistent-services</servicedir>\n"
++            "  <includedir>system.d</includedir>\n"
++            "  <includedir>%s/sw/*/share/dbus-1/system.d</includedir>\n"
++            "  <includedir>%s/sw/*/etc/dbus-1/system.d</includedir>\n"
++            "</busconfig>\n",
++            root, root, root, root, root);
++  write_text_file (main_conf, conf_xml);
++
++  _dbus_string_init_const (&conf_path, main_conf);
++  parser = bus_config_load (&conf_path, TRUE, NULL, &error);
++  if (parser == NULL)
++    _dbus_test_fatal ("bus_config_load failed: %s", error.message);
++
++  /* system.d from basedir and from wildcard system.d paths must be deduplicated,
++   * and alphabetical glob order means sw/systemd overrides sw/dbus pidfile */
++  if (bus_config_parser_get_pidfile (parser) == NULL ||
++      strcmp (bus_config_parser_get_pidfile (parser), "/run/systemd-login1.pid") != 0)
++    {
++      _dbus_warn ("unexpected pidfile: %s",
++                  bus_config_parser_get_pidfile (parser) ?
++                  bus_config_parser_get_pidfile (parser) : "(null)");
++      goto out;
++    }
++
++  conf_dirs = bus_config_parser_get_conf_dirs (parser);
++  count = 0;
++  for (link = _dbus_list_get_first_link (conf_dirs);
++       link != NULL;
++       link = _dbus_list_get_next_link (conf_dirs, link))
++    {
++      const char *d = link->data;
++
++      if (strcmp (d, pkg_a_sysd) == 0)
++        found_pkg_a = TRUE;
++      else if (strcmp (d, pkg_b_sysd) == 0)
++        found_pkg_b = TRUE;
++      count++;
++    }
++
++  if (count != 2 || !found_pkg_a || !found_pkg_b)
++    {
++      _dbus_warn ("expected exactly 2 deduplicated conf_dirs, got %d", count);
++      goto out;
++    }
++
++  found_pkg_a = FALSE;
++  found_pkg_b = FALSE;
++  count = 0;
++  service_dirs = bus_config_parser_get_service_dirs (parser);
++  for (link = _dbus_list_get_first_link (service_dirs);
++       link != NULL;
++       link = _dbus_list_get_next_link (service_dirs, link))
++    {
++      BusConfigServiceDir *sd = link->data;
++
++      if (strcmp (sd->path, pkg_a_svc) == 0)
++        found_pkg_a = TRUE;
++      else if (strcmp (sd->path, pkg_b_svc) == 0)
++        found_pkg_b = TRUE;
++      count++;
++    }
++
++  if (count != 2 || !found_pkg_a || !found_pkg_b)
++    {
++      _dbus_warn ("expected exactly 2 globbed service_dirs, got %d", count);
++      goto out;
++    }
++
++  /* Verify _dbus_split_glob_paths_and_append via XDG_DATA_DIRS wildcard */
++  old_xdg_raw = getenv ("XDG_DATA_DIRS");
++  if (old_xdg_raw != NULL)
++    old_xdg_copy = strdup (old_xdg_raw);
++
++  snprintf (xdg_glob, sizeof (xdg_glob), "%s/sw/*/share", root);
++  setenv ("XDG_DATA_DIRS", xdg_glob, 1);
++
++  if (!_dbus_get_standard_session_servicedirs (&session_dirs))
++    _dbus_test_fatal ("_dbus_get_standard_session_servicedirs failed");
++
++  if (old_xdg_copy != NULL)
++    {
++      setenv ("XDG_DATA_DIRS", old_xdg_copy, 1);
++      free (old_xdg_copy);
++      old_xdg_copy = NULL;
++    }
++  else
++    {
++      unsetenv ("XDG_DATA_DIRS");
++    }
++
++  found_pkg_a = FALSE;
++  found_pkg_b = FALSE;
++  snprintf (pkg_a_svc, sizeof (pkg_a_svc), "%s/sw/dbus/share/dbus-1/services", root);
++  snprintf (pkg_b_svc, sizeof (pkg_b_svc), "%s/sw/systemd/share/dbus-1/services", root);
++
++  for (link = _dbus_list_get_first_link (&session_dirs);
++       link != NULL;
++       link = _dbus_list_get_next_link (&session_dirs, link))
++    {
++      const char *d = link->data;
++
++      if (strcmp (d, pkg_a_svc) == 0)
++        found_pkg_a = TRUE;
++      else if (strcmp (d, pkg_b_svc) == 0)
++        found_pkg_b = TRUE;
++      else if (strstr (d, "/sw/bash/") != NULL)
++        {
++          _dbus_warn ("unexpected non-matching package dir %s", d);
++          goto out;
++        }
++    }
++
++  if (!found_pkg_a || !found_pkg_b)
++    {
++      _dbus_warn ("missing globbed session service dirs");
++      goto out;
++    }
++
++  ret = TRUE;
++
++out:
++  _dbus_list_clear_full (&session_dirs, dbus_free);
++  if (parser != NULL)
++    bus_config_parser_unref (parser);
++  dbus_error_free (&error);
++  free (old_xdg_copy);
++  return ret;
++}
++
++static const DBusTestCase tests[] =
++{
++  { "fluffy_glob_config", test_fluffy_glob_config },
++  { NULL }
++};
++
++int
++main (int    argc,
++      char **argv)
++{
++  return _dbus_test_main (argc, argv, _DBUS_N_ELEMENTS (tests), tests,
++                          DBUS_TEST_FLAGS_NONE,
++                          NULL, NULL);
++}
+diff --no-dereference -Naur dbus-1.16.2.orig/test/meson.build dbus-1.16.2/test/meson.build
+--- dbus-1.16.2.orig/test/meson.build	2025-02-27 16:29:06.000000000 +0000
++++ dbus-1.16.2/test/meson.build	2025-02-27 16:29:06.000000000 +0000
+@@ -413,6 +413,20 @@
+         'srcs': [ 'internals/printf.c' ],
+         'link': [ libdbus_testutils, ],
+     },
++]
++
++if message_bus and platform_unix
++    tests += [
++        {
++            'name': 'fluffy-config',
++            'srcs': [ 'internals/fluffy-config.c' ],
++            'link': [ libdbus_testutils, libdbus_daemon_internal, ],
++            'install': false,
++        },
++    ]
++endif
++
++tests += [
+     {
+         'name': 'manual-backtrace',
+         'srcs': [ 'manual-backtrace.c' ],

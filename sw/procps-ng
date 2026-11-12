@@ -1,0 +1,100 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=4.0.7
+
+ARCHIVES=(
+    9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d https://downloads.sourceforge.net/procps-ng/procps-ng-$VERSION.tar.xz
+    58a8375656f27aeab5ca178595281edaa76e879358ffd328e552b533a361db83 file://procps-ng-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    libgcc
+    ncurses
+    systemd
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        dejagnu
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        systemd
+        tar
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        dejagnu
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        systemd
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i procps-ng-$VERSION-fluffy-shell.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site \
+    PKG_CONFIG="false" \
+    NCURSES_CFLAGS=" " \
+    NCURSES_LIBS="-lncursesw" \
+    SYSTEMD_CFLAGS=" " \
+    SYSTEMD_LIBS="-lsystemd" \
+    ./configure \
+        --prefix=/sw/procps-ng \
+        --sbindir=/sw/procps-ng/bin \
+        --docdir=/sw/procps-ng/share/doc/procps-ng-$VERSION \
+        --disable-static \
+        --disable-kill \
+        --enable-watch8bit \
+        --with-systemd
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    find $DESTDIR/sw/procps-ng -name '*.la' -delete
+}

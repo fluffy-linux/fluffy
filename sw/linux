@@ -1,0 +1,99 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=7.1.8
+
+ARCHIVES=(
+    ff01dcb449279d5b4cfccdb01fee639cf5ff1803f1749a77844dd33915422c49 https://www.kernel.org/pub/linux/kernel/v7.x/linux-$VERSION.tar.xz
+    8194c7d3e3d34dbdebf10d2c2ec6fa94959275090cd9ec2d54ef3b7e7fdfa524 file://linux-$VERSION-fluffy-shell.patch
+    8b1d71f89324e12b85ef07a742f4d9b584fe65fe786d799d3288925d062459d7 file://config-$VERSION
+)
+
+NEEDS=()
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        bc
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        kmod
+        libelf
+        libgcc
+        linux-headers
+        make
+        openssl
+        patch
+        perl
+        sed
+        tar
+        xz
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        bc
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        kmod
+        libelf
+        libgcc
+        linux-headers
+        make
+        openssl
+        patch
+        perl
+        sed
+        tar
+        xz
+        zlib
+        zstd
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i linux-$VERSION-fluffy-shell.patch
+
+    if [ -f "config-$VERSION" ]; then
+        cp -v config-$VERSION .config
+    else
+        cp -v ../config-$VERSION .config
+    fi
+
+    make olddefconfig
+    make -j$(nproc) bzImage modules
+}
+
+INSTALL() {
+    make INSTALL_MOD_PATH=$DESTDIR/sw/linux modules_install
+    mkdir -p $DESTDIR/sw/linux/boot
+    cp -v arch/x86/boot/bzImage $DESTDIR/sw/linux/boot/vmlinuz-$VERSION
+    cp -v System.map $DESTDIR/sw/linux/boot/System.map-$VERSION
+    cp -v .config $DESTDIR/sw/linux/boot/config-$VERSION
+    rm -f $DESTDIR/sw/linux/lib/modules/$VERSION/{build,source}
+}
