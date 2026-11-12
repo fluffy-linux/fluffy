@@ -1,0 +1,74 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.14
+
+ARCHIVES=(
+    01a7b881bd220bfdf615f97b8718f80bdfd3f6add385b993dcf6efd14e8c0ac6 https://ftpmirror.gnu.org/gzip/gzip-$VERSION.tar.xz
+    462c17a167aa36ae20aadfdc526eefbe28f414a2fbfa7ff47b5736b59e36f7e9 file://gzip-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        sed
+        tar-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i gzip-$VERSION-fluffy-shell.patch
+
+    ./configure \
+        --prefix=/sw/gzip
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

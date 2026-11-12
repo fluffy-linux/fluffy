@@ -1,0 +1,108 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=9.2.1025
+
+ARCHIVES=(
+    cb0dbf701f8550bb54940304fa4d8b875e078db84967e5b36a0eb7ebe8a6d0cc https://github.com/vim/vim/archive/v$VERSION/vim-$VERSION.tar.gz
+    b6e870e5194e789d8d0ccd08f72561ae9984fd38b77be2ccafae43c62fb3e650 file://vim-$VERSION-fluffy-shell.patch
+)
+
+NEEDS=(
+    glibc
+    ncurses
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        libstdcpp
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        tar
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        libstdcpp
+        linux-headers
+        make
+        ncurses
+        patch
+        sed
+        tar
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i vim-$VERSION-fluffy-shell.patch
+
+    echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/vim \
+        --with-tlib=ncurses
+    make
+}
+
+INSTALL() {
+    make install
+
+    ln -sv vim $DESTDIR/sw/vim/bin/vi
+
+    for L in $DESTDIR/sw/vim/share/man/{,*/}man1/vim.1; do
+        ln -sv vim.1 $(dirname $L)/vi.1
+    done
+
+    mkdir -pv $DESTDIR/sw/vim/share/doc
+    ln -sv ../vim/vim92/doc $DESTDIR/sw/vim/share/doc/vim-$VERSION
+
+    mkdir -pv $DESTDIR/sw/vim/etc
+    cat > $DESTDIR/sw/vim/etc/vimrc << "EOF"
+" Begin /sw/vim/etc/vimrc
+
+" Ensure defaults are set before customizing settings, not after
+source $VIMRUNTIME/defaults.vim
+let skip_defaults_vim=1
+
+set nocompatible
+set backspace=2
+set mouse=
+syntax on
+if (&term == "xterm") || (&term == "vt100")
+  set background=dark
+endif
+
+" End /sw/vim/etc/vimrc
+EOF
+}

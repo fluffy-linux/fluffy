@@ -1,0 +1,2233 @@
+diff --no-dereference -Naur findutils-4.11.0.orig/aclocal.m4 findutils-4.11.0/aclocal.m4
+--- findutils-4.11.0.orig/aclocal.m4	2026-07-11 09:03:19.000000000 +0000
++++ findutils-4.11.0/aclocal.m4	2026-07-11 09:03:19.000000000 +0000
+@@ -264,7 +264,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/check-testfiles.sh findutils-4.11.0/build-aux/check-testfiles.sh
+--- findutils-4.11.0.orig/build-aux/check-testfiles.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/build-aux/check-testfiles.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # check-testfiles.sh -- Check we distributed all the test files we need
+ # Copyright (C) 2007-2026 Free Software Foundation, Inc.
+ #
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/compile findutils-4.11.0/build-aux/compile
+--- findutils-4.11.0.orig/build-aux/compile	2026-07-11 09:03:23.000000000 +0000
++++ findutils-4.11.0/build-aux/compile	2026-07-11 09:03:23.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/config.guess findutils-4.11.0/build-aux/config.guess
+--- findutils-4.11.0.orig/build-aux/config.guess	2026-06-25 19:35:13.000000000 +0000
++++ findutils-4.11.0/build-aux/config.guess	2026-06-25 19:35:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2026 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1022,7 +1022,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/config.rpath findutils-4.11.0/build-aux/config.rpath
+--- findutils-4.11.0.orig/build-aux/config.rpath	2026-06-24 09:56:23.000000000 +0000
++++ findutils-4.11.0/build-aux/config.rpath	2026-06-24 09:56:23.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Output a system dependent set of variables, describing how to set the
+ # run time search path of shared libraries in a binary (executable or
+ # shared library).
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/config.sub findutils-4.11.0/build-aux/config.sub
+--- findutils-4.11.0.orig/build-aux/config.sub	2026-06-25 19:35:13.000000000 +0000
++++ findutils-4.11.0/build-aux/config.sub	2026-06-25 19:35:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2026 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/depcomp findutils-4.11.0/build-aux/depcomp
+--- findutils-4.11.0.orig/build-aux/depcomp	2026-06-25 19:35:13.000000000 +0000
++++ findutils-4.11.0/build-aux/depcomp	2026-06-25 19:35:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2026-05-29.23; # UTC
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/gen-changelog.sh findutils-4.11.0/build-aux/gen-changelog.sh
+--- findutils-4.11.0.orig/build-aux/gen-changelog.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/build-aux/gen-changelog.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Generate the ChangeLog for findutils.
+ 
+ # Copyright (C) 2015-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/gendocs.sh findutils-4.11.0/build-aux/gendocs.sh
+--- findutils-4.11.0.orig/build-aux/gendocs.sh	2026-06-25 19:35:13.000000000 +0000
++++ findutils-4.11.0/build-aux/gendocs.sh	2026-06-25 19:35:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ # gendocs.sh -- generate a GNU manual in many formats.  This script is
+ #   mentioned in maintain.texi.  See the help message below for usage details.
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/git-version-gen findutils-4.11.0/build-aux/git-version-gen
+--- findutils-4.11.0.orig/build-aux/git-version-gen	2026-06-24 09:56:19.000000000 +0000
++++ findutils-4.11.0/build-aux/git-version-gen	2026-06-24 09:56:19.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2025-06-10.02; # UTC
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/gitlog-to-changelog findutils-4.11.0/build-aux/gitlog-to-changelog
+--- findutils-4.11.0.orig/build-aux/gitlog-to-changelog	2026-06-24 09:56:19.000000000 +0000
++++ findutils-4.11.0/build-aux/gitlog-to-changelog	2026-06-24 09:56:19.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Convert git log output to ChangeLog format.
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/gnupload findutils-4.11.0/build-aux/gnupload
+--- findutils-4.11.0.orig/build-aux/gnupload	2026-06-24 09:56:19.000000000 +0000
++++ findutils-4.11.0/build-aux/gnupload	2026-06-24 09:56:19.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2025-06-28.18; # UTC
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/install-sh findutils-4.11.0/build-aux/install-sh
+--- findutils-4.11.0.orig/build-aux/install-sh	2025-10-14 15:16:52.000000000 +0000
++++ findutils-4.11.0/build-aux/install-sh	2025-10-14 15:16:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/man-lint.sh findutils-4.11.0/build-aux/man-lint.sh
+--- findutils-4.11.0.orig/build-aux/man-lint.sh	2026-06-27 12:15:43.000000000 +0000
++++ findutils-4.11.0/build-aux/man-lint.sh	2026-06-27 12:15:43.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Copyright (C) 2007-2026 Free Software Foundation, Inc.
+ #
+ # This program is free software: you can redistribute it and/or modify
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/mdate-sh findutils-4.11.0/build-aux/mdate-sh
+--- findutils-4.11.0.orig/build-aux/mdate-sh	2026-06-25 19:35:13.000000000 +0000
++++ findutils-4.11.0/build-aux/mdate-sh	2026-06-25 19:35:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it,
+ # formatted like 1 January 2000.
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/missing findutils-4.11.0/build-aux/missing
+--- findutils-4.11.0.orig/build-aux/missing	2026-07-11 09:03:23.000000000 +0000
++++ findutils-4.11.0/build-aux/missing	2026-07-11 09:03:23.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2024-06-07.14; # UTC
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/mkinstalldirs findutils-4.11.0/build-aux/mkinstalldirs
+--- findutils-4.11.0.orig/build-aux/mkinstalldirs	2025-10-14 15:16:52.000000000 +0000
++++ findutils-4.11.0/build-aux/mkinstalldirs	2025-10-14 15:16:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # mkinstalldirs --- make directory hierarchy
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/test-driver findutils-4.11.0/build-aux/test-driver
+--- findutils-4.11.0.orig/build-aux/test-driver	2026-07-11 09:03:25.000000000 +0000
++++ findutils-4.11.0/build-aux/test-driver	2026-07-11 09:03:25.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/update-copyright findutils-4.11.0/build-aux/update-copyright
+--- findutils-4.11.0.orig/build-aux/update-copyright	2026-06-24 09:56:19.000000000 +0000
++++ findutils-4.11.0/build-aux/update-copyright	2026-06-24 09:56:19.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Update an FSF copyright year list to include the current year.
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/useless-if-before-free findutils-4.11.0/build-aux/useless-if-before-free
+--- findutils-4.11.0.orig/build-aux/useless-if-before-free	2026-06-24 09:56:19.000000000 +0000
++++ findutils-4.11.0/build-aux/useless-if-before-free	2026-06-24 09:56:19.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Detect instances of "if (p) free (p);".
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/vc-list-files findutils-4.11.0/build-aux/vc-list-files
+--- findutils-4.11.0.orig/build-aux/vc-list-files	2026-06-24 09:56:19.000000000 +0000
++++ findutils-4.11.0/build-aux/vc-list-files	2026-06-24 09:56:19.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # List version-controlled file names.
+ 
+ # Print a version string.
+diff --no-dereference -Naur findutils-4.11.0.orig/build-aux/ylwrap findutils-4.11.0/build-aux/ylwrap
+--- findutils-4.11.0.orig/build-aux/ylwrap	2026-07-11 09:03:24.000000000 +0000
++++ findutils-4.11.0/build-aux/ylwrap	2026-07-11 09:03:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # ylwrap - wrapper for lex/yacc invocations.
+ 
+ scriptversion=2024-06-19.01; # UTC
+diff --no-dereference -Naur findutils-4.11.0.orig/configure findutils-4.11.0/configure
+--- findutils-4.11.0.orig/configure	2026-07-11 09:03:22.000000000 +0000
++++ findutils-4.11.0/configure	2026-07-11 09:03:22.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72 for GNU findutils 4.11.0.
+ #
+@@ -281,7 +281,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -6160,7 +6160,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -7768,7 +7768,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -10150,7 +10150,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@echo '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -72690,7 +72690,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -72703,7 +72703,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -72815,7 +72815,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -72828,7 +72828,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -72894,7 +72894,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -72907,7 +72907,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+@@ -73008,7 +73008,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -73192,7 +73192,7 @@
+ else case e in #(
+   e)
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff --no-dereference -Naur findutils-4.11.0.orig/gl/m4/lib-ld.m4 findutils-4.11.0/gl/m4/lib-ld.m4
+--- findutils-4.11.0.orig/gl/m4/lib-ld.m4	2026-06-24 09:56:23.000000000 +0000
++++ findutils-4.11.0/gl/m4/lib-ld.m4	2026-06-24 09:56:23.000000000 +0000
+@@ -39,7 +39,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+diff --no-dereference -Naur findutils-4.11.0.orig/gl/m4/lib-link.m4 findutils-4.11.0/gl/m4/lib-link.m4
+--- findutils-4.11.0.orig/gl/m4/lib-link.m4	2026-06-24 09:56:23.000000000 +0000
++++ findutils-4.11.0/gl/m4/lib-link.m4	2026-06-24 09:56:23.000000000 +0000
+@@ -134,7 +134,7 @@
+   AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT]) dnl we use $ac_aux_dir
+   AC_CACHE_CHECK([for shared library run path origin], [acl_cv_rpath], [
+     CC="$CC" GCC="$GCC" LDFLAGS="$LDFLAGS" LD="$LD" with_gnu_ld="$with_gnu_ld" \
+-    ${CONFIG_SHELL-/bin/sh} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
++    ${CONFIG_SHELL-/sw/bash/bin/bash} "$ac_aux_dir/config.rpath" "$host" > conftest.sh
+     . ./conftest.sh
+     rm -f ./conftest.sh
+     acl_cv_rpath=done
+diff --no-dereference -Naur findutils-4.11.0.orig/gl/m4/progtest.m4 findutils-4.11.0/gl/m4/progtest.m4
+--- findutils-4.11.0.orig/gl/m4/progtest.m4	2026-06-24 09:56:23.000000000 +0000
++++ findutils-4.11.0/gl/m4/progtest.m4	2026-06-24 09:56:23.000000000 +0000
+@@ -28,7 +28,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -41,7 +41,7 @@
+ # Find out how to test for executable files. Don't use a zero-byte file,
+ # as systems may use methods other than mode bits to determine executability.
+ cat >conf$$.file <<_ASEOF
+-#! /bin/sh
++#! /sw/bash/bin/bash
+ exit 0
+ _ASEOF
+ chmod +x conf$$.file
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/init.sh findutils-4.11.0/gnulib-tests/init.sh
+--- findutils-4.11.0.orig/gnulib-tests/init.sh	2026-06-24 09:56:20.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/init.sh	2026-06-24 09:56:20.000000000 +0000
+@@ -20,7 +20,7 @@
+ #
+ # The typical skeleton of a test looks like this:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . "${srcdir=.}/init.sh"; path_prepend_ .
+ #   Execute some commands.
+ #   Note that these commands are executed in a subdirectory, therefore you
+@@ -68,7 +68,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -134,7 +134,7 @@
+ 
+ # We require $(...) support unconditionally.
+ # We require that the printf built-in work correctly regarding octal escapes;
+-# this eliminates /bin/sh on AIX 7.2.
++# this eliminates /sw/bash/bin/bash on AIX 7.2.
+ # We require non-surprising "local" semantics (this eliminates dash).
+ # This takes the admittedly draconian step of eliminating dash, because the
+ # assignment tab=$(printf '\t') works fine, yet preceding it with "local "
+@@ -153,10 +153,10 @@
+ # If no acceptable shell is found, skip the current test.
+ #
+ # The "...set -x; P=1 true 2>err..." test is to disqualify any shell that
+-# emits "P=1" into err, as /bin/sh from SunOS 5.11 and OpenBSD 4.7 do.
++# emits "P=1" into err, as /sw/bash/bin/bash from SunOS 5.11 and OpenBSD 4.7 do.
+ #
+ # Use "9" to indicate success (rather than 0), in case some shell acts
+-# like Solaris 10's /bin/sh but exits successfully instead of with status 2.
++# like Solaris 10's /sw/bash/bin/bash but exits successfully instead of with status 2.
+ 
+ # Eval this code in a subshell to determine a shell's suitability.
+ # 10 - passes all tests; ok to use
+@@ -198,7 +198,7 @@
+ 
+   # Search for a shell that meets our requirements.
+   for re_shell_ in __current__ "${CONFIG_SHELL:-no_shell}" \
+-      /bin/sh bash dash zsh pdksh fail
++      /sw/bash/bin/bash bash dash zsh pdksh fail
+   do
+     test "$re_shell_" = no_shell && continue
+ 
+@@ -213,7 +213,7 @@
+     # When testing the current shell, simply "eval" the test code.
+     # Otherwise, run it via $re_shell_ -c ...
+     if test "$re_shell_" = __current__; then
+-      # 'eval'ing this code makes Solaris 10's /bin/sh exit with
++      # 'eval'ing this code makes Solaris 10's /sw/bash/bin/bash exit with
+       # $? set to 2.  It does not evaluate any of the code after the
+       # "unexpected" first '('.  Thus, we must run it in a subshell.
+       ( eval "$gl_shell_test_script_" ) > /dev/null 2>&1
+@@ -414,7 +414,7 @@
+ {
+   if test "$VERBOSE" = yes; then
+     # Test whether set -x may cause the selected shell to corrupt an
+-    # application's stderr.  Many do, including zsh-4.3.10 and the /bin/sh
++    # application's stderr.  Many do, including zsh-4.3.10 and the /sw/bash/bin/bash
+     # from SunOS 5.11 and OpenBSD 4.7.
+     # If enabling verbose output this way would cause trouble, simply
+     # issue a warning and refrain.
+@@ -597,9 +597,9 @@
+ 
+ # The interpreter for Bourne-shell scripts.
+ # No special standards compatibility requirements.
+-# Some environments, such as Android, don't have /bin/sh.
+-if test -f /bin/sh$EXEEXT; then
+-  BOURNE_SHELL=/bin/sh
++# Some environments, such as Android, don't have /sw/bash/bin/bash.
++if test -f /sw/bash/bin/bash$EXEEXT; then
++  BOURNE_SHELL=/sw/bash/bin/bash
+ else
+   BOURNE_SHELL=sh
+ fi
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-binary-io.sh findutils-4.11.0/gnulib-tests/test-binary-io.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-binary-io.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-binary-io.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-btoc32-1.sh findutils-4.11.0/gnulib-tests/test-btoc32-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-btoc32-1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-btoc32-1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-btoc32-2.sh findutils-4.11.0/gnulib-tests/test-btoc32-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-btoc32-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-btoc32-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-btoc32-3.sh findutils-4.11.0/gnulib-tests/test-btoc32-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-btoc32-3.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-btoc32-3.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-btowc-1.sh findutils-4.11.0/gnulib-tests/test-btowc-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-btowc-1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-btowc-1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-btowc-2.sh findutils-4.11.0/gnulib-tests/test-btowc-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-btowc-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-btowc-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-btowc-3.sh findutils-4.11.0/gnulib-tests/test-btowc-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-btowc-3.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-btowc-3.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c-strcasecmp.sh findutils-4.11.0/gnulib-tests/test-c-strcasecmp.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c-strcasecmp.sh	2025-10-14 15:16:52.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c-strcasecmp.sh	2025-10-14 15:16:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the C locale.
+ ${CHECKER} ./test-c-strcasecmp${EXEEXT} || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c-strncasecmp.sh findutils-4.11.0/gnulib-tests/test-c-strncasecmp.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c-strncasecmp.sh	2025-10-14 15:16:52.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c-strncasecmp.sh	2025-10-14 15:16:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the C locale.
+ ${CHECKER} ./test-c-strncasecmp${EXEEXT} || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isalnum.sh findutils-4.11.0/gnulib-tests/test-c32isalnum.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isalnum.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isalnum.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isalnum${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isalpha.sh findutils-4.11.0/gnulib-tests/test-c32isalpha.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isalpha.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isalpha.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isalpha${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isblank.sh findutils-4.11.0/gnulib-tests/test-c32isblank.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isblank.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isblank.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isblank${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32iscntrl.sh findutils-4.11.0/gnulib-tests/test-c32iscntrl.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32iscntrl.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32iscntrl.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32iscntrl${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isdigit.sh findutils-4.11.0/gnulib-tests/test-c32isdigit.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isdigit.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isdigit.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isdigit${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isgraph.sh findutils-4.11.0/gnulib-tests/test-c32isgraph.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isgraph.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isgraph.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isgraph${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32islower.sh findutils-4.11.0/gnulib-tests/test-c32islower.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32islower.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32islower.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32islower${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isprint.sh findutils-4.11.0/gnulib-tests/test-c32isprint.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isprint.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isprint.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isprint${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32ispunct.sh findutils-4.11.0/gnulib-tests/test-c32ispunct.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32ispunct.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32ispunct.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32ispunct${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isspace.sh findutils-4.11.0/gnulib-tests/test-c32isspace.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isspace.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isspace.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isspace${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isupper.sh findutils-4.11.0/gnulib-tests/test-c32isupper.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isupper.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isupper.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isupper${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32isxdigit.sh findutils-4.11.0/gnulib-tests/test-c32isxdigit.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32isxdigit.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32isxdigit.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32isxdigit${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-2.sh findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-3.sh findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-4.sh findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-5.sh findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-6.sh findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-6.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-7.sh findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-7.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-8.sh findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32rtomb-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32rtomb-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-c32rtomb-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32rtomb.sh findutils-4.11.0/gnulib-tests/test-c32rtomb.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32rtomb.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32rtomb.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-c32rtomb${EXEEXT} 1 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32tolower.sh findutils-4.11.0/gnulib-tests/test-c32tolower.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32tolower.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32tolower.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Allow distinguishing the various invocations in the .log file.
+ set -x
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-c32toupper.sh findutils-4.11.0/gnulib-tests/test-c32toupper.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-c32toupper.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-c32toupper.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Allow distinguishing the various invocations in the .log file.
+ set -x
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-closein.sh findutils-4.11.0/gnulib-tests/test-closein.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-closein.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-closein.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-error.sh findutils-4.11.0/gnulib-tests/test-error.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-error.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-error.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test of the 'error' module.
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fflush2.sh findutils-4.11.0/gnulib-tests/test-fflush2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fflush2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fflush2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Execute the test only with seekable input stream.
+ # The behaviour of fflush() on a non-seekable input stream is undefined.
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-1.sh findutils-4.11.0/gnulib-tests/test-fnmatch-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C \
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-2.sh findutils-4.11.0/gnulib-tests/test-fnmatch-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-3.sh findutils-4.11.0/gnulib-tests/test-fnmatch-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-3.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-3.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-4.sh findutils-4.11.0/gnulib-tests/test-fnmatch-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-5.sh findutils-4.11.0/gnulib-tests/test-fnmatch-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-2.sh findutils-4.11.0/gnulib-tests/test-fnmatch-w32-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-3.sh findutils-4.11.0/gnulib-tests/test-fnmatch-w32-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-4.sh findutils-4.11.0/gnulib-tests/test-fnmatch-w32-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-5.sh findutils-4.11.0/gnulib-tests/test-fnmatch-w32-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-6.sh findutils-4.11.0/gnulib-tests/test-fnmatch-w32-6.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-7.sh findutils-4.11.0/gnulib-tests/test-fnmatch-w32-7.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-8.sh findutils-4.11.0/gnulib-tests/test-fnmatch-w32-8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fnmatch-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fnmatch-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-fnmatch-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fpending.sh findutils-4.11.0/gnulib-tests/test-fpending.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fpending.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fpending.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfile=
+ trap 'rm -fr $tmpfile' HUP INT QUIT TERM
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-freadahead.sh findutils-4.11.0/gnulib-tests/test-freadahead.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-freadahead.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-freadahead.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-freadahead${EXEEXT} 0 < "$srcdir/test-freadahead.sh" || exit 1
+ ${CHECKER} ./test-freadahead${EXEEXT} 5 < "$srcdir/test-freadahead.sh" || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fseek.sh findutils-4.11.0/gnulib-tests/test-fseek.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fseek.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fseek.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseek${EXEEXT} 1 < "$srcdir/test-fseek.sh" || exit 1
+ echo hi | ${CHECKER} ./test-fseek${EXEEXT} || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fseek2.sh findutils-4.11.0/gnulib-tests/test-fseek2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fseek2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fseek2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-fseek${EXEEXT} 1 2 < "$srcdir/test-fseek2.sh"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fseeko.sh findutils-4.11.0/gnulib-tests/test-fseeko.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fseeko.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fseeko.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko${EXEEXT} 1 < "$srcdir/test-fseeko.sh" || exit 1
+ echo hi | ${CHECKER} ./test-fseeko${EXEEXT} || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fseeko2.sh findutils-4.11.0/gnulib-tests/test-fseeko2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fseeko2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fseeko2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-fseeko${EXEEXT} 1 2 < "$srcdir/test-fseeko2.sh"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fseeko3.sh findutils-4.11.0/gnulib-tests/test-fseeko3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fseeko3.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fseeko3.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko3${EXEEXT} 0 "$srcdir/test-fseeko3.sh" || exit 1
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-fseeko4.sh findutils-4.11.0/gnulib-tests/test-fseeko4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-fseeko4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-fseeko4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-fseeko4${EXEEXT} "$srcdir/test-fseeko4.sh" || exit 1
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-ftell.sh findutils-4.11.0/gnulib-tests/test-ftell.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-ftell.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-ftell.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftell${EXEEXT} 1 < "$srcdir/test-ftell.sh" || exit 1
+ echo hi | ${CHECKER} ./test-ftell${EXEEXT} || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-ftell2.sh findutils-4.11.0/gnulib-tests/test-ftell2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-ftell2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-ftell2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftell${EXEEXT} 1 2 < "$srcdir/test-ftell2.sh"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-ftello.sh findutils-4.11.0/gnulib-tests/test-ftello.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-ftello.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-ftello.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftello${EXEEXT} 1 < "$srcdir/test-ftello.sh" || exit 1
+ echo hi | ${CHECKER} ./test-ftello${EXEEXT} || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-ftello2.sh findutils-4.11.0/gnulib-tests/test-ftello2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-ftello2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-ftello2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftello${EXEEXT} 1 2 < "$srcdir/test-ftello2.sh"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-ftello4.sh findutils-4.11.0/gnulib-tests/test-ftello4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-ftello4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-ftello4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${CHECKER} ./test-ftello4${EXEEXT} "$srcdir/test-ftello4.sh" || exit 1
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-ftruncate.sh findutils-4.11.0/gnulib-tests/test-ftruncate.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-ftruncate.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-ftruncate.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exec ${CHECKER} ./test-ftruncate${EXEEXT} "$srcdir/test-ftruncate.sh"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-getcwd.sh findutils-4.11.0/gnulib-tests/test-getcwd.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-getcwd.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-getcwd.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ . "${srcdir=.}/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-init.sh findutils-4.11.0/gnulib-tests/test-init.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-init.sh	2026-06-24 09:56:20.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-init.sh	2026-06-24 09:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for init.sh
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-iswdigit.sh findutils-4.11.0/gnulib-tests/test-iswdigit.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-iswdigit.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-iswdigit.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswdigit${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-iswpunct.sh findutils-4.11.0/gnulib-tests/test-iswpunct.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-iswpunct.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-iswpunct.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswpunct${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-iswxdigit.sh findutils-4.11.0/gnulib-tests/test-iswxdigit.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-iswxdigit.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-iswxdigit.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-iswxdigit${EXEEXT} 0 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-localcharset-w32utf8.sh findutils-4.11.0/gnulib-tests/test-localcharset-w32utf8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-localcharset-w32utf8.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-localcharset-w32utf8.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-localename-w32utf8.sh findutils-4.11.0/gnulib-tests/test-localename-w32utf8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-localename-w32utf8.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-localename-w32utf8.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-lseek.sh findutils-4.11.0/gnulib-tests/test-lseek.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-lseek.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-lseek.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-1.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-2.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-3.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-3.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-3.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-4.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-5.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-2.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-3.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-4.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-5.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-6.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-6.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-7.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-7.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-8.sh findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtoc32-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtoc32-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-mbrtoc32-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-1.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-2.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-3.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-3.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-3.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-4.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-5.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-2.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-3.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-4.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-5.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-6.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-6.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-7.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-7.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-8.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-mbrtowc-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32utf8.sh findutils-4.11.0/gnulib-tests/test-mbrtowc-w32utf8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbrtowc-w32utf8.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbrtowc-w32utf8.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbscasestr2.sh findutils-4.11.0/gnulib-tests/test-mbscasestr2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbscasestr2.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbscasestr2.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbscasestr3.sh findutils-4.11.0/gnulib-tests/test-mbscasestr3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbscasestr3.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbscasestr3.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbscasestr4.sh findutils-4.11.0/gnulib-tests/test-mbscasestr4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbscasestr4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbscasestr4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific Turkish locale is installed.
+ : "${LOCALE_TR_UTF8=tr_TR.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsinit.sh findutils-4.11.0/gnulib-tests/test-mbsinit.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsinit.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsinit.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbslen.sh findutils-4.11.0/gnulib-tests/test-mbslen.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbslen.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbslen.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsnlen.sh findutils-4.11.0/gnulib-tests/test-mbsnlen.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsnlen.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsnlen.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-1.sh findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-2.sh findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-3.sh findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-3.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-3.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-4.sh findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-5.sh findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtoc32s-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtoc32s-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-1.sh findutils-4.11.0/gnulib-tests/test-mbsrtowcs-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtowcs-1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether the POSIX locale has encoding errors.
+ LC_ALL=C \
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-2.sh findutils-4.11.0/gnulib-tests/test-mbsrtowcs-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtowcs-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-3.sh findutils-4.11.0/gnulib-tests/test-mbsrtowcs-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-3.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtowcs-3.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-4.sh findutils-4.11.0/gnulib-tests/test-mbsrtowcs-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtowcs-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific EUC-JP locale is installed.
+ : "${LOCALE_JA=ja_JP}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-5.sh findutils-4.11.0/gnulib-tests/test-mbsrtowcs-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsrtowcs-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsrtowcs-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsstr2.sh findutils-4.11.0/gnulib-tests/test-mbsstr2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsstr2.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsstr2.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific UTF-8 locale is installed.
+ : "${LOCALE_EN_UTF8=en_US.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-mbsstr3.sh findutils-4.11.0/gnulib-tests/test-mbsstr3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-mbsstr3.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-mbsstr3.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test whether a specific GB18030 locale is installed.
+ : "${LOCALE_ZH_CN=zh_CN.GB18030}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-nl_langinfo1.sh findutils-4.11.0/gnulib-tests/test-nl_langinfo1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-nl_langinfo1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-nl_langinfo1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LC_ALL=C ${CHECKER} ./test-nl_langinfo1${EXEEXT} 0 || exit 1
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-nl_langinfo2.sh findutils-4.11.0/gnulib-tests/test-nl_langinfo2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-nl_langinfo2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-nl_langinfo2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # The name of a specific traditional locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-nstrftime-1.sh findutils-4.11.0/gnulib-tests/test-nstrftime-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-nstrftime-1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-nstrftime-1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LC_ALL=C ${CHECKER} ./test-nstrftime${EXEEXT} || exit 1
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-nstrftime-2.sh findutils-4.11.0/gnulib-tests/test-nstrftime-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-nstrftime-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-nstrftime-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ : "${LOCALE_FR=fr_FR}"
+ : "${LOCALE_FR_UTF8=fr_FR.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-nstrftime-w32utf8.sh findutils-4.11.0/gnulib-tests/test-nstrftime-w32utf8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-nstrftime-w32utf8.sh	2025-11-17 09:57:24.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-nstrftime-w32utf8.sh	2025-11-17 09:57:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-perror.sh findutils-4.11.0/gnulib-tests/test-perror.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-perror.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-perror.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-select-in.sh findutils-4.11.0/gnulib-tests/test-select-in.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-select-in.sh	2025-10-14 15:16:52.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-select-in.sh	2025-10-14 15:16:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test select() on file descriptors opened for reading.
+ 
+ # This test is known to fail on Solaris 2.6 and older, due to its handling
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-select-out.sh findutils-4.11.0/gnulib-tests/test-select-out.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-select-out.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-select-out.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test select() on file descriptors opened for writing.
+ 
+ tmpfiles=""
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-setlocale-w32utf8.sh findutils-4.11.0/gnulib-tests/test-setlocale-w32utf8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-setlocale-w32utf8.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-setlocale-w32utf8.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test the UTF-8 environment on native Windows.
+ unset LC_ALL
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-setlocale1.sh findutils-4.11.0/gnulib-tests/test-setlocale1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-setlocale1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-setlocale1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ : "${LOCALE_FR=fr_FR}"
+ : "${LOCALE_FR_UTF8=fr_FR.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-setlocale2.sh findutils-4.11.0/gnulib-tests/test-setlocale2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-setlocale2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-setlocale2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test locale names with likely unsupported encoding in Unix syntax.
+ for name in ar_SA.ISO-8859-1 fr_FR.CP1251 zh_TW.GB18030 zh_CN.BIG5; do
+@@ -10,7 +10,7 @@
+             French_France.65001 Japanese_Japan.65001 Turkish_Turkey.65001 \
+             Chinese_Taiwan.65001 Chinese_China.54936 Chinese_China.65001; do
+   # Here we use 'env' to set the LC_ALL environment variable, because on
+-  # Solaris 11.0, the /bin/sh refuses to do it for Turkish_Turkey.65001.
++  # Solaris 11.0, the /sw/bash/bin/bash refuses to do it for Turkish_Turkey.65001.
+   env LC_ALL="$name" ${CHECKER} ./test-setlocale2${EXEEXT} 1 || exit 1
+ done
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-strncasecmp-1.sh findutils-4.11.0/gnulib-tests/test-strncasecmp-1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-strncasecmp-1.sh	2025-10-14 15:16:52.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-strncasecmp-1.sh	2025-10-14 15:16:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C \
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-strncasecmp-2.sh findutils-4.11.0/gnulib-tests/test-strncasecmp-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-strncasecmp-2.sh	2025-10-14 15:16:52.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-strncasecmp-2.sh	2025-10-14 15:16:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in an ISO-8859-1 or ISO-8859-15 locale.
+ : "${LOCALE_FR=fr_FR}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-strtod1.sh findutils-4.11.0/gnulib-tests/test-strtod1.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-strtod1.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-strtod1.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ : "${LOCALE_FR=fr_FR}"
+ : "${LOCALE_FR_UTF8=fr_FR.UTF-8}"
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-update-copyright.sh findutils-4.11.0/gnulib-tests/test-update-copyright.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-update-copyright.sh	2026-06-24 09:56:20.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-update-copyright.sh	2026-06-24 09:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for update-copyright.
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+@@ -32,20 +32,20 @@
+ TMP=$TMP_BASE
+ s=$TMP-script
+ cat <<\EOF > $s
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ # This prologue allows running a perl script as an executable
+ # on systems that are compliant to a POSIX version before POSIX:2017.
+ # On such systems, the usual invocation of an executable through execlp()
+ # or execvp() fails with ENOEXEC if it is a script that does not start
+ # with a #! line.  The script interpreter mentioned in the #! line has
+-# to be /bin/sh, because on GuixSD systems that is the only program that
++# to be /sw/bash/bin/bash, because on GuixSD systems that is the only program that
+ # has a fixed file name.  The second line is essential for perl and is
+ # also useful for editing this file in Emacs.  The next two lines below
+ # are valid code in both sh and perl.  When executed by sh, they re-execute
+ # the script through the perl program found in $PATH.  The '-x' option
+ # is essential as well; without it, perl would re-execute the script
+-# through /bin/sh.  When executed by perl, the next two lines are a no-op.
++# through /sw/bash/bin/bash.  When executed by perl, the next two lines are a no-op.
+ eval 'exec perl -wSx -pi "$0" "$@"'
+      if 0;
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-vc-list-files-cvs.sh findutils-4.11.0/gnulib-tests/test-vc-list-files-cvs.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-vc-list-files-cvs.sh	2026-06-24 09:56:20.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-vc-list-files-cvs.sh	2026-06-24 09:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for vc-list-files
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+@@ -28,7 +28,7 @@
+   # On the second iteration, ensure that cvsu fails, so we'll
+   # exercise the awk-using code.
+   if test $i = without; then
+-    printf '%s\n' '#!/bin/sh' 'exit 1' > cvsu
++    printf '%s\n' '#!/sw/bash/bin/bash' 'exit 1' > cvsu
+     chmod a+x cvsu
+     PATH=`pwd`:$PATH
+     export PATH
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-vc-list-files-git.sh findutils-4.11.0/gnulib-tests/test-vc-list-files-git.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-vc-list-files-git.sh	2026-06-24 09:56:20.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-vc-list-files-git.sh	2026-06-24 09:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Unit tests for vc-list-files
+ # Copyright (C) 2008-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-verify.sh findutils-4.11.0/gnulib-tests/test-verify.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-verify.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-verify.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ . "${srcdir=.}/init.sh"
+ 
+ # We are not interested in triggering bugs in the compilers and tools
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-version-etc.sh findutils-4.11.0/gnulib-tests/test-version-etc.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-version-etc.sh	2026-06-24 09:56:20.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-version-etc.sh	2026-06-24 09:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for version-etc.
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-2.sh findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-2.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-2.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1252 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} French_France 1252
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-3.sh findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-3.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-3.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP1256 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} "Arabic_Saudi Arabia" 1256
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-4.sh findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-4.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-4.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test some UTF-8 locales.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} French_France Japanese_Japan Chinese_Taiwan Chinese_China 65001
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-5.sh findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-5.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-5.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP932 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Japanese_Japan 932
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-6.sh findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-6.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-6.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP950 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_Taiwan 950
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-7.sh findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-7.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-7.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a CP936 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_China 936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-8.sh findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-8.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-wcrtomb-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-wcrtomb-w32-8.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test a GB18030 locale.
+ ${CHECKER} ./test-wcrtomb-w32${EXEEXT} Chinese_China 54936
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-wcrtomb.sh findutils-4.11.0/gnulib-tests/test-wcrtomb.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-wcrtomb.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-wcrtomb.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Test in the POSIX locale.
+ LC_ALL=C     ${CHECKER} ./test-wcrtomb${EXEEXT} 1 || exit 1
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-xalloc-die.sh findutils-4.11.0/gnulib-tests/test-xalloc-die.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-xalloc-die.sh	2026-06-24 09:56:20.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-xalloc-die.sh	2026-06-24 09:56:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test suite for xalloc_die.
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+ # This file is part of the GNUlib Library.
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-xstrtol.sh findutils-4.11.0/gnulib-tests/test-xstrtol.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-xstrtol.sh	2025-10-14 15:14:51.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-xstrtol.sh	2025-10-14 15:14:51.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-xstrtoumax.sh findutils-4.11.0/gnulib-tests/test-xstrtoumax.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-xstrtoumax.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-xstrtoumax.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/test-yesno.sh findutils-4.11.0/gnulib-tests/test-yesno.sh
+--- findutils-4.11.0.orig/gnulib-tests/test-yesno.sh	2024-10-31 15:33:37.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/test-yesno.sh	2024-10-31 15:33:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ : "${srcdir=.}"
+ . "$srcdir/init.sh"; path_prepend_ .
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/gnulib-tests/uniwidth/test-uc_width2.sh findutils-4.11.0/gnulib-tests/uniwidth/test-uc_width2.sh
+--- findutils-4.11.0.orig/gnulib-tests/uniwidth/test-uc_width2.sh	2025-11-17 09:57:24.000000000 +0000
++++ findutils-4.11.0/gnulib-tests/uniwidth/test-uc_width2.sh	2025-11-17 09:57:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ tmpfiles=""
+ trap 'rm -fr $tmpfiles' HUP INT QUIT TERM
+diff --no-dereference -Naur findutils-4.11.0.orig/lib/check-regexprops.sh findutils-4.11.0/lib/check-regexprops.sh
+--- findutils-4.11.0.orig/lib/check-regexprops.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/lib/check-regexprops.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Generate regexprops.texi and compare it against the checked-in version.
+ #
+ # Copyright (C) 2009-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/locate/updatedb.sh findutils-4.11.0/locate/updatedb.sh
+--- findutils-4.11.0.orig/locate/updatedb.sh	2026-06-27 11:46:16.000000000 +0000
++++ findutils-4.11.0/locate/updatedb.sh	2026-06-27 11:46:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # updatedb -- build a locate pathname database
+ # Copyright (C) 1994-2026 Free Software Foundation, Inc.
+ #
+@@ -148,7 +148,7 @@
+ : ${FINDOPTIONS=}
+ 
+ # What shell should we use?  We should use a POSIX-ish sh.
+-: ${SHELL="/bin/sh"}
++: ${SHELL="/sw/bash/bin/bash"}
+ 
+ # Non-network directories to put in the database.
+ : ${SEARCHPATHS="/"}
+diff --no-dereference -Naur findutils-4.11.0.orig/po/Makefile.in.in findutils-4.11.0/po/Makefile.in.in
+--- findutils-4.11.0.orig/po/Makefile.in.in	2026-06-24 09:56:23.000000000 +0000
++++ findutils-4.11.0/po/Makefile.in.in	2026-06-24 09:56:23.000000000 +0000
+@@ -15,7 +15,7 @@
+ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
+ 
+ SED = @SED@
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ @SET_MAKE@
+ 
+ srcdir = @srcdir@
+@@ -499,7 +499,7 @@
+ # Recreate Makefile by invoking config.status. Explicitly invoke the shell,
+ # because execution permission bits may not work on the current file system.
+ # Use @SHELL@, which is the shell determined by autoconf for the use by its
+-# scripts, not $(SHELL) which is hardwired to /bin/sh and may be deficient.
++# scripts, not $(SHELL) which is hardwired to /sw/bash/bin/bash and may be deficient.
+ Makefile: Makefile.in.in Makevars $(top_builddir)/config.status @POMAKEFILEDEPS@
+ 	cd $(top_builddir) \
+ 	  && @SHELL@ ./config.status $(subdir)/$@.in po-directories
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/arg-nan.sh findutils-4.11.0/tests/find/arg-nan.sh
+--- findutils-4.11.0.orig/tests/find/arg-nan.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/arg-nan.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure 'not-a-number' diagnostic for NAN arguments.
+ 
+ # Copyright (C) 2023-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/debug-missing-arg.sh findutils-4.11.0/tests/find/debug-missing-arg.sh
+--- findutils-4.11.0.orig/tests/find/debug-missing-arg.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/debug-missing-arg.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify that 'find -D' without further argument outputs an error diagnostic.
+ # Between FINDUTILS_4_3_1-1 and 4.6, find crashed on some platforms.
+ # See Savannah bug #52220.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/depth-unreadable-dir.sh findutils-4.11.0/tests/find/depth-unreadable-dir.sh
+--- findutils-4.11.0.orig/tests/find/depth-unreadable-dir.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/depth-unreadable-dir.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # find -depth: ensure to output an unreadable directory.
+ 
+ # Copyright (C) 2020-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/exec-plus-last-file.sh findutils-4.11.0/tests/find/exec-plus-last-file.sh
+--- findutils-4.11.0.orig/tests/find/exec-plus-last-file.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/exec-plus-last-file.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This test verifies that find invokes the given command for the
+ # multiple-argument syntax '-exec CMD {} +'.  Between FINDUTILS-4.2.12
+ # and v4.6.0, find(1) would have failed to execute CMD another time
+@@ -35,7 +35,7 @@
+ 
+ # Create the CMD script and check that it works.
+ mkdir 'bin' \
+-  && printf '%s\n' '#!/bin/sh' 'printf "%s\n" "$@"' > "bin/$CMD" \
++  && printf '%s\n' '#!/sw/bash/bin/bash' 'printf "%s\n" "$@"' > "bin/$CMD" \
+   && chmod +x "bin/$CMD" \
+   && PATH="$PWD/bin:$PATH" \
+   && [ "$( find bin -maxdepth 0 -exec "$CMD" '{}' + )" = 'bin' ] \
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/execdir-fd-leak.sh findutils-4.11.0/tests/find/execdir-fd-leak.sh
+--- findutils-4.11.0.orig/tests/find/execdir-fd-leak.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/execdir-fd-leak.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This test verifies that find does not leak a file descriptor for the working
+ # directory specified by the -execdir option.
+ # See Savannah bug #34976.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/files0-from.sh findutils-4.11.0/tests/find/files0-from.sh
+--- findutils-4.11.0.orig/tests/find/files0-from.sh	2026-06-28 07:48:18.000000000 +0000
++++ findutils-4.11.0/tests/find/files0-from.sh	2026-06-28 07:48:18.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise -files0-from option.
+ 
+ # Copyright (C) 2021-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/inode-zero.sh findutils-4.11.0/tests/find/inode-zero.sh
+--- findutils-4.11.0.orig/tests/find/inode-zero.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/inode-zero.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure find(1) treats inode number 0 correctly.
+ 
+ # Copyright (C) 2021-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/many-dir-entries-vs-OOM.sh findutils-4.11.0/tests/find/many-dir-entries-vs-OOM.sh
+--- findutils-4.11.0.orig/tests/find/many-dir-entries-vs-OOM.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/many-dir-entries-vs-OOM.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This test verifies that find does not have excessive memory consumption
+ # even for large directories.
+ # See Savannah bug #34079.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/mount-vs-xdev-bind.sh findutils-4.11.0/tests/find/mount-vs-xdev-bind.sh
+--- findutils-4.11.0.orig/tests/find/mount-vs-xdev-bind.sh	2026-06-27 11:39:29.000000000 +0000
++++ findutils-4.11.0/tests/find/mount-vs-xdev-bind.sh	2026-06-27 11:39:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise find -mount vs. -xdev behaviour for bind mounts (on same device).
+ 
+ # Copyright (C) 2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/mount-vs-xdev-other-fs.sh findutils-4.11.0/tests/find/mount-vs-xdev-other-fs.sh
+--- findutils-4.11.0.orig/tests/find/mount-vs-xdev-other-fs.sh	2026-06-27 11:39:29.000000000 +0000
++++ findutils-4.11.0/tests/find/mount-vs-xdev-other-fs.sh	2026-06-27 11:39:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise find -mount vs. -xdev behaviour with another file system.
+ 
+ # Copyright (C) 2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/mount-vs-xdev.sh findutils-4.11.0/tests/find/mount-vs-xdev.sh
+--- findutils-4.11.0.orig/tests/find/mount-vs-xdev.sh	2026-06-27 11:44:31.000000000 +0000
++++ findutils-4.11.0/tests/find/mount-vs-xdev.sh	2026-06-27 11:44:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise find -mount vs. -xdev behaviour.
+ 
+ # Copyright (C) 2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/name-lbracket-literal.sh findutils-4.11.0/tests/find/name-lbracket-literal.sh
+--- findutils-4.11.0.orig/tests/find/name-lbracket-literal.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/name-lbracket-literal.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test that find -name treats the unquoted '[' argument literally.
+ # See Savannah bug #32043.
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/name-slash.sh findutils-4.11.0/tests/find/name-slash.sh
+--- findutils-4.11.0.orig/tests/find/name-slash.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/name-slash.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise 'find -name PATTERN' behavior with a '/' in PATTERN.
+ 
+ # Copyright (C) 2022-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/newer.sh findutils-4.11.0/tests/find/newer.sh
+--- findutils-4.11.0.orig/tests/find/newer.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/newer.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise -anewer -cnewer -newer -newerXY.
+ 
+ # Copyright (C) 2022-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/operators-wrong-with-dash.sh findutils-4.11.0/tests/find/operators-wrong-with-dash.sh
+--- findutils-4.11.0.orig/tests/find/operators-wrong-with-dash.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/operators-wrong-with-dash.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify behavior for '-!', '-,', '-(', and '-)'.
+ 
+ # Copyright (C) 2025-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/opt-numeric-arg.sh findutils-4.11.0/tests/find/opt-numeric-arg.sh
+--- findutils-4.11.0.orig/tests/find/opt-numeric-arg.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/opt-numeric-arg.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise error diagnostics for options with mandatory numeric arguments.
+ 
+ # Copyright (C) 2023-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/printf_escape_c.sh findutils-4.11.0/tests/find/printf_escape_c.sh
+--- findutils-4.11.0.orig/tests/find/printf_escape_c.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/printf_escape_c.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test -printf with the \c escape character.
+ 
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/printf_escapechars.sh findutils-4.11.0/tests/find/printf_escapechars.sh
+--- findutils-4.11.0.orig/tests/find/printf_escapechars.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/printf_escapechars.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test -printf with octal and letter escapes.
+ 
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/printf_inode.sh findutils-4.11.0/tests/find/printf_inode.sh
+--- findutils-4.11.0.orig/tests/find/printf_inode.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/printf_inode.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify that ls -i and find -printf %i produce the same output.
+ 
+ # Copyright (C) 2011-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/readdir_race.sh findutils-4.11.0/tests/find/readdir_race.sh
+--- findutils-4.11.0.orig/tests/find/readdir_race.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/readdir_race.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify that -ignore_readdir_race properly handles vanished files/directories.
+ 
+ # Copyright (C) 2024-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/refuse-noop.sh findutils-4.11.0/tests/find/refuse-noop.sh
+--- findutils-4.11.0.orig/tests/find/refuse-noop.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/refuse-noop.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This test verifies that find refuses the internal -noop, ---noop option.
+ # Between findutils-4.3.1 and 4.6, find dumped core ($? = 139).
+ # See Savannah bug #48180.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/sv-bug-66365-exec.sh findutils-4.11.0/tests/find/sv-bug-66365-exec.sh
+--- findutils-4.11.0.orig/tests/find/sv-bug-66365-exec.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/sv-bug-66365-exec.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test that find -exec ... + treats the + as a terminator only when it
+ # immediately follows a {}.  See Savannah bug #66365.
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/type_list.sh findutils-4.11.0/tests/find/type_list.sh
+--- findutils-4.11.0.orig/tests/find/type_list.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/find/type_list.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify find's behavior regarding comma-separated file type arguments
+ # to the -type/-xtype options.
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/used.sh findutils-4.11.0/tests/find/used.sh
+--- findutils-4.11.0.orig/tests/find/used.sh	2026-06-27 11:44:31.000000000 +0000
++++ findutils-4.11.0/tests/find/used.sh	2026-06-27 11:44:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify that find -used works.
+ 
+ # Copyright (C) 2020-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/find/user-group-max.sh findutils-4.11.0/tests/find/user-group-max.sh
+--- findutils-4.11.0.orig/tests/find/user-group-max.sh	2026-06-27 11:44:31.000000000 +0000
++++ findutils-4.11.0/tests/find/user-group-max.sh	2026-06-27 11:44:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify -user/-group allow UID/GID values as large as UID_T_MAX/GID_T_MAX
+ 
+ # Copyright (C) 2023-2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/init.sh findutils-4.11.0/tests/init.sh
+--- findutils-4.11.0.orig/tests/init.sh	2026-06-24 09:56:24.000000000 +0000
++++ findutils-4.11.0/tests/init.sh	2026-06-24 09:56:24.000000000 +0000
+@@ -20,7 +20,7 @@
+ #
+ # The typical skeleton of a test looks like this:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . "${srcdir=.}/init.sh"; path_prepend_ .
+ #   Execute some commands.
+ #   Note that these commands are executed in a subdirectory, therefore you
+@@ -68,7 +68,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -134,7 +134,7 @@
+ 
+ # We require $(...) support unconditionally.
+ # We require that the printf built-in work correctly regarding octal escapes;
+-# this eliminates /bin/sh on AIX 7.2.
++# this eliminates /sw/bash/bin/bash on AIX 7.2.
+ # We require non-surprising "local" semantics (this eliminates dash).
+ # This takes the admittedly draconian step of eliminating dash, because the
+ # assignment tab=$(printf '\t') works fine, yet preceding it with "local "
+@@ -153,10 +153,10 @@
+ # If no acceptable shell is found, skip the current test.
+ #
+ # The "...set -x; P=1 true 2>err..." test is to disqualify any shell that
+-# emits "P=1" into err, as /bin/sh from SunOS 5.11 and OpenBSD 4.7 do.
++# emits "P=1" into err, as /sw/bash/bin/bash from SunOS 5.11 and OpenBSD 4.7 do.
+ #
+ # Use "9" to indicate success (rather than 0), in case some shell acts
+-# like Solaris 10's /bin/sh but exits successfully instead of with status 2.
++# like Solaris 10's /sw/bash/bin/bash but exits successfully instead of with status 2.
+ 
+ # Eval this code in a subshell to determine a shell's suitability.
+ # 10 - passes all tests; ok to use
+@@ -198,7 +198,7 @@
+ 
+   # Search for a shell that meets our requirements.
+   for re_shell_ in __current__ "${CONFIG_SHELL:-no_shell}" \
+-      /bin/sh bash dash zsh pdksh fail
++      /sw/bash/bin/bash bash dash zsh pdksh fail
+   do
+     test "$re_shell_" = no_shell && continue
+ 
+@@ -213,7 +213,7 @@
+     # When testing the current shell, simply "eval" the test code.
+     # Otherwise, run it via $re_shell_ -c ...
+     if test "$re_shell_" = __current__; then
+-      # 'eval'ing this code makes Solaris 10's /bin/sh exit with
++      # 'eval'ing this code makes Solaris 10's /sw/bash/bin/bash exit with
+       # $? set to 2.  It does not evaluate any of the code after the
+       # "unexpected" first '('.  Thus, we must run it in a subshell.
+       ( eval "$gl_shell_test_script_" ) > /dev/null 2>&1
+@@ -414,7 +414,7 @@
+ {
+   if test "$VERBOSE" = yes; then
+     # Test whether set -x may cause the selected shell to corrupt an
+-    # application's stderr.  Many do, including zsh-4.3.10 and the /bin/sh
++    # application's stderr.  Many do, including zsh-4.3.10 and the /sw/bash/bin/bash
+     # from SunOS 5.11 and OpenBSD 4.7.
+     # If enabling verbose output this way would cause trouble, simply
+     # issue a warning and refrain.
+@@ -597,9 +597,9 @@
+ 
+ # The interpreter for Bourne-shell scripts.
+ # No special standards compatibility requirements.
+-# Some environments, such as Android, don't have /bin/sh.
+-if test -f /bin/sh$EXEEXT; then
+-  BOURNE_SHELL=/bin/sh
++# Some environments, such as Android, don't have /sw/bash/bin/bash.
++if test -f /sw/bash/bin/bash$EXEEXT; then
++  BOURNE_SHELL=/sw/bash/bin/bash
+ else
+   BOURNE_SHELL=sh
+ fi
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/lang-default findutils-4.11.0/tests/lang-default
+--- findutils-4.11.0.orig/tests/lang-default	2025-06-21 08:08:44.000000000 +0000
++++ findutils-4.11.0/tests/lang-default	2025-06-21 08:08:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Set locale-related environment variables so we get consistent
+ # message translations, time formats, sort orderings, etc.
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/misc/help-version.sh findutils-4.11.0/tests/misc/help-version.sh
+--- findutils-4.11.0.orig/tests/misc/help-version.sh	2026-06-27 13:38:32.000000000 +0000
++++ findutils-4.11.0/tests/misc/help-version.sh	2026-06-27 13:38:32.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Make sure all of these programs work properly
+ # when invoked with --help or --version.
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/other-fs-tmpdir findutils-4.11.0/tests/other-fs-tmpdir
+--- findutils-4.11.0.orig/tests/other-fs-tmpdir	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/other-fs-tmpdir	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Use stat to find a writable directory on a file system different from that
+ # of the current directory.  If one is found, create a temporary directory
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/sample-test findutils-4.11.0/tests/sample-test
+--- findutils-4.11.0.orig/tests/sample-test	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/sample-test	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # FIXME
+ 
+ # Copyright (C) 2026 Free Software Foundation, Inc.
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/xargs/conflicting_opts.sh findutils-4.11.0/tests/xargs/conflicting_opts.sh
+--- findutils-4.11.0.orig/tests/xargs/conflicting_opts.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/xargs/conflicting_opts.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test mutually exclusive options --max-args, --max-lines, --replace, and
+ # their short-option aliases (-L, -l -I -i -n).
+ 
+diff --no-dereference -Naur findutils-4.11.0.orig/tests/xargs/verbose-quote.sh findutils-4.11.0/tests/xargs/verbose-quote.sh
+--- findutils-4.11.0.orig/tests/xargs/verbose-quote.sh	2026-06-27 11:38:59.000000000 +0000
++++ findutils-4.11.0/tests/xargs/verbose-quote.sh	2026-06-27 11:38:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Verify that 'xargs -t' quotes the command properly when needed.
+ 
+ # Copyright (C) 2019-2026 Free Software Foundation, Inc.
+@@ -21,14 +21,14 @@
+ 
+ # Prepare a command with a whitespace in its file name.
+ printf "%s\n" \
+-  '#!/bin/sh' \
++  '#!/sw/bash/bin/bash' \
+   'echo "$@"' \
+   > 'my command' \
+   && chmod +x 'my command' \
+   || framework_failure_
+ 
+ # Run xargs with -t for various commands which require quoting.
+-# (Use NL because dash as /bin/sh does not know $'\n' syntax.)
++# (Use NL because dash as /sw/bash/bin/bash does not know $'\n' syntax.)
+ nl='
+ '
+ printf '%s\0' \

@@ -1,24 +1,42 @@
 diff -Naur p11-kit-0.26.5.orig/build/litter/compile p11-kit-0.26.5/build/litter/compile
---- p11-kit-0.26.5.orig/build/litter/compile	2026-08-06 06:06:55.000000000 -0400
-+++ p11-kit-0.26.5/build/litter/compile	2026-10-28 01:23:19.877614621 -0400
+--- p11-kit-0.26.5.orig/build/litter/compile	2026-08-06 10:06:55.000000000 +0000
++++ p11-kit-0.26.5/build/litter/compile	2026-08-06 10:06:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Wrapper for compilers which do not understand '-c -o'.
  
  scriptversion=2025-06-18.21; # UTC
+diff -Naur p11-kit-0.26.5.orig/build/litter/config.guess p11-kit-0.26.5/build/litter/config.guess
+--- p11-kit-0.26.5.orig/build/litter/config.guess	2026-08-06 10:06:55.000000000 +0000
++++ p11-kit-0.26.5/build/litter/config.guess	2026-08-06 10:06:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
 diff -Naur p11-kit-0.26.5.orig/build/litter/config.rpath p11-kit-0.26.5/build/litter/config.rpath
---- p11-kit-0.26.5.orig/build/litter/config.rpath	2026-08-06 06:06:48.000000000 -0400
-+++ p11-kit-0.26.5/build/litter/config.rpath	2026-10-28 01:23:19.876293465 -0400
+--- p11-kit-0.26.5.orig/build/litter/config.rpath	2026-08-06 10:06:48.000000000 +0000
++++ p11-kit-0.26.5/build/litter/config.rpath	2026-08-06 10:06:48.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Output a system dependent set of variables, describing how to set the
  # run time search path of shared libraries in a binary (executable or
  # shared library).
+diff -Naur p11-kit-0.26.5.orig/build/litter/config.sub p11-kit-0.26.5/build/litter/config.sub
+--- p11-kit-0.26.5.orig/build/litter/config.sub	2026-08-06 10:06:55.000000000 +0000
++++ p11-kit-0.26.5/build/litter/config.sub	2026-08-06 10:06:55.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
 diff -Naur p11-kit-0.26.5.orig/build/litter/depcomp p11-kit-0.26.5/build/litter/depcomp
---- p11-kit-0.26.5.orig/build/litter/depcomp	2026-08-06 06:06:55.000000000 -0400
-+++ p11-kit-0.26.5/build/litter/depcomp	2026-10-28 01:23:19.877762330 -0400
+--- p11-kit-0.26.5.orig/build/litter/depcomp	2026-08-06 10:06:55.000000000 +0000
++++ p11-kit-0.26.5/build/litter/depcomp	2026-08-06 10:06:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -26,17 +44,26 @@ diff -Naur p11-kit-0.26.5.orig/build/litter/depcomp p11-kit-0.26.5/build/litter/
  
  scriptversion=2025-06-18.21; # UTC
 diff -Naur p11-kit-0.26.5.orig/build/litter/install-sh p11-kit-0.26.5/build/litter/install-sh
---- p11-kit-0.26.5.orig/build/litter/install-sh	2026-08-06 06:06:55.000000000 -0400
-+++ p11-kit-0.26.5/build/litter/install-sh	2026-10-28 01:23:19.877946863 -0400
+--- p11-kit-0.26.5.orig/build/litter/install-sh	2026-08-06 10:06:55.000000000 +0000
++++ p11-kit-0.26.5/build/litter/install-sh	2026-08-06 10:06:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  # install - install a program, script, or datafile
  
  scriptversion=2025-06-18.21; # UTC
+diff -Naur p11-kit-0.26.5.orig/build/litter/ltmain.sh p11-kit-0.26.5/build/litter/ltmain.sh
+--- p11-kit-0.26.5.orig/build/litter/ltmain.sh	2026-08-06 10:06:52.000000000 +0000
++++ p11-kit-0.26.5/build/litter/ltmain.sh	2026-08-06 10:06:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env sh
++#!/sw/bash/bin/bash
+ ## DO NOT EDIT - This file generated from ./build-aux/ltmain.in
+ ##               by inline-source v2019-02-19.15
+ 
 diff -Naur p11-kit-0.26.5.orig/build/litter/missing p11-kit-0.26.5/build/litter/missing
---- p11-kit-0.26.5.orig/build/litter/missing	2026-08-06 06:06:55.000000000 -0400
-+++ p11-kit-0.26.5/build/litter/missing	2026-10-28 01:23:19.877247255 -0400
+--- p11-kit-0.26.5.orig/build/litter/missing	2026-08-06 10:06:55.000000000 +0000
++++ p11-kit-0.26.5/build/litter/missing	2026-08-06 10:06:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -44,8 +71,8 @@ diff -Naur p11-kit-0.26.5.orig/build/litter/missing p11-kit-0.26.5/build/litter/
  
  scriptversion=2025-06-18.21; # UTC
 diff -Naur p11-kit-0.26.5.orig/build/litter/tap-driver.sh p11-kit-0.26.5/build/litter/tap-driver.sh
---- p11-kit-0.26.5.orig/build/litter/tap-driver.sh	2026-08-06 06:06:55.000000000 -0400
-+++ p11-kit-0.26.5/build/litter/tap-driver.sh	2026-10-28 01:23:19.876058119 -0400
+--- p11-kit-0.26.5.orig/build/litter/tap-driver.sh	2026-08-06 10:06:55.000000000 +0000
++++ p11-kit-0.26.5/build/litter/tap-driver.sh	2026-08-06 10:06:55.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
@@ -53,35 +80,72 @@ diff -Naur p11-kit-0.26.5.orig/build/litter/tap-driver.sh p11-kit-0.26.5/build/l
  #
  # This program is free software; you can redistribute it and/or modify
 diff -Naur p11-kit-0.26.5.orig/configure p11-kit-0.26.5/configure
---- p11-kit-0.26.5.orig/configure	2026-08-06 06:06:54.000000000 -0400
-+++ p11-kit-0.26.5/configure	2026-10-28 01:23:19.867529278 -0400
+--- p11-kit-0.26.5.orig/configure	2026-08-06 10:06:54.000000000 +0000
++++ p11-kit-0.26.5/configure	2026-08-06 10:06:54.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Guess values for system-dependent variables and create Makefiles.
  # Generated by GNU Autoconf 2.72 for p11-kit 0.26.5.
  #
+@@ -15910,9 +15910,6 @@
+ 		PKG_CONFIG=""
+ 	fi
+ fi
+-if test -z "$PKG_CONFIG"; then
+-	as_fn_error $? "pkg-config not found" "$LINENO" 5
+-fi
+ 
+ 
+ 
+diff -Naur p11-kit-0.26.5.orig/p11-kit/gen-fixed-closures.py p11-kit-0.26.5/p11-kit/gen-fixed-closures.py
+--- p11-kit-0.26.5.orig/p11-kit/gen-fixed-closures.py	2025-12-11 13:59:36.000000000 +0000
++++ p11-kit-0.26.5/p11-kit/gen-fixed-closures.py	2025-12-11 13:59:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/sw/python/bin/python3
+ 
+ """
+ SPDX-License-Identifier: BSD-3-Clause
 diff -Naur p11-kit-0.26.5.orig/p11-kit/gen-pkcs11-gnu.sh p11-kit-0.26.5/p11-kit/gen-pkcs11-gnu.sh
---- p11-kit-0.26.5.orig/p11-kit/gen-pkcs11-gnu.sh	2023-10-24 08:58:49.000000000 -0400
-+++ p11-kit-0.26.5/p11-kit/gen-pkcs11-gnu.sh	2026-10-28 01:23:19.881899638 -0400
+--- p11-kit-0.26.5.orig/p11-kit/gen-pkcs11-gnu.sh	2023-10-24 12:58:49.000000000 +0000
++++ p11-kit-0.26.5/p11-kit/gen-pkcs11-gnu.sh	2023-10-24 12:58:49.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  
  source="$1"
  target="$2"
+diff -Naur p11-kit-0.26.5.orig/p11-kit/gen-wrappers.py p11-kit-0.26.5/p11-kit/gen-wrappers.py
+--- p11-kit-0.26.5.orig/p11-kit/gen-wrappers.py	2025-12-11 13:59:36.000000000 +0000
++++ p11-kit-0.26.5/p11-kit/gen-wrappers.py	2025-12-11 13:59:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/sw/python/bin/python3
+ 
+ """
+ SPDX-License-Identifier: BSD-3-Clause
 diff -Naur p11-kit-0.26.5.orig/p11-kit/meson_post_install.sh p11-kit-0.26.5/p11-kit/meson_post_install.sh
---- p11-kit-0.26.5.orig/p11-kit/meson_post_install.sh	2023-10-24 08:58:49.000000000 -0400
-+++ p11-kit-0.26.5/p11-kit/meson_post_install.sh	2026-10-28 01:23:19.885127061 -0400
+--- p11-kit-0.26.5.orig/p11-kit/meson_post_install.sh	2023-10-24 12:58:49.000000000 +0000
++++ p11-kit-0.26.5/p11-kit/meson_post_install.sh	2023-10-24 12:58:49.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  
  set +x
  
+diff -Naur p11-kit-0.26.5.orig/subprojects/pkcs11-json/gen.py p11-kit-0.26.5/subprojects/pkcs11-json/gen.py
+--- p11-kit-0.26.5.orig/subprojects/pkcs11-json/gen.py	2025-12-16 16:15:08.000000000 +0000
++++ p11-kit-0.26.5/subprojects/pkcs11-json/gen.py	2025-12-16 16:15:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/sw/python/bin/python3
+ 
+ """
+ SPDX-License-Identifier: BSD-3-Clause
 diff -Naur p11-kit-0.26.5.orig/trust/trust-extract-compat p11-kit-0.26.5/trust/trust-extract-compat
---- p11-kit-0.26.5.orig/trust/trust-extract-compat	2023-10-24 08:58:49.000000000 -0400
-+++ p11-kit-0.26.5/trust/trust-extract-compat	2026-10-28 01:23:19.903938419 -0400
+--- p11-kit-0.26.5.orig/trust/trust-extract-compat	2023-10-24 12:58:49.000000000 +0000
++++ p11-kit-0.26.5/trust/trust-extract-compat	2023-10-24 12:58:49.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash

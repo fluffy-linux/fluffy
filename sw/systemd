@@ -1,0 +1,166 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=261.2
+
+HAS_LDFLAGS="-lsystemd -ludev"
+
+ARCHIVES=(
+    ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec https://github.com/systemd/systemd/archive/v$VERSION/systemd-$VERSION.tar.gz
+    9be13865c9c7f9fecba7b86fc5185aecef00164c87ed68b4f6884283aefebe50 https://anduin.linuxfromscratch.org/LFS/systemd-man-pages-$VERSION.tar.xz
+    7b62b8271aa5532fcf9011d8d6d0fd5c01070dab862c482741d3f600f8f51962 file://systemd-$VERSION-fluffy-shell.patch
+    4aedbdfd86940cc389adcfeb3452f51c1eb018ccd1a1a3a9ee97d1c85223fdad file://systemd-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    acl
+    glibc
+    kmod
+    libcap
+    libxcrypt
+    openssl
+    util-linux-pass1
+    xz
+    zlib
+    zstd
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        acl
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        gperf
+        grep
+        gzip
+        jinja2
+        kmod
+        libcap
+        libgcc
+        libxcrypt
+        linux-headers
+        make
+        markupsafe
+        meson
+        ninja
+        openssl
+        patch
+        python
+        sed
+        tar
+        util-linux-pass1
+        xz
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        acl
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        gperf
+        grep
+        gzip
+        jinja2
+        kmod
+        libcap
+        libgcc
+        libxcrypt
+        linux-headers
+        make
+        markupsafe
+        meson
+        ninja
+        openssl
+        patch
+        python
+        sed
+        tar
+        util-linux-pass1
+        xz
+        zlib
+        zstd
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i systemd-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i systemd-$VERSION-fluffy-source.patch
+
+    mkdir -p build
+    cd build
+
+    meson setup .. \
+        --prefix=/sw/systemd \
+        --buildtype=release \
+        -Dcreate-log-dirs=false \
+        -Ddefault-dnssec=no \
+        -Dfirstboot=false \
+        -Dinstall-sysconfdir=false \
+        -Dinstall-tests=false \
+        -Dldconfig=false \
+        -Dsysusers=false \
+        -Drpmmacrosdir=no \
+        -Dshellprofiledir=no \
+        -Dsshconfdir=no \
+        -Dsshdconfdir=no \
+        -Dhomed=disabled \
+        -Dman=disabled \
+        -Dmode=release \
+        -Dpamconfdir=no \
+        -Ddev-kvm-mode=0660 \
+        -Dnobody-group=nogroup \
+        -Dsysupdate=disabled \
+        -Dukify=disabled \
+        -Dsplit-bin=false \
+        -Duser-path=/sw/*/bin \
+        -Ddebug-shell=/sw/bash/bin/bash \
+        -Dkmod-path=kmod \
+        -Dmount-path=mount \
+        -Dumount-path=umount \
+        -Dloadkeys-path=loadkeys \
+        -Dsetfont-path=setfont \
+        -Dsulogin-path=sulogin \
+        -Dnologin-path=nologin \
+        -Ddocdir=/sw/systemd/share/doc/systemd-$VERSION
+
+    ninja
+}
+
+CHECK() {
+    meson test -C build test-path-util test-path-lookup --print-errorlogs
+}
+
+INSTALL() {
+    DESTDIR=$DESTDIR ninja -C build install
+
+    ln -sfv ../lib/systemd/systemd $DESTDIR/sw/systemd/bin/init
+
+    mkdir -pv $DESTDIR/sw/systemd/share/man
+    if test -d systemd-man-pages-$VERSION
+    then
+        cp -a systemd-man-pages-$VERSION/* $DESTDIR/sw/systemd/share/man/
+    elif test -d ../systemd-man-pages-$VERSION
+    then
+        cp -a ../systemd-man-pages-$VERSION/* $DESTDIR/sw/systemd/share/man/
+    fi
+}

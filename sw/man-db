@@ -1,0 +1,110 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.13.1
+
+ARCHIVES=(
+    8afebb6f7eb6bb8542929458841f5c7e6f240e30c86358c1fbcefbea076c87d9 https://download.savannah.gnu.org/releases/man-db/man-db-$VERSION.tar.xz
+    35dd7ad2ab5e8f527033943196c7f509f51546667d672dd7fd25f3e3ddbbfb05 file://man-db-$VERSION-fluffy-shell.patch
+    13ae6425da91496c8fb4eb46a05855dbd533231f84d9c298d796368b02161b19 file://man-db-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    gdbm
+    glibc
+    libpipeline
+    zlib
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        gdbm
+        gettext
+        glibc
+        grep
+        groff
+        gzip
+        libgcc
+        libpipeline
+        linux-headers
+        make
+        patch
+        sed
+        systemd
+        tar
+        xz
+        zlib
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        gdbm
+        gettext
+        glibc
+        grep
+        groff
+        gzip
+        libgcc
+        libpipeline
+        linux-headers
+        make
+        patch
+        sed
+        systemd
+        tar
+        xz
+        zlib
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i man-db-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i man-db-$VERSION-fluffy-source.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site \
+    libpipeline_CFLAGS=" " \
+    libpipeline_LIBS="-lpipeline" \
+    ./configure \
+        --prefix=/sw/man-db \
+        --sbindir=/sw/man-db/bin \
+        --docdir=/sw/man-db/share/doc/man-db-$VERSION \
+        --sysconfdir=/sw/man-db/etc \
+        --disable-setuid \
+        --disable-cache-owner \
+        --with-browser=/sw/lynx/bin/lynx \
+        --with-vgrind=/sw/groff/bin/vgrind \
+        --with-grap=/sw/grap/bin/grap \
+        --with-systemdsystemunitdir=/sw/man-db/lib/systemd/system \
+        --with-systemdtmpfilesdir=/sw/man-db/lib/tmpfiles.d \
+        --without-libseccomp
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    find $DESTDIR/sw/man-db -name '*.la' -delete
+}

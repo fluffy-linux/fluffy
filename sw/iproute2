@@ -1,0 +1,96 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=7.1.0
+
+ARCHIVES=(
+    fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-$VERSION.tar.xz
+    5b1dc95afad9bd216faa6b220f59743625c53e9ff5e3daf787b77c7cd0d2bef5 file://iproute2-$VERSION-fluffy-shell.patch
+    485a89aa410ce30c0c0d77eb4e8a3908e8dc6938314de1b3bf64e3171a12797b file://iproute2-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc
+    libcap
+    libelf
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        glibc
+        grep
+        gzip-pass1
+        libcap
+        libelf
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        python
+        sed
+        tar-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        glibc
+        grep
+        gzip
+        libcap
+        libelf
+        libgcc
+        linux-headers
+        make
+        patch
+        python
+        sed
+        tar
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i iproute2-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i iproute2-$VERSION-fluffy-source.patch
+
+    ./configure --prefix /sw/iproute2
+    make \
+        PREFIX=/sw/iproute2 \
+        SBINDIR=/sw/iproute2/bin \
+        CONF_ETC_DIR=/sw/iproute2/etc/iproute2 \
+        NETNS_RUN_DIR=/run/netns
+}
+
+CHECK() {
+    ./ip/ip -V
+}
+
+INSTALL() {
+    make \
+        PREFIX=/sw/iproute2 \
+        SBINDIR=/sw/iproute2/bin \
+        CONF_ETC_DIR=/sw/iproute2/etc/iproute2 \
+        NETNS_RUN_DIR=/run/netns \
+        install
+}

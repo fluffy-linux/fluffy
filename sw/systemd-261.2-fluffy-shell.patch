@@ -1,0 +1,701 @@
+diff --no-dereference -Naur systemd-261.2.orig/man/50-xdg-data-dirs.sh systemd-261.2/man/50-xdg-data-dirs.sh
+--- systemd-261.2.orig/man/50-xdg-data-dirs.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/man/50-xdg-data-dirs.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: MIT-0
+ 
+ # set the default value
+diff --no-dereference -Naur systemd-261.2.orig/man/check-os-release.sh systemd-261.2/man/check-os-release.sh
+--- systemd-261.2.orig/man/check-os-release.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/man/check-os-release.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -eu
++#!/sw/bash/bin/bash -eu
+ # SPDX-License-Identifier: MIT-0
+ 
+ test -e /etc/os-release && os_release='/etc/os-release' || os_release='/usr/lib/os-release'
+diff --no-dereference -Naur systemd-261.2.orig/man/html.in systemd-261.2/man/html.in
+--- systemd-261.2.orig/man/html.in	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/man/html.in	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ set -e
+diff --no-dereference -Naur systemd-261.2.orig/man/man.in systemd-261.2/man/man.in
+--- systemd-261.2.orig/man/man.in	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/man/man.in	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ set -e
+diff --no-dereference -Naur systemd-261.2.orig/mkosi/mkosi.images/minimal-0/mkosi.postinst systemd-261.2/mkosi/mkosi.images/minimal-0/mkosi.postinst
+--- systemd-261.2.orig/mkosi/mkosi.images/minimal-0/mkosi.postinst	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/mkosi/mkosi.images/minimal-0/mkosi.postinst	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eux
+ 
+diff --no-dereference -Naur systemd-261.2.orig/mkosi/mkosi.images/minimal-1/mkosi.postinst systemd-261.2/mkosi/mkosi.images/minimal-1/mkosi.postinst
+--- systemd-261.2.orig/mkosi/mkosi.images/minimal-1/mkosi.postinst	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/mkosi/mkosi.images/minimal-1/mkosi.postinst	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eux
+ 
+diff --no-dereference -Naur systemd-261.2.orig/src/kernel-install/50-depmod.install systemd-261.2/src/kernel-install/50-depmod.install
+--- systemd-261.2.orig/src/kernel-install/50-depmod.install	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/kernel-install/50-depmod.install	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+diff --no-dereference -Naur systemd-261.2.orig/src/kernel-install/90-loaderentry.install.in systemd-261.2/src/kernel-install/90-loaderentry.install.in
+--- systemd-261.2.orig/src/kernel-install/90-loaderentry.install.in	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/kernel-install/90-loaderentry.install.in	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+diff --no-dereference -Naur systemd-261.2.orig/src/kernel-install/90-uki-copy.install systemd-261.2/src/kernel-install/90-uki-copy.install
+--- systemd-261.2.orig/src/kernel-install/90-uki-copy.install	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/kernel-install/90-uki-copy.install	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+ # ex: ts=8 sw=4 sts=4 et filetype=sh
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+diff --no-dereference -Naur systemd-261.2.orig/src/kernel-install/test-kernel-install.sh systemd-261.2/src/kernel-install/test-kernel-install.sh
+--- systemd-261.2.orig/src/kernel-install/test-kernel-install.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/kernel-install/test-kernel-install.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -208,7 +208,7 @@
+ 
+ # disable all dropins
+ cat >"$D/00-skip.install" <<EOF
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ exit 77
+ EOF
+ chmod +x "$D/00-skip.install"
+diff --no-dereference -Naur systemd-261.2.orig/src/udev/generate-keyboard-keys-gperf.sh systemd-261.2/src/udev/generate-keyboard-keys-gperf.sh
+--- systemd-261.2.orig/src/udev/generate-keyboard-keys-gperf.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/udev/generate-keyboard-keys-gperf.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eu
+ 
+diff --no-dereference -Naur systemd-261.2.orig/test/hwdb-test.sh systemd-261.2/test/hwdb-test.sh
+--- systemd-261.2.orig/test/hwdb-test.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/hwdb-test.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ #
+ # Call built systemd-hwdb update on our hwdb files to ensure that they parse
+diff --no-dereference -Naur systemd-261.2.orig/test/integration-tests/TEST-04-JOURNAL/TEST-04-JOURNAL.units/delegated_cgroup_filtering_payload.sh systemd-261.2/test/integration-tests/TEST-04-JOURNAL/TEST-04-JOURNAL.units/delegated_cgroup_filtering_payload.sh
+--- systemd-261.2.orig/test/integration-tests/TEST-04-JOURNAL/TEST-04-JOURNAL.units/delegated_cgroup_filtering_payload.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/integration-tests/TEST-04-JOURNAL/TEST-04-JOURNAL.units/delegated_cgroup_filtering_payload.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ mkdir /sys/fs/cgroup/system.slice/delegated-cgroup-filtering.service/the_child
+diff --no-dereference -Naur systemd-261.2.orig/test/integration-tests/TEST-04-JOURNAL/TEST-04-JOURNAL.units/delegated_cgroup_filtering_payload_child.sh systemd-261.2/test/integration-tests/TEST-04-JOURNAL/TEST-04-JOURNAL.units/delegated_cgroup_filtering_payload_child.sh
+--- systemd-261.2.orig/test/integration-tests/TEST-04-JOURNAL/TEST-04-JOURNAL.units/delegated_cgroup_filtering_payload_child.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/integration-tests/TEST-04-JOURNAL/TEST-04-JOURNAL.units/delegated_cgroup_filtering_payload_child.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ echo $$ >/sys/fs/cgroup/system.slice/delegated-cgroup-filtering.service/the_child/cgroup.procs
+diff --no-dereference -Naur systemd-261.2.orig/test/integration-tests/TEST-52-HONORFIRSTSHUTDOWN/TEST-52-HONORFIRSTSHUTDOWN.units/test-honor-first-shutdown.sh systemd-261.2/test/integration-tests/TEST-52-HONORFIRSTSHUTDOWN/TEST-52-HONORFIRSTSHUTDOWN.units/test-honor-first-shutdown.sh
+--- systemd-261.2.orig/test/integration-tests/TEST-52-HONORFIRSTSHUTDOWN/TEST-52-HONORFIRSTSHUTDOWN.units/test-honor-first-shutdown.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/integration-tests/TEST-52-HONORFIRSTSHUTDOWN/TEST-52-HONORFIRSTSHUTDOWN.units/test-honor-first-shutdown.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ echo "Honor first shutdown test script"
+diff --no-dereference -Naur systemd-261.2.orig/test/test-path-util/script.sh systemd-261.2/test/test-path-util/script.sh
+--- systemd-261.2.orig/test/test-path-util/script.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/test-path-util/script.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,7 +1,7 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ echo "$0 $*"
+-test "$(basename "$0")" = "script.sh" || exit 1
++test "${0##*/}" = "script.sh" || exit 1
+ test "$1" = "--version" || exit 2
+ echo "Life is good"
+diff --no-dereference -Naur systemd-261.2.orig/test/udev-dmi-memory-id-test.sh systemd-261.2/test/udev-dmi-memory-id-test.sh
+--- systemd-261.2.orig/test/udev-dmi-memory-id-test.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/udev-dmi-memory-id-test.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ set -e
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-04-JOURNAL.journal.sh systemd-261.2/test/units/TEST-04-JOURNAL.journal.sh
+--- systemd-261.2.orig/test/units/TEST-04-JOURNAL.journal.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-04-JOURNAL.journal.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -164,7 +164,7 @@
+ (! journalctl -q --fields --unit "test-no-such-unit-$RANDOM.service" --no-pager)
+ journalctl --no-hostname --utc --catalog | grep . >/dev/null
+ # Exercise executable_is_script() and the related code, e.g. `journalctl -b /path/to/a/script.sh` should turn
+-# into ((_EXE=/usr/bin/bash AND _COMM=script.sh) AND _BOOT_ID=c002e3683ba14fa8b6c1e12878386514)
++# into ((_EXE=/sw/bash/bin/bash AND _COMM=script.sh) AND _BOOT_ID=c002e3683ba14fa8b6c1e12878386514)
+ journalctl -b "$(readlink -f "$0")" | grep . >/dev/null
+ journalctl -b "$(systemd-id128 boot-id)" | grep . >/dev/null
+ journalctl --since yesterday --reverse | grep . >/dev/null
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-07-PID1.alias-corruption.sh systemd-261.2/test/units/TEST-07-PID1.alias-corruption.sh
+--- systemd-261.2.orig/test/units/TEST-07-PID1.alias-corruption.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-07-PID1.alias-corruption.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -376,7 +376,7 @@
+ [Service]
+ Type=notify
+ NotifyAccess=all
+-ExecStart=/bin/bash -c 'trap "" TERM; systemd-notify --ready; while :; do sleep infinity & wait $!; done'
++ExecStart=/sw/bash/bin/bash -c 'trap "" TERM; systemd-notify --ready; while :; do sleep infinity & wait $!; done'
+ TimeoutStopSec=infinity
+ SendSIGKILL=no
+ EOF
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-13-NSPAWN.machined.sh systemd-261.2/test/units/TEST-13-NSPAWN.machined.sh
+--- systemd-261.2.orig/test/units/TEST-13-NSPAWN.machined.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-13-NSPAWN.machined.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -118,9 +118,9 @@
+ test ! -L /etc/systemd/system/machines.target.wants/systemd-nspawn@long-running.service
+ machinectl disable long-running long-running long-running container1
+ 
+-[[ "$(TERM=dumb machinectl shell testuser@ /usr/bin/bash -c 'echo -ne $FOO')" == "" ]]
+-[[ "$(TERM=dumb machinectl shell --setenv=FOO=bar testuser@ /usr/bin/bash -c 'echo -ne $FOO')" == "bar" ]]
+-[[ "$(TERM=dumb machinectl shell testuser@ --setenv=FOO=bar /usr/bin/bash -c 'echo -ne $FOO')" == "bar" ]]
++[[ "$(TERM=dumb machinectl shell testuser@ /sw/bash/bin/bash -c 'echo -ne $FOO')" == "" ]]
++[[ "$(TERM=dumb machinectl shell --setenv=FOO=bar testuser@ /sw/bash/bin/bash -c 'echo -ne $FOO')" == "bar" ]]
++[[ "$(TERM=dumb machinectl shell testuser@ --setenv=FOO=bar /sw/bash/bin/bash -c 'echo -ne $FOO')" == "bar" ]]
+ 
+ [[ "$(machinectl show --property=State --value long-running)" == "running" ]]
+ # Equivalent to machinectl kill --signal=SIGRTMIN+4 --kill-whom=leader
+@@ -414,13 +414,13 @@
+ # server side, to not generate early SIGHUP. Hence, let's just invoke "sleep
+ # infinity" client side, once we acquired the fd (passing it to it), and kill
+ # it once we verified everything worked.
+-PID=$(systemd-notify --fork -- varlinkctl --exec call /run/systemd/machine/io.systemd.Machine io.systemd.Machine.Open '{"name": ".host", "mode": "shell", "user": "root", "path": "/usr/bin/bash", "args": ["bash", "-c", "echo $FOO >/tmp/none-existent-file"], "environment": ["FOO=BAR"]}' -- sleep infinity)
++PID=$(systemd-notify --fork -- varlinkctl --exec call /run/systemd/machine/io.systemd.Machine io.systemd.Machine.Open '{"name": ".host", "mode": "shell", "user": "root", "path": "/sw/bash/bin/bash", "args": ["bash", "-c", "echo $FOO >/tmp/none-existent-file"], "environment": ["FOO=BAR"]}' -- sleep infinity)
+ timeout 30 bash -c "until test -e /tmp/none-existent-file; do sleep .5; done"
+ grep -q "BAR" /tmp/none-existent-file
+ kill "$PID"
+ 
+ # Test varlinkctl's --exec fd passing logic properly
+-assert_eq "$(varlinkctl --exec call /run/systemd/machine/io.systemd.Machine io.systemd.Machine.Open '{"name": ".host", "mode": "shell", "user": "root", "path": "/usr/bin/bash", "args": ["bash", "-c", "echo $((7 + 8))"], "environment": ["TERM=dumb"]}' -- bash -c 'read -r -N 2 x <&3 ; echo "$x"')" 15
++assert_eq "$(varlinkctl --exec call /run/systemd/machine/io.systemd.Machine io.systemd.Machine.Open '{"name": ".host", "mode": "shell", "user": "root", "path": "/sw/bash/bin/bash", "args": ["bash", "-c", "echo $((7 + 8))"], "environment": ["TERM=dumb"]}' -- bash -c 'read -r -N 2 x <&3 ; echo "$x"')" 15
+ 
+ # test io.systemd.Machine.MapFrom
+ varlinkctl call /run/systemd/machine/io.systemd.Machine io.systemd.Machine.MapFrom '{"name": "long-running", "uid":0, "gid": 0}'
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-13-NSPAWN.nspawn-oci.sh systemd-261.2/test/units/TEST-13-NSPAWN.nspawn-oci.sh
+--- systemd-261.2.orig/test/units/TEST-13-NSPAWN.nspawn-oci.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-13-NSPAWN.nspawn-oci.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -311,7 +311,7 @@
+     "hooks" : {
+         "prestart" : [
+             {
+-                "path" : "/bin/bash",
++                "path" : "/sw/bash/bin/bash",
+                 "args" : [
+                     "-xec",
+                     "echo \$PRESTART_FOO >/prestart"
+@@ -331,7 +331,7 @@
+         ],
+         "poststart" : [
+             {
+-                "path" : "/bin/bash",
++                "path" : "/sw/bash/bin/bash",
+                 "args" : [
+                     "touch",
+                     "/poststart"
+@@ -340,7 +340,7 @@
+         ],
+         "poststop" : [
+             {
+-                "path" : "/bin/bash",
++                "path" : "/sw/bash/bin/bash",
+                 "args" : [
+                     "touch",
+                     "/poststop"
+@@ -446,7 +446,7 @@
+     '"linux" : { "readonlyPaths" : [ "/foo", 1 ] }'
+     '"linux" : { "readonlyPaths" : [ "/foo", "bar" ] }'
+     # Invalid hooks
+-    '"hooks" : { "prestart" : [ { "path" : "/bin/bash", "timeout" : 0 } ] }'
++    '"hooks" : { "prestart" : [ { "path" : "/sw/bash/bin/bash", "timeout" : 0 } ] }'
+     # Invalid annotations
+     '"annotations" : { "" : "bar" }'
+     '"annotations" : { "foo" : 1 }'
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-13-NSPAWN.nspawn.sh systemd-261.2/test/units/TEST-13-NSPAWN.nspawn.sh
+--- systemd-261.2.orig/test/units/TEST-13-NSPAWN.nspawn.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-13-NSPAWN.nspawn.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -211,7 +211,7 @@
+ if [[ $# -eq 0 ]]; then
+     :
+ elif [[ $1 == passwd ]]; then
+-    echo "testuser:x:1000:1000:testuser:/:/bin/sh"
++    echo "testuser:x:1000:1000:testuser:/:/sw/bash/bin/bash"
+ elif [[ $1 == initgroups ]]; then
+     echo "testuser"
+ fi
+@@ -646,7 +646,7 @@
+     chown -R root:root "$root"
+ 
+     # User/group name collision
+-    echo "nspawn-bind-user-2:x:1000:1000:nspawn-bind-user-2:/home/nspawn-bind-user-2:/bin/bash" >"$root/etc/passwd"
++    echo "nspawn-bind-user-2:x:1000:1000:nspawn-bind-user-2:/home/nspawn-bind-user-2:/sw/bash/bin/bash" >"$root/etc/passwd"
+     (! systemd-nspawn --directory="$root" \
+                       --private-users=pick \
+                       --bind-user=nspawn-bind-user-1 \
+@@ -670,8 +670,8 @@
+ 
+     root="$(mktemp -d /var/lib/machines/TEST-13-NSPAWN.bind-user.XXX)"
+     create_dummy_container "$root"
+-    useradd --create-home --user-group --shell=/usr/bin/bash nspawn-bind-user-1
+-    useradd --create-home --user-group --shell=/usr/bin/sh   nspawn-bind-user-2
++    useradd --create-home --user-group --shell=/sw/bash/bin/bash nspawn-bind-user-1
++    useradd --create-home --user-group --shell=/sw/bash/bin/bash   nspawn-bind-user-2
+     trap bind_user_cleanup RETURN
+ 
+     systemd-nspawn --directory="$root" \
+@@ -689,13 +689,13 @@
+                    --private-users=pick \
+                    --bind-user=nspawn-bind-user-1 \
+                    --bind-user-shell=yes \
+-                   bash -xec 'grep -q "\"shell\":\"/usr/bin/bash\"" /run/host/userdb/nspawn-bind-user-1.user'
++                   bash -xec 'grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-1.user'
+ 
+     systemd-nspawn --directory="$root" \
+                    --private-users=pick \
+                    --bind-user=nspawn-bind-user-1 \
+-                   --bind-user-shell=/bin/bash \
+-                   bash -xec 'grep -q "\"shell\":\"/bin/bash\"" /run/host/userdb/nspawn-bind-user-1.user'
++                   --bind-user-shell=/sw/bash/bin/bash \
++                   bash -xec 'grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-1.user'
+ 
+     (! systemd-nspawn --directory="$root" \
+                       --private-users=pick \
+@@ -714,14 +714,14 @@
+                    --bind-user=nspawn-bind-user-1 \
+                    --bind-user=nspawn-bind-user-2 \
+                    --bind-user-shell=yes \
+-                   bash -xec 'grep -q "\"shell\":\"/usr/bin/bash\"" /run/host/userdb/nspawn-bind-user-1.user && grep -q "\"shell\":\"/usr/bin/sh\"" /run/host/userdb/nspawn-bind-user-2.user'
++                   bash -xec 'grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-1.user && grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-2.user'
+ 
+     systemd-nspawn --directory="$root" \
+                    --private-users=pick \
+                    --bind-user=nspawn-bind-user-1 \
+                    --bind-user=nspawn-bind-user-2 \
+-                   --bind-user-shell=/bin/sh \
+-                   bash -xec 'grep -q "\"shell\":\"/bin/sh\"" /run/host/userdb/nspawn-bind-user-1.user && grep -q "\"shell\":\"/bin/sh\"" /run/host/userdb/nspawn-bind-user-2.user'
++                   --bind-user-shell=/sw/bash/bin/bash \
++                   bash -xec 'grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-1.user && grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-2.user'
+ 
+     mach=$(basename "$root")
+     mkdir -p /run/systemd/nspawn
+@@ -752,16 +752,16 @@
+     systemd-nspawn --directory="$root" \
+                    --private-users=pick \
+                    --bind-user=nspawn-bind-user-2 \
+-                   bash -xec 'grep -q "\"shell\":\"/usr/bin/sh\"" /run/host/userdb/nspawn-bind-user-2.user'
++                   bash -xec 'grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-2.user'
+ 
+     cat <<'EOF' >"$conf"
+ [Files]
+-BindUserShell=/bin/sh
++BindUserShell=/sw/bash/bin/bash
+ EOF
+     systemd-nspawn --directory="$root" \
+                    --private-users=pick \
+                    --bind-user=nspawn-bind-user-2 \
+-                   bash -xec 'grep -q "\"shell\":\"/bin/sh\"" /run/host/userdb/nspawn-bind-user-2.user'
++                   bash -xec 'grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-2.user'
+ 
+     cat <<'EOF' >"$conf"
+ # [Files]
+@@ -772,7 +772,7 @@
+                    --settings=override \
+                    --bind-user=nspawn-bind-user-2 \
+                    --bind-user-shell=yes \
+-                   bash -xec 'grep -q "\"shell\":\"/usr/bin/sh\"" /run/host/userdb/nspawn-bind-user-2.user'
++                   bash -xec 'grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-2.user'
+ 
+     cat <<'EOF' >"$conf"
+ [Files]
+@@ -798,14 +798,14 @@
+ 
+     cat <<'EOF' >"$conf"
+ [Files]
+-BindUserShell=/bin/sh
++BindUserShell=/sw/bash/bin/bash
+ EOF
+     systemd-nspawn --directory="$root" \
+                    --private-users=pick \
+                    --settings=override \
+                    --bind-user=nspawn-bind-user-2 \
+                    --bind-user-shell=yes \
+-                   bash -xec 'grep -q "\"shell\":\"/bin/sh\"" /run/host/userdb/nspawn-bind-user-2.user'
++                   bash -xec 'grep -q "\"shell\":\"/sw/bash/bin/bash\"" /run/host/userdb/nspawn-bind-user-2.user'
+ 
+     rm -fr "$root"
+ }
+@@ -925,7 +925,7 @@
+ if [[ $# -eq 0 ]]; then
+     :
+ elif [[ $1 == passwd ]]; then
+-    echo "testuser:x:1010:1010:testuser:/:/bin/sh"
++    echo "testuser:x:1010:1010:testuser:/:/sw/bash/bin/bash"
+ elif [[ $1 == initgroups ]]; then
+     echo "testuser"
+ fi
+@@ -1594,7 +1594,7 @@
+     # environment and argv the same way the kernel splits them.
+     mkdir -p "$root/usr/lib/systemd"
+     cat >"$root/usr/lib/systemd/systemd" <<'EOF'
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ set -e
+ printf '%s\n' "$@" >/output/argv
+ env >/output/env
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-13-NSPAWN.unpriv.sh systemd-261.2/test/units/TEST-13-NSPAWN.unpriv.sh
+--- systemd-261.2.orig/test/units/TEST-13-NSPAWN.unpriv.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-13-NSPAWN.unpriv.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -125,7 +125,7 @@
+         call \
+         /run/systemd/machine/io.systemd.Machine \
+         io.systemd.Machine.Open \
+-        '{"name":"shouldnotwork3", "mode": "shell", "user":"root","path":"/usr/bin/bash","args":["bash","-c","''touch /shouldnotwork; sleep 20''"]}')
++        '{"name":"shouldnotwork3", "mode": "shell", "user":"root","path":"/sw/bash/bin/bash","args":["bash","-c","''touch /shouldnotwork; sleep 20''"]}')
+ (! varlinkctl \
+     call \
+     /run/systemd/machine/io.systemd.Machine \
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-17-UDEV.IMPORT.sh systemd-261.2/test/units/TEST-17-UDEV.IMPORT.sh
+--- systemd-261.2.orig/test/units/TEST-17-UDEV.IMPORT.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-17-UDEV.IMPORT.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -19,7 +19,7 @@
+ 
+ cat >/run/udev/rules.d/50-testsuite.rules <<'EOF'
+ SUBSYSTEM=="mem", KERNEL=="null", OPTIONS="log_level=debug"
+-ACTION=="add", SUBSYSTEM=="mem", KERNEL=="null", IMPORT{program}="/bin/sh -c 'printf \"TRUNCATED_OK=yes\nTRUNCATED_BAD=\"; i=0; while [ \"$i\" -lt 20000 ]; do printf A; i=$((i + 1)); done'"
++ACTION=="add", SUBSYSTEM=="mem", KERNEL=="null", IMPORT{program}="/sw/bash/bin/bash -c 'printf \"TRUNCATED_OK=yes\nTRUNCATED_BAD=\"; i=0; while [ \"$i\" -lt 20000 ]; do printf A; i=$((i + 1)); done'"
+ EOF
+ 
+ udevadm control --reload
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-17-UDEV.queued-events-serialization.sh systemd-261.2/test/units/TEST-17-UDEV.queued-events-serialization.sh
+--- systemd-261.2.orig/test/units/TEST-17-UDEV.queued-events-serialization.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-17-UDEV.queued-events-serialization.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -17,9 +17,9 @@
+ ACTION=="remove", GOTO="end"
+ 
+ IMPORT{db}="INVOCATIONS"
+-IMPORT{program}="/usr/bin/bash -c 'systemctl show --property=InvocationID systemd-udevd.service'"
++IMPORT{program}="/sw/bash/bin/bash -c 'systemctl show --property=InvocationID systemd-udevd.service'"
+ ENV{INVOCATIONS}+="%E{ACTION}_%E{SEQNUM}_%E{InvocationID}"
+-ACTION=="add", RUN+="/usr/bin/bash -c ': >/tmp/marker'", RUN+="/usr/bin/sleep 10"
++ACTION=="add", RUN+="/sw/bash/bin/bash -c ': >/tmp/marker'", RUN+="/usr/bin/sleep 10"
+ 
+ LABEL="end"
+ EOF
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-35-LOGIN.sh systemd-261.2/test/units/TEST-35-LOGIN.sh
+--- systemd-261.2.orig/test/units/TEST-35-LOGIN.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-35-LOGIN.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -21,7 +21,7 @@
+ 
+ setup_test_user() {
+     mkdir -p /var/spool/cron /var/spool/mail
+-    useradd -m -s /usr/bin/bash logind-test-user
++    useradd -m -s /sw/bash/bin/bash logind-test-user
+     trap cleanup_test_user EXIT
+ }
+ 
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-46-HOMED.sh systemd-261.2/test/units/TEST-46-HOMED.sh
+--- systemd-261.2.orig/test/units/TEST-46-HOMED.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-46-HOMED.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1110,10 +1110,10 @@
+ }
+ 
+ testcase_identity_groups() {
+-    NEWPASSWORD=foobar homectl create idgrouptest --storage=directory --shell=/bin/bash --enforce-password-policy=no --rebalance-weight=off
++    NEWPASSWORD=foobar homectl create idgrouptest --storage=directory --shell=/sw/bash/bin/bash --enforce-password-policy=no --rebalance-weight=off
+     PASSWORD=foobar homectl activate idgrouptest
+ 
+-    machinectl shell idgrouptest@ /usr/bin/bash -euxo pipefail -c "jq '.memberOf = ((.memberOf // []) + [\"systemd-journal\"] | unique) | .lastChangeUSec = ((.lastChangeUSec // 0) + 3600000000)' /home/idgrouptest/.identity > /home/idgrouptest/.identity.new && mv -f /home/idgrouptest/.identity.new /home/idgrouptest/.identity"
++    machinectl shell idgrouptest@ /sw/bash/bin/bash -euxo pipefail -c "jq '.memberOf = ((.memberOf // []) + [\"systemd-journal\"] | unique) | .lastChangeUSec = ((.lastChangeUSec // 0) + 3600000000)' /home/idgrouptest/.identity > /home/idgrouptest/.identity.new && mv -f /home/idgrouptest/.identity.new /home/idgrouptest/.identity"
+     jq -e '.memberOf | index("systemd-journal") != null' /home/idgrouptest/.identity
+ 
+     PASSWORD=foobar homectl authenticate idgrouptest
+@@ -1140,11 +1140,11 @@
+     trap 'rm -f /etc/polkit-1/rules.d/updatehome.rules' RETURN ERR EXIT
+     systemctl try-reload-or-restart polkit.service
+ 
+-    NEWPASSWORD=foobar homectl create idgrouptest2 --storage=directory --shell=/bin/bash --enforce-password-policy=no --rebalance-weight=off
++    NEWPASSWORD=foobar homectl create idgrouptest2 --storage=directory --shell=/sw/bash/bin/bash --enforce-password-policy=no --rebalance-weight=off
+     PASSWORD=foobar homectl activate idgrouptest2
+ 
+     cat >/tmp/idgrouptest-add-group.sh <<'EOF'
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ set -exuo pipefail
+ 
+ loginctl show-session "${XDG_SESSION_ID:?}" -p Active --value | grep '^yes$' >/dev/null
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-50-DISSECT.dissect.sh systemd-261.2/test/units/TEST-50-DISSECT.dissect.sh
+--- systemd-261.2.orig/test/units/TEST-50-DISSECT.dissect.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-50-DISSECT.dissect.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -26,9 +26,9 @@
+ 
+ systemd-dissect --list "$MINIMAL_IMAGE.raw" | grep '^etc/os-release$' >/dev/null
+ systemd-dissect --mtree "$MINIMAL_IMAGE.raw" --mtree-hash yes | \
+-    grep -E "^.(/usr|)/bin/bash type=file mode=0755 uid=0 gid=0 size=[0-9]* sha256sum=[a-z0-9]*$" >/dev/null
++    grep -E "^.(/usr|)/sw/bash/bin/bash type=file mode=0755 uid=0 gid=0 size=[0-9]* sha256sum=[a-z0-9]*$" >/dev/null
+ systemd-dissect --mtree "$MINIMAL_IMAGE.raw" --mtree-hash no  | \
+-    grep -E "^.(/usr|)/bin/bash type=file mode=0755 uid=0 gid=0 size=[0-9]*$" >/dev/null
++    grep -E "^.(/usr|)/sw/bash/bin/bash type=file mode=0755 uid=0 gid=0 size=[0-9]*$" >/dev/null
+ 
+ read -r SHA256SUM1 _ < <(systemd-dissect --copy-from "$MINIMAL_IMAGE.raw" etc/os-release | sha256sum)
+ test "$SHA256SUM1" != ""
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.firstboot.sh systemd-261.2/test/units/TEST-74-AUX-UTILS.firstboot.sh
+--- systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.firstboot.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-74-AUX-UTILS.firstboot.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -104,13 +104,13 @@
+ rm -fv "$ROOT/etc/passwd" "$ROOT/etc/shadow"
+ # If /etc/passwd and /etc/shadow exist, they will only be updated if the shadow
+ # password is !unprovisioned.
+-echo "root:x:0:0:root:/root:/bin/sh" >"$ROOT/etc/passwd"
++echo "root:x:0:0:root:/root:/sw/bash/bin/bash" >"$ROOT/etc/passwd"
+ echo "root:!test:::::::" >"$ROOT/etc/shadow"
+ systemd-firstboot --root="$ROOT" --root-password=foo
+ grep -q "^root:x:0:0:" "$ROOT/etc/passwd"
+ grep -q "^root:!test:" "$ROOT/etc/shadow"
+ rm -fv "$ROOT/etc/passwd" "$ROOT/etc/shadow"
+-echo "root:x:0:0:root:/root:/bin/sh" >"$ROOT/etc/passwd"
++echo "root:x:0:0:root:/root:/sw/bash/bin/bash" >"$ROOT/etc/passwd"
+ echo "root:!unprovisioned:::::::" >"$ROOT/etc/shadow"
+ systemd-firstboot --root="$ROOT" --root-password=foo
+ grep -q "^root:x:0:0:" "$ROOT/etc/passwd"
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.sysusers.sh systemd-261.2/test/units/TEST-74-AUX-UTILS.sysusers.sh
+--- systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.sysusers.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-74-AUX-UTILS.sysusers.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -7,8 +7,8 @@
+ . "$(dirname "$0")"/util.sh
+ 
+ systemd-sysusers - <<EOF
+-u unlockedtestuser - "An unlocked system user" / /bin/bash
+-u! lockedtestuser - "A locked system user" / /bin/bash
++u unlockedtestuser - "An unlocked system user" / /sw/bash/bin/bash
++u! lockedtestuser - "A locked system user" / /sw/bash/bin/bash
+ EOF
+ 
+ if command -v userdbctl >/dev/null; then
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.userdbctl.sh systemd-261.2/test/units/TEST-74-AUX-UTILS.userdbctl.sh
+--- systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.userdbctl.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-74-AUX-UTILS.userdbctl.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -20,7 +20,7 @@
+ trap cleanup EXIT
+ 
+ systemd-sysusers - <<EOF
+-u test-74-userdbctl - "Test user for TEST-74-AUX-UTILS.userdbctl.sh" / /bin/bash
++u test-74-userdbctl - "Test user for TEST-74-AUX-UTILS.userdbctl.sh" / /sw/bash/bin/bash
+ EOF
+ 
+ # Root
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.varlinkctl-unit.sh systemd-261.2/test/units/TEST-74-AUX-UTILS.varlinkctl-unit.sh
+--- systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.varlinkctl-unit.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-74-AUX-UTILS.varlinkctl-unit.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -214,7 +214,7 @@
+ CRED_VALUE_B64=$(printf 'secret-value' | base64 -w0)
+ CRED_OUTPUT=$(mktemp)
+ varlinkctl call "$MANAGER_SOCKET" io.systemd.Unit.StartTransient \
+-    "{\"context\":{\"ID\":\"varlink-transient-cred.service\",\"Exec\":{\"SetCredential\":[{\"id\":\"mycred\",\"value\":\"${CRED_VALUE_B64}\"}]},\"Service\":{\"Type\":\"oneshot\",\"RemainAfterExit\":true,\"ExecStart\":[{\"path\":\"/bin/sh\",\"arguments\":[\"/bin/sh\",\"-c\",\"cat \$CREDENTIALS_DIRECTORY/mycred > ${CRED_OUTPUT}\"]}]}}}"
++    "{\"context\":{\"ID\":\"varlink-transient-cred.service\",\"Exec\":{\"SetCredential\":[{\"id\":\"mycred\",\"value\":\"${CRED_VALUE_B64}\"}]},\"Service\":{\"Type\":\"oneshot\",\"RemainAfterExit\":true,\"ExecStart\":[{\"path\":\"/sw/bash/bin/bash\",\"arguments\":[\"/sw/bash/bin/bash\",\"-c\",\"cat \$CREDENTIALS_DIRECTORY/mycred > ${CRED_OUTPUT}\"]}]}}}"
+ timeout 30 bash -c "until systemctl is-active varlink-transient-cred.service; do sleep 0.5; done"
+ grep '^secret-value$' "$CRED_OUTPUT" >/dev/null
+ rm -f "$CRED_OUTPUT"
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.varlinkctl.sh systemd-261.2/test/units/TEST-74-AUX-UTILS.varlinkctl.sh
+--- systemd-261.2.orig/test/units/TEST-74-AUX-UTILS.varlinkctl.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-74-AUX-UTILS.varlinkctl.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -70,7 +70,7 @@
+ IDL_FILE="$(mktemp)"
+ varlinkctl introspect /run/systemd/journal/io.systemd.journal io.systemd.Journal | tee "${IDL_FILE:?}"
+ varlinkctl validate-idl "$IDL_FILE"
+-cat /bin/sh >"$IDL_FILE"
++cat /sw/bash/bin/bash >"$IDL_FILE"
+ (! varlinkctl validate-idl "$IDL_FILE")
+ 
+ if [[ -x /usr/lib/systemd/systemd-pcrextend ]]; then
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.bind-volume.sh systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.bind-volume.sh
+--- systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.bind-volume.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.bind-volume.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -79,7 +79,7 @@
+ # Build a minimal root for direct boot — guest just sleeps.
+ mkdir -p "$WORKDIR/rootfs/sbin"
+ cat >"$WORKDIR/rootfs/sbin/init" <<'INITEOF'
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec sleep infinity
+ INITEOF
+ chmod +x "$WORKDIR/rootfs/sbin/init"
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.coredump.sh systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.coredump.sh
+--- systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.coredump.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.coredump.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -287,7 +287,7 @@
+     # access the crashed binary (and hence won't be able to symbolize its stacktrace) unless
+     # EnterNamespace=yes is used
+     cat >"$MAKE_STACKTRACE_DUMP" <<\EOF
+-#!/usr/bin/bash -eux
++#!/sw/bash/bin/bash -eux
+ 
+ TARGET="/tmp/${1:?}"
+ EC=0
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.replace-storage.sh systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.replace-storage.sh
+--- systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.replace-storage.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.replace-storage.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -77,7 +77,7 @@
+ 
+ mkdir -p "$WORKDIR/rootfs/sbin"
+ cat >"$WORKDIR/rootfs/sbin/init" <<'INITEOF'
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec sleep infinity
+ INITEOF
+ chmod +x "$WORKDIR/rootfs/sbin/init"
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.vmspawn-drives.sh systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.vmspawn-drives.sh
+--- systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.vmspawn-drives.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.vmspawn-drives.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -70,7 +70,7 @@
+ # The guest doesn't need to fully boot — 'sleep infinity' keeps QEMU alive for QMP testing.
+ mkdir -p "$WORKDIR/rootfs/sbin"
+ cat >"$WORKDIR/rootfs/sbin/init" <<'INITEOF'
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec sleep infinity
+ INITEOF
+ chmod +x "$WORKDIR/rootfs/sbin/init"
+diff --no-dereference -Naur systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.vmspawn.sh systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.vmspawn.sh
+--- systemd-261.2.orig/test/units/TEST-87-AUX-UTILS-VM.vmspawn.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/test/units/TEST-87-AUX-UTILS-VM.vmspawn.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -72,7 +72,7 @@
+ # with QMP. A trivial init that sleeps is sufficient.
+ mkdir -p "$WORKDIR/root/sbin"
+ cat >"$WORKDIR/root/sbin/init" <<'EOF'
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec sleep infinity
+ EOF
+ chmod +x "$WORKDIR/root/sbin/init"
+diff --no-dereference -Naur systemd-261.2.orig/tools/find-build-dir.sh systemd-261.2/tools/find-build-dir.sh
+--- systemd-261.2.orig/tools/find-build-dir.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/find-build-dir.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eu
+ 
+diff --no-dereference -Naur systemd-261.2.orig/tools/find-double-newline.sh systemd-261.2/tools/find-double-newline.sh
+--- systemd-261.2.orig/tools/find-double-newline.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/find-double-newline.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ set -eu
+diff --no-dereference -Naur systemd-261.2.orig/tools/find-tabs.sh systemd-261.2/tools/find-tabs.sh
+--- systemd-261.2.orig/tools/find-tabs.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/find-tabs.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ 
+ set -eu
+diff --no-dereference -Naur systemd-261.2.orig/tools/git-contrib.sh systemd-261.2/tools/git-contrib.sh
+--- systemd-261.2.orig/tools/git-contrib.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/git-contrib.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eu
+ 
+diff --no-dereference -Naur systemd-261.2.orig/tools/git-setup.sh systemd-261.2/tools/git-setup.sh
+--- systemd-261.2.orig/tools/git-setup.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/git-setup.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eu
+ 
+diff --no-dereference -Naur systemd-261.2.orig/tools/meson-build.sh systemd-261.2/tools/meson-build.sh
+--- systemd-261.2.orig/tools/meson-build.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/meson-build.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eux
+ 
+diff --no-dereference -Naur systemd-261.2.orig/tools/update-hwdb-autosuspend.sh systemd-261.2/tools/update-hwdb-autosuspend.sh
+--- systemd-261.2.orig/tools/update-hwdb-autosuspend.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/update-hwdb-autosuspend.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eu
+ 
+diff --no-dereference -Naur systemd-261.2.orig/tools/update-hwdb.sh systemd-261.2/tools/update-hwdb.sh
+--- systemd-261.2.orig/tools/update-hwdb.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/update-hwdb.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eu
+ 
+diff --no-dereference -Naur systemd-261.2.orig/tools/update-syscall-tables.sh systemd-261.2/tools/update-syscall-tables.sh
+--- systemd-261.2.orig/tools/update-syscall-tables.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/tools/update-syscall-tables.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ set -eu
+ 
+diff --no-dereference -Naur systemd-261.2.orig/xorg/50-systemd-user.sh systemd-261.2/xorg/50-systemd-user.sh
+--- systemd-261.2.orig/xorg/50-systemd-user.sh	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/xorg/50-systemd-user.sh	2026-07-23 17:07:04.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #  SPDX-License-Identifier: LGPL-2.1-or-later
+ #
+ #  This file is part of systemd.

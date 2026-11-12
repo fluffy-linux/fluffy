@@ -1,0 +1,699 @@
+diff -Naur curl-8.23.0.orig/docs/examples/version-check.pl curl-8.23.0/docs/examples/version-check.pl
+--- curl-8.23.0.orig/docs/examples/version-check.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/docs/examples/version-check.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/docs/libcurl/mksymbolsmanpage.pl curl-8.23.0/docs/libcurl/mksymbolsmanpage.pl
+--- curl-8.23.0.orig/docs/libcurl/mksymbolsmanpage.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/docs/libcurl/mksymbolsmanpage.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ # ***************************************************************************
+ # *                                  _   _ ____  _
+ # *  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/docs/libcurl/symbols.pl curl-8.23.0/docs/libcurl/symbols.pl
+--- curl-8.23.0.orig/docs/libcurl/symbols.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/docs/libcurl/symbols.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/lib/optiontable.pl curl-8.23.0/lib/optiontable.pl
+--- curl-8.23.0.orig/lib/optiontable.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/lib/optiontable.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ 
+ use strict;
+ use warnings;
+diff -Naur curl-8.23.0.orig/scripts/badwords curl-8.23.0/scripts/badwords
+--- curl-8.23.0.orig/scripts/badwords	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/badwords	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ # Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ #
+ # SPDX-License-Identifier: curl
+diff -Naur curl-8.23.0.orig/scripts/badwords-all curl-8.23.0/scripts/badwords-all
+--- curl-8.23.0.orig/scripts/badwords-all	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/badwords-all	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ # Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ #
+ # SPDX-License-Identifier: curl
+diff -Naur curl-8.23.0.orig/scripts/cd2cd curl-8.23.0/scripts/cd2cd
+--- curl-8.23.0.orig/scripts/cd2cd	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/cd2cd	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/cd2nroff curl-8.23.0/scripts/cd2nroff
+--- curl-8.23.0.orig/scripts/cd2nroff	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/cd2nroff	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/cdall curl-8.23.0/scripts/cdall
+--- curl-8.23.0.orig/scripts/cdall	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/cdall	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/checksrc-all.pl curl-8.23.0/scripts/checksrc-all.pl
+--- curl-8.23.0.orig/scripts/checksrc-all.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/checksrc-all.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ # Copyright (C) Viktor Szakats
+ #
+ # SPDX-License-Identifier: curl
+diff -Naur curl-8.23.0.orig/scripts/checksrc.pl curl-8.23.0/scripts/checksrc.pl
+--- curl-8.23.0.orig/scripts/checksrc.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/checksrc.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/completion.pl curl-8.23.0/scripts/completion.pl
+--- curl-8.23.0.orig/scripts/completion.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/completion.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/extract-unit-protos curl-8.23.0/scripts/extract-unit-protos
+--- curl-8.23.0.orig/scripts/extract-unit-protos	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/extract-unit-protos	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/managen curl-8.23.0/scripts/managen
+--- curl-8.23.0.orig/scripts/managen	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/managen	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/mdlinkcheck curl-8.23.0/scripts/mdlinkcheck
+--- curl-8.23.0.orig/scripts/mdlinkcheck	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/mdlinkcheck	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/mk-ca-bundle.pl curl-8.23.0/scripts/mk-ca-bundle.pl
+--- curl-8.23.0.orig/scripts/mk-ca-bundle.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/mk-ca-bundle.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ # ***************************************************************************
+ # *                                  _   _ ____  _
+ # *  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/mk-unity.pl curl-8.23.0/scripts/mk-unity.pl
+--- curl-8.23.0.orig/scripts/mk-unity.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/mk-unity.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/nroff2cd curl-8.23.0/scripts/nroff2cd
+--- curl-8.23.0.orig/scripts/nroff2cd	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/nroff2cd	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/randdisable curl-8.23.0/scripts/randdisable
+--- curl-8.23.0.orig/scripts/randdisable	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/randdisable	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ # Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ #
+ # SPDX-License-Identifier: curl
+diff -Naur curl-8.23.0.orig/scripts/spacecheck.pl curl-8.23.0/scripts/spacecheck.pl
+--- curl-8.23.0.orig/scripts/spacecheck.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/spacecheck.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/testnum curl-8.23.0/scripts/testnum
+--- curl-8.23.0.orig/scripts/testnum	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/testnum	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/top-complexity curl-8.23.0/scripts/top-complexity
+--- curl-8.23.0.orig/scripts/top-complexity	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/top-complexity	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/scripts/top-length curl-8.23.0/scripts/top-length
+--- curl-8.23.0.orig/scripts/top-length	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/top-length	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/src/mk-file-embed.pl curl-8.23.0/src/mk-file-embed.pl
+--- curl-8.23.0.orig/src/mk-file-embed.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/src/mk-file-embed.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/src/mkhelp.pl curl-8.23.0/src/mkhelp.pl
+--- curl-8.23.0.orig/src/mkhelp.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/src/mkhelp.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/certs/genserv.pl curl-8.23.0/tests/certs/genserv.pl
+--- curl-8.23.0.orig/tests/certs/genserv.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/certs/genserv.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+@@ -70,7 +70,7 @@
+     if($OPENSSL eq basename($OPENSSL)) {  # has no directory component
+         # find openssl in PATH
+         my $found = 0;
+-        foreach(File::Spec->path()) {
++        foreach(map { /[*?\[]/ ? glob($_) : $_ } File::Spec->path()) {
+             my $file = File::Spec->catfile($_, $OPENSSL);
+             if(-f $file) {
+                 $OPENSSL = $file;
+diff -Naur curl-8.23.0.orig/tests/devtest.pl curl-8.23.0/tests/devtest.pl
+--- curl-8.23.0.orig/tests/devtest.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/devtest.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/dictserver.py curl-8.23.0/tests/dictserver.py
+--- curl-8.23.0.orig/tests/dictserver.py	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/dictserver.py	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/sw/python/bin/python3
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/ech_combos.py curl-8.23.0/tests/ech_combos.py
+--- curl-8.23.0.orig/tests/ech_combos.py	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/ech_combos.py	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/sw/python/bin/python3
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/ftpserver.pl curl-8.23.0/tests/ftpserver.pl
+--- curl-8.23.0.orig/tests/ftpserver.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/ftpserver.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/http/scorecard.py curl-8.23.0/tests/http/scorecard.py
+--- curl-8.23.0.orig/tests/http/scorecard.py	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/http/scorecard.py	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/sw/python/bin/python3
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/http/testenv/ws_4frames_server.py curl-8.23.0/tests/http/testenv/ws_4frames_server.py
+--- curl-8.23.0.orig/tests/http/testenv/ws_4frames_server.py	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/http/testenv/ws_4frames_server.py	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/sw/python/bin/python3
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/http/testenv/ws_echo_server.py curl-8.23.0/tests/http/testenv/ws_echo_server.py
+--- curl-8.23.0.orig/tests/http/testenv/ws_echo_server.py	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/http/testenv/ws_echo_server.py	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/sw/python/bin/python3
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/http-server.pl curl-8.23.0/tests/http-server.pl
+--- curl-8.23.0.orig/tests/http-server.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/http-server.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/http2-server.pl curl-8.23.0/tests/http2-server.pl
+--- curl-8.23.0.orig/tests/http2-server.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/http2-server.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/http3-server.pl curl-8.23.0/tests/http3-server.pl
+--- curl-8.23.0.orig/tests/http3-server.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/http3-server.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/libtest/mk-lib1521.pl curl-8.23.0/tests/libtest/mk-lib1521.pl
+--- curl-8.23.0.orig/tests/libtest/mk-lib1521.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/libtest/mk-lib1521.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/libtest/test1013.pl curl-8.23.0/tests/libtest/test1013.pl
+--- curl-8.23.0.orig/tests/libtest/test1013.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/libtest/test1013.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/libtest/test1022.pl curl-8.23.0/tests/libtest/test1022.pl
+--- curl-8.23.0.orig/tests/libtest/test1022.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/libtest/test1022.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/libtest/test307.pl curl-8.23.0/tests/libtest/test307.pl
+--- curl-8.23.0.orig/tests/libtest/test307.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/libtest/test307.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/libtest/test3500.pl curl-8.23.0/tests/libtest/test3500.pl
+--- curl-8.23.0.orig/tests/libtest/test3500.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/libtest/test3500.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/libtest/test610.pl curl-8.23.0/tests/libtest/test610.pl
+--- curl-8.23.0.orig/tests/libtest/test610.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/libtest/test610.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/libtest/test613.pl curl-8.23.0/tests/libtest/test613.pl
+--- curl-8.23.0.orig/tests/libtest/test613.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/libtest/test613.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/memanalyze.pl curl-8.23.0/tests/memanalyze.pl
+--- curl-8.23.0.orig/tests/memanalyze.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/memanalyze.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/memanalyzer.pm curl-8.23.0/tests/memanalyzer.pm
+--- curl-8.23.0.orig/tests/memanalyzer.pm	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/memanalyzer.pm	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/negtelnetserver.py curl-8.23.0/tests/negtelnetserver.py
+--- curl-8.23.0.orig/tests/negtelnetserver.py	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/negtelnetserver.py	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/sw/python/bin/python3
+ #
+ #  Project                     ___| | | |  _ \| |
+ #                             / __| | | | |_) | |
+diff -Naur curl-8.23.0.orig/tests/rtspserver.pl curl-8.23.0/tests/rtspserver.pl
+--- curl-8.23.0.orig/tests/rtspserver.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/rtspserver.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/runtests.pl curl-8.23.0/tests/runtests.pl
+--- curl-8.23.0.orig/tests/runtests.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/runtests.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/secureserver.pl curl-8.23.0/tests/secureserver.pl
+--- curl-8.23.0.orig/tests/secureserver.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/secureserver.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/servers.pm curl-8.23.0/tests/servers.pm
+--- curl-8.23.0.orig/tests/servers.pm	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/servers.pm	2026-10-14 05:54:05.000000000 +0000
+@@ -158,7 +158,7 @@
+         @paths = (split(';', $ENV{'PATH'}), @extrapaths);
+     }
+     else {
+-        @paths = (split(':', $ENV{'PATH'}), "/usr/sbin", "/usr/local/sbin",
++        @paths = (map({ /[*?\[]/ ? glob($_) : $_ } split(':', $ENV{'PATH'})), "/usr/sbin", "/usr/local/sbin",
+                   "/sbin", "/usr/bin", "/usr/local/bin", @extrapaths);
+     }
+     for(@paths) {
+diff -Naur curl-8.23.0.orig/tests/sshhelp.pm curl-8.23.0/tests/sshhelp.pm
+--- curl-8.23.0.orig/tests/sshhelp.pm	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/sshhelp.pm	2026-10-14 05:54:05.000000000 +0000
+@@ -285,7 +285,7 @@
+ sub find_file_spath {
+     my $filename = $_[0];
+     my @spath;
+-    push(@spath, File::Spec->path());
++    push(@spath, map { /[*?\[]/ ? glob($_) : $_ } File::Spec->path());
+     push(@spath, @sftppath);
+     return find_file($filename, @spath);
+ }
+@@ -296,7 +296,7 @@
+ sub find_exe_file_hpath {
+     my $filename = $_[0];
+     my @hpath;
+-    push(@hpath, File::Spec->path());
++    push(@hpath, map { /[*?\[]/ ? glob($_) : $_ } File::Spec->path());
+     push(@hpath, @httptlssrvpath);
+     return find_exe_file($filename, @hpath);
+ }
+diff -Naur curl-8.23.0.orig/tests/sshserver.pl curl-8.23.0/tests/sshserver.pl
+--- curl-8.23.0.orig/tests/sshserver.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/sshserver.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test-linter.pl curl-8.23.0/tests/test-linter.pl
+--- curl-8.23.0.orig/tests/test-linter.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test-linter.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1119.pl curl-8.23.0/tests/test1119.pl
+--- curl-8.23.0.orig/tests/test1119.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1119.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1135.pl curl-8.23.0/tests/test1135.pl
+--- curl-8.23.0.orig/tests/test1135.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1135.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1139.pl curl-8.23.0/tests/test1139.pl
+--- curl-8.23.0.orig/tests/test1139.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1139.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1140.pl curl-8.23.0/tests/test1140.pl
+--- curl-8.23.0.orig/tests/test1140.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1140.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1165.pl curl-8.23.0/tests/test1165.pl
+--- curl-8.23.0.orig/tests/test1165.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1165.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1167.pl curl-8.23.0/tests/test1167.pl
+--- curl-8.23.0.orig/tests/test1167.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1167.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1173.pl curl-8.23.0/tests/test1173.pl
+--- curl-8.23.0.orig/tests/test1173.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1173.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1175.pl curl-8.23.0/tests/test1175.pl
+--- curl-8.23.0.orig/tests/test1175.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1175.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1177.pl curl-8.23.0/tests/test1177.pl
+--- curl-8.23.0.orig/tests/test1177.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1177.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1222.pl curl-8.23.0/tests/test1222.pl
+--- curl-8.23.0.orig/tests/test1222.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1222.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1275.pl curl-8.23.0/tests/test1275.pl
+--- curl-8.23.0.orig/tests/test1275.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1275.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1276.pl curl-8.23.0/tests/test1276.pl
+--- curl-8.23.0.orig/tests/test1276.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1276.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1477.pl curl-8.23.0/tests/test1477.pl
+--- curl-8.23.0.orig/tests/test1477.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1477.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1486.pl curl-8.23.0/tests/test1486.pl
+--- curl-8.23.0.orig/tests/test1486.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1486.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1488.pl curl-8.23.0/tests/test1488.pl
+--- curl-8.23.0.orig/tests/test1488.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1488.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1544.pl curl-8.23.0/tests/test1544.pl
+--- curl-8.23.0.orig/tests/test1544.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1544.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test1707.pl curl-8.23.0/tests/test1707.pl
+--- curl-8.23.0.orig/tests/test1707.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test1707.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test745.pl curl-8.23.0/tests/test745.pl
+--- curl-8.23.0.orig/tests/test745.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test745.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/test971.pl curl-8.23.0/tests/test971.pl
+--- curl-8.23.0.orig/tests/test971.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/test971.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/testcurl.pl curl-8.23.0/tests/testcurl.pl
+--- curl-8.23.0.orig/tests/testcurl.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/testcurl.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/tftpserver.pl curl-8.23.0/tests/tftpserver.pl
+--- curl-8.23.0.orig/tests/tftpserver.pl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/tftpserver.pl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff -Naur curl-8.23.0.orig/tests/util.py curl-8.23.0/tests/util.py
+--- curl-8.23.0.orig/tests/util.py	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/tests/util.py	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/sw/python/bin/python3
+ #
+ #  Project                     ___| | | |  _ \| |
+ #                             / __| | | | |_) | |

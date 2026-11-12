@@ -1,0 +1,89 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.35
+
+ARCHIVES=(
+    4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16 https://ftpmirror.gnu.org/tar/tar-$VERSION.tar.xz
+    51cadccfcb2f29cfdb4ec18015360100aa167179a72ece040a6a8612aeec5081 https://www.linuxfromscratch.org/patches/lfs/13.1/tar-$VERSION-acl_fix-1.patch
+    8309e6759d925380d5327e211727816b390e3cc31ed9f04a5db70bb0f65c3bfa file://tar-$VERSION-fluffy-shell.patch
+    1ee4a6c4ef68597eceb029c3e5ad3324a80f4e4b0c19ced70510e5a64ecebc2c file://tar-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    acl
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        acl
+        bash
+        binutils
+        bzip2
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar-pass1
+        xz
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        acl
+        bash
+        binutils
+        bzip2
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        sed
+        tar
+        xz
+        zstd
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i tar-$VERSION-acl_fix-1.patch
+    patch -Z -Np1 -i tar-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i tar-$VERSION-fluffy-source.patch
+
+    FORCE_UNSAFE_CONFIGURE=1 ./configure \
+        --prefix=/sw/tar
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

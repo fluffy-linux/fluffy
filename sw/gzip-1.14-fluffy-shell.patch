@@ -1,0 +1,805 @@
+diff --no-dereference -Naur gzip-1.14.orig/Makefile.am gzip-1.14/Makefile.am
+--- gzip-1.14.orig/Makefile.am	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/Makefile.am	2025-01-03 17:33:26.000000000 +0000
+@@ -95,7 +95,7 @@
+ .in:
+ 	$(AM_V_GEN)rm -f $@-t $@ \
+ 	  && sed \
+-		-e 's|/bin/sh|$(SHELL)|g' \
++		-e 's|/sw/bash/bin/bash|$(SHELL)|g' \
+ 		-e 's|[@]GREP@|$(GREP)|g' \
+ 		-e "s|'gzip'|$(GZIP_TRANSFORMED)|g" \
+ 		-e "s|'zdiff'|$(ZDIFF_TRANSFORMED)|g" \
+diff --no-dereference -Naur gzip-1.14.orig/Makefile.in gzip-1.14/Makefile.in
+--- gzip-1.14.orig/Makefile.in	2025-04-10 03:43:52.000000000 +0000
++++ gzip-1.14/Makefile.in	2025-04-10 03:43:52.000000000 +0000
+@@ -2605,7 +2605,7 @@
+ .in:
+ 	$(AM_V_GEN)rm -f $@-t $@ \
+ 	  && sed \
+-		-e 's|/bin/sh|$(SHELL)|g' \
++		-e 's|/sw/bash/bin/bash|$(SHELL)|g' \
+ 		-e 's|[@]GREP@|$(GREP)|g' \
+ 		-e "s|'gzip'|$(GZIP_TRANSFORMED)|g" \
+ 		-e "s|'zdiff'|$(ZDIFF_TRANSFORMED)|g" \
+diff --no-dereference -Naur gzip-1.14.orig/aclocal.m4 gzip-1.14/aclocal.m4
+--- gzip-1.14.orig/aclocal.m4	2025-04-10 03:43:49.000000000 +0000
++++ gzip-1.14/aclocal.m4	2025-04-10 03:43:49.000000000 +0000
+@@ -720,7 +720,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/announce-gen gzip-1.14/build-aux/announce-gen
+--- gzip-1.14.orig/build-aux/announce-gen	2025-02-02 05:23:37.000000000 +0000
++++ gzip-1.14/build-aux/announce-gen	2025-02-02 05:23:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Generate a release announcement message.
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/ar-lib gzip-1.14/build-aux/ar-lib
+--- gzip-1.14.orig/build-aux/ar-lib	2017-06-03 17:53:41.000000000 +0000
++++ gzip-1.14/build-aux/ar-lib	2017-06-03 17:53:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for Microsoft lib.exe
+ 
+ me=ar-lib
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/compile gzip-1.14/build-aux/compile
+--- gzip-1.14.orig/build-aux/compile	2025-04-10 03:43:52.000000000 +0000
++++ gzip-1.14/build-aux/compile	2025-04-10 03:43:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Wrapper for compilers which do not understand '-c -o'.
+ 
+ scriptversion=2025-02-03.05; # UTC
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/config.guess gzip-1.14/build-aux/config.guess
+--- gzip-1.14.orig/build-aux/config.guess	2024-09-08 14:19:08.000000000 +0000
++++ gzip-1.14/build-aux/config.guess	2024-09-08 14:19:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1020,7 +1020,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/config.sub gzip-1.14/build-aux/config.sub
+--- gzip-1.14.orig/build-aux/config.sub	2024-09-08 14:19:08.000000000 +0000
++++ gzip-1.14/build-aux/config.sub	2024-09-08 14:19:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2024 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/depcomp gzip-1.14/build-aux/depcomp
+--- gzip-1.14.orig/build-aux/depcomp	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/depcomp	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # depcomp - compile a program generating dependencies as side-effects
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/do-release-commit-and-tag gzip-1.14/build-aux/do-release-commit-and-tag
+--- gzip-1.14.orig/build-aux/do-release-commit-and-tag	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/do-release-commit-and-tag	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # In a git/autoconf/automake-enabled project with a NEWS file and a version-
+ # controlled .prev-version file, automate the procedure by which we record
+ # the date, release-type and version string in the NEWS file.  That commit
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/gendocs.sh gzip-1.14/build-aux/gendocs.sh
+--- gzip-1.14.orig/build-aux/gendocs.sh	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/gendocs.sh	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -e
++#!/sw/bash/bin/bash -e
+ # gendocs.sh -- generate a GNU manual in many formats.  This script is
+ #   mentioned in maintain.texi.  See the help message below for usage details.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/git-version-gen gzip-1.14/build-aux/git-version-gen
+--- gzip-1.14.orig/build-aux/git-version-gen	2025-02-02 05:23:37.000000000 +0000
++++ gzip-1.14/build-aux/git-version-gen	2025-02-02 05:23:37.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Print a version string.
+ scriptversion=2025-01-28.09; # UTC
+ 
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/gitlog-to-changelog gzip-1.14/build-aux/gitlog-to-changelog
+--- gzip-1.14.orig/build-aux/gitlog-to-changelog	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/gitlog-to-changelog	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Convert git log output to ChangeLog format.
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/gnu-web-doc-update gzip-1.14/build-aux/gnu-web-doc-update
+--- gzip-1.14.orig/build-aux/gnu-web-doc-update	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/gnu-web-doc-update	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Run this after each non-alpha release, to update the web documentation at
+ # https://www.gnu.org/software/$pkg/manual/
+ 
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/gnupload gzip-1.14/build-aux/gnupload
+--- gzip-1.14.orig/build-aux/gnupload	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/gnupload	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Sign files and upload them.
+ 
+ scriptversion=2024-12-09.08; # UTC
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/install-sh gzip-1.14/build-aux/install-sh
+--- gzip-1.14.orig/build-aux/install-sh	2024-12-13 18:35:57.000000000 +0000
++++ gzip-1.14/build-aux/install-sh	2024-12-13 18:35:57.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/mdate-sh gzip-1.14/build-aux/mdate-sh
+--- gzip-1.14.orig/build-aux/mdate-sh	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/mdate-sh	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Get modification time of a file or directory and pretty-print it.
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/missing gzip-1.14/build-aux/missing
+--- gzip-1.14.orig/build-aux/missing	2025-04-10 03:43:52.000000000 +0000
++++ gzip-1.14/build-aux/missing	2025-04-10 03:43:52.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Common wrapper for a few potentially missing GNU and other programs.
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/test-driver gzip-1.14/build-aux/test-driver
+--- gzip-1.14.orig/build-aux/test-driver	2025-04-10 03:43:53.000000000 +0000
++++ gzip-1.14/build-aux/test-driver	2025-04-10 03:43:53.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # test-driver - basic testsuite driver script.
+ 
+ scriptversion=2024-12-03.03; # UTC
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/update-copyright gzip-1.14/build-aux/update-copyright
+--- gzip-1.14.orig/build-aux/update-copyright	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/update-copyright	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Update an FSF copyright year list to include the current year.
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/useless-if-before-free gzip-1.14/build-aux/useless-if-before-free
+--- gzip-1.14.orig/build-aux/useless-if-before-free	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/useless-if-before-free	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #! -*-perl-*-
+ 
+ # Detect instances of "if (p) free (p);".
+diff --no-dereference -Naur gzip-1.14.orig/build-aux/vc-list-files gzip-1.14/build-aux/vc-list-files
+--- gzip-1.14.orig/build-aux/vc-list-files	2025-01-03 17:36:44.000000000 +0000
++++ gzip-1.14/build-aux/vc-list-files	2025-01-03 17:36:44.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # List version-controlled file names.
+ 
+ # Print a version string.
+diff --no-dereference -Naur gzip-1.14.orig/configure gzip-1.14/configure
+--- gzip-1.14.orig/configure	2025-04-10 03:46:48.000000000 +0000
++++ gzip-1.14/configure	2025-04-10 03:46:48.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Guess values for system-dependent variables and create Makefiles.
+ # Generated by GNU Autoconf 2.72.76-2f64 for gzip 1.14.
+ #
+@@ -287,7 +287,7 @@
+ esac
+ fi
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -5170,7 +5170,7 @@
+   printf %s "(cached) " >&6
+ else case e in #(
+   e) cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@printf '%s\n' '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+@@ -6705,7 +6705,7 @@
+     for i in 1 2 3 4 5 6; do
+       echo '#include "conftst'$i'.h"' >> sub/conftest.c
+       # Using ": > sub/conftst$i.h" creates only sub/conftst1.h with
+-      # Solaris 10 /bin/sh.
++      # Solaris 10 /sw/bash/bin/bash.
+       echo '/* dummy */' > sub/conftst$i.h
+     done
+     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+@@ -7333,7 +7333,7 @@
+         # Test that $(...) works.
+         test "$(expr 3 + 4)" -eq 7 || exit
+       '
+-      # Solaris 11 /bin/sh (AT&T Research) 93u 2011-02-08 has a file
++      # Solaris 11 /sw/bash/bin/bash (AT&T Research) 93u 2011-02-08 has a file
+       # descriptor bug that breaks zgrep and is hard to test for
+       # directly.  At some point $(...) is reading a pipe from the
+       # subshell, but the pipe is also open in the parent shell, so
+@@ -7391,7 +7391,7 @@
+ printf '%s\n' "$ac_cv_path_shell" >&6; }
+    SHELL=$ac_cv_path_shell
+    if test "$SHELL" = no; then
+-     SHELL=/bin/sh
++     SHELL=/sw/bash/bin/bash
+      { printf '%s\n' "$as_me:${as_lineno-$LINENO}: WARNING: using $SHELL, even though it does not conform to POSIX" >&5
+ printf '%s\n' "$as_me: WARNING: using $SHELL, even though it does not conform to POSIX" >&2;}
+    fi
+diff --no-dereference -Naur gzip-1.14.orig/gunzip.in gzip-1.14/gunzip.in
+--- gzip-1.14.orig/gunzip.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/gunzip.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Uncompress files.  This is the inverse of gzip.
+ 
+ # Copyright (C) 2007, 2010-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/gzexe.in gzip-1.14/gzexe.in
+--- gzip-1.14.orig/gzexe.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/gzexe.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # gzexe: compressor for Unix executables.
+ # Use this only for binaries that you do not use frequently.
+ #
+@@ -8,9 +8,9 @@
+ # We also try to retain the original file permissions on the compressed file.
+ # For safety reasons, gzexe will not create setuid or setgid shell scripts.
+ 
+-# WARNING: the first line of this file must be either : or #!/bin/sh
++# WARNING: the first line of this file must be either : or #!/sw/bash/bin/bash
+ # The : is required for some old versions of csh.
+-# On Ultrix, /bin/sh is too buggy, change the first line to: #!/bin/sh5
++# On Ultrix, /sw/bash/bin/bash is too buggy, change the first line to: #!/bin/sh5
+ 
+ 
+ # Copyright (C) 1998, 2002, 2004, 2006-2007, 2010-2025 Free Software
+@@ -144,7 +144,7 @@
+   fi
+   if test $decomp -eq 0; then
+     (cat <<'EOF' &&
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ skip=49
+ 
+ tab='	'
+diff --no-dereference -Naur gzip-1.14.orig/m4/shell.m4 gzip-1.14/m4/shell.m4
+--- gzip-1.14.orig/m4/shell.m4	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/m4/shell.m4	2025-01-03 17:33:26.000000000 +0000
+@@ -32,7 +32,7 @@
+         # Test that $(...) works.
+         test "$(expr 3 + 4)" -eq 7 || exit
+       '
+-      # Solaris 11 /bin/sh (AT&T Research) 93u 2011-02-08 has a file
++      # Solaris 11 /sw/bash/bin/bash (AT&T Research) 93u 2011-02-08 has a file
+       # descriptor bug that breaks zgrep and is hard to test for
+       # directly.  At some point $(...) is reading a pipe from the
+       # subshell, but the pipe is also open in the parent shell, so
+@@ -86,7 +86,7 @@
+    AC_MSG_RESULT($ac_cv_path_shell)
+    SHELL=$ac_cv_path_shell
+    if test "$SHELL" = no; then
+-     SHELL=/bin/sh
++     SHELL=/sw/bash/bin/bash
+      AC_MSG_WARN([using $SHELL, even though it does not conform to POSIX])
+    fi
+    if "$SHELL" -c "$ac_maybe_solaris_sh_bug" 2>/dev/null; then
+diff --no-dereference -Naur gzip-1.14.orig/sample/zfile gzip-1.14/sample/zfile
+--- gzip-1.14.orig/sample/zfile	2022-04-07 16:30:29.000000000 +0000
++++ gzip-1.14/sample/zfile	2022-04-07 16:30:29.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LC_ALL=C
+ export LC_ALL
+diff --no-dereference -Naur gzip-1.14.orig/tests/gzip-env gzip-1.14/tests/gzip-env
+--- gzip-1.14.orig/tests/gzip-env	2025-02-24 03:16:09.000000000 +0000
++++ gzip-1.14/tests/gzip-env	2025-02-24 03:16:09.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test the GZIP environment variable.
+ 
+ # Copyright 2015-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/helin-segv gzip-1.14/tests/helin-segv
+--- gzip-1.14.orig/tests/helin-segv	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/helin-segv	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Before gzip-1.4, gzip -d would segfault on some inputs.
+ 
+ # Copyright (C) 2010-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/help-version gzip-1.14/tests/help-version
+--- gzip-1.14.orig/tests/help-version	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/help-version	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Make sure all of these programs work properly
+ # when invoked with --help or --version.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/hufts gzip-1.14/tests/hufts
+--- gzip-1.14.orig/tests/hufts	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/hufts	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise bugs whereby invalid input could make gzip -d misbehave.
+ 
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/init.sh gzip-1.14/tests/init.sh
+--- gzip-1.14.orig/tests/init.sh	2025-01-03 17:37:12.000000000 +0000
++++ gzip-1.14/tests/init.sh	2025-01-03 17:37:12.000000000 +0000
+@@ -20,7 +20,7 @@
+ #
+ # The typical skeleton of a test looks like this:
+ #
+-#   #!/bin/sh
++#   #!/sw/bash/bin/bash
+ #   . "${srcdir=.}/init.sh"; path_prepend_ .
+ #   Execute some commands.
+ #   Note that these commands are executed in a subdirectory, therefore you
+@@ -68,7 +68,7 @@
+ # Prepare PATH_SEPARATOR.
+ # The user is always right.
+ if test "${PATH_SEPARATOR+set}" != set; then
+-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
++  # Determine PATH_SEPARATOR by trying to find /sw/bash/bin/bash in a PATH which
+   # contains only /bin. Note that ksh looks also at the FPATH variable,
+   # so we have to set that as well for the test.
+   PATH_SEPARATOR=:
+@@ -130,7 +130,7 @@
+ 
+ # We require $(...) support unconditionally.
+ # We require that the printf built-in work correctly regarding octal escapes;
+-# this eliminates /bin/sh on AIX 7.2.
++# this eliminates /sw/bash/bin/bash on AIX 7.2.
+ # We require non-surprising "local" semantics (this eliminates dash).
+ # This takes the admittedly draconian step of eliminating dash, because the
+ # assignment tab=$(printf '\t') works fine, yet preceding it with "local "
+@@ -149,10 +149,10 @@
+ # If no acceptable shell is found, skip the current test.
+ #
+ # The "...set -x; P=1 true 2>err..." test is to disqualify any shell that
+-# emits "P=1" into err, as /bin/sh from SunOS 5.11 and OpenBSD 4.7 do.
++# emits "P=1" into err, as /sw/bash/bin/bash from SunOS 5.11 and OpenBSD 4.7 do.
+ #
+ # Use "9" to indicate success (rather than 0), in case some shell acts
+-# like Solaris 10's /bin/sh but exits successfully instead of with status 2.
++# like Solaris 10's /sw/bash/bin/bash but exits successfully instead of with status 2.
+ 
+ # Eval this code in a subshell to determine a shell's suitability.
+ # 10 - passes all tests; ok to use
+@@ -194,7 +194,7 @@
+ 
+   # Search for a shell that meets our requirements.
+   for re_shell_ in __current__ "${CONFIG_SHELL:-no_shell}" \
+-      /bin/sh bash dash zsh pdksh fail
++      /sw/bash/bin/bash bash dash zsh pdksh fail
+   do
+     test "$re_shell_" = no_shell && continue
+ 
+@@ -209,7 +209,7 @@
+     # When testing the current shell, simply "eval" the test code.
+     # Otherwise, run it via $re_shell_ -c ...
+     if test "$re_shell_" = __current__; then
+-      # 'eval'ing this code makes Solaris 10's /bin/sh exit with
++      # 'eval'ing this code makes Solaris 10's /sw/bash/bin/bash exit with
+       # $? set to 2.  It does not evaluate any of the code after the
+       # "unexpected" first '('.  Thus, we must run it in a subshell.
+       ( eval "$gl_shell_test_script_" ) > /dev/null 2>&1
+@@ -410,7 +410,7 @@
+ {
+   if test "$VERBOSE" = yes; then
+     # Test whether set -x may cause the selected shell to corrupt an
+-    # application's stderr.  Many do, including zsh-4.3.10 and the /bin/sh
++    # application's stderr.  Many do, including zsh-4.3.10 and the /sw/bash/bin/bash
+     # from SunOS 5.11, OpenBSD 4.7 and Irix 6.5.
+     # If enabling verbose output this way would cause trouble, simply
+     # issue a warning and refrain.
+@@ -590,9 +590,9 @@
+ 
+ # The interpreter for Bourne-shell scripts.
+ # No special standards compatibility requirements.
+-# Some environments, such as Android, don't have /bin/sh.
+-if test -f /bin/sh$EXEEXT; then
+-  BOURNE_SHELL=/bin/sh
++# Some environments, such as Android, don't have /sw/bash/bin/bash.
++if test -f /sw/bash/bin/bash$EXEEXT; then
++  BOURNE_SHELL=/sw/bash/bin/bash
+ else
+   BOURNE_SHELL=sh
+ fi
+diff --no-dereference -Naur gzip-1.14.orig/tests/keep gzip-1.14/tests/keep
+--- gzip-1.14.orig/tests/keep	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/keep	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise the --keep option.
+ 
+ # Copyright (C) 2013-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/list gzip-1.14/tests/list
+--- gzip-1.14.orig/tests/list	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/list	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise the --list option.
+ 
+ # Copyright 2016-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/list-big gzip-1.14/tests/list-big
+--- gzip-1.14.orig/tests/list-big	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/list-big	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise the --list option with a big file.
+ 
+ # Copyright 2021-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/memcpy-abuse gzip-1.14/tests/memcpy-abuse
+--- gzip-1.14.orig/tests/memcpy-abuse	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/memcpy-abuse	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Before gzip-1.4, this the use of memcpy in inflate_codes could
+ # mistakenly operate on overlapping regions.  Exercise that code.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/mixed gzip-1.14/tests/mixed
+--- gzip-1.14.orig/tests/mixed	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/mixed	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that gzip -cdf handles mixed compressed/not-compressed data
+ # Before gzip-1.5, it would produce invalid output.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/null-suffix-clobber gzip-1.14/tests/null-suffix-clobber
+--- gzip-1.14.orig/tests/null-suffix-clobber	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/null-suffix-clobber	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Before gzip-1.5, gzip -d -S '' k.gz would delete F.gz and not create "F"
+ 
+ # Copyright (C) 2010-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/pipe-output gzip-1.14/tests/pipe-output
+--- gzip-1.14.orig/tests/pipe-output	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/pipe-output	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Check behavior of output to pipes
+ 
+ # Copyright 2023-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/reference gzip-1.14/tests/reference
+--- gzip-1.14.orig/tests/reference	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/reference	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that reference compressed files are still decompressible, and
+ # that their corresponding inputs still compress to precisely the same bytes.
+ # For a "normal" compression program, one must not require that the encoded
+diff --no-dereference -Naur gzip-1.14.orig/tests/reproducible gzip-1.14/tests/reproducible
+--- gzip-1.14.orig/tests/reproducible	2025-03-28 02:40:28.000000000 +0000
++++ gzip-1.14/tests/reproducible	2025-03-28 02:40:28.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that gzip has reproducible output.
+ 
+ # Copyright 2018-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/stdin gzip-1.14/tests/stdin
+--- gzip-1.14.orig/tests/stdin	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/stdin	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that gzip interprets "-" as stdin.
+ 
+ # Copyright (C) 2009-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/synchronous gzip-1.14/tests/synchronous
+--- gzip-1.14.orig/tests/synchronous	2025-02-01 19:24:41.000000000 +0000
++++ gzip-1.14/tests/synchronous	2025-02-01 19:24:41.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Check that --synchronous works.
+ 
+ # Copyright 2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/timestamp gzip-1.14/tests/timestamp
+--- gzip-1.14.orig/tests/timestamp	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/timestamp	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise timestamps.
+ 
+ # Copyright 2016-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/trailing-nul gzip-1.14/tests/trailing-nul
+--- gzip-1.14.orig/tests/trailing-nul	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/trailing-nul	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # gzip accepts trailing NUL bytes; don't fail if there is exactly one.
+ # Before gzip-1.4, this would fail.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/two-files gzip-1.14/tests/two-files
+--- gzip-1.14.orig/tests/two-files	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/two-files	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that gzip can compress more than one file.
+ 
+ # Copyright 2020-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/unpack-invalid gzip-1.14/tests/unpack-invalid
+--- gzip-1.14.orig/tests/unpack-invalid	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/unpack-invalid	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # gzip should report invalid 'unpack' input when uncompressing.
+ # With gzip-1.5, it would output invalid data instead.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/unpack-valid gzip-1.14/tests/unpack-valid
+--- gzip-1.14.orig/tests/unpack-valid	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/unpack-valid	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test end-of-block check in unpack code
+ 
+ # Copyright 2017-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/upper-suffix gzip-1.14/tests/upper-suffix
+--- gzip-1.14.orig/tests/upper-suffix	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/upper-suffix	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure an upper-case user-specified suffix works as expected.
+ # This test would have failed in gzip-1.18
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/write-error gzip-1.14/tests/write-error
+--- gzip-1.14.orig/tests/write-error	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/write-error	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Test for improved diagnostics
+ 
+ # Copyright 2023-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/z-suffix gzip-1.14/tests/z-suffix
+--- gzip-1.14.orig/tests/z-suffix	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/z-suffix	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Check that -Sz works.
+ 
+ # Copyright 2014-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/zdiff gzip-1.14/tests/zdiff
+--- gzip-1.14.orig/tests/zdiff	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/zdiff	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Exercise zdiff with two compressed inputs.
+ # Before gzip-1.4, this would fail.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/zgrep-abuse gzip-1.14/tests/zgrep-abuse
+--- gzip-1.14.orig/tests/zgrep-abuse	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/zgrep-abuse	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Show how zgrep applied to a crafted file name may overwrite
+ # a selected file with chosen content.  Fixed in gzip-1.12.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/zgrep-binary gzip-1.14/tests/zgrep-binary
+--- gzip-1.14.orig/tests/zgrep-binary	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/zgrep-binary	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # 'zgrep PATTERN FILE' would output "(standard input): binary file matches"
+ # without mentioning FILE.  Fixed in gzip-1.12.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/zgrep-context gzip-1.14/tests/zgrep-context
+--- gzip-1.14.orig/tests/zgrep-context	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/zgrep-context	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that zgrep -15 works.  Before gzip-1.5, it would fail.
+ 
+ # Copyright (C) 2012-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/tests/zgrep-f gzip-1.14/tests/zgrep-f
+--- gzip-1.14.orig/tests/zgrep-f	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/zgrep-f	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Ensure that zgrep -f - works like grep -f -
+ # Before gzip-1.4, it would fail.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/zgrep-signal gzip-1.14/tests/zgrep-signal
+--- gzip-1.14.orig/tests/zgrep-signal	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/zgrep-signal	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Check that zgrep is terminated gracefully by signal when
+ # its grep/sed pipeline is terminated by a signal.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/tests/znew-k gzip-1.14/tests/znew-k
+--- gzip-1.14.orig/tests/znew-k	2025-01-03 17:33:26.000000000 +0000
++++ gzip-1.14/tests/znew-k	2025-01-03 17:33:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Check that znew -K works without compress(1).
+ 
+ # Copyright (C) 2010-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/zcat.in gzip-1.14/zcat.in
+--- gzip-1.14.orig/zcat.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/zcat.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Uncompress files to standard output.
+ 
+ # Copyright (C) 2007, 2010-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/zcmp.in gzip-1.14/zcmp.in
+--- gzip-1.14.orig/zcmp.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/zcmp.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # Compare the uncompressed contents of compressed files, byte by byte.
+ 
+ # Copyright (C) 2007, 2010-2025 Free Software Foundation, Inc.
+diff --no-dereference -Naur gzip-1.14.orig/zdiff.in gzip-1.14/zdiff.in
+--- gzip-1.14.orig/zdiff.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/zdiff.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # sh is buggy on RS/6000 AIX 3.2. Replace above line with #!/bin/ksh
+ 
+ # Copyright (C) 1998, 2002, 2006-2007, 2009-2025 Free Software Foundation, Inc.
+@@ -126,7 +126,7 @@
+                 case $file2 in
+                 *[-.]gz* | *[-.][zZ] | *.t[ga]z | -)
+                     if
+-                        # Reject Solaris 8's buggy /bin/bash 2.03.
++                        # Reject Solaris 8's buggy /sw/bash/bin/bash 2.03.
+                         echo X |
+                          (echo X | eval "$cmp" /dev/fd/5 - >/dev/null 2>&1) \
+                                 5<&0
+diff --no-dereference -Naur gzip-1.14.orig/zegrep.in gzip-1.14/zegrep.in
+--- gzip-1.14.orig/zegrep.in	2022-04-05 13:28:13.000000000 +0000
++++ gzip-1.14/zegrep.in	2022-04-05 13:28:13.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec 'zgrep' -E "$@"
+diff --no-dereference -Naur gzip-1.14.orig/zfgrep.in gzip-1.14/zfgrep.in
+--- gzip-1.14.orig/zfgrep.in	2022-04-05 13:28:13.000000000 +0000
++++ gzip-1.14/zfgrep.in	2022-04-05 13:28:13.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec 'zgrep' -F "$@"
+diff --no-dereference -Naur gzip-1.14.orig/zforce.in gzip-1.14/zforce.in
+--- gzip-1.14.orig/zforce.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/zforce.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # zforce: force a gz extension on all gzip files so that gzip will not
+ # compress them twice.
+ #
+diff --no-dereference -Naur gzip-1.14.orig/zgrep.in gzip-1.14/zgrep.in
+--- gzip-1.14.orig/zgrep.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/zgrep.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # zgrep -- a wrapper around a grep program that decompresses files as needed
+ # Adapted from a version sent by Charles Levert <charles@comm.polymtl.ca>
+diff --no-dereference -Naur gzip-1.14.orig/zless.in gzip-1.14/zless.in
+--- gzip-1.14.orig/zless.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/zless.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 1998, 2002, 2006-2007, 2010-2025 Free Software Foundation, Inc.
+ 
+diff --no-dereference -Naur gzip-1.14.orig/zmore.in gzip-1.14/zmore.in
+--- gzip-1.14.orig/zmore.in	2025-01-03 17:34:06.000000000 +0000
++++ gzip-1.14/zmore.in	2025-01-03 17:34:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 2001-2002, 2007, 2010-2025 Free Software Foundation, Inc.
+ # Copyright (C) 1992, 1993 Jean-loup Gailly
+diff --no-dereference -Naur gzip-1.14.orig/znew.in gzip-1.14/znew.in
+--- gzip-1.14.orig/znew.in	2025-02-24 03:16:09.000000000 +0000
++++ gzip-1.14/znew.in	2025-02-24 03:16:09.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Copyright (C) 1998, 2002, 2004, 2007, 2010-2025 Free Software Foundation,
+ # Inc.

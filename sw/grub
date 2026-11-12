@@ -1,0 +1,91 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.14
+
+ARCHIVES=(
+    bc8d3c73535b8838d8c8e2654d73edc4e6ae8c8acdb45d5df5dc9a1547446d43 https://ftpmirror.gnu.org/grub/grub-$VERSION.tar.xz
+    7a27046a69aec73ff0e7b1562a7beab38ed55a46a5b4563db54229d0a2bd1fd7 file://grub-$VERSION-fluffy-shell.patch
+    20231e3edc443cd120aa0f67d9ad54df5c3ca3ac1785e164a78d4c2bdfef9b56 file://grub-$VERSION-fluffy-source.patch
+)
+
+NEEDS=(
+    glibc
+    xz
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        patch-pass1
+        python
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        bison
+        coreutils
+        diffutils
+        findutils
+        flex
+        gawk
+        gcc
+        gettext
+        glibc
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        patch
+        python
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i grub-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i grub-$VERSION-fluffy-source.patch
+
+    ./configure \
+        --prefix=/sw/grub \
+        --sysconfdir=/sw/grub/etc \
+        --sbindir=/sw/grub/bin \
+        --disable-efiemu \
+        --disable-werror
+    make
+}
+
+CHECK() {
+    true
+}
+
+INSTALL() {
+    make install
+}

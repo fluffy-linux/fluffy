@@ -1,0 +1,100 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.16.2
+
+HAS_CFLAGS="-I/sw/dbus/include/dbus-1.0 -I/sw/dbus/lib/dbus-1.0/include"
+HAS_LDFLAGS="-ldbus-1"
+
+ARCHIVES=(
+    0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2 https://dbus.freedesktop.org/releases/dbus/dbus-$VERSION.tar.xz
+)
+
+NEEDS=(
+    expat
+    glibc
+    systemd
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        expat
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        meson
+        ninja
+        patch
+        python
+        sed
+        systemd
+        tar
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        expat
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        meson
+        ninja
+        patch
+        python
+        sed
+        systemd
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    mkdir -p build
+    cd build
+
+    meson setup .. \
+        --prefix=/sw/dbus \
+        --buildtype=release \
+        --wrap-mode=nofallback \
+        -Dasserts=false \
+        -Dsystem_socket=/run/dbus/system_bus_socket \
+        -Dsystem_pid_file=/run/dbus/pid \
+        -Dsystemd_system_unitdir=/sw/dbus/lib/systemd/system \
+        -Dsystemd_user_unitdir=/sw/dbus/lib/systemd/user
+
+    ninja
+}
+
+CHECK() {
+    meson test -C build --print-errorlogs
+}
+
+INSTALL() {
+    DESTDIR=$DESTDIR ninja -C build install
+
+    mkdir -p $DESTDIR/sw/dbus/var/lib/dbus
+    ln -sf /etc/machine-id $DESTDIR/sw/dbus/var/lib/dbus/machine-id
+}

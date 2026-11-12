@@ -12,8 +12,8 @@ HAS_LDFLAGS=-lp11-kit
 
 ARCHIVES=(
     f2cc09111e44bf3fea58f023180b33acea90aa82d042d6fbb623fbc5ba033bb7 https://github.com/p11-glue/p11-kit/releases/download/$VERSION/p11-kit-$VERSION.tar.xz
-    52d81b7ce5ec2f703131ed36a03d0a7eb097f6a98b500dba3736853716fdd96e file://p11-kit-$VERSION-fluffy-shell.patch
-    d5a8f80223afccb9c38b21e8a45ced672e205abfa1e1fb9dea296c26e5104d8b file://p11-kit-$VERSION-fluffy-test.patch
+    960049bfc0358bd36ed0a440e6b64782b2ee6009e32de1a55545dc14d16dfd0f file://p11-kit-$VERSION-fluffy-shell.patch
+    b169b0e9542f6dc06a9474748eedc97c854dc6608bec3a0b1ddc03d202716a33 file://p11-kit-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -40,11 +40,10 @@ then
         libtasn1
         linux-headers
         make-pass1
-        meson
-        ninja
         patch-pass1
         python
         sed
+        tar-pass1
         xz
     )
 else
@@ -64,11 +63,10 @@ else
         libtasn1
         linux-headers
         make
-        meson
-        ninja
         patch
         python
         sed
+        tar
         xz
     )
 fi
@@ -80,7 +78,8 @@ MAKE() {
         --prefix=/sw/p11-kit \
         --sysconfdir=/sw/p11-kit/etc \
         --with-trust-paths=/etc/pki/anchors:/sw/ca-certificates/etc/ssl/certs/ca-certificates.crt \
-        --disable-static
+        --disable-static \
+        bashcompdir=/sw/p11-kit/share/bash-completion/completions
     make
 }
 

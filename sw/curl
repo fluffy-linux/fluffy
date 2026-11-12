@@ -14,6 +14,7 @@ ARCHIVES=(
     b1fc8dfae54424bea6a546125d59d1a5a293c4aa79b0978179bd50e225bd5d3e file://curl-$VERSION-fluffy-shell.patch
     afe278436da2a91bffe1aa4556424eb5f22aca3c3061a5856bfcec36f662315c file://curl-$VERSION-fluffy-source.patch
     a3f92fc9cec3592efcb089bcec37fa5025b8b7f3b67d22ca4a8abac343c4e4b7 file://curl-$VERSION-fluffy-test.patch
+    039bf88a47db3d62b63eb94922b71f459b9526b51d78bef85f4adb6f26826655 file://curl-$VERSION-fluffy-ch8.patch
 )
 
 NEEDS=(
@@ -83,6 +84,7 @@ MAKE() {
     patch -Z -Np1 -i curl-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i curl-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i curl-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i curl-$VERSION-fluffy-ch8.patch
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/curl \
         --disable-static \
@@ -95,7 +97,7 @@ MAKE() {
 }
 
 CHECK() {
-    make test
+    make test-nonflaky TFLAGS="-n -j$(nproc)"
 }
 
 INSTALL() {

@@ -1,0 +1,98 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=5.4.1
+
+ARCHIVES=(
+    07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://ftpmirror.gnu.org/gawk/gawk-$VERSION.tar.xz
+    dedef2b70a60868dd38498427795bddd8e8dfb05389fd6f5994b89e9e2cbcf68 file://gawk-$VERSION-fluffy-shell.patch
+    e22c60f6ea1ed1fab3eddb5790dba704e7df0d66f81793a72f41a723fd46d582 file://gawk-$VERSION-fluffy-source.patch
+    3aaa865218d26facfd6d8438eb2b8957a7894e0c2709f6c88b41032bd1cde4bf file://gawk-$VERSION-fluffy-ch8.patch
+)
+
+NEEDS=(
+    bash
+    glibc
+    gmp
+    mpfr
+    readline
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils-pass1
+        gawk-pass1
+        gcc
+        gettext
+        glibc
+        gmp
+        grep
+        gzip-pass1
+        libgcc
+        linux-headers
+        make-pass1
+        mpfr
+        ncurses
+        patch-pass1
+        readline
+        sed
+        tar-pass1
+        xz
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        gettext
+        glibc
+        gmp
+        grep
+        gzip
+        libgcc
+        linux-headers
+        make
+        mpfr
+        ncurses
+        patch
+        readline
+        sed
+        tar
+        xz
+    )
+fi
+
+MAKE() {
+    patch -Z -Np1 -i gawk-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i gawk-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i gawk-$VERSION-fluffy-ch8.patch
+
+    sed -i 's/extras//' Makefile.in
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/gawk
+    make
+}
+
+CHECK() {
+    make PAGER=cat check
+}
+
+INSTALL() {
+    make install
+    ln -sv gawk.1 $DESTDIR/sw/gawk/share/man/man1/awk.1
+    install -vDm644 doc/{awkforai.txt,*.{eps,pdf,jpg}} -t $DESTDIR/sw/gawk/share/doc/gawk-$VERSION
+    find $DESTDIR/sw/gawk -name '*.la' -delete
+}

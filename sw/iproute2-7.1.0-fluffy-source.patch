@@ -1,0 +1,91 @@
+diff --no-dereference -Naur iproute2-7.1.0/configure iproute2-7.1.0/configure
+--- iproute2-7.1.0/configure	2026-06-15 18:50:05.000000000 -0400
++++ iproute2-7.1.0/configure	2026-06-15 18:50:05.000000000 -0400
+@@ -16,7 +16,7 @@
+ 
+ check_toolchain()
+ {
+-    : ${PKG_CONFIG:=pkg-config}
++    : ${PKG_CONFIG:=false}
+     : ${AR=ar}
+     : ${CC=gcc}
+     : ${YACC=bison}
+@@ -217,15 +217,21 @@
+ 
+ check_elf()
+ {
+-    if ${PKG_CONFIG} libelf --exists; then
++    cat >$TMPDIR/elftest.c <<EOF
++#include <libelf.h>
++int main(void) {
++    return elf_version(EV_CURRENT) == EV_NONE;
++}
++EOF
++    if $CC $CFLAGS $CPPFLAGS -o $TMPDIR/elftest $TMPDIR/elftest.c $LDFLAGS -lelf >/dev/null 2>&1; then
+ 	echo "HAVE_ELF:=y" >>$CONFIG
+ 	echo "yes"
+-
+-	echo 'CFLAGS += -DHAVE_ELF' "$(${PKG_CONFIG} libelf --cflags)" >> $CONFIG
+-	echo 'LDLIBS += ' "$(${PKG_CONFIG} libelf --libs)" >>$CONFIG
++	echo 'CFLAGS += -DHAVE_ELF' >>$CONFIG
++	echo 'LDLIBS += -lelf' >>$CONFIG
+     else
+ 	echo "no"
+     fi
++    rm -f $TMPDIR/elftest.c $TMPDIR/elftest
+ }
+ 
+ have_libbpf_basic()
+@@ -449,15 +455,22 @@
+ 
+ check_cap()
+ {
+-	if ${PKG_CONFIG} libcap --exists; then
+-		echo "HAVE_CAP:=y" >>$CONFIG
+-		echo "yes"
+-
+-		echo 'CFLAGS += -DHAVE_LIBCAP' "$(${PKG_CONFIG} libcap --cflags)" >>$CONFIG
+-		echo 'LDLIBS +=' "$(${PKG_CONFIG} libcap --libs)" >> $CONFIG
+-	else
+-		echo "no"
+-	fi
++    cat >$TMPDIR/captest.c <<EOF
++#include <sys/capability.h>
++int main(void) {
++    cap_t cap = cap_get_proc();
++    return cap != 0;
++}
++EOF
++    if $CC $CFLAGS $CPPFLAGS -o $TMPDIR/captest $TMPDIR/captest.c $LDFLAGS -lcap >/dev/null 2>&1; then
++	echo "HAVE_CAP:=y" >>$CONFIG
++	echo "yes"
++	echo 'CFLAGS += -DHAVE_LIBCAP' >>$CONFIG
++	echo 'LDLIBS += -lcap' >>$CONFIG
++    else
++	echo "no"
++    fi
++    rm -f $TMPDIR/captest.c $TMPDIR/captest
+ }
+ 
+ check_color()
+diff --no-dereference -Naur iproute2-7.1.0/ip/routel iproute2-7.1.0/ip/routel
+--- iproute2-7.1.0/ip/routel	2026-06-15 18:50:05.000000000 -0400
++++ iproute2-7.1.0/ip/routel	2026-06-15 18:50:05.000000000 -0400
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/sw/python/bin/python3
+ # SPDX-License-Identifier: GPL-2.0
+ #
+ # This is simple script to process JSON output from ip route
+diff --no-dereference -Naur iproute2-7.1.0/tc/e_bpf.c iproute2-7.1.0/tc/e_bpf.c
+--- iproute2-7.1.0/tc/e_bpf.c	2026-06-15 18:50:05.000000000 -0400
++++ iproute2-7.1.0/tc/e_bpf.c	2026-06-15 18:50:05.000000000 -0400
+@@ -16,7 +16,7 @@
+ #include "bpf_elf.h"
+ #include "bpf_scm.h"
+ 
+-#define BPF_DEFAULT_CMD	"/bin/sh"
++#define BPF_DEFAULT_CMD	"/sw/bash/bin/bash"
+ 
+ static char *argv_default[] = { BPF_DEFAULT_CMD, NULL };
+ 
