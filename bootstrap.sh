@@ -241,7 +241,8 @@ fi
 if test -f "$FLUFFY/sw/.build/fstab"
 then
     mkdir -pv "$FLUFFY/etc/fluffy"
-    cp -fv "$FLUFFY/sw/.build/fstab" "$FLUFFY/etc/fluffy/fstab"
+    sed -E '/^#/d; /^\/sw\/[^ ]*-pass[0-9]+-[^ ]*\.squashfs[[:space:]]/d; /^\/sw\/(cross|host)-build-[^ ]*\.squashfs[[:space:]]/d; s/-pass[0-9]+//g' \
+        "$FLUFFY/sw/.build/fstab" > "$FLUFFY/etc/fluffy/fstab"
 fi
 
 if test -f "$DIR/boot/grub/grub.cfg"

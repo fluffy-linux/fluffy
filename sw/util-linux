@@ -112,10 +112,14 @@ MAKE() {
 }
 
 CHECK() {
-    make test_pathnames test_mount_context
+    make test_pathnames
     test "$(./test_pathnames _PATH_LOGIN)" = "login"
     test "$(./test_pathnames _PATH_DEFPATH)" = "/sw/*/bin"
     test "$(./test_pathnames _PATH_DEFPATH_ROOT)" = "/sw/*/bin"
+    grep -Fq '#define FS_SEARCH_PATH "/sw/*/bin"' config.h
+    mkdir -p /tmp/fluffy-fsck/pkg/bin
+    ln -sf /sw/coreutils/bin/true /tmp/fluffy-fsck/pkg/bin/fsck.fluffytest
+    FSTAB_FILE=/dev/null PATH="/tmp/fluffy-fsck/*/bin:$PATH" ./fsck -T -N -t fluffytest /dev/null | grep -Fq '[/tmp/fluffy-fsck/pkg/bin/fsck.fluffytest'
 }
 
 INSTALL() {
