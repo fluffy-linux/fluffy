@@ -13,7 +13,7 @@ ARCHIVES=(
     ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec https://github.com/systemd/systemd/archive/v$VERSION/systemd-$VERSION.tar.gz
     9be13865c9c7f9fecba7b86fc5185aecef00164c87ed68b4f6884283aefebe50 https://anduin.linuxfromscratch.org/LFS/systemd-man-pages-$VERSION.tar.xz
     7b62b8271aa5532fcf9011d8d6d0fd5c01070dab862c482741d3f600f8f51962 file://systemd-$VERSION-fluffy-shell.patch
-    e61b327818771fd0df28e4e22a10cfa4b1c9134c040aa6c9999814bc6cba0894 file://systemd-$VERSION-fluffy-source.patch
+    b65c6fee8234f79e1eb17ebd333516f3536016f6136533cea1362002a37fa4bc file://systemd-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -109,9 +109,26 @@ MAKE() {
     mkdir -p build
     cd build
 
+    MOUNT_CFLAGS="-I/sw/util-linux/include/libmount" \
+    MOUNT_LIBS="-lmount" \
+    BLKID_CFLAGS="-I/sw/util-linux/include/blkid" \
+    BLKID_LIBS="-lblkid" \
+    FDISK_CFLAGS="-I/sw/util-linux/include/libfdisk" \
+    FDISK_LIBS="-lfdisk" \
     meson setup .. \
         --prefix=/sw/systemd \
         --buildtype=release \
+        -Dacl=enabled \
+        -Dblkid=enabled \
+        -Dbzip2=disabled \
+        -Dfdisk=enabled \
+        -Dkmod=enabled \
+        -Dlibcrypt=enabled \
+        -Dlibmount=enabled \
+        -Dopenssl=enabled \
+        -Dxz=enabled \
+        -Dzlib=enabled \
+        -Dzstd=enabled \
         -Dcreate-log-dirs=false \
         -Ddefault-dnssec=no \
         -Dfirstboot=false \
@@ -153,7 +170,7 @@ MAKE() {
 }
 
 CHECK() {
-    meson test -C build test-path-util test-path-lookup test-condition test-conf-files --print-errorlogs
+    meson test -C build test-path-util test-path-lookup test-condition test-conf-files test-mount-util test-dlopen-so --print-errorlogs
 }
 
 INSTALL() {

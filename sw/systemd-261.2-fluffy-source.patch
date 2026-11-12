@@ -1,3 +1,15 @@
+diff --no-dereference -Naur systemd-261.2.orig/meson.build systemd-261.2/meson.build
+--- systemd-261.2.orig/meson.build	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/meson.build	2026-07-23 17:07:04.000000000 +0000
+@@ -1282,7 +1282,7 @@
+ conf.set10('HAVE_BZIP2', libbzip2.found())
+ libbzip2_cflags = libbzip2.partial_dependency(includes: true, compile_args: true)
+ 
+-libxz = dependency('liblzma',
++libxz = dependency('liblzma', 'xz',
+                    required : get_option('xz'))
+ conf.set10('HAVE_XZ', libxz.found())
+ libxz_cflags = libxz.partial_dependency(includes: true, compile_args: true)
 diff --no-dereference -Naur systemd-261.2.orig/rules.d/50-udev-default.rules.in systemd-261.2/rules.d/50-udev-default.rules.in
 --- systemd-261.2.orig/rules.d/50-udev-default.rules.in	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/rules.d/50-udev-default.rules.in	2026-07-23 17:07:04.000000000 +0000
@@ -201,6 +213,36 @@ diff --no-dereference -Naur systemd-261.2.orig/src/core/load-fragment.c systemd-
          if (r < 0)
                  return 0;
  
+diff --no-dereference -Naur systemd-261.2.orig/src/core/namespace.c systemd-261.2/src/core/namespace.c
+--- systemd-261.2.orig/src/core/namespace.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/core/namespace.c	2026-07-23 17:07:04.000000000 +0000
+@@ -180,7 +180,8 @@
+ 
+ /* ProtectKernelModules= option */
+ static const MountEntry protect_kernel_modules_table[] = {
+-        { "/usr/lib/modules",    MOUNT_INACCESSIBLE, true  },
++        { "/sw/linux/lib/modules", MOUNT_INACCESSIBLE, true  },
++        { "/usr/lib/modules",      MOUNT_INACCESSIBLE, true  },
+ };
+ 
+ /* ProtectKernelLogs= option */
+@@ -234,14 +235,14 @@
+ 
+ /* ProtectSystem=yes */
+ static const MountEntry protect_system_yes_table[] = {
+-        { "/usr",                MOUNT_READ_ONLY,     false },
++        { "/sw",                 MOUNT_READ_ONLY,     false },
+         { "/boot",               MOUNT_READ_ONLY,     true  },
+         { "/efi",                MOUNT_READ_ONLY,     true  },
+ };
+ 
+ /* ProtectSystem=full includes ProtectSystem=yes */
+ static const MountEntry protect_system_full_table[] = {
+-        { "/usr",                MOUNT_READ_ONLY,     false },
++        { "/sw",                 MOUNT_READ_ONLY,     false },
+         { "/boot",               MOUNT_READ_ONLY,     true  },
+         { "/efi",                MOUNT_READ_ONLY,     true  },
+         { "/etc",                MOUNT_READ_ONLY,     false },
 diff --no-dereference -Naur systemd-261.2.orig/src/libsystemd/sd-path/path-lookup.c systemd-261.2/src/libsystemd/sd-path/path-lookup.c
 --- systemd-261.2.orig/src/libsystemd/sd-path/path-lookup.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/libsystemd/sd-path/path-lookup.c	2026-07-23 17:07:04.000000000 +0000

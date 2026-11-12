@@ -245,6 +245,23 @@ then
         "$FLUFFY/sw/.build/fstab" > "$FLUFFY/etc/fluffy/fstab"
 fi
 
+if test -s "$FLUFFY/etc/fluffy/fstab" && grep -q '^/sw/systemd-[0-9]' "$FLUFFY/etc/fluffy/fstab"
+then
+    FLUFFY="$FLUFFY" unshare -m bash -euo pipefail -c '
+        mount --make-rprivate /
+        while read -r src tgt _
+        do
+            test -n "$src" || continue
+            mkdir -p "$FLUFFY$tgt"
+            mount -t squashfs -o ro "$FLUFFY$src" "$FLUFFY$tgt"
+        done < "$FLUFFY/etc/fluffy/fstab"
+        if test -x "$FLUFFY/sw/systemd/bin/systemctl"
+        then
+            chroot "$FLUFFY" /sw/systemd/bin/systemctl preset-all
+        fi
+    '
+fi
+
 if test -f "$DIR/boot/grub/grub.cfg"
 then
     mkdir -pv "$FLUFFY/boot/grub"

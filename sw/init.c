@@ -117,6 +117,7 @@ static int loop_mount_squashfs(const char *image_path, const char *target_dir)
     memset(&config, 0, sizeof(config));
     config.fd = file_fd;
     config.info.lo_flags = LO_FLAGS_AUTOCLEAR | LO_FLAGS_READ_ONLY;
+    snprintf((char *)config.info.lo_file_name, LO_NAME_SIZE, "%s", image_path);
     if (ioctl(loop_fd, LOOP_CONFIGURE, &config) < 0)
 #endif
     {
@@ -130,18 +131,22 @@ static int loop_mount_squashfs(const char *image_path, const char *target_dir)
         struct loop_info64 info;
         memset(&info, 0, sizeof(info));
         info.lo_flags = LO_FLAGS_AUTOCLEAR | LO_FLAGS_READ_ONLY;
+        snprintf((char *)info.lo_file_name, LO_NAME_SIZE, "%s", image_path);
         ioctl(loop_fd, LOOP_SET_STATUS64, &info);
     }
 
     close(file_fd);
-    close(loop_fd);
 
     mkdir_p(target_dir, 0755);
+    /* Keep loop_fd open across mount() so LO_FLAGS_AUTOCLEAR does not detach
+     * the loop device before the filesystem opens it. */
     if (mount(loop_dev, target_dir, "squashfs", MS_RDONLY, NULL) < 0) {
         printf("init: mount %s on %s failed: %s\n", loop_dev, target_dir, strerror(errno));
+        close(loop_fd);
         return -1;
     }
 
+    close(loop_fd);
     return 0;
 }
 

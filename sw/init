@@ -8,7 +8,7 @@ fi
 VERSION=1.0
 
 ARCHIVES=(
-    d8d38e46398c41c380cc3d4dbbda9b8259c4e29fde52fb8db6c51661dbcd9894 file://init.c
+    4596e959a950a3959bfdf521f5ccfc1c0dc2000c274c96d96fa7029af77d2d4f file://init.c
 )
 
 NEEDS=()
