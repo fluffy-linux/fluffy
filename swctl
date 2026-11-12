@@ -136,6 +136,30 @@ bring_up_lo() {
     dlcall free "$ptr"
 }
 
+mount_chroot_resolv_conf() {
+    test -f /etc/resolv.conf || return 0
+    if test ! -L "$FLUFFY/etc/resolv.conf" && test ! -s "$FLUFFY/etc/resolv.conf"
+    then
+        ln -snf ../run/systemd/resolve/stub-resolv.conf "$FLUFFY/etc/resolv.conf"
+    fi
+    if test -L "$FLUFFY/etc/resolv.conf"
+    then
+        local resolv_tgt resolv_dst
+        resolv_tgt="$(readlink "$FLUFFY/etc/resolv.conf")"
+        if [[ "$resolv_tgt" == /* ]]
+        then
+            resolv_dst="$FLUFFY$resolv_tgt"
+        else
+            resolv_dst="$FLUFFY/etc/$resolv_tgt"
+        fi
+        mkdir -p "${resolv_dst%/*}"
+        touch "$resolv_dst"
+        call mount /etc/resolv.conf "$resolv_dst" $NULL $MS_BIND $NULL
+    else
+        call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
+    fi
+}
+
 if test -f /sw/util-linux/lib/libmount.so.1
 then
     dlopen /sw/util-linux/lib/libmount.so.1
@@ -756,11 +780,7 @@ build_single_pkg() {
                 else
                     call mount tmpfs "$FLUFFY/dev/shm" tmpfs $(( MS_NOSUID | MS_NODEV )) $NULL
                 fi
-                if test -f /etc/resolv.conf
-                then
-                    touch "$FLUFFY/etc/resolv.conf"
-                    call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
-                fi
+                mount_chroot_resolv_conf
 
                 call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
 
@@ -1271,11 +1291,7 @@ run)
         else
             call mount tmpfs "$FLUFFY/dev/shm" tmpfs $(( MS_NOSUID | MS_NODEV )) $NULL
         fi
-        if test -f /etc/resolv.conf
-        then
-            touch "$FLUFFY/etc/resolv.conf"
-            call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
-        fi
+        mount_chroot_resolv_conf
         call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
         install_targets bash "$target"
         call mount /sw "$FLUFFY/sw" $NULL $(( MS_BIND | MS_REC )) $NULL

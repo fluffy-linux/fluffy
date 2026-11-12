@@ -126,22 +126,29 @@ PRETTY_NAME="Fluffy Linux"
 OS_EOF
 fi
 
+if test ! -f "$FLUFFY/etc/hostname"
+then
+    echo "fluffy" > "$FLUFFY/etc/hostname"
+fi
+
 if test ! -f "$FLUFFY/etc/hosts"
 then
     cat << "HOSTS_EOF" > "$FLUFFY/etc/hosts"
 127.0.0.1 localhost
-::1 localhost
+::1 ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
 HOSTS_EOF
 fi
 
-if test ! -f "$FLUFFY/etc/nsswitch.conf"
+if test ! -f "$FLUFFY/etc/nsswitch.conf" || ! grep -q "resolve" "$FLUFFY/etc/nsswitch.conf"
 then
     cat << "NSS_EOF" > "$FLUFFY/etc/nsswitch.conf"
-passwd: files
-group: files
-shadow: files
+passwd: files systemd
+group: files systemd
+shadow: files systemd
 
-hosts: files dns
+hosts: mymachines resolve [!UNAVAIL=return] files myhostname dns
 networks: files
 
 protocols: files
@@ -149,6 +156,26 @@ services: files
 ethers: files
 rpc: files
 NSS_EOF
+fi
+
+if test ! -L "$FLUFFY/etc/resolv.conf" && test ! -s "$FLUFFY/etc/resolv.conf"
+then
+    ln -snfv ../run/systemd/resolve/stub-resolv.conf "$FLUFFY/etc/resolv.conf"
+fi
+
+mkdir -pv "$FLUFFY/etc/systemd/network"
+if test ! -f "$FLUFFY/etc/systemd/network/10-eth-dhcp.network"
+then
+    cat << "NET_EOF" > "$FLUFFY/etc/systemd/network/10-eth-dhcp.network"
+[Match]
+Name=en* eth*
+
+[Network]
+DHCP=yes
+
+[DHCPv4]
+UseDomains=true
+NET_EOF
 fi
 
 if test ! -f "$FLUFFY/etc/protocols"
@@ -249,6 +276,9 @@ if test -s "$FLUFFY/etc/fluffy/fstab" && grep -q '^/sw/systemd-[0-9]' "$FLUFFY/e
 then
     FLUFFY="$FLUFFY" unshare -m bash -euo pipefail -c '
         mount --make-rprivate /
+        mkdir -p "$FLUFFY/proc" "$FLUFFY/sys"
+        mount -t proc proc "$FLUFFY/proc"
+        mount -t sysfs sysfs "$FLUFFY/sys"
         while read -r src tgt _
         do
             test -n "$src" || continue

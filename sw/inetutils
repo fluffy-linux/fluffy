@@ -88,7 +88,7 @@ CHECK() {
 }
 
 INSTALL() {
-    make install
+    make SUIDMODE="-m 4755" install
     install -d -m755 $DESTDIR/sw/inetutils/sbin
     ln -sfv ../bin/ifconfig $DESTDIR/sw/inetutils/sbin/ifconfig
 }
