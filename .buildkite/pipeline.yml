@@ -2,5 +2,6 @@ steps:
   - label: "binutils-pass1"
     env:
       FLUFFY: /mnt/ci
+      CROSS: "1"
     command: |
-      sudo FLUFFY="$$FLUFFY" ./swctl build binutils-pass1
+      sudo FLUFFY="$$FLUFFY" CROSS="$$CROSS" ./swctl build binutils-pass1

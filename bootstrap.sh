@@ -2,7 +2,7 @@
 set -euo pipefail
 
 DIR="$(dirname "$(realpath "$0")")"
-FLUFFY=/mnt/fluffy
+FLUFFY="${FLUFFY:-/mnt/fluffy}"
 
 if ! mountpoint -q "$FLUFFY"
 then
