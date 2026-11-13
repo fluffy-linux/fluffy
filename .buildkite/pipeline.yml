@@ -1,0 +1,6 @@
+steps:
+  - label: "binutils-pass1"
+    env:
+      FLUFFY: /mnt/ci
+    command: |
+      sudo FLUFFY="$$FLUFFY" ./swctl build binutils-pass1
