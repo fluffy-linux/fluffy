@@ -8,7 +8,7 @@ fi
 VERSION=4.0.2
 
 ARCHIVES=(
-    b6929defd93884b584d7c87829e0e7b5c26ed6be17b0b873979019314aa841c8 https://files.pythonhosted.org/packages/46/ef/34533186e76c526d9ec17a1ad9a10c7354cbfb20f51583cc36dfe4bdccd0/flit_core-$VERSION.tar.gz
+    b6929defd93884b584d7c87829e0e7b5c26ed6be17b0b873979019314aa841c8 https://github.com/fluffy-linux/flit/releases/download/$VERSION/flit_core-$VERSION.tar.gz
 )
 
 NEEDS=(

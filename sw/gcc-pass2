@@ -6,10 +6,10 @@ MPC_VERSION=1.4.1
 GMP_VERSION=6.3.0
 
 ARCHIVES=(
-    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
-    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$MPFR_VERSION.tar.xz
-    91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$MPC_VERSION.tar.xz
-    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$GMP_VERSION.tar.xz
+    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://github.com/fluffy-linux/gcc/releases/download/releases/gcc-$VERSION/gcc-$VERSION.tar.xz
+    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://github.com/fluffy-linux/mpfr/releases/download/$MPFR_VERSION/mpfr-$MPFR_VERSION.tar.xz
+    91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://github.com/fluffy-linux/mpc/releases/download/$MPC_VERSION/mpc-$MPC_VERSION.tar.xz
+    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://github.com/fluffy-linux/gmp/releases/download/gmp-$GMP_VERSION/gmp-$GMP_VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
     c261da6b2739c1994bce6b572ea6956aeabacff6ccf3ecaf3c4bc6da05b5157e file://gcc-$VERSION-fluffy-source.patch
 )

@@ -8,8 +8,9 @@ fi
 VERSION=2.73
 
 ARCHIVES=(
-    9fd672b1c8425fac2fa67fa0477b990987268b90ff36d5f016dae57be0d6b52e https://ftpmirror.gnu.org/autoconf/autoconf-$VERSION.tar.xz
-    54cf02c0280cb03cd32cbd131aeb8ff9bfa47a41bf13ff1005f6a07c1dccdbb2 file://autoconf-$VERSION-fluffy-shell.patch
+    9fd672b1c8425fac2fa67fa0477b990987268b90ff36d5f016dae57be0d6b52e https://github.com/fluffy-linux/autoconf/releases/download/v$VERSION/autoconf-$VERSION.tar.xz
+    67fb6445f64c2c6e22bfa88b1df327bcfab341ba210ffa73d55478eeb6c71ddf file://autoconf-$VERSION-fluffy-source.patch
+    83e1ba4e9b29b1d4407539d8da5a39993194ce04f301bf34233f005ed414cc5b file://autoconf-$VERSION-fluffy-test.patch
 )
 
 if test -v CROSS
@@ -92,9 +93,11 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i autoconf-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i autoconf-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i autoconf-$VERSION-fluffy-test.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/autoconf
     make
 }

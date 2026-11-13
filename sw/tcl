@@ -10,10 +10,10 @@ VERSION=8.6.18
 HAS_LDFLAGS=-ltcl8.6
 
 ARCHIVES=(
-    14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://downloads.sourceforge.net/tcl/tcl$VERSION-src.tar.gz
-    bee2d83a19ce50624eeae951be29fe5f654b171357a6391123caf18107cec543 https://downloads.sourceforge.net/tcl/tcl$VERSION-html.tar.gz
-    9832123f0ff7fe7280e7419eab14079a6b65665a89976513a5d3323f114a769d file://tcl$VERSION-fluffy-shell.patch
-    46486532085ad55d2fd944f403bde27c29d212596beedc7796961668e7448b85 file://tcl$VERSION-fluffy-source.patch
+    14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-src.tar.gz
+    bee2d83a19ce50624eeae951be29fe5f654b171357a6391123caf18107cec543 https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-html.tar.gz
+    65b998a705a2b8812c22a731ed3c001589d79590edf184a3300d25bfd7f9a067 file://tcl$VERSION-fluffy-source.patch
+    97296312735d79b0fbfcf9d70e67e84cd18d681481f34a8a5d4b7445f220bbba file://tcl$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -65,12 +65,13 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i tcl$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i tcl$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i tcl$VERSION-fluffy-test.patch
 
     SRCDIR=$(pwd)
     cd unix
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/tcl \
         --mandir=/sw/tcl/share/man \
         --disable-rpath \

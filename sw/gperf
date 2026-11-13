@@ -8,7 +8,7 @@ fi
 VERSION=3.3
 
 ARCHIVES=(
-    fd87e0aba7e43ae054837afd6cd4db03a3f2693deb3619085e6ed9d8d9604ad8 https://ftpmirror.gnu.org/gperf/gperf-$VERSION.tar.gz
+    fd87e0aba7e43ae054837afd6cd4db03a3f2693deb3619085e6ed9d8d9604ad8 https://github.com/fluffy-linux/gperf/releases/download/v$VERSION/gperf-$VERSION.tar.gz
     00012bcccd09a2a2a3ade32e8a84c69952d26f1753425adcc196c5164399675c file://gperf-$VERSION-fluffy-test.patch
 )
 

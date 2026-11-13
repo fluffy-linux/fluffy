@@ -10,8 +10,7 @@ VERSION=6.6
 HAS_LDFLAGS=-lncursesw
 
 ARCHIVES=(
-    355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://invisible-mirror.net/archives/ncurses/ncurses-$VERSION.tar.gz
-    0c5cbf1c358a5cd922d0c741f0f029ffb2a7db66612968949532ae92da8672e8 file://ncurses-$VERSION-fluffy-shell.patch
+    355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://github.com/fluffy-linux/ncurses-snapshots/releases/download/v${VERSION//./_}/ncurses-$VERSION.tar.gz
 )
 
 NEEDS=(
@@ -60,9 +59,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ncurses-$VERSION-fluffy-shell.patch
-
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/ncurses \
         --mandir=/sw/ncurses/share/man \
         --with-manpage-format=normal \

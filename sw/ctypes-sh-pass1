@@ -3,7 +3,7 @@ ON=host-build
 VERSION=1.3
 
 ARCHIVES=(
-    ab032a845d8e579e39159f9bb8e68214892b2d927e6c70834230c88145892165 https://github.com/taviso/ctypes.sh/releases/download/v$VERSION/ctypes-sh-$VERSION.tar.gz
+    ab032a845d8e579e39159f9bb8e68214892b2d927e6c70834230c88145892165 https://github.com/fluffy-linux/ctypes.sh/releases/download/v$VERSION/ctypes-sh-$VERSION.tar.gz
 )
 
 NEEDS=(

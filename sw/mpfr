@@ -10,7 +10,7 @@ VERSION=4.2.2
 HAS_LDFLAGS=-lmpfr
 
 ARCHIVES=(
-    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$VERSION.tar.xz
+    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://github.com/fluffy-linux/mpfr/releases/download/$VERSION/mpfr-$VERSION.tar.xz
     722260587205e6697cd7c55ee98b8eb648f46eadc560b74e5f1c76169e77c5f6 file://mpfr-$VERSION-fluffy-source.patch
 )
 

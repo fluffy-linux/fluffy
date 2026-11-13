@@ -8,7 +8,7 @@ fi
 VERSION=0.48.0
 
 ARCHIVES=(
-    94800765601e9171bf5d58d066e640662842bcedcbab982b2c90787a2c987322 https://pypi.org/packages/source/w/wheel/wheel-$VERSION.tar.gz
+    94800765601e9171bf5d58d066e640662842bcedcbab982b2c90787a2c987322 https://github.com/fluffy-linux/wheel/releases/download/$VERSION/wheel-$VERSION.tar.gz
 )
 
 NEEDS=(

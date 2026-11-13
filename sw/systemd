@@ -10,8 +10,8 @@ VERSION=261.2
 HAS_LDFLAGS="-lsystemd -ludev"
 
 ARCHIVES=(
-    ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec https://github.com/systemd/systemd/archive/v$VERSION/systemd-$VERSION.tar.gz
-    9be13865c9c7f9fecba7b86fc5185aecef00164c87ed68b4f6884283aefebe50 https://anduin.linuxfromscratch.org/LFS/systemd-man-pages-$VERSION.tar.xz
+    ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec https://github.com/fluffy-linux/systemd/releases/download/v$VERSION/systemd-$VERSION.tar.gz
+    9be13865c9c7f9fecba7b86fc5185aecef00164c87ed68b4f6884283aefebe50 https://github.com/fluffy-linux/systemd/releases/download/v$VERSION/systemd-man-pages-$VERSION.tar.xz
     7b62b8271aa5532fcf9011d8d6d0fd5c01070dab862c482741d3f600f8f51962 file://systemd-$VERSION-fluffy-shell.patch
     b65c6fee8234f79e1eb17ebd333516f3536016f6136533cea1362002a37fa4bc file://systemd-$VERSION-fluffy-source.patch
 )

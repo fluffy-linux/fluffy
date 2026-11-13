@@ -8,8 +8,7 @@ fi
 VERSION=4.10
 
 ARCHIVES=(
-    b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7 https://ftpmirror.gnu.org/sed/sed-$VERSION.tar.xz
-    ab1627eaacacd068c970582f2b565a22e34b1bb12165bfbd1e333d359c58be71 file://sed-$VERSION-fluffy-shell.patch
+    b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7 https://github.com/fluffy-linux/sed/releases/download/v$VERSION/sed-$VERSION.tar.xz
 )
 
 NEEDS=(
@@ -64,9 +63,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i sed-$VERSION-fluffy-shell.patch
-
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/sed \
         --docdir=/sw/sed/share/doc/sed-$VERSION
     make
@@ -74,7 +72,8 @@ MAKE() {
 }
 
 CHECK() {
-    make check
+    make SUBDIRS=. check
+    make -C gnulib-tests 'LOG_COMPILER=bash -c '\''case "$$0" in *.sh) exec bash "$$0" "$$@";; *) exec "$$0" "$$@";; esac'\''' check
 }
 
 INSTALL() {

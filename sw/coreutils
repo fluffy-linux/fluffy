@@ -8,8 +8,8 @@ fi
 VERSION=9.11
 
 ARCHIVES=(
-    394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3 https://ftpmirror.gnu.org/coreutils/coreutils-$VERSION.tar.xz
-    7c2aecf9ae24b87b019595e382b9f41d2c96de7f95abe95ad8cacc7e2ce1bbcc https://www.linuxfromscratch.org/patches/lfs/13.1/coreutils-$VERSION-i18n-1.patch
+    394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3 https://github.com/fluffy-linux/coreutils/releases/download/v$VERSION/coreutils-$VERSION.tar.xz
+    7c2aecf9ae24b87b019595e382b9f41d2c96de7f95abe95ad8cacc7e2ce1bbcc file://coreutils-$VERSION-i18n-1.patch
     2bc3a5a73b2eba8a3e29554f43baa0c2c8c1e4a75cee059c4fb68785f1b8c29a file://coreutils-$VERSION-fluffy-shell.patch
     c24ff3e4dd0e9bb5423612f974ccd660f9cc8ac180d9bf02b6ff656e3d1b0a90 file://coreutils-$VERSION-fluffy-source.patch
 )

@@ -10,7 +10,7 @@ VERSION=2.4.0
 HAS_LDFLAGS=-lacl
 
 ARCHIVES=(
-    e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3 https://download.savannah.gnu.org/releases/acl/acl-$VERSION.tar.xz
+    e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3 https://github.com/fluffy-linux/acl/releases/download/v$VERSION/acl-$VERSION.tar.xz
     107000ecaeed120e8175e4cb12cb02d5dd96d89fed5f5664c375019b41336d88 file://acl-$VERSION-fluffy-test.patch
 )
 

@@ -8,7 +8,7 @@ fi
 VERSION=7.1.8
 
 ARCHIVES=(
-    ff01dcb449279d5b4cfccdb01fee639cf5ff1803f1749a77844dd33915422c49 https://www.kernel.org/pub/linux/kernel/v7.x/linux-$VERSION.tar.xz
+    ff01dcb449279d5b4cfccdb01fee639cf5ff1803f1749a77844dd33915422c49 https://github.com/fluffy-linux/linux/releases/download/v$VERSION/linux-$VERSION.tar.xz
     8194c7d3e3d34dbdebf10d2c2ec6fa94959275090cd9ec2d54ef3b7e7fdfa524 file://linux-$VERSION-fluffy-shell.patch
     8b1d71f89324e12b85ef07a742f4d9b584fe65fe786d799d3288925d062459d7 file://config-$VERSION
 )

@@ -3,7 +3,7 @@ ON=host-build
 VERSION=1.4.21
 
 ARCHIVES=(
-    f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66 https://ftpmirror.gnu.org/m4/m4-$VERSION.tar.xz
+    f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66 https://github.com/fluffy-linux/m4/releases/download/v$VERSION/m4-$VERSION.tar.xz
 )
 
 NEEDS=(

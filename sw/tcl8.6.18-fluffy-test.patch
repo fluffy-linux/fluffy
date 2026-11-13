@@ -1,0 +1,81 @@
+diff --no-dereference -Naur tcl8.6.18.orig/tests/chanio.test tcl8.6.18/tests/chanio.test
+--- tcl8.6.18.orig/tests/chanio.test	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18/tests/chanio.test	2026-04-17 18:51:37.000000000 +0000
+@@ -56,7 +56,7 @@
+     # some tests can only be run is umask is 2 if "umask" cannot be run, the
+     # tests will be skipped.
+     set umaskValue 0
+-    testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
++    testConstraint umask [expr {![catch {set umaskValue [scan [exec /sw/bash/bin/bash -c umask] %o]}]}]
+ 
+     testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
+ 
+diff --no-dereference -Naur tcl8.6.18.orig/tests/exec.test tcl8.6.18/tests/exec.test
+--- tcl8.6.18.orig/tests/exec.test	2026-05-07 17:12:36.000000000 +0000
++++ tcl8.6.18/tests/exec.test	2026-05-07 17:12:36.000000000 +0000
+@@ -687,13 +687,13 @@
+ } -body {
+     # Note that we have to allow for the current contents of the temporary
+     # file, which is why the result is 14 and not 12
+-    exec /bin/sh -c \
++    exec /sw/bash/bin/bash -c \
+ 	    {for a in 1 2 3; do sleep 1; echo $a; done} >>$tmpfile &
+-    exec /bin/sh -c \
++    exec /sw/bash/bin/bash -c \
+ 	    {for a in 4 5 6; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
+-    exec /bin/sh -c \
++    exec /sw/bash/bin/bash -c \
+ 	    {for a in a b c; do sleep 1; echo $a; done} >>$tmpfile &
+-    exec /bin/sh -c \
++    exec /sw/bash/bin/bash -c \
+ 	    {for a in d e f; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
+     # The above four shell invocations take about 3 seconds to finish, so allow
+     # 5s (in case the machine is busy)
+diff --no-dereference -Naur tcl8.6.18.orig/tests/io.test tcl8.6.18/tests/io.test
+--- tcl8.6.18.orig/tests/io.test	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18/tests/io.test	2026-04-17 18:51:37.000000000 +0000
+@@ -59,7 +59,7 @@
+ # some tests can only be run is umask is 2
+ # if "umask" cannot be run, the tests will be skipped.
+ set umaskValue 0
+-testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
++testConstraint umask [expr {![catch {set umaskValue [scan [exec /sw/bash/bin/bash -c umask] %o]}]}]
+ 
+ testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
+ 
+diff --no-dereference -Naur tcl8.6.18.orig/tests/unixFile.test tcl8.6.18/tests/unixFile.test
+--- tcl8.6.18.orig/tests/unixFile.test	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18/tests/unixFile.test	2026-04-17 18:51:37.000000000 +0000
+@@ -56,6 +56,32 @@
+     set env(PATH) ":/dummy"
+     testfindexecutable junk
+ } $absPath
++test unixFile-1.8 {Tcl_FindExecutable wildcard PATH} -constraints {testfindexecutable unix} -setup {
++    file mkdir pkg_b/bin pkg_a/bin
++    file attributes [makeFile "" pkg_b/bin/wjunk] -perm 0o777
++    file attributes [makeFile "" pkg_a/bin/wjunk] -perm 0o777
++} -body {
++    set env(PATH) "/dummy:[pwd]/pkg_*/bin"
++    testfindexecutable wjunk
++} -cleanup {
++    removeFile pkg_a/bin/wjunk
++    removeFile pkg_b/bin/wjunk
++    file delete -force pkg_a pkg_b
++} -result [file join [temporaryDirectory] pkg_a bin wjunk]
++test unixFile-1.9 {auto_execok wildcard PATH} -constraints {unix} -setup {
++    auto_reset
++    file mkdir pkg_b/bin pkg_a/bin
++    file attributes [makeFile "" pkg_b/bin/wjunk2] -perm 0o777
++    file attributes [makeFile "" pkg_a/bin/wjunk2] -perm 0o777
++} -body {
++    set env(PATH) "/dummy:[pwd]/pkg_*/bin"
++    auto_execok wjunk2
++} -cleanup {
++    auto_reset
++    removeFile pkg_a/bin/wjunk2
++    removeFile pkg_b/bin/wjunk2
++    file delete -force pkg_a pkg_b
++} -result [list [file join [temporaryDirectory] pkg_a bin wjunk2]]
+ 
+ # cleanup
+ catch {set env(PATH) $oldPath}

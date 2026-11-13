@@ -3,9 +3,8 @@ ON=cross-build
 VERSION=5.44.0
 
 ARCHIVES=(
-    505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://www.cpan.org/src/5.0/perl-$VERSION.tar.xz
-    88349b06fc44db99308859fe656f375e32788ff0ab877b5d862409541b0387a0 file://perl-$VERSION-fluffy-shell.patch
-    682a045cdb9360a10ea089bd8b75806ae763b4734151aa457a47c5115e2752a5 file://perl-$VERSION-fluffy-test.patch
+    505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://github.com/fluffy-linux/perl5/releases/download/v$VERSION/perl-$VERSION.tar.xz
+    76d5b2c38546637ae9847dbee846f3dc38440b662c94c9455f5f68a995c9bd8b file://perl-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -31,8 +30,7 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i perl-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i perl-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i perl-$VERSION-fluffy-source.patch
     sh Configure -des \
         -D prefix=/sw/perl \
         -D vendorprefix=/sw/perl \
@@ -45,6 +43,7 @@ MAKE() {
         -D vendorarch=/sw/perl/lib/perl5/5.44/vendor_perl \
         -D man1dir=none \
         -D man3dir=none \
+        -D sh=/sw/bash/bin/bash \
         -D targetsh=/sw/bash/bin/bash \
         -D locincpth="" \
         -D loclibpth=""

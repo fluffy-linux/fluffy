@@ -1,6 +1,6 @@
 diff --no-dereference -Naur grub-2.14.orig/configure grub-2.14/configure
---- grub-2.14.orig/configure	2026-01-14 13:26:54.000000000 -0500
-+++ grub-2.14/configure	2026-01-14 13:26:54.000000000 -0500
+--- grub-2.14.orig/configure	2026-01-14 18:26:54.000000000 +0000
++++ grub-2.14/configure	2026-01-14 18:26:54.000000000 +0000
 @@ -40919,15 +40919,15 @@
  
  
@@ -21,17 +21,53 @@ diff --no-dereference -Naur grub-2.14.orig/configure grub-2.14/configure
  /* end confdefs.h.  */
  
 diff --no-dereference -Naur grub-2.14.orig/gentpl.py grub-2.14/gentpl.py
---- grub-2.14.orig/gentpl.py	2024-09-05 11:24:01.000000000 -0400
-+++ grub-2.14/gentpl.py	2024-09-05 11:24:01.000000000 -0400
+--- grub-2.14.orig/gentpl.py	2024-09-05 15:24:01.000000000 +0000
++++ grub-2.14/gentpl.py	2024-09-05 15:24:01.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/python
 +#!/sw/python/bin/python3
  #  GRUB  --  GRand Unified Bootloader
  #  Copyright (C) 2010,2011,2012,2013  Free Software Foundation, Inc.
  #
+diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.core.am grub-2.14/grub-core/Makefile.core.am
+--- grub-2.14.orig/grub-core/Makefile.core.am	2026-01-14 18:26:44.000000000 +0000
++++ grub-2.14/grub-core/Makefile.core.am	2026-01-14 18:26:44.000000000 +0000
+@@ -12669,7 +12669,7 @@
+ squash4_module_LDADD  = 
+ squash4_module_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_MODULE) $(CFLAGS_POSIX) -Wno-undef 
+ squash4_module_LDFLAGS  = $(AM_LDFLAGS) $(LDFLAGS_MODULE) 
+-squash4_module_CPPFLAGS  = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H 
++squash4_module_CPPFLAGS  = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H 
+ squash4_module_CCASFLAGS  = $(AM_CCASFLAGS) $(CCASFLAGS_MODULE) 
+ squash4_module_DEPENDENCIES  = $(TARGET_OBJ2ELF) 
+ dist_noinst_DATA += 
+diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.core.def grub-2.14/grub-core/Makefile.core.def
+--- grub-2.14.orig/grub-core/Makefile.core.def	2026-01-08 18:22:14.000000000 +0000
++++ grub-2.14/grub-core/Makefile.core.def	2026-01-08 18:22:14.000000000 +0000
+@@ -1601,7 +1601,7 @@
+   name = squash4;
+   common = fs/squash4.c;
+   cflags = '$(CFLAGS_POSIX) -Wno-undef';
+-  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
++  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
+ };
+ 
+ module = {
+diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.in grub-2.14/grub-core/Makefile.in
+--- grub-2.14.orig/grub-core/Makefile.in	2026-01-14 18:27:11.000000000 +0000
++++ grub-2.14/grub-core/Makefile.in	2026-01-14 18:27:11.000000000 +0000
+@@ -26434,7 +26434,7 @@
+ squash4_module_LDADD = 
+ squash4_module_CFLAGS = $(AM_CFLAGS) $(CFLAGS_MODULE) $(CFLAGS_POSIX) -Wno-undef 
+ squash4_module_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS_MODULE) 
+-squash4_module_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H 
++squash4_module_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H 
+ squash4_module_CCASFLAGS = $(AM_CCASFLAGS) $(CCASFLAGS_MODULE) 
+ squash4_module_DEPENDENCIES = $(TARGET_OBJ2ELF) 
+ tar_module_SOURCES = fs/tar.c  ## platform sources
 diff --no-dereference -Naur grub-2.14.orig/grub-core/fs/squash4.c grub-2.14/grub-core/fs/squash4.c
---- grub-2.14.orig/grub-core/fs/squash4.c	2025-02-18 09:14:54.000000000 -0500
-+++ grub-2.14/grub-core/fs/squash4.c	2025-02-18 09:14:54.000000000 -0500
+--- grub-2.14.orig/grub-core/fs/squash4.c	2025-02-18 14:14:54.000000000 +0000
++++ grub-2.14/grub-core/fs/squash4.c	2025-02-18 14:14:54.000000000 +0000
 @@ -32,6 +32,9 @@
  #include "xz.h"
  #include "xz_stream.h"
@@ -152,39 +188,174 @@ diff --no-dereference -Naur grub-2.14.orig/grub-core/fs/squash4.c grub-2.14/grub
    grub_free (data->xzbuf);
    grub_free (data->ino.cumulated_block_sizes);
    grub_free (data->ino.block_sizes);
-diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.core.am grub-2.14/grub-core/Makefile.core.am
---- grub-2.14.orig/grub-core/Makefile.core.am	2026-01-14 13:26:44.000000000 -0500
-+++ grub-2.14/grub-core/Makefile.core.am	2026-01-14 13:26:44.000000000 -0500
-@@ -12669,7 +12669,7 @@
- squash4_module_LDADD  = 
- squash4_module_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_MODULE) $(CFLAGS_POSIX) -Wno-undef 
- squash4_module_LDFLAGS  = $(AM_LDFLAGS) $(LDFLAGS_MODULE) 
--squash4_module_CPPFLAGS  = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H 
-+squash4_module_CPPFLAGS  = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H 
- squash4_module_CCASFLAGS  = $(AM_CCASFLAGS) $(CCASFLAGS_MODULE) 
- squash4_module_DEPENDENCIES  = $(TARGET_OBJ2ELF) 
- dist_noinst_DATA += 
-diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.core.def grub-2.14/grub-core/Makefile.core.def
---- grub-2.14.orig/grub-core/Makefile.core.def	2026-01-08 13:22:14.000000000 -0500
-+++ grub-2.14/grub-core/Makefile.core.def	2026-01-08 13:22:14.000000000 -0500
-@@ -1601,7 +1601,7 @@
-   name = squash4;
-   common = fs/squash4.c;
-   cflags = '$(CFLAGS_POSIX) -Wno-undef';
--  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
-+  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H';
- };
+diff --no-dereference -Naur grub-2.14.orig/util/grub-kbdcomp.in grub-2.14/util/grub-kbdcomp.in
+--- grub-2.14.orig/util/grub-kbdcomp.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub-kbdcomp.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
  
- module = {
-diff --no-dereference -Naur grub-2.14.orig/grub-core/Makefile.in grub-2.14/grub-core/Makefile.in
---- grub-2.14.orig/grub-core/Makefile.in	2026-01-14 13:27:11.000000000 -0500
-+++ grub-2.14/grub-core/Makefile.in	2026-01-14 13:27:11.000000000 -0500
-@@ -26434,7 +26434,7 @@
- squash4_module_LDADD = 
- squash4_module_CFLAGS = $(AM_CFLAGS) $(CFLAGS_MODULE) $(CFLAGS_POSIX) -Wno-undef 
- squash4_module_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS_MODULE) 
--squash4_module_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H 
-+squash4_module_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS_MODULE) -I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -I$(srcdir)/lib/zstd -DMINILZO_HAVE_CONFIG_H 
- squash4_module_CCASFLAGS = $(AM_CCASFLAGS) $(CCASFLAGS_MODULE) 
- squash4_module_DEPENDENCIES = $(TARGET_OBJ2ELF) 
- tar_module_SOURCES = fs/tar.c  ## platform sources
+ prefix="@prefix@"
+ exec_prefix="@exec_prefix@"
+diff --no-dereference -Naur grub-2.14.orig/util/grub-mkconfig.in grub-2.14/util/grub-mkconfig.in
+--- grub-2.14.orig/util/grub-mkconfig.in	2025-11-18 11:49:31.000000000 +0000
++++ grub-2.14/util/grub-mkconfig.in	2025-11-18 11:49:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # Generate grub.cfg by inspecting /boot contents.
+diff --no-dereference -Naur grub-2.14.orig/util/grub-reboot.in grub-2.14/util/grub-reboot.in
+--- grub-2.14.orig/util/grub-reboot.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub-reboot.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Set a default boot entry for GRUB, for the next boot only.
+ # Copyright (C) 2004,2009  Free Software Foundation, Inc.
+diff --no-dereference -Naur grub-2.14.orig/util/grub-set-default.in grub-2.14/util/grub-set-default.in
+--- grub-2.14.orig/util/grub-set-default.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub-set-default.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Set a default boot entry for GRUB.
+ # Copyright (C) 2004,2009  Free Software Foundation, Inc.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/00_header.in grub-2.14/util/grub.d/00_header.in
+--- grub-2.14.orig/util/grub.d/00_header.in	2025-11-18 11:49:31.000000000 +0000
++++ grub-2.14/util/grub.d/00_header.in	2025-11-18 11:49:31.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_hurd.in grub-2.14/util/grub.d/10_hurd.in
+--- grub-2.14.orig/util/grub.d/10_hurd.in	2024-01-25 17:22:59.000000000 +0000
++++ grub-2.14/util/grub.d/10_hurd.in	2024-01-25 17:22:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_illumos.in grub-2.14/util/grub.d/10_illumos.in
+--- grub-2.14.orig/util/grub.d/10_illumos.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub.d/10_illumos.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_kfreebsd.in grub-2.14/util/grub.d/10_kfreebsd.in
+--- grub-2.14.orig/util/grub.d/10_kfreebsd.in	2022-11-14 15:52:54.000000000 +0000
++++ grub-2.14/util/grub.d/10_kfreebsd.in	2022-11-14 15:52:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_linux.in grub-2.14/util/grub.d/10_linux.in
+--- grub-2.14.orig/util/grub.d/10_linux.in	2025-08-14 22:27:02.000000000 +0000
++++ grub-2.14/util/grub.d/10_linux.in	2025-08-14 22:27:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_netbsd.in grub-2.14/util/grub.d/10_netbsd.in
+--- grub-2.14.orig/util/grub.d/10_netbsd.in	2022-11-14 15:52:54.000000000 +0000
++++ grub-2.14/util/grub.d/10_netbsd.in	2022-11-14 15:52:54.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_windows.in grub-2.14/util/grub.d/10_windows.in
+--- grub-2.14.orig/util/grub.d/10_windows.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub.d/10_windows.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/10_xnu.in grub-2.14/util/grub.d/10_xnu.in
+--- grub-2.14.orig/util/grub.d/10_xnu.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub.d/10_xnu.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/20_linux_xen.in grub-2.14/util/grub.d/20_linux_xen.in
+--- grub-2.14.orig/util/grub.d/20_linux_xen.in	2025-08-14 22:27:02.000000000 +0000
++++ grub-2.14/util/grub.d/20_linux_xen.in	2025-08-14 22:27:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/25_bli.in grub-2.14/util/grub.d/25_bli.in
+--- grub-2.14.orig/util/grub.d/25_bli.in	2023-08-14 15:10:42.000000000 +0000
++++ grub-2.14/util/grub.d/25_bli.in	2023-08-14 15:10:42.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/30_os-prober.in grub-2.14/util/grub.d/30_os-prober.in
+--- grub-2.14.orig/util/grub.d/30_os-prober.in	2025-03-05 10:50:06.000000000 +0000
++++ grub-2.14/util/grub.d/30_os-prober.in	2025-03-05 10:50:06.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/30_uefi-firmware.in grub-2.14/util/grub.d/30_uefi-firmware.in
+--- grub-2.14.orig/util/grub.d/30_uefi-firmware.in	2022-12-07 22:38:26.000000000 +0000
++++ grub-2.14/util/grub.d/30_uefi-firmware.in	2022-12-07 22:38:26.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # grub-mkconfig helper script.
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/40_custom.in grub-2.14/util/grub.d/40_custom.in
+--- grub-2.14.orig/util/grub.d/40_custom.in	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/grub.d/40_custom.in	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exec tail -n +3 $0
+ # This file provides an easy way to add custom menu entries.  Simply type the
+ # menu entries you want to add after this comment.  Be careful not to change
+diff --no-dereference -Naur grub-2.14.orig/util/grub.d/41_custom.in grub-2.14/util/grub.d/41_custom.in
+--- grub-2.14.orig/util/grub.d/41_custom.in	2020-09-11 13:51:21.000000000 +0000
++++ grub-2.14/util/grub.d/41_custom.in	2020-09-11 13:51:21.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ cat <<EOF
+ if [ -f  \${config_directory}/custom.cfg ]; then
+   source \${config_directory}/custom.cfg
+diff --no-dereference -Naur grub-2.14.orig/util/i386/efi/grub-dumpdevtree grub-2.14/util/i386/efi/grub-dumpdevtree
+--- grub-2.14.orig/util/i386/efi/grub-dumpdevtree	2018-11-24 17:13:02.000000000 +0000
++++ grub-2.14/util/i386/efi/grub-dumpdevtree	2018-11-24 17:13:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2009  Free Software Foundation, Inc.
+ #

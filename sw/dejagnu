@@ -8,10 +8,9 @@ fi
 VERSION=1.6.3
 
 ARCHIVES=(
-    87daefacd7958b4a69f88c6856dbd1634261963c414079d0c371f589cd66a2e3 https://ftpmirror.gnu.org/dejagnu/dejagnu-$VERSION.tar.gz
-    36bb31081a9172482d34870e8e9abe9a39314385c3b6a8829848fede7872f0a1 file://dejagnu-$VERSION-fluffy-shell.patch
-    84402dfb6becdb4535dc8d4f105685feacd09a0248e008a2bec5f5260cb1e2b7 file://dejagnu-$VERSION-fluffy-source.patch
-    8150c0cfe6033cedd215c5f33b0f7880b0f44b0c163d23c8c73dc56a466bdf6a file://dejagnu-$VERSION-fluffy-test.patch
+    87daefacd7958b4a69f88c6856dbd1634261963c414079d0c371f589cd66a2e3 https://github.com/fluffy-linux/dejagnu/releases/download/dejagnu-$VERSION-release/dejagnu-$VERSION.tar.gz
+    244fcd029c724038fc4c8bab787914c00e2a449e623c09d54fda53212d576003 file://dejagnu-$VERSION-fluffy-source.patch
+    41a5ab8452af4d665f4eab676229c33a8bc7901034e8a2281c7e1f0bd005bdd2 file://dejagnu-$VERSION-fluffy-test.patch
 )
 
 if test -v CROSS
@@ -85,14 +84,14 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i dejagnu-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i dejagnu-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i dejagnu-$VERSION-fluffy-test.patch
 
     mkdir -v build
     cd build
 
-    CONFIG_SITE=/sw/glibc/share/config.site ../configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ../configure \
         --prefix=/sw/dejagnu
     makeinfo --html --no-split -o doc/dejagnu.html ../doc/dejagnu.texi
     makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi

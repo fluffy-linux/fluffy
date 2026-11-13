@@ -8,7 +8,7 @@ fi
 VERSION=6.18
 
 ARCHIVES=(
-    c934fadc8b59748c68227a34f6581d2ddf8282b73cdcd52546c8cd88b74b24d1 https://www.kernel.org/pub/linux/docs/man-pages/man-pages-$VERSION.tar.xz
+    c934fadc8b59748c68227a34f6581d2ddf8282b73cdcd52546c8cd88b74b24d1 https://github.com/fluffy-linux/man-pages/releases/download/man-pages-$VERSION/man-pages-$VERSION.tar.xz
     a833f7f585791611f1c25814a1c429406af0a3f03f81f01cf1f1f538e51a60c6 file://man-pages-$VERSION-fluffy-source.patch
     0d84d157288e440c1f6602472f57d27de6315be13d0c442e1bc3110664aec4a1 file://man-pages-$VERSION-fluffy-test.patch
 )

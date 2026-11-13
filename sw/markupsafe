@@ -8,7 +8,7 @@ fi
 VERSION=3.0.3
 
 ARCHIVES=(
-    722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698 https://pypi.org/packages/source/M/MarkupSafe/markupsafe-$VERSION.tar.gz
+    722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698 https://github.com/fluffy-linux/markupsafe/releases/download/$VERSION/markupsafe-$VERSION.tar.gz
 )
 
 NEEDS=(

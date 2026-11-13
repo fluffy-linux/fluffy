@@ -8,7 +8,7 @@ fi
 VERSION=1.12.0
 
 ARCHIVES=(
-    88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c https://github.com/mesonbuild/meson/releases/download/$VERSION/meson-$VERSION.tar.gz
+    88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c https://github.com/fluffy-linux/meson/releases/download/$VERSION/meson-$VERSION.tar.gz
     4a5b09876438317044eb6ee85c71aa1504c2abc4774f43594f22e4b2c0d14546 file://meson-$VERSION-fluffy.patch
 )
 

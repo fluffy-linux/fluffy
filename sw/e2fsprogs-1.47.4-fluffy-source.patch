@@ -1,0 +1,174 @@
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/MCONFIG.in e2fsprogs-1.47.4/MCONFIG.in
+--- e2fsprogs-1.47.4.orig/MCONFIG.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/MCONFIG.in	2026-03-06 17:17:36.000000000 +0000
+@@ -206,7 +206,7 @@
+ $(top_builddir)/util/symlinks:
+ 	cd $(top_builddir)/util ; $(MAKE) symlinks
+ 
+-INSTALL_SYMLINK = /bin/sh $(top_builddir)/util/install-symlink \
++INSTALL_SYMLINK = $(SHELL) $(top_builddir)/util/install-symlink \
+ 			@SYMLINK_RELATIVE@ \
+ 			--symlinks=$(top_builddir)/util/symlinks
+ DEP_INSTALL_SYMLINK = $(top_builddir)/util/install-symlink \
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/config/parse-types.sh e2fsprogs-1.47.4/config/parse-types.sh
+--- e2fsprogs-1.47.4.orig/config/parse-types.sh	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/config/parse-types.sh	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ cat > sed.script << "EOF"
+ /^#/d
+@@ -16,7 +16,7 @@
+     CPP="$CC -E"
+ fi
+ 
+-/bin/echo -n "checking for __uNN types... "
++printf "checking for __uNN types... "
+ # can't check [ -f /usr/include/asm/types.h ] directly, since
+ # the include path might be different if cross-compiling
+ if echo '#include <asm/types.h>' | $CPP - 2> parse-types.log | \
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/configure e2fsprogs-1.47.4/configure
+--- e2fsprogs-1.47.4.orig/configure	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/configure	2026-03-06 17:17:36.000000000 +0000
+@@ -6354,7 +6354,7 @@
+   enableval=$enable_libuuid; if test "$enableval" = "no"
+ then
+ 	if test -z "$PKG_CONFIG"; then
+-		as_fn_error $? "pkg-config not installed; please install it." "$LINENO" 5
++		:
+ 	fi
+ 
+ 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uuid_generate in -luuid" >&5
+@@ -6402,8 +6402,9 @@
+ printf "%s\n" "$ac_cv_lib_uuid_uuid_generate" >&6; }
+ if test "x$ac_cv_lib_uuid_uuid_generate" = xyes
+ then :
+-  LIBUUID=`$PKG_CONFIG --libs uuid`;
+-		 STATIC_LIBUUID=`$PKG_CONFIG --static --libs uuid`
++  LIBUUID=`$PKG_CONFIG --libs uuid 2>/dev/null`
++  LIBUUID=${LIBUUID:-"-luuid"}
++  STATIC_LIBUUID=${STATIC_LIBUUID:-"-luuid"}
+ else case e in #(
+   e) as_fn_error $? "external uuid library not found" "$LINENO" 5 ;;
+ esac
+@@ -6471,8 +6472,9 @@
+ printf "%s\n" "$ac_cv_lib_uuid_uuid_generate" >&6; }
+ if test "x$ac_cv_lib_uuid_uuid_generate" = xyes
+ then :
+-  LIBUUID=`$PKG_CONFIG --libs uuid`;
+-		 STATIC_LIBUUID=`$PKG_CONFIG --static --libs uuid`
++  LIBUUID=`$PKG_CONFIG --libs uuid 2>/dev/null`
++  LIBUUID=${LIBUUID:-"-luuid"}
++  STATIC_LIBUUID=${STATIC_LIBUUID:-"-luuid"}
+ fi
+ 
+ fi
+@@ -6648,7 +6650,7 @@
+   enableval=$enable_libblkid; if test "$enableval" = "no"
+ then
+ 	if test -z "$PKG_CONFIG"; then
+-		as_fn_error $? "pkg-config not installed; please install it." "$LINENO" 5
++		:
+ 	fi
+ 
+ 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for blkid_get_cache in -lblkid" >&5
+@@ -6696,8 +6698,9 @@
+ printf "%s\n" "$ac_cv_lib_blkid_blkid_get_cache" >&6; }
+ if test "x$ac_cv_lib_blkid_blkid_get_cache" = xyes
+ then :
+-  LIBBLKID=`$PKG_CONFIG --libs blkid`;
+-		 STATIC_LIBBLKID=`$PKG_CONFIG --static --libs blkid`
++  LIBBLKID=`$PKG_CONFIG --libs blkid 2>/dev/null`
++  LIBBLKID=${LIBBLKID:-"-lblkid"}
++  STATIC_LIBBLKID=${STATIC_LIBBLKID:-"-lblkid"}
+ else case e in #(
+   e) as_fn_error $? "external blkid library not found" "$LINENO" 5 ;;
+ esac
+@@ -6767,8 +6770,9 @@
+ printf "%s\n" "$ac_cv_lib_blkid_blkid_get_cache" >&6; }
+ if test "x$ac_cv_lib_blkid_blkid_get_cache" = xyes
+ then :
+-  LIBBLKID=`$PKG_CONFIG --libs blkid`;
+-		 STATIC_LIBBLKID=`$PKG_CONFIG --static --libs blkid`
++  LIBBLKID=`$PKG_CONFIG --libs blkid 2>/dev/null`
++  LIBBLKID=${LIBBLKID:-"-lblkid"}
++  STATIC_LIBBLKID=${STATIC_LIBBLKID:-"-lblkid"}
+ fi
+ 
+ fi
+@@ -13332,9 +13336,9 @@
+  esac
+ 
+ if test $cross_compiling = no; then
+-  BUILD_CC="$BUILD_CC" CPP="$CPP" /bin/sh $ac_aux_dir/parse-types.sh
++  BUILD_CC="$BUILD_CC" CPP="$CPP" $SHELL $ac_aux_dir/parse-types.sh
+ else
+-  CROSS_COMPILE="1" BUILD_CC="$BUILD_CC" CPP="$CPP" /bin/sh $ac_aux_dir/parse-types.sh
++  CROSS_COMPILE="1" BUILD_CC="$BUILD_CC" CPP="$CPP" $SHELL $ac_aux_dir/parse-types.sh
+ fi
+ ASM_TYPES_HEADER=./asm_types.h
+ 
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/et/compile_et.sh.in e2fsprogs-1.47.4/lib/et/compile_et.sh.in
+--- e2fsprogs-1.47.4.orig/lib/et/compile_et.sh.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/lib/et/compile_et.sh.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ #
+ 
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/ss/mk_cmds.sh.in e2fsprogs-1.47.4/lib/ss/mk_cmds.sh.in
+--- e2fsprogs-1.47.4.orig/lib/ss/mk_cmds.sh.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/lib/ss/mk_cmds.sh.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ #
+ 
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub.in e2fsprogs-1.47.4/scrub/e2scrub.in
+--- e2fsprogs-1.47.4.orig/scrub/e2scrub.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/scrub/e2scrub.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ #  Copyright (C) 2018 Oracle.  All Rights Reserved.
+ #
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub_all.in e2fsprogs-1.47.4/scrub/e2scrub_all.in
+--- e2fsprogs-1.47.4.orig/scrub/e2scrub_all.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/scrub/e2scrub_all.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ #  Copyright (C) 2018 Oracle.  All Rights Reserved.
+ #
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub_all_cron.in e2fsprogs-1.47.4/scrub/e2scrub_all_cron.in
+--- e2fsprogs-1.47.4.orig/scrub/e2scrub_all_cron.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/scrub/e2scrub_all_cron.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ #  Copyright (C) 2018 Oracle.  All Rights Reserved.
+ #
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub_fail.in e2fsprogs-1.47.4/scrub/e2scrub_fail.in
+--- e2fsprogs-1.47.4.orig/scrub/e2scrub_fail.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/scrub/e2scrub_fail.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ # Email logs of failed e2scrub unit runs when the systemd service fails.
+ 
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/util/install-symlink.in e2fsprogs-1.47.4/util/install-symlink.in
+--- e2fsprogs-1.47.4.orig/util/install-symlink.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/util/install-symlink.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # install-symlink source destination destdir
+ #

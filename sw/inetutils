@@ -8,8 +8,7 @@ fi
 VERSION=2.8
 
 ARCHIVES=(
-    57b3cf4f77555992881e5ba2a09a63b05aa2c56342a60ed4305b5f45938390b5 https://ftpmirror.gnu.org/inetutils/inetutils-$VERSION.tar.gz
-    f8a8b648a494ad272f6b9d9914a74da9f6e6c81b5dc7ee48d00a0cdf6893e386 file://inetutils-$VERSION-fluffy-shell.patch
+    57b3cf4f77555992881e5ba2a09a63b05aa2c56342a60ed4305b5f45938390b5 https://github.com/fluffy-linux/inetutils/releases/download/v$VERSION/inetutils-$VERSION.tar.gz
 )
 
 NEEDS=(
@@ -66,11 +65,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i inetutils-$VERSION-fluffy-shell.patch
-
     sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/inetutils \
         --localstatedir=/sw/inetutils/var \
         --disable-logger \
@@ -84,7 +82,7 @@ MAKE() {
 }
 
 CHECK() {
-    make check
+    make 'LOG_COMPILER=bash -c '\''case "$$0" in *.sh) exec bash "$$0" "$$@";; *) exec "$$0" "$$@";; esac'\''' check
 }
 
 INSTALL() {

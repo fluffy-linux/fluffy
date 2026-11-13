@@ -8,7 +8,7 @@ fi
 VERSION=5.4.1
 
 ARCHIVES=(
-    07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://ftpmirror.gnu.org/gawk/gawk-$VERSION.tar.xz
+    07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://github.com/fluffy-linux/gawk/releases/download/gawk-$VERSION/gawk-$VERSION.tar.xz
     b9956cc9d1a2e50130c28244399853946ba76fa8896102e15f28398946c98ef4 file://gawk-$VERSION-fluffy-source.patch
     e53b14e1924322ad37dd8c106b89fe119c04137b677a7817f6524be59568e3a9 file://gawk-$VERSION-fluffy-test.patch
 )

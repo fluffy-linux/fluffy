@@ -3,7 +3,7 @@ ON=host-build
 VERSION=3.12
 
 ARCHIVES=(
-    7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd https://ftpmirror.gnu.org/diffutils/diffutils-$VERSION.tar.xz
+    7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd https://github.com/fluffy-linux/diffutils/releases/download/v$VERSION/diffutils-$VERSION.tar.xz
 )
 
 NEEDS=(

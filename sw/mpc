@@ -10,7 +10,7 @@ VERSION=1.4.1
 HAS_LDFLAGS=-lmpc
 
 ARCHIVES=(
-    91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$VERSION.tar.xz
+    91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://github.com/fluffy-linux/mpc/releases/download/$VERSION/mpc-$VERSION.tar.xz
 )
 
 NEEDS=(

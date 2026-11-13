@@ -1,4 +1,42 @@
-diff -Naur dejagnu-1.6.3.orig/lib/remote.exp dejagnu-1.6.3/lib/remote.exp
+diff --no-dereference -Naur dejagnu-1.6.3.orig/commands/help.sh dejagnu-1.6.3/commands/help.sh
+--- dejagnu-1.6.3.orig/commands/help.sh	2021-05-23 02:47:46.000000000 +0000
++++ dejagnu-1.6.3/commands/help.sh	2021-05-23 02:47:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # help.sh -- "dejagnu help" command
+ #
+ # Copyright (C) 2018, 2021 Free Software Foundation, Inc.
+diff --no-dereference -Naur dejagnu-1.6.3.orig/dejagnu dejagnu-1.6.3/dejagnu
+--- dejagnu-1.6.3.orig/dejagnu	2021-05-23 02:40:36.000000000 +0000
++++ dejagnu-1.6.3/dejagnu	2021-05-23 02:40:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 2018, 2021 Free Software Foundation, Inc.
+ #
+@@ -291,8 +291,8 @@
+     bashbin="$BASH"
+ elif test -x "${bindir}/bash" ; then
+     bashbin="${bindir}/bash"
+-elif test -x /bin/bash ; then
+-    bashbin=/bin/bash
++elif test -x /sw/bash/bin/bash ; then
++    bashbin=/sw/bash/bin/bash
+ else
+     bashbin=bash
+ fi
+@@ -481,7 +481,7 @@
+     exp)    exec "$expectbin" -- "${commdir}/${command}.exp" ${1+"$@"} ;;
+     gawk)   exec "$gawkbin" -f "${commdir}/${command}.gawk" -- ${1+"$@"} ;;
+     tcl)    exec "$tclbin" "${commdir}/${command}.tcl" ${1+"$@"} ;;
+-    sh)     exec /bin/sh "${commdir}/${command}.sh" ${1+"$@"} ;;
++    sh)     exec /sw/bash/bin/bash "${commdir}/${command}.sh" ${1+"$@"} ;;
+     echo)
+ 	echo command: "${command}"
+ 	echo args: ${1+"$@"}
+diff --no-dereference -Naur dejagnu-1.6.3.orig/lib/remote.exp dejagnu-1.6.3/lib/remote.exp
 --- dejagnu-1.6.3.orig/lib/remote.exp	2020-07-08 23:12:33.000000000 +0000
 +++ dejagnu-1.6.3/lib/remote.exp	2020-07-08 23:12:33.000000000 +0000
 @@ -78,7 +78,7 @@
@@ -28,7 +66,7 @@ diff -Naur dejagnu-1.6.3.orig/lib/remote.exp dejagnu-1.6.3/lib/remote.exp
      }
  
      return $res
-diff -Naur dejagnu-1.6.3.orig/lib/utils.exp dejagnu-1.6.3/lib/utils.exp
+diff --no-dereference -Naur dejagnu-1.6.3.orig/lib/utils.exp dejagnu-1.6.3/lib/utils.exp
 --- dejagnu-1.6.3.orig/lib/utils.exp	2020-07-01 01:24:33.000000000 +0000
 +++ dejagnu-1.6.3/lib/utils.exp	2020-07-01 01:24:33.000000000 +0000
 @@ -174,15 +174,22 @@
@@ -63,3 +101,21 @@ diff -Naur dejagnu-1.6.3.orig/lib/utils.exp dejagnu-1.6.3/lib/utils.exp
  	    }
  	}
      }
+diff --no-dereference -Naur dejagnu-1.6.3.orig/runtest dejagnu-1.6.3/runtest
+--- dejagnu-1.6.3.orig/runtest	2021-04-15 02:04:30.000000000 +0000
++++ dejagnu-1.6.3/runtest	2021-04-15 02:04:30.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (C) 1992-2016, 2021 Free Software Foundation, Inc.
+ #
+@@ -89,7 +89,7 @@
+ # This wrapper script will set up run-time library search PATHs.
+ 
+ if [ -x "$expectbin-bld.sh" ]; then
+-  expectbin="${CONFIG_SHELL-/bin/sh} $expectbin-bld.sh"
++  expectbin="${CONFIG_SHELL-/sw/bash/bin/bash} $expectbin-bld.sh"
+ fi
+ 
+ # Extract a few options from the option list.

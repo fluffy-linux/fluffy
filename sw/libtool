@@ -10,7 +10,7 @@ VERSION=2.6.2
 HAS_LDFLAGS=-lltdl
 
 ARCHIVES=(
-    2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e https://ftpmirror.gnu.org/libtool/libtool-$VERSION.tar.xz
+    2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e https://github.com/fluffy-linux/libtool/releases/download/v$VERSION/libtool-$VERSION.tar.xz
     d48bebaabeb967162767994595d80e20698116e83c6e7c142429fe92882b5d9b file://libtool-$VERSION-fluffy-shell.patch
 )
 

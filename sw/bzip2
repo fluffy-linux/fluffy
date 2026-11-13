@@ -10,7 +10,7 @@ VERSION=1.0.8
 HAS_LDFLAGS=-lbz2
 
 ARCHIVES=(
-    ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269 https://www.sourceware.org/pub/bzip2/bzip2-$VERSION.tar.gz
+    ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269 https://github.com/fluffy-linux/bzip2/releases/download/bzip2-$VERSION/bzip2-$VERSION.tar.gz
     b6e179e81e1732c2b97552b07b702daac383b7a186e8cbca2d466fbfa1e574b0 file://bzip2-$VERSION-fluffy-source.patch
 )
 

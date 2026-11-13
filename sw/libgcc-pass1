@@ -3,7 +3,7 @@ ON=host-build
 VERSION=16.2.0
 
 ARCHIVES=(
-    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
+    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://github.com/fluffy-linux/gcc/releases/download/releases/gcc-$VERSION/gcc-$VERSION.tar.xz
 )
 
 NEEDS=(

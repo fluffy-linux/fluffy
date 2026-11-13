@@ -1,0 +1,36 @@
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-language-specific-requests man-db-2.13.1/src/tests/man-language-specific-requests
+--- man-db-2.13.1.orig/src/tests/man-language-specific-requests	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-language-specific-requests	2025-05-02 12:49:29.000000000 +0000
+@@ -14,7 +14,7 @@
+ export MANPATH
+ 
+ cat >"$tmpdir/fake-program" <<EOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exec cat
+ EOF
+ chmod +x "$tmpdir/fake-program"
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/man-so-links-same-section man-db-2.13.1/src/tests/man-so-links-same-section
+--- man-db-2.13.1.orig/src/tests/man-so-links-same-section	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/man-so-links-same-section	2025-05-02 12:49:29.000000000 +0000
+@@ -15,7 +15,7 @@
+ export MANPATH
+ 
+ cat >"$tmpdir/fake-program" <<EOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exec cat
+ EOF
+ chmod +x "$tmpdir/fake-program"
+diff --no-dereference -Naur man-db-2.13.1.orig/src/tests/zsoelim-so-includes man-db-2.13.1/src/tests/zsoelim-so-includes
+--- man-db-2.13.1.orig/src/tests/zsoelim-so-includes	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/tests/zsoelim-so-includes	2025-05-02 12:49:29.000000000 +0000
+@@ -15,7 +15,7 @@
+ export MANPATH
+ 
+ cat >"$tmpdir/fake-program" <<EOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exec cat
+ EOF
+ chmod +x "$tmpdir/fake-program"

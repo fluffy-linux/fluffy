@@ -1,5 +1,5 @@
-diff --no-dereference -Naur kbd-2.10.0/configure kbd-2.10.0/configure
---- kbd-2.10.0/configure	2026-05-25 07:17:15.399726452 +0000
+diff --no-dereference -Naur kbd-2.10.0.orig/configure kbd-2.10.0/configure
+--- kbd-2.10.0.orig/configure	2026-05-25 07:17:15.399726452 +0000
 +++ kbd-2.10.0/configure	2026-05-25 07:17:15.399726452 +0000
 @@ -19640,9 +19640,9 @@
  
@@ -26,8 +26,17 @@ diff --no-dereference -Naur kbd-2.10.0/configure kbd-2.10.0/configure
  
  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking the configure options..." >&5
  printf '%s\n' "$as_me: checking the configure options..." >&6;}
-diff --no-dereference -Naur kbd-2.10.0/docs/man/man8/Makefile kbd-2.10.0/docs/man/man8/Makefile
---- kbd-2.10.0/docs/man/man8/Makefile	2026-05-25 07:17:52.779644375 +0000
+diff --no-dereference -Naur kbd-2.10.0.orig/data/compress.sh kbd-2.10.0/data/compress.sh
+--- kbd-2.10.0.orig/data/compress.sh	2026-03-18 13:49:48.272721550 +0000
++++ kbd-2.10.0/data/compress.sh	2026-03-18 13:49:48.272721550 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -eu
++#!/sw/bash/bin/bash -eu
+ # SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ COMPRESS="${COMPRESS?A command to compress files is required.}"
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/man/man8/Makefile kbd-2.10.0/docs/man/man8/Makefile
+--- kbd-2.10.0.orig/docs/man/man8/Makefile	2026-05-25 07:17:52.779644375 +0000
 +++ kbd-2.10.0/docs/man/man8/Makefile	2026-05-25 07:17:52.779644375 +0000
 @@ -379,7 +379,7 @@
  V_GEN_SED_0 = @echo "  SED     " $@;
@@ -38,8 +47,8 @@ diff --no-dereference -Naur kbd-2.10.0/docs/man/man8/Makefile kbd-2.10.0/docs/ma
  		showconsolefont.8 setvtrgb.8 $(gen_MANS)
  
  CLEANFILES = $(gen_MANS)
-diff --no-dereference -Naur kbd-2.10.0/docs/man/man8/Makefile.in kbd-2.10.0/docs/man/man8/Makefile.in
---- kbd-2.10.0/docs/man/man8/Makefile.in	2026-05-25 07:17:16.344253695 +0000
+diff --no-dereference -Naur kbd-2.10.0.orig/docs/man/man8/Makefile.in kbd-2.10.0/docs/man/man8/Makefile.in
+--- kbd-2.10.0.orig/docs/man/man8/Makefile.in	2026-05-25 07:17:16.344253695 +0000
 +++ kbd-2.10.0/docs/man/man8/Makefile.in	2026-05-25 07:17:16.344253695 +0000
 @@ -379,7 +379,7 @@
  V_GEN_SED_0 = @echo "  SED     " $@;
@@ -50,22 +59,21 @@ diff --no-dereference -Naur kbd-2.10.0/docs/man/man8/Makefile.in kbd-2.10.0/docs
  		showconsolefont.8 setvtrgb.8 $(gen_MANS)
  
  CLEANFILES = $(gen_MANS)
-diff --no-dereference -Naur kbd-2.10.0/tests/libcommon/libcommon-test03.c kbd-2.10.0/tests/libcommon/libcommon-test03.c
---- kbd-2.10.0/tests/libcommon/libcommon-test03.c	2026-03-23 07:58:24.241356971 +0000
-+++ kbd-2.10.0/tests/libcommon/libcommon-test03.c	2026-03-23 07:58:24.241356971 +0000
-@@ -1,3 +1,5 @@
-+#include <sys/ioctl.h>
-+#include <linux/kd.h>
- #include <unistd.h>
- #include <stdio.h>
- #include <stdlib.h>
-@@ -10,7 +12,8 @@
- 	int console;
- 	char *name;
+diff --no-dereference -Naur kbd-2.10.0.orig/src/unicode_start kbd-2.10.0/src/unicode_start
+--- kbd-2.10.0.orig/src/unicode_start	2024-12-15 19:29:45.032485996 +0000
++++ kbd-2.10.0/src/unicode_start	2024-12-15 19:29:45.032485996 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
  
--	if (!isatty(0))
-+	char arg = 0;
-+	if (!isatty(0) || ioctl(0, KDGKBTYPE, &arg) != 0 || (arg != KB_101 && arg != KB_84))
- 		return EXIT_SUCCESS;
+ # 0. Check whether we're on a console
+ TTY=$(/usr/bin/tty)
+diff --no-dereference -Naur kbd-2.10.0.orig/src/unicode_stop kbd-2.10.0/src/unicode_stop
+--- kbd-2.10.0.orig/src/unicode_stop	2024-12-15 19:29:45.032485996 +0000
++++ kbd-2.10.0/src/unicode_stop	2024-12-15 19:29:45.032485996 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
  
- 	console = getfd(NULL);
+ TTY=$(/usr/bin/tty)
+ case "$TTY" in

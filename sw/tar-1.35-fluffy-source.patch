@@ -1,3 +1,39 @@
+diff --no-dereference -Naur tar-1.35.orig/scripts/backup.in tar-1.35/scripts/backup.in
+--- tar-1.35.orig/scripts/backup.in	2023-07-10 07:29:17.000000000 +0000
++++ tar-1.35/scripts/backup.in	2023-07-10 07:29:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Make backups.
+ 
+ # Copyright 2004-2006, 2013, 2019 Free Software Foundation
+diff --no-dereference -Naur tar-1.35.orig/scripts/backup.sh.in tar-1.35/scripts/backup.sh.in
+--- tar-1.35.orig/scripts/backup.sh.in	2023-07-10 07:29:17.000000000 +0000
++++ tar-1.35/scripts/backup.sh.in	2023-07-10 07:29:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Make backups.
+ 
+ # Copyright 2004-2023 Free Software Foundation, Inc.
+diff --no-dereference -Naur tar-1.35.orig/scripts/dump-remind.in tar-1.35/scripts/dump-remind.in
+--- tar-1.35.orig/scripts/dump-remind.in	2023-07-10 07:29:17.000000000 +0000
++++ tar-1.35/scripts/dump-remind.in	2023-07-10 07:29:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # This file is included in the GNU tar distribution as an example.  It is
+ # not used by default unless the proper line is uncommented in backup-specs.
+ # System administrators will probably want to customize this and
+diff --no-dereference -Naur tar-1.35.orig/scripts/restore.in tar-1.35/scripts/restore.in
+--- tar-1.35.orig/scripts/restore.in	2023-07-10 07:29:17.000000000 +0000
++++ tar-1.35/scripts/restore.in	2023-07-10 07:29:17.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Restore backups.
+ 
+ # Copyright 2004-2023 Free Software Foundation, Inc.
 diff --no-dereference -Naur tar-1.35.orig/src/system.c tar-1.35/src/system.c
 --- tar-1.35.orig/src/system.c	2023-07-10 07:29:17.000000000 +0000
 +++ tar-1.35/src/system.c	2023-07-10 07:29:17.000000000 +0000

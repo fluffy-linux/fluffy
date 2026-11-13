@@ -8,8 +8,8 @@ fi
 VERSION=9.2.1025
 
 ARCHIVES=(
-    cb0dbf701f8550bb54940304fa4d8b875e078db84967e5b36a0eb7ebe8a6d0cc https://github.com/vim/vim/archive/v$VERSION/vim-$VERSION.tar.gz
-    b6e870e5194e789d8d0ccd08f72561ae9984fd38b77be2ccafae43c62fb3e650 file://vim-$VERSION-fluffy-shell.patch
+    cb0dbf701f8550bb54940304fa4d8b875e078db84967e5b36a0eb7ebe8a6d0cc https://github.com/fluffy-linux/vim/releases/download/v$VERSION/vim-$VERSION.tar.gz
+    17669875ecc13018f4ffdaa825169d5f20f81dbfb0dd07f49e94be9c29d892af file://vim-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -65,11 +65,12 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i vim-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i vim-$VERSION-fluffy-source.patch
 
     echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/vim \
         --with-tlib=ncurses
     make

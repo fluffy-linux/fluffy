@@ -1,0 +1,244 @@
+diff --no-dereference -Naur autoconf-2.73.orig/tests/autotest.at autoconf-2.73/tests/autotest.at
+--- autoconf-2.73.orig/tests/autotest.at	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/tests/autotest.at	2026-02-24 14:14:02.000000000 +0000
+@@ -1734,7 +1734,7 @@
+ [AT_SKIP_PARALLEL_TESTS
+ mkdir bin
+ cat >bin/mkfifo <<\EOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 1
+ EOF
+ chmod +x bin/mkfifo
+diff --no-dereference -Naur autoconf-2.73.orig/tests/c.at autoconf-2.73/tests/c.at
+--- autoconf-2.73.orig/tests/c.at	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/tests/c.at	2026-02-24 14:14:02.000000000 +0000
+@@ -114,7 +114,7 @@
+ AT_SETUP([AC_PROG_CPP with warnings])
+ 
+ AT_DATA([mycpp],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ echo noise >&2
+ exec "$@"
+ ]])
+@@ -155,7 +155,7 @@
+ 
+ # A cpp which exit status is meaningless.
+ AT_DATA([mycpp],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ cpp "$@"
+ exit 0
+ ]])
+@@ -198,7 +198,7 @@
+   [], [ignore], [ignore])
+ 
+ AT_DATA([mycc],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ echo "Annoying copyright message" >&2
+ exec "$@"
+ ]])
+diff --no-dereference -Naur autoconf-2.73.orig/tests/m4sh.at autoconf-2.73/tests/m4sh.at
+--- autoconf-2.73.orig/tests/m4sh.at	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/tests/m4sh.at	2026-02-24 14:14:02.000000000 +0000
+@@ -50,11 +50,11 @@
+ AT_CHECK_M4SH
+ 
+ # Calling the script simply 'script' could cause problems with
+-# Solaris /usr/xpg4/bin/sh in the invocation 'sh script' below.
++# Solaris /usr/xpg4/sw/bash/bin/bash in the invocation 'sh script' below.
+ mv -f script script2
+ 
+ AT_DATA([fake-shell],
+-[[#!/bin/sh
++[[#!/sw/bash/bin/bash
+ echo 'Fake shell executed.'
+ shift # fake shell
+ echo "nargs = @S|@#"
+@@ -118,7 +118,7 @@
+ AT_CHECK_AUTOCONF
+ 
+ AT_DATA([cfg-sh],
+-[[#!/bin/sh
++[[#!/sw/bash/bin/bash
+ : > cfg-sh-has-run
+ exec sh "@S|@@"
+ ]])
+@@ -756,7 +756,7 @@
+   echo 1
+ fi
+ cat > foo.sh <<\EOF || AS_EXIT([1])
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ EOF
+ # File systems like FAT tend to fake executable permissions on all files.
+@@ -808,7 +808,7 @@
+ test x${2} = xe && set -e
+ test $[#] -gt 0 || AS_EXIT
+ AS_SET_STATUS([3])
+-dnl Solaris /bin/sh 'set -e' doesn't react to failed function calls
++dnl Solaris /sw/bash/bin/bash 'set -e' doesn't react to failed function calls
+ test x${2} = xe \
+   && { echo 'skipping rest of test: set -e support is lousy'; exit 77; }
+ AS_SET_STATUS([4])
+@@ -830,7 +830,7 @@
+ dnl though m4sh in general should not try to rely on it because of
+ dnl portability nightmares on what constructs are considered errors across
+ dnl various shells; therefore, an overall SKIP result is desirable on
+-dnl broken shells like Solaris /bin/sh.
++dnl broken shells like Solaris /sw/bash/bin/bash.
+ AT_CHECK([$CONFIG_SHELL ./script '' e], [3])
+ AT_CHECK([$CONFIG_SHELL ./script d e], [3], [stdout])
+ dnl NetBSD sh fails to output on stderr here.
+diff --no-dereference -Naur autoconf-2.73.orig/tests/semantics.at autoconf-2.73/tests/semantics.at
+--- autoconf-2.73.orig/tests/semantics.at	2026-03-18 18:32:44.000000000 +0000
++++ autoconf-2.73/tests/semantics.at	2026-03-18 18:32:44.000000000 +0000
+@@ -639,7 +639,7 @@
+ [mkdir path
+ 
+ cat >path/tool <<\EOF
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ exit 0
+ EOF
+ chmod +x path/tool
+@@ -1304,7 +1304,7 @@
+ (set -ex
+ for d in d_foo d_bar d_blurf d_quux; do
+   mkdir $d
+-  printf '%s\n%s\n' '#! /bin/sh' "echo entered $d/configure" \
++  printf '%s\n%s\n' '#!/sw/bash/bin/bash' "echo entered $d/configure" \
+     > $d/configure
+   chmod +x $d/configure
+ done)
+diff --no-dereference -Naur autoconf-2.73.orig/tests/tools.at autoconf-2.73/tests/tools.at
+--- autoconf-2.73.orig/tests/tools.at	2026-03-02 14:46:12.000000000 +0000
++++ autoconf-2.73/tests/tools.at	2026-03-02 14:46:12.000000000 +0000
+@@ -23,8 +23,8 @@
+ ## Syntax of the shell scripts.  ##
+ ## ----------------------------- ##
+ 
+-# We use '/bin/sh -n script' to check that there are no syntax errors
+-# in the scripts.  Although incredible, there are /bin/sh that go into
++# We use '/sw/bash/bin/bash -n script' to check that there are no syntax errors
++# in the scripts.  Although incredible, there are /sw/bash/bin/bash that go into
+ # endless loops with '-n', e.g., SunOS's:
+ #
+ #   $ uname -a
+@@ -40,8 +40,8 @@
+ #   $ time sh -nx endless.sh
+ #   ^Csh -nx endless.sh  3,67s user 0,03s system 63% cpu 5,868 total
+ #
+-# So before using '/bin/sh -n' to check our scripts, we first check
+-# that '/bin/sh -n' is not broken to death.
++# So before using '/sw/bash/bin/bash -n' to check our scripts, we first check
++# that '/sw/bash/bin/bash -n' is not broken to death.
+ 
+ AT_SETUP([Syntax of the shell scripts])
+ 
+diff --no-dereference -Naur autoconf-2.73.orig/tests/torture.at autoconf-2.73/tests/torture.at
+--- autoconf-2.73.orig/tests/torture.at	2026-03-20 18:48:28.000000000 +0000
++++ autoconf-2.73/tests/torture.at	2026-03-20 18:48:28.000000000 +0000
+@@ -293,15 +293,15 @@
+ 
+ # Now check for write errors.
+ # Depending on the shell, 'printf' might or might not report write
+-# errors on stdout.  Check /bin/sh regardless of $SHELL, because
+-# config.status always uses /bin/sh.
++# errors on stdout.  Check /sw/bash/bin/bash regardless of $SHELL, because
++# config.status always uses /sw/bash/bin/bash.
+ # Note: another way to force a write error is with ulimit -f, but
+ # depending on the OS it might not be possible to set that limit
+ # lower than one disk block, so we'd have to make the tests below
+ # produce much more output.
+ test_write_errors=false
+ if test -w /dev/full && test -c /dev/full; then
+-  if /bin/sh -c 'printf "write errors detected?\\n"' > /dev/full 2> /dev/null
++  if /sw/bash/bin/bash -c 'printf "write errors detected?\\n"' > /dev/full 2> /dev/null
+   then :
+   else test_write_errors=:
+   fi
+@@ -1802,11 +1802,11 @@
+ 	 0, [ignore], [stderr],
+ 	 [AT_CHECK([grep 'rerun with a POSIX shell' stderr], [], [ignore])])
+ chmod a-w .
+-AT_CHECK([{ /bin/sh ./configure $configure_options --help=recursive; chmod u+w .; } | grep " INNERMOST "],
++AT_CHECK([{ /sw/bash/bin/bash ./configure $configure_options --help=recursive; chmod u+w .; } | grep " INNERMOST "],
+ 	 0, [ignore], [stderr],
+ 	 [AT_CHECK([grep 'rerun with a POSIX shell' stderr], [], [ignore])])
+ chmod a-w .
+-AT_CHECK([PATH=.$PATH_SEPARATOR$PATH; export PATH; { /bin/sh configure $configure_options --help=recursive; chmod +w .; } | grep " INNERMOST "],
++AT_CHECK([PATH=.$PATH_SEPARATOR$PATH; export PATH; { /sw/bash/bin/bash configure $configure_options --help=recursive; chmod +w .; } | grep " INNERMOST "],
+ 	 0, [ignore], [stderr],
+ 	 [AT_CHECK([grep 'rerun with a POSIX shell' stderr], [], [ignore])])
+ chmod a-w .
+@@ -1844,13 +1844,13 @@
+ 	 0, [ignore], [stderr],
+ 	 [AT_CHECK([grep 'rerun with a POSIX shell' stderr], [], [ignore])])
+ chmod a-w builddir
+-AT_CHECK([cd builddir && { /bin/sh ../configure $configure_options --help=recursive; chmod u+w .; } | grep " INNERMOST "],
++AT_CHECK([cd builddir && { /sw/bash/bin/bash ../configure $configure_options --help=recursive; chmod u+w .; } | grep " INNERMOST "],
+ 	 0, [ignore], [stderr],
+ 	 [AT_CHECK([grep 'rerun with a POSIX shell' stderr], [], [ignore])])
+ chmod a-w builddir
+ # Not all shells search $PATH for scripts.
+-if (cd builddir && PATH=`pwd`/..$PATH_SEPARATOR$PATH /bin/sh configure $configure_options --help) >/dev/null 2>&1; then
+-  AT_CHECK([cd builddir && PATH=`pwd`/..$PATH_SEPARATOR$PATH /bin/sh configure $configure_options --help=recursive | grep " INNERMOST "], 0, [ignore])
++if (cd builddir && PATH=`pwd`/..$PATH_SEPARATOR$PATH /sw/bash/bin/bash configure $configure_options --help) >/dev/null 2>&1; then
++  AT_CHECK([cd builddir && PATH=`pwd`/..$PATH_SEPARATOR$PATH /sw/bash/bin/bash configure $configure_options --help=recursive | grep " INNERMOST "], 0, [ignore])
+ fi
+ AT_CHECK([PATH=`pwd`$PATH_SEPARATOR$PATH; export PATH; cd builddir && { configure $configure_options --help=recursive; chmod u+w .; } | grep " INNERMOST "],
+ 	 0, [ignore], [stderr],
+@@ -1885,7 +1885,7 @@
+ AS_MKDIR_P([inner])
+ 
+ AT_DATA([inner/configure],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ case "$*" in
+     *--help*) echo 'No Autoconf here, folks!' ;;
+     *)        echo got_it >myfile ;;
+@@ -1932,7 +1932,7 @@
+ AS_MKDIR_P([foo])
+ 
+ AT_DATA([foo/configure],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ touch innerfile
+ exit 0
+ ]])
+@@ -2409,7 +2409,7 @@
+ 
+ # Create a fake ltmain.sh to get past the above failure.
+ AT_DATA([ltmain.sh],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ exit 1
+ ]])
+ chmod +x ltmain.sh
+@@ -2705,19 +2705,19 @@
+ mkdir build-aux
+ 
+ AT_DATA([build-aux/config-guess.old],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ timestamp='1970-01-01'
+ printf '%s\n' 'frobozz-bogon-bogos1'
+ ]])
+ 
+ AT_DATA([build-aux/config-sub.new],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ scriptversion='9999-12-31'
+ printf '%s\n' "$*"
+ ]])
+ 
+ AT_DATA([build-aux/install-sh.old],
+-[[#! /bin/sh
++[[#!/sw/bash/bin/bash
+ # Old versions of install-sh did not have a timestamp line.
+ ]])
+ 

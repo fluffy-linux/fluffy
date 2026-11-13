@@ -3,7 +3,7 @@ ON=cross-build
 VERSION=1.0
 
 ARCHIVES=(
-    71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7 https://ftpmirror.gnu.org/gettext/gettext-$VERSION.tar.xz
+    71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7 https://github.com/fluffy-linux/gettext/releases/download/v$VERSION/gettext-$VERSION.tar.xz
     24d2a42e3eb51d0574b51e019e5864f374dc2a26170049ac00f5db849567d0ce file://gettext-$VERSION-fluffy-shell.patch
 )
 

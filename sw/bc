@@ -8,7 +8,7 @@ fi
 VERSION=7.0.3
 
 ARCHIVES=(
-    91eb74caed0ee6655b669711a4f350c25579778694df248e28363318e03c7fc4 https://github.com/gavinhoward/bc/releases/download/$VERSION/bc-$VERSION.tar.xz
+    91eb74caed0ee6655b669711a4f350c25579778694df248e28363318e03c7fc4 https://github.com/fluffy-linux/bc/releases/download/$VERSION/bc-$VERSION.tar.xz
     3762f32a86a1d877a554e08472ba2d14fa4dc5f3be76110f8c841f3855e83468 file://bc-$VERSION-fluffy-source.patch
     fd4efad468a1d66ab2ae8b31fed9c8c012743c8d698e8e9aa17b038059522dd8 file://bc-$VERSION-fluffy-test.patch
 )

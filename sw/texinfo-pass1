@@ -3,7 +3,7 @@ ON=cross-build
 VERSION=7.3
 
 ARCHIVES=(
-    51f74eb0f51cfa9873b85264dfdd5d46e8957ec95b88f0fb762f63d9e164c72e https://ftpmirror.gnu.org/texinfo/texinfo-$VERSION.tar.xz
+    51f74eb0f51cfa9873b85264dfdd5d46e8957ec95b88f0fb762f63d9e164c72e https://github.com/fluffy-linux/texinfo/releases/download/texinfo-$VERSION/texinfo-$VERSION.tar.xz
     c7ec72c350fce9dc15527c8397fcf1cfb29292d47d7c7326773f9f7d777cf8cd file://texinfo-$VERSION-fluffy-shell.patch
     b385f43b509ceb6a506264794ff8670400ce2bade13aa67100996f20a6d37e7f file://texinfo-$VERSION-fluffy-test.patch
 )

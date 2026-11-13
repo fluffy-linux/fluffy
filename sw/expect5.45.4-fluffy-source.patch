@@ -1,7 +1,67 @@
-diff -Naur expect5.45.4.orig/configure expect5.45.4/configure
---- expect5.45.4.orig/configure	2018-02-04 10:43:58.000000000 +0000
-+++ expect5.45.4/configure	2018-02-04 10:43:58.000000000 +0000
-@@ -8639,11 +8639,7 @@
+diff --no-dereference -Naur expect5.45.4.orig/configure expect5.45.4/configure
+--- expect5.45.4.orig/configure	2025-04-22 03:16:42.221990368 +0000
++++ expect5.45.4/configure	2025-04-22 03:16:42.221990368 +0000
+@@ -2532,6 +2532,9 @@
+ 
+ 
+ 	    # First check to see if --with-tcl was specified.
++	    if test x"${with_tclconfig}" = xyes ; then
++		with_tclconfig=""
++	    fi
+ 	    if test x"${with_tclconfig}" != x ; then
+ 		case "${with_tclconfig}" in
+ 		    */tclConfig.sh )
+@@ -2604,7 +2607,8 @@
+ 
+ 	    # check in a few common install locations
+ 	    if test x"${ac_cv_c_tclconfig}" = x ; then
+-		for i in `ls -d ${libdir} 2>/dev/null` \
++		for i in `ls -d /sw/*/lib 2>/dev/null` \
++			`ls -d ${libdir} 2>/dev/null` \
+ 			`ls -d ${exec_prefix}/lib 2>/dev/null` \
+ 			`ls -d ${prefix}/lib 2>/dev/null` \
+ 			`ls -d /usr/local/lib 2>/dev/null` \
+@@ -2792,17 +2796,10 @@
+ 	    prefix=/usr/local
+ 	fi
+     fi
+-    if test "${exec_prefix}" = "NONE" -a x"${prefix_default}" = x"yes" \
+-	-o x"${exec_prefix_default}" = x"yes" ; then
+-	if test x"${TCL_EXEC_PREFIX}" != x; then
+-	    { $as_echo "$as_me:${as_lineno-$LINENO}: --exec-prefix defaulting to TCL_EXEC_PREFIX ${TCL_EXEC_PREFIX}" >&5
+-$as_echo "$as_me: --exec-prefix defaulting to TCL_EXEC_PREFIX ${TCL_EXEC_PREFIX}" >&6;}
+-	    exec_prefix=${TCL_EXEC_PREFIX}
+-	else
+-	    { $as_echo "$as_me:${as_lineno-$LINENO}: --exec-prefix defaulting to ${prefix}" >&5
++    if test "${exec_prefix}" = "NONE" ; then
++	{ $as_echo "$as_me:${as_lineno-$LINENO}: --exec-prefix defaulting to ${prefix}" >&5
+ $as_echo "$as_me: --exec-prefix defaulting to ${prefix}" >&6;}
+-	    exec_prefix=$prefix
+-	fi
++	exec_prefix=$prefix
+     fi
+ 
+ 
+@@ -5019,7 +5016,9 @@
+ else
+ 
+ 	# Use the value from --with-tclinclude, if it was given
+-
++	if test x"${with_tclinclude}" = xyes ; then
++	    with_tclinclude=""
++	fi
+ 	if test x"${with_tclinclude}" != x ; then
+ 	    if test -f "${with_tclinclude}/tcl.h" ; then
+ 		ac_cv_c_tclh=${with_tclinclude}
+@@ -5049,6 +5048,7 @@
+ 
+ 	    eval "temp_includedir=${includedir}"
+ 	    list="$list \
++		`ls -d /sw/*/include            2>/dev/null` \
+ 		`ls -d ${temp_includedir}        2>/dev/null` \
+ 		`ls -d ${TCL_PREFIX}/include     2>/dev/null` \
+ 		`ls -d ${TCL_BIN_DIR}/../include 2>/dev/null`"
+@@ -8637,11 +8637,7 @@
  
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking stty to use" >&5
  $as_echo_n "checking stty to use... " >&6; }
@@ -14,7 +74,7 @@ diff -Naur expect5.45.4.orig/configure expect5.45.4/configure
  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STTY_BIN" >&5
  $as_echo "$STTY_BIN" >&6; }
  
-diff -Naur expect5.45.4.orig/configure.in expect5.45.4/configure.in
+diff --no-dereference -Naur expect5.45.4.orig/configure.in expect5.45.4/configure.in
 --- expect5.45.4.orig/configure.in	2018-02-04 10:43:58.000000000 +0000
 +++ expect5.45.4/configure.in	2018-02-04 10:43:58.000000000 +0000
 @@ -347,11 +347,7 @@
@@ -30,3 +90,46 @@ diff -Naur expect5.45.4.orig/configure.in expect5.45.4/configure.in
  AC_MSG_RESULT($STTY_BIN)
  
  AC_MSG_CHECKING([if stty reads stdout])
+diff --no-dereference -Naur expect5.45.4.orig/fixline1 expect5.45.4/fixline1
+--- expect5.45.4.orig/fixline1	2018-02-02 19:15:52.000000000 +0000
++++ expect5.45.4/fixline1	2018-02-02 19:15:52.000000000 +0000
+@@ -12,13 +12,13 @@
+ #
+ set line1 [gets stdin]
+ if {"$line1" == "\#!/bin/sh"} {
+-    # if multi-line hack already in place, do nothing
+-    set header $line1
++    # if multi-line hack already in place, rewrite shebang for Fluffy
++    set header "#!/sw/bash/bin/bash"
+ } else {
+     # if single-line #!, switch to multi-line rewrite
+ 
+     regexp "^#!(.*/)*(.*)" $line1 X X tail
+-    set header "#!/bin/sh\n"
++    set header "#!/sw/bash/bin/bash\n"
+     append header "# \\\n"
+     append header "exec $tail "; append header {"$0" ${1+"$@"}}
+ }
+diff --no-dereference -Naur expect5.45.4.orig/testsuite/configure expect5.45.4/testsuite/configure
+--- expect5.45.4.orig/testsuite/configure	2018-02-04 10:43:58.000000000 +0000
++++ expect5.45.4/testsuite/configure	2018-02-04 10:43:58.000000000 +0000
+@@ -2290,6 +2290,9 @@
+ 
+ 
+ 	    # First check to see if --with-tcl was specified.
++	    if test x"${with_tclconfig}" = xyes ; then
++		with_tclconfig=""
++	    fi
+ 	    if test x"${with_tclconfig}" != x ; then
+ 		case "${with_tclconfig}" in
+ 		    */tclConfig.sh )
+@@ -2362,7 +2365,8 @@
+ 
+ 	    # check in a few common install locations
+ 	    if test x"${ac_cv_c_tclconfig}" = x ; then
+-		for i in `ls -d ${libdir} 2>/dev/null` \
++		for i in `ls -d /sw/*/lib 2>/dev/null` \
++			`ls -d ${libdir} 2>/dev/null` \
+ 			`ls -d ${exec_prefix}/lib 2>/dev/null` \
+ 			`ls -d ${prefix}/lib 2>/dev/null` \
+ 			`ls -d /usr/local/lib 2>/dev/null` \

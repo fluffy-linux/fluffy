@@ -8,9 +8,8 @@ fi
 VERSION=2.14
 
 ARCHIVES=(
-    bc8d3c73535b8838d8c8e2654d73edc4e6ae8c8acdb45d5df5dc9a1547446d43 https://ftpmirror.gnu.org/grub/grub-$VERSION.tar.xz
-    7a27046a69aec73ff0e7b1562a7beab38ed55a46a5b4563db54229d0a2bd1fd7 file://grub-$VERSION-fluffy-shell.patch
-    365ed4ac4fd76aa821dc3cab69da6bf18951f4ea00fbb110de692d4bf66e0241 file://grub-$VERSION-fluffy-source.patch
+    bc8d3c73535b8838d8c8e2654d73edc4e6ae8c8acdb45d5df5dc9a1547446d43 https://github.com/fluffy-linux/grub/releases/download/grub-$VERSION/grub-$VERSION.tar.xz
+    6ab40604c289b8dedb1dec75eecfe3f985a0bef2ff11d06fdf18e8ff8a61fd89 file://grub-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -70,10 +69,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i grub-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i grub-$VERSION-fluffy-source.patch
 
-    ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    $CONFIG_SHELL ./configure \
         --prefix=/sw/grub \
         --sysconfdir=/sw/grub/etc \
         --sbindir=/sw/grub/bin \
