@@ -8,7 +8,7 @@ fi
 VERSION=1.14
 
 ARCHIVES=(
-    01a7b881bd220bfdf615f97b8718f80bdfd3f6add385b993dcf6efd14e8c0ac6 https://ftpmirror.gnu.org/gzip/gzip-$VERSION.tar.xz
+    01a7b881bd220bfdf615f97b8718f80bdfd3f6add385b993dcf6efd14e8c0ac6 https://github.com/fluffy-linux/gzip/releases/download/v$VERSION/gzip-$VERSION.tar.xz
 )
 
 NEEDS=(

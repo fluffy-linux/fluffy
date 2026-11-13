@@ -3,7 +3,7 @@ ON=host-build
 VERSION=2.47
 
 ARCHIVES=(
-    154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff https://ftpmirror.gnu.org/binutils/binutils-$VERSION.tar.xz
+    154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff https://github.com/fluffy-linux/binutils-gdb/releases/download/binutils-${VERSION//./_}/binutils-$VERSION.tar.xz
     4602feb91bec5a8053b8683a5032a835d35940f0d1e3aa17a28c6db42adfbd9a file://binutils-$VERSION-fluffy-shell.patch
     b336826eebce46174f9237c3d5c1acef3ed00a74de8431cc97c9eb6b95d4977b file://binutils-$VERSION-fluffy-source.patch
 )

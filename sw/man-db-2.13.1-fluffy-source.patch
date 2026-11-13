@@ -1,3 +1,15 @@
+diff --no-dereference -Naur man-db-2.13.1.orig/init/systemd/man-db.service.in man-db-2.13.1/init/systemd/man-db.service.in
+--- man-db-2.13.1.orig/init/systemd/man-db.service.in	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/init/systemd/man-db.service.in	2025-05-02 12:49:29.000000000 +0000
+@@ -6,7 +6,7 @@
+ [Service]
+ Type=oneshot
+ # Recover from deletion, per FHS.
+-ExecStart=+/usr/bin/install -d -o @cache_top_owner@ -g @cache_top_owner@ -m 0755 /var/cache/man
++ExecStart=+install -d -o @cache_top_owner@ -g @cache_top_owner@ -m 0755 /var/cache/man
+ # Regenerate man database.
+ ExecStart=@bindir@/mandb --quiet
+ User=@cache_top_owner@
 diff --no-dereference -Naur man-db-2.13.1.orig/lib/pathsearch.c man-db-2.13.1/lib/pathsearch.c
 --- man-db-2.13.1.orig/lib/pathsearch.c	2025-05-02 12:49:29.000000000 +0000
 +++ man-db-2.13.1/lib/pathsearch.c	2025-05-02 12:49:29.000000000 +0000
@@ -124,3 +136,40 @@ diff --no-dereference -Naur man-db-2.13.1.orig/lib/pathsearch.c man-db-2.13.1/li
 -	free (cwd);
  	return ret;
  }
+diff --no-dereference -Naur man-db-2.13.1.orig/src/man.c man-db-2.13.1/src/man.c
+--- man-db-2.13.1.orig/src/man.c	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/man.c	2025-05-02 12:49:29.000000000 +0000
+@@ -1535,7 +1535,7 @@
+ 		free (esc_file);
+ 	}
+ 
+-	cmd = pipecmd_new_args ("/bin/sh", "-c", browser, nullptr);
++	cmd = pipecmd_new_args ("/sw/bash/bin/bash", "-c", browser, nullptr);
+ 	pipecmd_pre_exec (cmd, drop_privs, NULL, NULL);
+ 	p = pipeline_new_commands (cmd, nullptr);
+ 	pipeline_ignore_signals (p, 1);
+diff --no-dereference -Naur man-db-2.13.1.orig/src/man_db.conf.in man-db-2.13.1/src/man_db.conf.in
+--- man-db-2.13.1.orig/src/man_db.conf.in	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/man_db.conf.in	2025-05-02 12:49:29.000000000 +0000
+@@ -17,9 +17,10 @@
+ #
+ #MANDATORY_MANPATH 			/usr/src/pvm3/man
+ #
+-MANDATORY_MANPATH			/usr/man
+-MANDATORY_MANPATH			/usr/share/man
+-MANDATORY_MANPATH			/usr/local/share/man
++#MANDATORY_MANPATH			/usr/man
++MANDATORY_MANPATH			/sw/man-pages/share/man
++MANDATORY_MANPATH			/sw/*/share/man
++#MANDATORY_MANPATH			/usr/local/share/man
+ #---------------------------------------------------------
+ # set up PATH to MANPATH mapping
+ # ie. what man tree holds man pages for what binary directory.
+@@ -63,6 +64,7 @@
+ #
+ #		*MANPATH*     ->	*CATPATH*
+ #
++MANDB_MAP	/sw			/var/cache/man
+ MANDB_MAP	/usr/man		/var/cache/man/fsstnd
+ MANDB_MAP	/usr/share/man		/var/cache/man
+ MANDB_MAP	/usr/local/man		/var/cache/man/oldlocal

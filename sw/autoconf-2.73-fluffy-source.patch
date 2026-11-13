@@ -1,0 +1,176 @@
+diff --no-dereference -Naur autoconf-2.73.orig/build-aux/config.guess autoconf-2.73/build-aux/config.guess
+--- autoconf-2.73.orig/build-aux/config.guess	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/build-aux/config.guess	2026-02-24 14:14:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Attempt to guess a canonical system name.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+@@ -39,7 +39,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+@@ -1020,7 +1020,7 @@
+ 	  EV67)  UNAME_MACHINE=alphaev67 ;;
+ 	  EV68*) UNAME_MACHINE=alphaev68 ;;
+ 	esac
+-	objdump --private-headers /bin/sh | grep -q ld.so.1
++	objdump --private-headers /sw/bash/bin/bash | grep -q ld.so.1
+ 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+ 	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+ 	;;
+diff --no-dereference -Naur autoconf-2.73.orig/build-aux/config.sub autoconf-2.73/build-aux/config.sub
+--- autoconf-2.73.orig/build-aux/config.sub	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/build-aux/config.sub	2026-02-24 14:14:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2025 Free Software Foundation, Inc.
+ 
+@@ -57,7 +57,7 @@
+ # superseded or lifted in POSIX.  However, this script identifies a wide
+ # variety of pre-POSIX systems that do not have POSIX shells at all, and
+ # even some reasonably current systems (Solaris 10 as case-in-point) still
+-# have a pre-POSIX /bin/sh.
++# have a pre-POSIX /sw/bash/bin/bash.
+ 
+ me=`echo "$0" | sed -e 's,.*/,,'`
+ 
+diff --no-dereference -Naur autoconf-2.73.orig/build-aux/install-sh autoconf-2.73/build-aux/install-sh
+--- autoconf-2.73.orig/build-aux/install-sh	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/build-aux/install-sh	2026-02-24 14:14:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2025-06-18.21; # UTC
+diff --no-dereference -Naur autoconf-2.73.orig/lib/autoconf/erlang.m4 autoconf-2.73/lib/autoconf/erlang.m4
+--- autoconf-2.73.orig/lib/autoconf/erlang.m4	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/lib/autoconf/erlang.m4	2026-02-24 14:14:02.000000000 +0000
+@@ -95,7 +95,7 @@
+ [ac_ext=erl
+ : ${ac_objext=o}
+ ac_compile='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&AS_MESSAGE_LOG_FD && ln -sf conftest.beam conftest.$ac_objext'
+-ac_link='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&AS_MESSAGE_LOG_FD && echo "[#]!/bin/sh" > conftest$ac_exeext && AS_ECHO(["\"$ERL\" -run conftest start -run init stop -noshell"]) >> conftest$ac_exeext && chmod +x conftest$ac_exeext'
++ac_link='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&AS_MESSAGE_LOG_FD && echo "[#]!/sw/bash/bin/bash" > conftest$ac_exeext && AS_ECHO(["\"$ERL\" -run conftest start -run init stop -noshell"]) >> conftest$ac_exeext && chmod +x conftest$ac_exeext'
+ ])
+ 
+ 
+diff --no-dereference -Naur autoconf-2.73.orig/lib/autoconf/general.m4 autoconf-2.73/lib/autoconf/general.m4
+--- autoconf-2.73.orig/lib/autoconf/general.m4	2026-03-02 14:46:12.000000000 +0000
++++ autoconf-2.73/lib/autoconf/general.m4	2026-03-02 14:46:12.000000000 +0000
+@@ -46,7 +46,7 @@
+ # it reaches the end of 'configure.ac'.
+ #
+ # - BINSH
+-#   #! /bin/sh
++#   #!/sw/bash/bin/bash
+ # - HEADER-REVISION
+ #   Sent by AC_REVISION
+ # - HEADER-COMMENT
+diff --no-dereference -Naur autoconf-2.73.orig/lib/autoconf/programs.m4 autoconf-2.73/lib/autoconf/programs.m4
+--- autoconf-2.73.orig/lib/autoconf/programs.m4	2026-03-02 14:46:12.000000000 +0000
++++ autoconf-2.73/lib/autoconf/programs.m4	2026-03-02 14:46:12.000000000 +0000
+@@ -944,7 +944,7 @@
+ ac_make=`AS_ECHO(["$[2]"]) | sed 's/+/p/g; s/[[^a-zA-Z0-9_]]/_/g'`
+ AC_CACHE_VAL(ac_cv_prog_make_${ac_make}_set,
+ [cat >conftest.make <<\_ACEOF
+-SHELL = /bin/sh
++SHELL = /sw/bash/bin/bash
+ all:
+ 	@printf '%s\n' '@@@%%%=$(MAKE)=@@@%%%'
+ _ACEOF
+diff --no-dereference -Naur autoconf-2.73.orig/lib/autoconf/specific.m4 autoconf-2.73/lib/autoconf/specific.m4
+--- autoconf-2.73.orig/lib/autoconf/specific.m4	2026-03-18 18:31:54.000000000 +0000
++++ autoconf-2.73/lib/autoconf/specific.m4	2026-03-18 18:31:54.000000000 +0000
+@@ -60,11 +60,11 @@
+ # ------------------
+ AC_DEFUN([AC_SYS_INTERPRETER],
+ [AC_CACHE_CHECK(whether @%:@! works in shell scripts, ac_cv_sys_interpreter,
+-[echo '#! /bin/cat
++[echo '#! /sw/coreutils/bin/cat
+ exit 69
+ ' >conftest
+ chmod u+x conftest
+-(SHELL=/bin/sh; export SHELL; ./conftest >/dev/null 2>&1)
++(SHELL=/sw/bash/bin/bash; export SHELL; ./conftest >/dev/null 2>&1)
+ if test $? -ne 69; then
+    ac_cv_sys_interpreter=yes
+ else
+diff --no-dereference -Naur autoconf-2.73.orig/lib/autotest/general.m4 autoconf-2.73/lib/autotest/general.m4
+--- autoconf-2.73.orig/lib/autotest/general.m4	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/lib/autotest/general.m4	2026-02-24 14:14:02.000000000 +0000
+@@ -233,7 +233,7 @@
+ unlimited permission to copy, distribute and modify it.], [m4_echo])]
+ [AS_PREPARE
+ 
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ 
+ # How were we run?
+ at_cli_args="$[@]"
+@@ -378,7 +378,7 @@
+ at_fn_create_debugging_script ()
+ {
+   {
+-    echo "#! /bin/sh" &&
++    echo "#!/sw/bash/bin/bash" &&
+     AS_ECHO(["cd '$at_dir'"]) &&
+     AS_ECHO(['case $[#] in']) &&
+     AS_ECHO(["  0) exec \${CONFIG_SHELL-$SHELL} \"$at_myself\" -v -d ]dnl
+diff --no-dereference -Naur autoconf-2.73.orig/lib/m4sugar/m4sh.m4 autoconf-2.73/lib/m4sugar/m4sh.m4
+--- autoconf-2.73.orig/lib/m4sugar/m4sh.m4	2026-02-24 14:14:02.000000000 +0000
++++ autoconf-2.73/lib/m4sugar/m4sh.m4	2026-02-24 14:14:02.000000000 +0000
+@@ -37,7 +37,7 @@
+ # KILL is only used to suppress output.
+ #
+ # - BINSH
+-#   AC_REQUIRE'd #! /bin/sh line
++#   AC_REQUIRE'd #!/sw/bash/bin/bash line
+ # - HEADER-REVISION
+ #   RCS keywords etc.
+ # - HEADER-COMMENT
+@@ -267,7 +267,7 @@
+   fi
+   AS_EXIT])])
+ fi
+-SHELL=${CONFIG_SHELL-/bin/sh}
++SHELL=${CONFIG_SHELL-/sw/bash/bin/bash}
+ export SHELL
+ # Unset more variables known to interfere with behavior of common tools.
+ CLICOLOR_FORCE= GREP_OPTIONS=
+@@ -312,7 +312,7 @@
+ # with these descriptors closed.
+ # 'exec m>&n' fails in POSIX sh when fd N is closed, but succeeds
+ # regardless of whether fd N is open in some old shells, e.g. Solaris
+-# /bin/sh.  This is OK because those shells will be rejected by
++# /sw/bash/bin/bash.  This is OK because those shells will be rejected by
+ # _AS_DETECT_BETTER_SHELL anyway.
+ # TODO post-2.70: use "backward" redirections when opening these fds,
+ # so we preserve their unusable state.  Needs downstream logic to
+@@ -581,7 +581,7 @@
+ # The shell comments are intentional, to work around people who don't
+ # realize the impacts of using insufficient m4 quoting.  This macro
+ # always uses : and provides a default case, to work around Solaris
+-# /bin/sh bugs regarding the exit status.
++# /sw/bash/bin/bash bugs regarding the exit status.
+ m4_define([_AS_CASE],
+ [ [@%:@(]
+   $1[)] :
+@@ -2204,7 +2204,7 @@
+ # Bangshe and minimal initialization.
+ # Put only the basename of __file__ into HEADER-COMMENT, so that the
+ # path to the source directory is not embedded in the output file.
+-m4_divert_text([BINSH], [@%:@! /bin/sh])
++m4_divert_text([BINSH], [@%:@! /sw/bash/bin/bash])
+ m4_divert_text([HEADER-COMMENT],
+ 	       [@%:@ Generated from m4_bpatsubst(__file__,[^.*/\([^/]*\)$],[[\1]]) by m4_PACKAGE_STRING.])
+ m4_divert_text([M4SH-SANITIZE], [_AS_SHELL_SANITIZE])

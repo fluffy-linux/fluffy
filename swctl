@@ -6,7 +6,8 @@
 set -euo pipefail
 shopt -s extglob
 
-source ctypes.sh
+# shellcheck disable=SC1091,SC2218
+builtin source ctypes.sh
 
 MNT_ITER_FORWARD=0
 
@@ -30,6 +31,24 @@ fatal() {
     exit 1
 }
 
+validate_pkg_name() {
+    local name="$1"
+    if [[ ! "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._+-]*$ ]]
+    then
+        fatal "invalid package name: $name"
+    fi
+}
+
+resolve_in_chroot() {
+    local root_dir="${1%/}" rel_path="$2" candidate
+    candidate="$(realpath -m "$root_dir/${rel_path#/}")"
+    if [[ "$candidate" != "$root_dir"/* ]]
+    then
+        fatal "chroot path escapes $root_dir: $rel_path -> $candidate"
+    fi
+    printf '%s' "$candidate"
+}
+
 source() {
     local src="$1"
     shift
@@ -44,10 +63,12 @@ source() {
             pkg_includes["$current_eval_pkg"]+="$src "
         fi
     fi
+    # shellcheck disable=SC1090
     builtin source "$src" "$@"
 }
 
 .() {
+    # shellcheck disable=SC1090
     source "$@"
 }
 
@@ -75,6 +96,11 @@ then
     fatal "no arguments provided"
 fi
 
+if (( EUID != 0 ))
+then
+    fatal "must be run as root"
+fi
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 if test -n "${FLUFFY:-}"
@@ -82,6 +108,10 @@ then
     call unshare $CLONE_NEWNS
     call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
     call mount "$FLUFFY/sw" /sw $NULL $(( MS_BIND | MS_REC )) $NULL
+    if test -d /dev/shm
+    then
+        call mount tmpfs /dev/shm tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
+    fi
 fi
 
 if test -v CROSS
@@ -96,9 +126,38 @@ fi
 
 FSTAB=${FSTAB:-/sw/.build/fstab}
 SEC_KEY="${FLUFFY_SIGN_KEY:-/sw/.build/sign.sec}"
+PUB_KEY="${FLUFFY_PUB_KEY:-/sw/.build/sign.pub}"
 
 sign_file() {
     signify -S -s "$SEC_KEY" -m "$1" -x - | tail -n 1
+}
+
+verify_fstab_signature() {
+    test -f "$FSTAB" || return 0
+    if test ! -f "$PUB_KEY"
+    then
+        fatal "public key not found for verifying $FSTAB: $PUB_KEY"
+    fi
+
+    local first_line="" sig=""
+    IFS= read -r first_line < "$FSTAB" || true
+    if [[ "$first_line" != "# fluffy.signature="* ]]
+    then
+        fatal "missing signature header in $FSTAB"
+    fi
+    sig="${first_line#\# fluffy.signature=}"
+
+    local tmp_msg="" tmp_sig=""
+    tmp_msg="$(mktemp)"
+    tmp_sig="$(mktemp)"
+    if ! tail -n +2 "$FSTAB" > "$tmp_msg" \
+        || ! printf 'untrusted comment: verify %s\n%s\n' "$FSTAB" "$sig" > "$tmp_sig" \
+        || ! signify -V -q -p "$PUB_KEY" -m "$tmp_msg" -x "$tmp_sig"
+    then
+        rm -f "$tmp_msg" "$tmp_sig"
+        fatal "signature verification failed for $FSTAB"
+    fi
+    rm -f "$tmp_msg" "$tmp_sig"
 }
 
 check_sha256() {
@@ -144,19 +203,47 @@ mount_chroot_resolv_conf() {
     fi
     if test -L "$FLUFFY/etc/resolv.conf"
     then
-        local resolv_tgt resolv_dst
+        local resolv_tgt rel_path resolv_dst
         resolv_tgt="$(readlink "$FLUFFY/etc/resolv.conf")"
         if [[ "$resolv_tgt" == /* ]]
         then
-            resolv_dst="$FLUFFY$resolv_tgt"
+            rel_path="$resolv_tgt"
         else
-            resolv_dst="$FLUFFY/etc/$resolv_tgt"
+            rel_path="/etc/$resolv_tgt"
+        fi
+        resolv_dst="$(resolve_in_chroot "$FLUFFY" "$rel_path")"
+        if test -L "$resolv_dst"
+        then
+            fatal "refusing to follow nested symlink for resolv.conf target: $resolv_dst"
         fi
         mkdir -p "${resolv_dst%/*}"
         touch "$resolv_dst"
         call mount /etc/resolv.conf "$resolv_dst" $NULL $MS_BIND $NULL
     else
         call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
+    fi
+}
+
+mount_chroot_shm() {
+    local chroot_shm="$FLUFFY/dev/shm"
+    if test -L "$chroot_shm"
+    then
+        local shm_tgt rel_shm
+        shm_tgt="$(readlink "$chroot_shm")"
+        if [[ "$shm_tgt" == /* ]]
+        then
+            rel_shm="$shm_tgt"
+        else
+            rel_shm="/dev/$shm_tgt"
+        fi
+        chroot_shm="$(resolve_in_chroot "$FLUFFY" "$rel_shm")"
+    fi
+    mkdir -p "$chroot_shm"
+    if test -d /dev/shm
+    then
+        call mount /dev/shm "$chroot_shm" $NULL $MS_BIND $NULL
+    else
+        call mount tmpfs "$chroot_shm" tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
     fi
 }
 
@@ -180,47 +267,61 @@ reload_fstab() {
 
     if test -f "$FSTAB"
     then
+        verify_fstab_signature
         call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
     fi
-
 }
 
 reload_fstab
 
 fs_str() {
+    local __fs="$1" __field="$2"
+    local -n __fs_out="$3"
     local __s
-    dlcall -r string -n __s "mnt_fs_get_$2" "$1"
-    eval "$3=\${__s#string:}"
+    dlcall -r string -n __s "mnt_fs_get_$__field" "$__fs"
+    __fs_out="${__s#string:}"
 }
 
 get_fs_opt() {
-    local fs="$1" key="$2" __out="$3" opts
-    eval "$__out=''"
-    fs_str "$fs" options opts
-    opts=",$opts,"
-    if [[ "$opts" == *,"$key=\""* ]]
+    local __fs="$1" __key="$2"
+    local -n __opt_out="$3"
+    __opt_out=""
+    local __opts="" __val=""
+    fs_str "$__fs" options __opts
+    __opts=",$__opts,"
+    if [[ "$__opts" == *,"$__key=\""* ]]
     then
-        local val="${opts#*,"$key=\""}"
-        val="${val%%\"*}"
-        eval "$__out=\$val"
+        __val="${__opts#*,"$__key=\""}"
+        __val="${__val%%\"*}"
+        __opt_out="$__val"
         return 0
-    elif [[ "$opts" == *,"$key="* ]]
+    elif [[ "$__opts" == *,"$__key="* ]]
     then
-        local val="${opts#*,"$key="}"
-        val="${val%%,*}"
-        eval "$__out=\$val"
+        __val="${__opts#*,"$__key="}"
+        __val="${__val%%,*}"
+        __opt_out="$__val"
         return 0
     fi
     return 1
 }
 
-find_fs_by_pkg() {
-    local query="$1" __var="$2" exact="${3:-0}"
-    local query_name="${query##*/}"
-    local query_base="${query_name%-pass*}"
+src_matches_pkg() {
+    local __src="$1" __pkg="$2"
+    [[ "$__src" == "/sw/$__pkg-"[0-9]*.squashfs ]] || return 1
+    local __ver="${__src#"/sw/$__pkg-"}"
+    __ver="${__ver%.squashfs}"
+    [[ "$__ver" =~ ^[0-9][^-]*(-fluffy[0-9]+)?$ ]]
+}
 
-    eval "$__var=\$NULL"
-    local fallback="$NULL"
+find_fs_by_pkg() {
+    local __query="$1"
+    local -n __find_out="$2"
+    local __exact="${3:-0}"
+    local __query_name="${__query##*/}"
+    local __query_base="${__query_name%-pass*}"
+
+    __find_out="$NULL"
+    local __fallback="$NULL"
 
     call_ptr itr mnt_new_iter "int:$MNT_ITER_FORWARD"
     call_ptr p_fs malloc "ulong:8"
@@ -238,19 +339,19 @@ find_fs_by_pkg() {
         local curr_fs="${val[0]}" src
         fs_str "$curr_fs" source src
 
-        if [[ "$src" == "/sw/$query_name-"[0-9]*.squashfs ]]
+        if src_matches_pkg "$src" "$__query_name"
         then
-            eval "$__var=\$curr_fs"
+            __find_out="$curr_fs"
             break
         fi
 
-        if test "$exact" -eq 0 && test "$fallback" == "$NULL"
+        if test "$__exact" -eq 0 && test "$__fallback" == "$NULL"
         then
             local tgt
             fs_str "$curr_fs" target tgt
-            if test "$tgt" == "/sw/$query_base" || [[ "$src" == "/sw/$query_base-"[0-9]*.squashfs ]]
+            if test "$tgt" == "/sw/$__query_base" || src_matches_pkg "$src" "$__query_base"
             then
-                fallback="$curr_fs"
+                __fallback="$curr_fs"
             fi
         fi
     done
@@ -258,9 +359,9 @@ find_fs_by_pkg() {
     dlcall free "$p_fs"
     dlcall mnt_free_iter "$itr"
 
-    if eval "test \"\$$__var\" == \"\$NULL\"" && test "$fallback" != "$NULL"
+    if test "$__find_out" == "$NULL" && test "$__fallback" != "$NULL"
     then
-        eval "$__var=\$fallback"
+        __find_out="$__fallback"
     fi
 }
 
@@ -271,6 +372,11 @@ register_entry() {
     local mountpoint="/sw/$mount_pkg"
     local recipe_checksum="${FLUFFY_RECIPE_CHECKSUM}"
     local needs=""
+
+    if [[ "${HAS_CFLAGS:-}" == *\"* || "${HAS_LDFLAGS:-}" == *\"* ]]
+    then
+        fatal "HAS_CFLAGS and HAS_LDFLAGS must not contain double quotes in $pkg"
+    fi
 
     if (( ${#NEEDS[@]} > 0 ))
     then
@@ -335,17 +441,27 @@ register_entry() {
 }
 
 sign_and_save_fstab() {
+    if test ! -f "$SEC_KEY"
+    then
+        fatal "signing key not found: $SEC_KEY"
+    fi
+
     local tmp_content fstab_sig
-    tmp_content="$(mktemp)"
+    mkdir -p "${FSTAB%/*}"
+    tmp_content="$(mktemp "${FSTAB%/*}/.fstab.XXXXXX")"
 
     call mnt_table_set_intro_comment "$mnt_table" $NULL
     call mnt_table_replace_file "$mnt_table" "string:$tmp_content"
-    fstab_sig="$(sign_file "$tmp_content")"
+    if ! fstab_sig="$(sign_file "$tmp_content")" || test -z "$fstab_sig"
+    then
+        rm -f "$tmp_content"
+        fatal "failed to sign $FSTAB"
+    fi
     rm -f "$tmp_content"
 
     call mnt_table_set_intro_comment "$mnt_table" "string:# fluffy.signature=$fstab_sig"$'\n'
-    mkdir -p "${FSTAB%/*}"
     call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
+    chmod 0644 "$FSTAB"
 }
 
 dfs() {
@@ -404,6 +520,7 @@ install_targets() {
 
     install_step() {
         local pkg_name="$1" fs="$NULL" src needs_str=""
+        validate_pkg_name "$pkg_name"
 
         find_fs_by_pkg "$pkg_name" fs
         if test "$fs" == "$NULL"
@@ -465,7 +582,7 @@ install_targets() {
             local mnt_src
             fs_str "$is_mnt" source mnt_src
             local backing_file="/sys/class/block/${mnt_src##*/}/loop/backing_file"
-            if test -r "$backing_file" && [[ "$(< "$backing_file")" == *"/${src##*/}" ]]
+            if test -r "$backing_file" && [[ "$(< "$backing_file")" == *"/sw/${src##*/}" || "$(< "$backing_file")" == "$src" ]]
             then
                 continue
             fi
@@ -570,6 +687,17 @@ lockdown_exec() {
 
         call mount /sw /sw $NULL $(( MS_BIND | MS_REC )) $NULL
 
+        # Hide /sw/.build (keys, fstab) behind an ephemeral tmpfs in all unprivileged phases.
+        if test "$1" != SQUASHFS && test -d /sw/.build
+        then
+            if test "$1" == INSTALL
+            then
+                call mount tmpfs /sw/.build tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=0755"
+            else
+                call mount tmpfs /sw/.build tmpfs $(( MS_NOSUID | MS_NODEV | MS_RDONLY )) "mode=0555"
+            fi
+        fi
+
         case "$1" in
             MAKE)
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
@@ -580,6 +708,10 @@ lockdown_exec() {
             INSTALL)
                 mkdir -p "/sw/.build/destdir/sw/$mount_pkg"
                 call mount "$work_dir/installed" "/sw/.build/destdir/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
+                if test -d /sw/.build
+                then
+                    call mount none /sw/.build $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
+                fi
                 call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
                 ;;
             SQUASHFS)
@@ -604,12 +736,40 @@ lockdown_exec() {
             call mount none /sw $NULL $(( MS_BIND | MS_REMOUNT )) $NULL
         fi
 
-        call mount tmpfs /tmp tmpfs 0 $NULL
+        call mount tmpfs /tmp tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
+        if test -d /var/tmp
+        then
+            call mount tmpfs /var/tmp tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
+        fi
 
+        local -a dep_exports=()
         if test "$1" != SQUASHFS
         then
-            touch /tmp/.fluffy_ns_sealed
-            chmod 0444 /tmp/.fluffy_ns_sealed
+            local dep dep_fs dep_cflags dep_ldflags canon_dep env_prefix
+            for dep in "${BUILD_NEEDS[@]}"
+            do
+                dep_fs="$NULL"
+                find_fs_by_pkg "$dep" dep_fs
+                if test "$dep_fs" != "$NULL"
+                then
+                    dep_cflags=""
+                    dep_ldflags=""
+                    get_fs_opt "$dep_fs" "X-fluffy.cflags" dep_cflags || true
+                    get_fs_opt "$dep_fs" "X-fluffy.ldflags" dep_ldflags || true
+                    if test -n "$dep_cflags" || test -n "$dep_ldflags"
+                    then
+                        canon_dep="${dep%-pass*}"
+                        env_prefix="${canon_dep^^}"
+                        env_prefix="${env_prefix//[^A-Z0-9_]/_}"
+                        dep_exports+=(
+                            "${env_prefix}_CFLAGS=${dep_cflags:- }"
+                            "${env_prefix}_LDFLAGS=${dep_ldflags:- }"
+                            "${env_prefix}_LIBS=${dep_ldflags:- }"
+                        )
+                    fi
+                fi
+            done
+
             cd /work
             call setgroups 0 $NULL
             call setresgid "$SUDO_GID" "$SUDO_GID" "$SUDO_GID"
@@ -647,7 +807,9 @@ lockdown_exec() {
                 export PATH="$d:$PATH"
             done
             shopt -u nullglob
-            export FLUFFY="$saved_fluffy" FLUFFY_TGT="$(uname -m)-fluffy-linux-gnu" CONFIG_SITE=/dev/null
+            local fluffy_tgt
+            fluffy_tgt="$(uname -m)-fluffy-linux-gnu"
+            export FLUFFY="$saved_fluffy" FLUFFY_TGT="$fluffy_tgt" CONFIG_SITE=/dev/null
         fi
 
         if test "$1" == INSTALL
@@ -655,30 +817,9 @@ lockdown_exec() {
             export DESTDIR=/sw/.build/destdir MAKEFLAGS="$MAKEFLAGS DESTDIR=/sw/.build/destdir" PATH="/sw/.build/destdir/sw/$mount_pkg/bin:$PATH"
         fi
 
-        if test "$1" != SQUASHFS
+        if (( ${#dep_exports[@]} > 0 ))
         then
-            local dep dep_fs dep_cflags dep_ldflags canon_dep env_prefix
-            for dep in "${BUILD_NEEDS[@]}"
-            do
-                dep_fs="$NULL"
-                find_fs_by_pkg "$dep" dep_fs
-                if test "$dep_fs" != "$NULL"
-                then
-                    dep_cflags=""
-                    dep_ldflags=""
-                    get_fs_opt "$dep_fs" "X-fluffy.cflags" dep_cflags || true
-                    get_fs_opt "$dep_fs" "X-fluffy.ldflags" dep_ldflags || true
-                    if test -n "$dep_cflags" || test -n "$dep_ldflags"
-                    then
-                        canon_dep="${dep%-pass*}"
-                        env_prefix="${canon_dep^^}"
-                        env_prefix="${env_prefix//[^A-Z0-9_]/_}"
-                        export "${env_prefix}_CFLAGS=${dep_cflags:- }"
-                        export "${env_prefix}_LDFLAGS=${dep_ldflags:- }"
-                        export "${env_prefix}_LIBS=${dep_ldflags:- }"
-                    fi
-                fi
-            done
+            export "${dep_exports[@]}"
         fi
 
         "$1"
@@ -695,6 +836,7 @@ lockdown() {
 
 build_single_pkg() {
     local pkg="${1##*/}"
+    validate_pkg_name "$pkg"
     local pkg_file="sw/$pkg"
 
     if test ! -f "$pkg_file"
@@ -708,6 +850,8 @@ build_single_pkg() {
         phase_log="$work_dir/phase.log"
         rm -f "$phase_log"
 
+        # Temporarily drop euid to SUDO_UID while keeping saved-uid=0 only for
+        # outer orchestration; PREPARE drops saved-uid=0 permanently in its own subshell.
         call setgroups 0 $NULL
         call setresgid "$SUDO_GID" "$SUDO_GID" 0
         call setresuid "$SUDO_UID" "$SUDO_UID" 0
@@ -766,20 +910,15 @@ build_single_pkg() {
                 call unshare $CLONE_NEWNS
                 call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
 
-                mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp,"$root"}
+                mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp,var/tmp,"$root"}
                 call mount /dev "$FLUFFY/dev" $NULL $MS_BIND $NULL
                 call mount /dev/pts "$FLUFFY/dev/pts" $NULL $MS_BIND $NULL
                 call mount proc "$FLUFFY/proc" proc 0 $NULL
                 call mount sysfs "$FLUFFY/sys" sysfs 0 $NULL
-                call mount tmpfs "$FLUFFY/run" tmpfs 0 $NULL
-                call mount tmpfs "$FLUFFY/tmp" tmpfs 0 $NULL
-                if test -h "$FLUFFY/dev/shm"
-                then
-                    mkdir -p "$FLUFFY$(realpath /dev/shm)"
-                    chmod 1777 "$FLUFFY$(realpath /dev/shm)"
-                else
-                    call mount tmpfs "$FLUFFY/dev/shm" tmpfs $(( MS_NOSUID | MS_NODEV )) $NULL
-                fi
+                call mount tmpfs "$FLUFFY/run" tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=0755"
+                call mount tmpfs "$FLUFFY/tmp" tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
+                call mount tmpfs "$FLUFFY/var/tmp" tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
+                mount_chroot_shm
                 mount_chroot_resolv_conf
 
                 call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
@@ -812,23 +951,6 @@ build_single_pkg() {
 
         log -n "$pkg${FLUFFY_PROGRESS:+ $FLUFFY_PROGRESS}:"
         prepare_exec() {
-            for ((i=0; i<${#ARCHIVES[@]}; i+=2))
-            do
-                sha256="${ARCHIVES[i]}"
-                url="${ARCHIVES[i+1]}"
-                filename="${url##*/}"
-                cached_file="$work_dir/archives/$filename"
-
-                if ! check_sha256 "$cached_file" "$sha256"
-                then
-                    rm -f "$cached_file"
-                    [[ "$url" == file://* && "$url" != file:///* ]] && url="file://$PWD/sw/${url#file://}"
-                    curl --fail --silent --show-error --location --output "$cached_file" "$url"
-                fi
-
-                verify_sha256 "$cached_file" "$sha256" "$filename"
-            done
-
             (
                 call setresuid 0 0 0
                 call setresgid 0 0 0
@@ -836,23 +958,51 @@ build_single_pkg() {
             )
             mkdir -p "$work_dir/src" "$work_dir/installed"
 
-            cd "$work_dir/src"
-            for idx in "${!archives[@]}"
-            do
-                archive="${archives[idx]}"
-                case "$archive" in
-                    *.tar.*)
-                        tar --one-top-level="${archive%%?(-src).tar.*}" -xf "$work_dir/archives/$archive"
-                        if (( idx == 0 ))
-                        then
-                            cd "${archive%%?(-src).tar.*}"
-                        fi
-                        ;;
-                    *)
-                        cp "$work_dir/archives/$archive" .
-                        ;;
-                esac
-            done
+            # Permanently drop saved-uid/saved-gid 0 before network fetches and tar extraction
+            # (supplementary groups were already cleared at the start of build_single_pkg).
+            (
+                call setresgid "$SUDO_GID" "$SUDO_GID" "$SUDO_GID"
+                call setresuid "$SUDO_UID" "$SUDO_UID" "$SUDO_UID"
+
+                for ((i=0; i<${#ARCHIVES[@]}; i+=2))
+                do
+                    sha256="${ARCHIVES[i]}"
+                    url="${ARCHIVES[i+1]}"
+                    filename="${url##*/}"
+                    validate_pkg_name "$filename"
+                    cached_file="$work_dir/archives/$filename"
+
+                    if ! check_sha256 "$cached_file" "$sha256"
+                    then
+                        local tmp_dl="$cached_file.part.$$"
+                        rm -f "$tmp_dl"
+                        [[ "$url" == file://* && "$url" != file:///* ]] && url="file://$PWD/sw/${url#file://}"
+                        curl --fail --silent --show-error --location --proto '=https,http,file' --output "$tmp_dl" -- "$url"
+                        verify_sha256 "$tmp_dl" "$sha256" "$filename"
+                        mv -f "$tmp_dl" "$cached_file"
+                    else
+                        verify_sha256 "$cached_file" "$sha256" "$filename"
+                    fi
+                done
+
+                cd "$work_dir/src"
+                for idx in "${!archives[@]}"
+                do
+                    archive="${archives[idx]}"
+                    case "$archive" in
+                        *.tar.*)
+                            tar --no-same-owner --no-same-permissions --one-top-level="${archive%%?(-src).tar.*}" -xf "$work_dir/archives/$archive"
+                            if (( idx == 0 ))
+                            then
+                                cd "${archive%%?(-src).tar.*}"
+                            fi
+                            ;;
+                        *)
+                            cp -- "$work_dir/archives/$archive" .
+                            ;;
+                    esac
+                done
+            )
         }
         run_phase PREPARE prepare_exec
 
@@ -880,7 +1030,6 @@ build_single_pkg() {
                 sign_and_save_fstab
                 rm -rf "$work_dir"/{src,installed,test-results,test-work}
             )
-            rm -rf /sw/.build/destdir 2>/dev/null || true
             rm -f "$phase_log"
         }
 
@@ -908,10 +1057,12 @@ format_recipe_mime() {
     # Part 2: Sourced includes (if any)
     if test -n "${pkg_includes[$pkg]:-}"
     then
+        local -a raw_incs=()
         local inc
-        for inc in $(printf '%s\n' ${pkg_includes[$pkg]} | LC_ALL=C sort -u)
+        read -ra raw_incs <<< "${pkg_includes[$pkg]}"
+        while IFS= read -r inc
         do
-            if test -f "$inc"
+            if test -n "$inc" && test -f "$inc"
             then
                 printf -- '--%s\r\n' "$boundary"
                 printf 'Content-Type: text/x-shellscript; charset="utf-8"\r\n'
@@ -920,7 +1071,7 @@ format_recipe_mime() {
                 cat "$inc"
                 printf '\r\n'
             fi
-        done
+        done < <(printf '%s\n' "${raw_incs[@]}" | LC_ALL=C sort -u)
     fi
 
     # Part 3: Direct build image manifest
@@ -930,8 +1081,10 @@ format_recipe_mime() {
     printf '\r\n'
     if test -n "${pkg_bneeds[$pkg]:-}"
     then
+        local -a bdeps=()
         local dep
-        for dep in ${pkg_bneeds[$pkg]}
+        read -ra bdeps <<< "${pkg_bneeds[$pkg]}"
+        for dep in "${bdeps[@]}"
         do
             if test -z "${pkg_img_chk[$dep]:-}"
             then
@@ -947,12 +1100,14 @@ plan_pkgs() {
     local plan_mode="$1" tmp_plan
     shift
     tmp_plan="$(mktemp)"
-    (
+    if ! (
         declare -a order=() root_nodes=()
         declare -A pkg_loaded=() pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_needs=() pkg_bneeds=() pkg_includes=()
 
         load_pkg_meta() {
-            local pkg_name="$1" recipe_file="sw/$1"
+            local pkg_name="$1"
+            validate_pkg_name "$pkg_name"
+            local recipe_file="sw/$pkg_name"
 
             if test -n "${pkg_loaded[$pkg_name]:-}"
             then
@@ -982,13 +1137,30 @@ plan_pkgs() {
             unset current_eval_pkg
             unset -f MAKE CHECK INSTALL
 
+            if [[ "${HAS_CFLAGS:-}" == *\"* || "${HAS_LDFLAGS:-}" == *\"* ]]
+            then
+                fatal "HAS_CFLAGS and HAS_LDFLAGS must not contain double quotes in $pkg_name"
+            fi
+
             local need_pkg
             for need_pkg in "${NEEDS[@]}"
             do
                 need_pkg="${need_pkg##*/}"
+                validate_pkg_name "$need_pkg"
                 if test ! -f "sw/$need_pkg"
                 then
                     fatal "recipe file not found: sw/$need_pkg (in NEEDS of $pkg_name)"
+                fi
+            done
+
+            local bneed_pkg
+            for bneed_pkg in "${BUILD_NEEDS[@]}"
+            do
+                bneed_pkg="${bneed_pkg##*/}"
+                validate_pkg_name "$bneed_pkg"
+                if test ! -f "sw/$bneed_pkg"
+                then
+                    fatal "recipe file not found: sw/$bneed_pkg (in BUILD_NEEDS of $pkg_name)"
                 fi
             done
 
@@ -1001,6 +1173,7 @@ plan_pkgs() {
             local -a direct_bneeds=()
             if test "$ON" != host-build && test "$ON" != "$pkg_name"
             then
+                validate_pkg_name "$ON"
                 direct_bneeds+=("$ON")
             fi
             direct_bneeds+=("${BUILD_NEEDS[@]}")
@@ -1011,21 +1184,30 @@ plan_pkgs() {
 
         build_step() {
             local mode="${1%%:*}" pkg_name="${1#*:}" dep
+            local -a deps_arr=()
             load_pkg_meta "$pkg_name"
 
             case "$mode" in
                 build)
-                    for dep in ${pkg_bneeds[$pkg_name]}
-                    do
-                        step_deps+=("run:${dep##*/}")
-                    done
+                    if test -n "${pkg_bneeds[$pkg_name]:-}"
+                    then
+                        read -ra deps_arr <<< "${pkg_bneeds[$pkg_name]}"
+                        for dep in "${deps_arr[@]}"
+                        do
+                            step_deps+=("run:${dep##*/}")
+                        done
+                    fi
                     ;;
                 run)
                     step_deps+=("build:$pkg_name")
-                    for dep in ${pkg_needs[$pkg_name]}
-                    do
-                        step_deps+=("run:${dep##*/}")
-                    done
+                    if test -n "${pkg_needs[$pkg_name]:-}"
+                    then
+                        read -ra deps_arr <<< "${pkg_needs[$pkg_name]}"
+                        for dep in "${deps_arr[@]}"
+                        do
+                            step_deps+=("run:${dep##*/}")
+                        done
+                    fi
                     ;;
                 *)
                     fatal "unknown plan mode: $mode"
@@ -1052,6 +1234,10 @@ plan_pkgs() {
             printf '%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}" "${pkg_cflags[$pkg]:-}" "${pkg_ldflags[$pkg]:-}"
         done
     ) > "$tmp_plan"
+    then
+        rm -f "$tmp_plan"
+        exit 1
+    fi
 
     order=()
     pkg_ver=()
@@ -1089,6 +1275,10 @@ build_pkgs() {
     if test -z "${SUDO_UID:-}" || test -z "${SUDO_GID:-}"
     then
         fatal "must be run via sudo"
+    fi
+    if test "$SUDO_UID" -eq 0 || test "$SUDO_GID" -eq 0
+    then
+        fatal "SUDO_UID and SUDO_GID must be unprivileged (non-zero)"
     fi
 
     # set low priority to not lock up the host
@@ -1130,7 +1320,7 @@ build_pkgs() {
         current_recipe_chk="$( format_recipe_mime "$pkg" | sha256sum )"
         current_recipe_chk="${current_recipe_chk%% *}"
 
-        if test -n "$src" && test -s "$src" && test -n "$recorded_recipe_chk" && test "$recorded_recipe_chk" == "$current_recipe_chk"
+        if test -n "$src" && test "$src" == "$sq" && test -s "$src" && test -n "$recorded_recipe_chk" && test "$recorded_recipe_chk" == "$current_recipe_chk"
         then
             log "$pkg [$idx/$total]: UP-TO-DATE"
             continue
@@ -1146,11 +1336,16 @@ build_pkgs() {
         then
             find_fs_by_pkg "$pkg" fs 1
         fi
-        if test "$fs" != "$NULL"
+        if test "$fs" == "$NULL"
         then
-            get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || true
-            pkg_img_chk["$pkg"]="$img_chk"
+            fatal "failed to locate registered fstab entry for $pkg after build"
         fi
+        get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || true
+        if test -z "$img_chk"
+        then
+            fatal "missing X-fluffy.image-checksum for $pkg after build"
+        fi
+        pkg_img_chk["$pkg"]="$img_chk"
     done
 }
 
@@ -1179,8 +1374,10 @@ refresh_recipe_checksums() {
             local curr_fs="${val[0]}" src
             fs_str "$curr_fs" source src
             local filename="${src##*/}"
-            local pkg_name="${filename%-[0-9]*.squashfs}"
-            if test -f "sw/$pkg_name"
+            filename="${filename%.squashfs}"
+            filename="${filename%-fluffy+([0-9])}"
+            local pkg_name="${filename%-[0-9]*}"
+            if test -f "sw/$pkg_name" && src_matches_pkg "$src" "$pkg_name"
             then
                 target_pkgs+=("$pkg_name")
             fi
@@ -1268,7 +1465,8 @@ run)
     then
         fatal "Usage: $0 run <package> <command> [args...]"
     fi
-    target="$1"
+    target="${1##*/}"
+    validate_pkg_name "$target"
     shift
     (
         build_pkgs --run bash "$target"
@@ -1277,20 +1475,15 @@ run)
     if test -n "${FLUFFY:-}"
     then
         root="$PWD"
-        mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp,"$root"}
+        mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp,var/tmp,"$root"}
         call mount /dev "$FLUFFY/dev" $NULL $MS_BIND $NULL
         call mount /dev/pts "$FLUFFY/dev/pts" $NULL $MS_BIND $NULL
         call mount proc "$FLUFFY/proc" proc 0 $NULL
         call mount sysfs "$FLUFFY/sys" sysfs 0 $NULL
-        call mount tmpfs "$FLUFFY/run" tmpfs 0 $NULL
-        call mount tmpfs "$FLUFFY/tmp" tmpfs 0 $NULL
-        if test -h "$FLUFFY/dev/shm"
-        then
-            mkdir -p "$FLUFFY$(realpath /dev/shm)"
-            chmod 1777 "$FLUFFY$(realpath /dev/shm)"
-        else
-            call mount tmpfs "$FLUFFY/dev/shm" tmpfs $(( MS_NOSUID | MS_NODEV )) $NULL
-        fi
+        call mount tmpfs "$FLUFFY/run" tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=0755"
+        call mount tmpfs "$FLUFFY/tmp" tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
+        call mount tmpfs "$FLUFFY/var/tmp" tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
+        mount_chroot_shm
         mount_chroot_resolv_conf
         call mount "$root" "$FLUFFY$root" $NULL $MS_BIND $NULL
         install_targets bash "$target"

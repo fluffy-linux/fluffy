@@ -3,7 +3,7 @@ ON=host-build
 VERSION=2.42.2
 
 ARCHIVES=(
-    03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a https://www.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-$VERSION.tar.xz
+    03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a https://github.com/fluffy-linux/util-linux/releases/download/v$VERSION/util-linux-$VERSION.tar.xz
 )
 
 NEEDS=(

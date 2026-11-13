@@ -8,7 +8,7 @@ fi
 VERSION=3.12
 
 ARCHIVES=(
-    7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd https://ftpmirror.gnu.org/diffutils/diffutils-$VERSION.tar.xz
+    7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd https://github.com/fluffy-linux/diffutils/releases/download/v$VERSION/diffutils-$VERSION.tar.xz
     233a5d9473016ffae09cf2cbd69fa1b622a822df2249066d439c1c30b3ac2093 file://diffutils-$VERSION-fluffy-shell.patch
     2c4c91b6a6779c5655aff3778e76992539a21758185674e9347c07970c3cf6e4 file://diffutils-$VERSION-fluffy-source.patch
 )

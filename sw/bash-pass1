@@ -3,8 +3,8 @@ ON=host-build
 VERSION=5.3
 
 ARCHIVES=(
-    0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz
-    26b6fe28d82797afe85ba22ce897a80bb3d74bf46de0f64d702a021690a2ccef file://bash-$VERSION-fluffy-source.patch
+    0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://github.com/fluffy-linux/bash/releases/download/bash-$VERSION/bash-$VERSION.tar.gz
+    79812c6d5c8caeea5d1cb56953b8193d2687b9a01a16279c90ee1038dd792a0c file://bash-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -22,9 +22,10 @@ BUILD_NEEDS=(
 MAKE() {
     patch -Z -Np1 -i bash-$VERSION-fluffy-source.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/bash \
-        --build=$(sh support/config.guess) \
+        --build=$($CONFIG_SHELL support/config.guess) \
         --host=$FLUFFY_TGT \
         --without-bash-malloc
     make

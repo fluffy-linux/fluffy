@@ -8,7 +8,7 @@ fi
 VERSION=1.24.1
 
 ARCHIVES=(
-    74e2819795b6aff431aeac983d63a9c8968eeaba2a2eba7df8ba4c7b41e7cfd8 https://ftpmirror.gnu.org/groff/groff-$VERSION.tar.gz
+    74e2819795b6aff431aeac983d63a9c8968eeaba2a2eba7df8ba4c7b41e7cfd8 https://github.com/fluffy-linux/groff/releases/download/$VERSION/groff-$VERSION.tar.gz
     7b2160654b45f201501b6240c5c912fb91323fccacb2b97dd2287e8b44c152c5 file://groff-$VERSION-fluffy-shell.patch
     8cfeb4dc2e0c12cf9d1571d73017eb944b499fdc192365caacc5c4a867abbd41 file://groff-$VERSION-fluffy-source.patch
 )

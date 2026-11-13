@@ -10,7 +10,7 @@ VERSION=1.10.0
 HAS_LDFLAGS=-llz4
 
 ARCHIVES=(
-    537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b https://github.com/lz4/lz4/releases/download/v$VERSION/lz4-$VERSION.tar.gz
+    537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b https://github.com/fluffy-linux/lz4/releases/download/v$VERSION/lz4-$VERSION.tar.gz
     65c03362297ef58fdec56cce67b39d99784775c90a22cf76abe5107cec325195 file://lz4-$VERSION-fluffy-test.patch
 )
 

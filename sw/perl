@@ -8,8 +8,9 @@ fi
 VERSION=5.44.0
 
 ARCHIVES=(
-    505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://www.cpan.org/src/5.0/perl-$VERSION.tar.xz
-    3e43a671a2f0117b87c627e9af1a29f1da9aecff4c5bbe255e2ab7fa6ef5f573 file://perl-$VERSION-fluffy-ch8.patch
+    505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://github.com/fluffy-linux/perl5/releases/download/v$VERSION/perl-$VERSION.tar.xz
+    76d5b2c38546637ae9847dbee846f3dc38440b662c94c9455f5f68a995c9bd8b file://perl-$VERSION-fluffy-source.patch
+    2dbbf22a0f2fd0114d14851b95df2546e715b3deef7d3b03308cc78d0070a0de file://perl-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -77,7 +78,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i perl-$VERSION-fluffy-ch8.patch
+    patch -Z -Np1 -i perl-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i perl-$VERSION-fluffy-test.patch
 
     export BUILD_ZLIB=False
     export BUILD_BZIP2=0
@@ -96,6 +98,7 @@ MAKE() {
         -D pager="/sw/less/bin/less -isR" \
         -D useshrplib \
         -D usethreads \
+        -D sh=/sw/bash/bin/bash \
         -D targetsh=/sw/bash/bin/bash \
         -D locincpth="" \
         -D loclibpth=""

@@ -10,7 +10,7 @@ VERSION=10.47
 HAS_LDFLAGS=-lpcre2-8
 
 ARCHIVES=(
-    47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7 https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$VERSION/pcre2-$VERSION.tar.bz2
+    47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7 https://github.com/fluffy-linux/pcre2/releases/download/pcre2-$VERSION/pcre2-$VERSION.tar.bz2
     1250912274d44649a860e62e4e2a541ca2992903c8dddc4541c97a6815f00fbc file://pcre2-$VERSION-fluffy-source.patch
     7017025f0da44ec4fdebeaabe72eb25ea7e8adb7f9e370fb25d65ba8625d6be6 file://pcre2-$VERSION-fluffy-test.patch
 )

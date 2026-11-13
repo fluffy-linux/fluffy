@@ -3,7 +3,7 @@ ON=host-build
 VERSION=4.7.5
 
 ARCHIVES=(
-    547b7b7f4d2e44bf91b6fc554664850c69563701deab9fd9cd7e21f694c88ea6 https://github.com/plougher/squashfs-tools/releases/download/$VERSION/squashfs-tools-$VERSION.tar.gz
+    547b7b7f4d2e44bf91b6fc554664850c69563701deab9fd9cd7e21f694c88ea6 https://github.com/fluffy-linux/squashfs-tools/releases/download/$VERSION/squashfs-tools-$VERSION.tar.gz
 )
 
 NEEDS=(

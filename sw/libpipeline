@@ -8,7 +8,7 @@ fi
 VERSION=1.5.8
 
 ARCHIVES=(
-    1b1203ca152ccd63983c3f2112f7fe6fa5afd453218ede5153d1b31e11bb8405 https://download.savannah.gnu.org/releases/libpipeline/libpipeline-$VERSION.tar.gz
+    1b1203ca152ccd63983c3f2112f7fe6fa5afd453218ede5153d1b31e11bb8405 https://github.com/fluffy-linux/libpipeline/releases/download/$VERSION/libpipeline-$VERSION.tar.gz
 )
 
 HAS_LDFLAGS="-lpipeline"

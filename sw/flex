@@ -10,9 +10,7 @@ VERSION=2.6.4
 HAS_LDFLAGS=-lfl
 
 ARCHIVES=(
-    e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995 https://github.com/westes/flex/releases/download/v$VERSION/flex-$VERSION.tar.gz
-    5c3d400e6e1a755ce85a09a94a5f64dda59e3c570bcea65bba3237f479d0a023 file://flex-$VERSION-fluffy-shell.patch
-    4bf25fede39f74e9066aa7bc4d3c2d65ff6b21e91cd73906210c29726ce0f938 file://flex-$VERSION-fluffy-test.patch
+    e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995 https://github.com/fluffy-linux/flex/releases/download/v$VERSION/flex-$VERSION.tar.gz
 )
 
 NEEDS=(
@@ -66,9 +64,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i flex-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i flex-$VERSION-fluffy-test.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/flex \
         --disable-static \
         --docdir=/sw/flex/share/doc/flex-$VERSION

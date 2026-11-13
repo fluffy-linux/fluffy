@@ -8,7 +8,7 @@ fi
 VERSION=4.0.7
 
 ARCHIVES=(
-    9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d https://downloads.sourceforge.net/procps-ng/procps-ng-$VERSION.tar.xz
+    9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d https://github.com/fluffy-linux/procps/releases/download/v$VERSION/procps-ng-$VERSION.tar.xz
     274386d20067991161324a26ab9da1a5bf5a85870c8c01dee8dfec6246330239 file://procps-ng-$VERSION-fluffy-source.patch
     60e072cee7493cd23903ebbb8e263d73420e0acbbd6f176c38db65ba65a01a26 file://procps-ng-$VERSION-fluffy-test.patch
 )

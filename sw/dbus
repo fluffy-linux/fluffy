@@ -11,7 +11,7 @@ HAS_CFLAGS="-I/sw/dbus/include/dbus-1.0 -I/sw/dbus/lib/dbus-1.0/include"
 HAS_LDFLAGS="-ldbus-1"
 
 ARCHIVES=(
-    0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2 https://dbus.freedesktop.org/releases/dbus/dbus-$VERSION.tar.xz
+    0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2 https://github.com/fluffy-linux/dbus/releases/download/dbus-$VERSION/dbus-$VERSION.tar.xz
     97f83dbc7d7e963e2b4d0a1b4597e0f1467e980f6eefac95c6c9f9a24a5b804f file://dbus-$VERSION-fluffy-source.patch
 )
 

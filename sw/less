@@ -8,7 +8,7 @@ fi
 VERSION=704
 
 ARCHIVES=(
-    20a0b0a2bb2525fa53c7eee9beb854b4c9cf172eabb209af7020743547bfe9fb https://www.greenwoodsoftware.com/less/less-$VERSION.tar.gz
+    20a0b0a2bb2525fa53c7eee9beb854b4c9cf172eabb209af7020743547bfe9fb https://github.com/fluffy-linux/less/releases/download/v$VERSION/less-$VERSION.tar.gz
     89d014808ffa1063f4b6c602c6898829329dbb66428f3418e4de59e15b1e38be file://less-$VERSION-fluffy-source.patch
     80ad0eb07fe85df9ffd1c53f64a495fddae4eb4cd4e78fa5204e71bb6deb3ccd file://less-$VERSION-fluffy-test.patch
 )

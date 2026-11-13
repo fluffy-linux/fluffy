@@ -8,7 +8,7 @@ fi
 VERSION=7.1.0
 
 ARCHIVES=(
-    fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-$VERSION.tar.xz
+    fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c https://github.com/fluffy-linux/iproute2/releases/download/v$VERSION/iproute2-$VERSION.tar.xz
     485a89aa410ce30c0c0d77eb4e8a3908e8dc6938314de1b3bf64e3171a12797b file://iproute2-$VERSION-fluffy-source.patch
 )
 

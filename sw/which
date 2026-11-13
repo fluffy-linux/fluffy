@@ -8,7 +8,7 @@ fi
 VERSION=2.25
 
 ARCHIVES=(
-    1cb83e4f702e60b8211ab5ec4c2afbab1b1dec80209456a7d2faf7584ed225ea https://ftpmirror.gnu.org/which/which-$VERSION.tar.gz
+    1cb83e4f702e60b8211ab5ec4c2afbab1b1dec80209456a7d2faf7584ed225ea https://github.com/fluffy-linux/which/releases/download/v$VERSION/which-$VERSION.tar.gz
     0f5af25b7e8b3eba9f1397ef7af3d051def98139167cc30603847148dced9ff9 file://which-$VERSION-fluffy-source.patch
 )
 

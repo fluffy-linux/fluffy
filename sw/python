@@ -11,9 +11,10 @@ HAS_CFLAGS=-I/sw/python/include/python3.14
 HAS_LDFLAGS=-lpython3.14
 
 ARCHIVES=(
-    3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz
-    d484b784ec35c5776c5ff55f81fa984b5251a38b532b24bb00e43148bd73ffe9 https://www.python.org/ftp/python/doc/$VERSION/python-$VERSION-docs-html.tar.bz2
-    66a7f2c9e5ae91a8ed0824d1888c5ba70c46e28ed2e22bd04d05d2d1aab06778 file://Python-$VERSION-fluffy.patch
+    3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/Python-$VERSION.tar.xz
+    d484b784ec35c5776c5ff55f81fa984b5251a38b532b24bb00e43148bd73ffe9 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/python-$VERSION-docs-html.tar.bz2
+    6d21c5bcbbd11264782241fb382fda389e5af30d2227530ea61548ba59e2d4cf file://Python-$VERSION-fluffy-source.patch
+    1b2c8df47acbc425635b0c0e3b5056d7bf4f28078203ef854cea3e7d5b35b462 file://Python-$VERSION-fluffy-test.patch
 )
 
 if test -v CROSS
@@ -127,9 +128,11 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i Python-$VERSION-fluffy.patch
+    patch -Z -Np1 -i Python-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i Python-$VERSION-fluffy-test.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/python \
         --enable-shared \
         --with-system-expat \

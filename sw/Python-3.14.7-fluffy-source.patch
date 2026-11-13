@@ -1,6 +1,179 @@
-diff -Naur Python-3.14.7.bash/Lib/os.py Python-3.14.7.source/Lib/os.py
---- Python-3.14.7.bash/Lib/os.py	2026-10-31 16:08:53.535031056 +0000
-+++ Python-3.14.7.source/Lib/os.py	2026-10-31 16:08:53.703893776 +0000
+diff --no-dereference -Naur Python-3.14.7.orig/Lib/_pyrepl/terminfo.py Python-3.14.7/Lib/_pyrepl/terminfo.py
+--- Python-3.14.7.orig/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
+@@ -99,8 +99,11 @@
+             if d:
+                 dirs.append(d)
+ 
++    import glob
++    dirs.extend(sorted(glob.glob("/sw/*/share/terminfo")))
+     dirs.extend(
+         [
++            "/sw/ncurses/share/terminfo",
+             "/etc/terminfo",
+             "/lib/terminfo",
+             "/usr/lib/terminfo",
+diff --no-dereference -Naur Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib Python-3.14.7/Lib/ctypes/macholib/fetch_macholib
+--- Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/ctypes/macholib/fetch_macholib	2026-08-05 10:29:49.000000000 +0000
+@@ -1,2 +1,2 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ svn export --force http://svn.red-bean.com/bob/macholib/trunk/macholib/ .
+diff --no-dereference -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
+--- Python-3.14.7.orig/Lib/glob.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/glob.py	2026-08-05 10:29:49.000000000 +0000
+@@ -1,14 +1,9 @@
+ """Filename globbing utility."""
+ 
+-import contextlib
+ import os
+-import re
+-import fnmatch
+-import functools
+-import itertools
+-import operator
+ import stat
+ import sys
++import posix
+ 
+ 
+ __all__ = ["glob", "iglob", "escape", "translate"]
+@@ -40,6 +35,11 @@
+     If `recursive` is true, the pattern '**' will match any files and
+     zero or more directories and subdirectories.
+     """
++    if (root_dir is None and dir_fd is None and not recursive and not include_hidden
++            and isinstance(pathname, str) and not pathname.startswith('.') and '/.' not in pathname):
++        sys.audit("glob.glob", pathname, recursive)
++        sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
++        return posix._glob(pathname)
+     return list(iglob(pathname, root_dir=root_dir, dir_fd=dir_fd, recursive=recursive,
+                       include_hidden=include_hidden))
+ 
+@@ -82,6 +82,7 @@
+         try:
+             s = next(it)  # skip empty string
+             if s:
++                import itertools
+                 it = itertools.chain((s,), it)
+         except StopIteration:
+             pass
+@@ -133,6 +134,7 @@
+ # takes a literal basename (so it only has to check for its existence).
+ 
+ def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
++    import fnmatch
+     names = _listdir(dirname, dir_fd, dironly)
+     if not (include_hidden or _ishidden(pattern)):
+         names = (x for x in names if not _ishidden(x))
+@@ -211,6 +213,7 @@
+         return
+ 
+ def _listdir(dirname, dir_fd, dironly):
++    import contextlib
+     with contextlib.closing(_iterdir(dirname, dir_fd, dironly)) as it:
+         return list(it)
+ 
+@@ -254,15 +257,11 @@
+         return dirname or basename
+     return os.path.join(dirname, basename)
+ 
+-magic_check = re.compile('([*?[])')
+-magic_check_bytes = re.compile(b'([*?[])')
+-
+ def has_magic(s):
+     if isinstance(s, bytes):
+-        match = magic_check_bytes.search(s)
++        return b'*' in s or b'?' in s or b'[' in s
+     else:
+-        match = magic_check.search(s)
+-    return match is not None
++        return '*' in s or '?' in s or '[' in s
+ 
+ def _ishidden(path):
+     return path[0] in ('.', b'.'[0])
+@@ -276,13 +275,14 @@
+ def escape(pathname):
+     """Escape all special characters.
+     """
++    import re
+     # Escaping is done by wrapping any of "*?[" between square brackets.
+     # Metacharacters do not work in the drive part and shouldn't be escaped.
+     drive, pathname = os.path.splitdrive(pathname)
+     if isinstance(pathname, bytes):
+-        pathname = magic_check_bytes.sub(br'[\1]', pathname)
++        pathname = re.sub(b'([*?[])', br'[\1]', pathname)
+     else:
+-        pathname = magic_check.sub(r'[\1]', pathname)
++        pathname = re.sub('([*?[])', r'[\1]', pathname)
+     return drive + pathname
+ 
+ 
+@@ -304,6 +304,8 @@
+     used to split the pattern into segments and match path separators.  If
+     not given, os.path.sep and os.path.altsep (where available) are used.
+     """
++    import re
++    import fnmatch
+     if not seps:
+         if os.path.altsep:
+             seps = (os.path.sep, os.path.altsep)
+@@ -346,13 +348,20 @@
+     return fr'(?s:{res})\z'
+ 
+ 
+-@functools.lru_cache(maxsize=512)
++_compile_pattern_cache = {}
+ def _compile_pattern(pat, seps, case_sensitive, recursive=True):
+     """Compile given glob pattern to a re.Pattern object (observing case
+     sensitivity)."""
++    key = (pat, seps, case_sensitive, recursive)
++    if key in _compile_pattern_cache:
++        return _compile_pattern_cache[key]
++    import re
+     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
+     regex = translate(pat, recursive=recursive, include_hidden=True, seps=seps)
+-    return re.compile(regex, flags=flags).match
++    res = re.compile(regex, flags=flags).match
++    if len(_compile_pattern_cache) < 512:
++        _compile_pattern_cache[key] = res
++    return res
+ 
+ 
+ class _GlobberBase:
+@@ -402,7 +411,7 @@
+             selector = self.recursive_selector
+         elif part in _special_parts:
+             selector = self.special_selector
+-        elif not self.case_pedantic and magic_check.search(part) is None:
++        elif not self.case_pedantic and not has_magic(part):
+             selector = self.literal_selector
+         else:
+             selector = self.wildcard_selector
+@@ -427,7 +436,7 @@
+         # Optimization: consume and join any subsequent literal parts here,
+         # rather than leaving them for the next selector. This reduces the
+         # number of string concatenation operations.
+-        while parts and magic_check.search(parts[-1]) is None:
++        while parts and not has_magic(parts[-1]):
+             part += self.sep + parts.pop()
+         if parts:
+             part += self.sep
+@@ -546,7 +555,9 @@
+     """Provides shell-style pattern matching and globbing for string paths.
+     """
+     lexists = staticmethod(os.path.lexists)
+-    concat_path = operator.add
++    @staticmethod
++    def concat_path(path, text):
++        return path + text
+ 
+     @staticmethod
+     def scandir(path):
+diff --no-dereference -Naur Python-3.14.7.orig/Lib/os.py Python-3.14.7/Lib/os.py
+--- Python-3.14.7.orig/Lib/os.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/os.py	2026-08-05 10:29:49.000000000 +0000
 @@ -687,6 +687,15 @@
  
      if path_list is None:
@@ -17,19 +190,18 @@ diff -Naur Python-3.14.7.bash/Lib/os.py Python-3.14.7.source/Lib/os.py
      return path_list.split(pathsep)
  
  
-diff -Naur Python-3.14.7.bash/Lib/shutil.py Python-3.14.7.source/Lib/shutil.py
---- Python-3.14.7.bash/Lib/shutil.py	2026-10-31 16:08:53.536589886 +0000
-+++ Python-3.14.7.source/Lib/shutil.py	2026-10-31 16:08:53.705476944 +0000
-@@ -1594,12 +1594,29 @@
-             return None
+diff --no-dereference -Naur Python-3.14.7.orig/Lib/shutil.py Python-3.14.7/Lib/shutil.py
+--- Python-3.14.7.orig/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
+@@ -1595,11 +1595,28 @@
  
          if use_bytes:
-+            has_wildcard = b'*' in path or b'?' in path
              path = os.fsencode(path)
++            has_wildcard = b'*' in path or b'?' in path
              path = path.split(os.fsencode(os.pathsep))
          else:
-+            has_wildcard = '*' in path or '?' in path
              path = os.fsdecode(path)
++            has_wildcard = '*' in path or '?' in path
              path = path.split(os.pathsep)
  
 +        if has_wildcard:
@@ -50,9 +222,37 @@ diff -Naur Python-3.14.7.bash/Lib/shutil.py Python-3.14.7.source/Lib/shutil.py
          if sys.platform == "win32" and _win_path_needs_curdir(cmd, mode):
              curdir = os.curdir
              if use_bytes:
-diff -Naur Python-3.14.7.bash/Lib/subprocess.py Python-3.14.7.source/Lib/subprocess.py
---- Python-3.14.7.bash/Lib/subprocess.py	2026-10-31 16:08:53.537359651 +0000
-+++ Python-3.14.7.source/Lib/subprocess.py	2026-10-31 16:08:53.706222343 +0000
+diff --no-dereference -Naur Python-3.14.7.orig/Lib/site.py Python-3.14.7/Lib/site.py
+--- Python-3.14.7.orig/Lib/site.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/site.py	2026-08-05 10:29:49.000000000 +0000
+@@ -78,7 +78,7 @@
+ import errno
+ 
+ # Prefixes for site-packages; add additional prefixes like /usr/local here
+-PREFIXES = [sys.prefix, sys.exec_prefix]
++PREFIXES = [sys.prefix, sys.exec_prefix, "/sw/*"]
+ # Enable per user site-packages directory
+ # set it to False to disable the feature or True to force the feature
+ ENABLE_USER_SITE = None
+@@ -394,6 +394,15 @@
+     if prefixes is None:
+         prefixes = PREFIXES
+ 
++    expanded_prefixes = []
++    for prefix in prefixes:
++        if prefix and ('*' in prefix or '?' in prefix):
++            import glob
++            expanded_prefixes.extend(sorted(glob.glob(prefix)))
++        else:
++            expanded_prefixes.append(prefix)
++    prefixes = expanded_prefixes
++
+     for prefix in prefixes:
+         if not prefix or prefix in seen:
+             continue
+diff --no-dereference -Naur Python-3.14.7.orig/Lib/subprocess.py Python-3.14.7/Lib/subprocess.py
+--- Python-3.14.7.orig/Lib/subprocess.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/subprocess.py	2026-08-05 10:29:49.000000000 +0000
 @@ -1847,7 +1847,7 @@
              if shell:
                  # On Android the default shell is at '/system/bin/sh'.
@@ -62,9 +262,9 @@ diff -Naur Python-3.14.7.bash/Lib/subprocess.py Python-3.14.7.source/Lib/subproc
                  args = [unix_shell, "-c"] + args
                  if executable:
                      args[0] = executable
-diff -Naur Python-3.14.7.bash/Makefile.pre.in Python-3.14.7.source/Makefile.pre.in
---- Python-3.14.7.bash/Makefile.pre.in	2026-10-31 16:08:53.599360273 +0000
-+++ Python-3.14.7.source/Makefile.pre.in	2026-10-31 16:08:53.766577744 +0000
+diff --no-dereference -Naur Python-3.14.7.orig/Makefile.pre.in Python-3.14.7/Makefile.pre.in
+--- Python-3.14.7.orig/Makefile.pre.in	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Makefile.pre.in	2026-08-05 10:29:49.000000000 +0000
 @@ -62,7 +62,7 @@
  GNULD=		@GNULD@
  
@@ -74,3 +274,709 @@ diff -Naur Python-3.14.7.bash/Makefile.pre.in Python-3.14.7.source/Makefile.pre.
  
  # Use this to make a link between python$(VERSION) and python in $(BINDIR)
  LN=		@LN@
+diff --no-dereference -Naur Python-3.14.7.orig/Misc/python-config.sh.in Python-3.14.7/Misc/python-config.sh.in
+--- Python-3.14.7.orig/Misc/python-config.sh.in	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Misc/python-config.sh.in	2026-08-05 10:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Keep this script in sync with python-config.in
+ 
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/_ssl/cert.c Python-3.14.7/Modules/_ssl/cert.c
+--- Python-3.14.7.orig/Modules/_ssl/cert.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/_ssl/cert.c	2026-08-05 10:29:49.000000000 +0000
+@@ -128,7 +128,8 @@
+ }
+ 
+ static PyObject*
+-_x509name_print(_sslmodulestate *state, X509_NAME *name, int indent, unsigned long flags)
++_x509name_print(_sslmodulestate *state, const X509_NAME *name,
++                int indent, unsigned long flags)
+ {
+     PyObject *res;
+     BIO *biobuf;
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/_ssl/debughelpers.c Python-3.14.7/Modules/_ssl/debughelpers.c
+--- Python-3.14.7.orig/Modules/_ssl/debughelpers.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/_ssl/debughelpers.c	2026-08-05 10:29:49.000000000 +0000
+@@ -26,6 +26,8 @@
+         return;
+     }
+ 
++    PyObject *exc = PyErr_GetRaisedException();
++
+     PyObject *ssl_socket;  /* ssl.SSLSocket or ssl.SSLObject */
+     if (ssl_obj->owner)
+         PyWeakref_GetRef(ssl_obj->owner, &ssl_socket);
+@@ -73,13 +75,13 @@
+         version, content_type, msg_type,
+         buf, len
+     );
+-    if (res == NULL) {
+-        ssl_obj->exc = PyErr_GetRaisedException();
+-    } else {
+-        Py_DECREF(res);
+-    }
++    Py_XDECREF(res);
+     Py_XDECREF(ssl_socket);
+ 
++    if (exc != NULL) {
++        _PyErr_ChainExceptions1(exc);
++    }
++
+     PyGILState_Release(threadstate);
+ }
+ 
+@@ -122,16 +124,19 @@
+ {
+     PyGILState_STATE threadstate;
+     PySSLSocket *ssl_obj = NULL;  /* ssl._SSLSocket, borrowed ref */
++    PyObject *exc;
+     int res, e;
+ 
+     threadstate = PyGILState_Ensure();
+ 
++    exc = PyErr_GetRaisedException();
++
+     ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
+     assert(Py_IS_TYPE(ssl_obj, get_state_sock(ssl_obj)->PySSLSocket_Type));
+     PyThread_type_lock lock = get_state_sock(ssl_obj)->keylog_lock;
+     assert(lock != NULL);
+     if (ssl_obj->ctx->keylog_bio == NULL) {
+-        return;
++        goto done;
+     }
+     /*
+      * The lock is neither released on exit nor on fork(). The lock is
+@@ -153,7 +158,11 @@
+         errno = e;
+         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError,
+                                              ssl_obj->ctx->keylog_filename);
+-        ssl_obj->exc = PyErr_GetRaisedException();
++    }
++
++done:
++    if (exc != NULL) {
++        _PyErr_ChainExceptions1(exc);
+     }
+     PyGILState_Release(threadstate);
+ }
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/_ssl.c Python-3.14.7/Modules/_ssl.c
+--- Python-3.14.7.orig/Modules/_ssl.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/_ssl.c	2026-08-05 10:29:49.000000000 +0000
+@@ -135,6 +135,17 @@
+ #error Unsupported OpenSSL version
+ #endif
+ 
++#if (OPENSSL_VERSION_NUMBER >= 0x40000000L)
++#  define OPENSSL_NO_SSL3
++#  define OPENSSL_NO_TLS1
++#  define OPENSSL_NO_TLS1_1
++#  define OPENSSL_NO_TLS1_2
++#  define OPENSSL_NO_SSL3_METHOD
++#  define OPENSSL_NO_TLS1_METHOD
++#  define OPENSSL_NO_TLS1_1_METHOD
++#  define OPENSSL_NO_TLS1_2_METHOD
++#endif
++
+ /* OpenSSL API 1.1.0+ does not include version methods */
+ #ifndef OPENSSL_NO_SSL3_METHOD
+ extern const SSL_METHOD *SSLv3_method(void);
+@@ -334,12 +345,16 @@
+     enum py_ssl_server_or_client socket_type;
+     PyObject *owner; /* weakref to Python level "owner" passed to servername callback */
+     PyObject *server_hostname;
+-    _PySSLError err; /* last seen error from various sources */
+-    /* Some SSL callbacks don't have error reporting. Callback wrappers
+-     * store exception information on the socket. The handshake, read, write,
+-     * and shutdown methods check for chained exceptions.
+-     */
+-    PyObject *exc;
++    // gh-148292: If non-zero, read(), sendfile(), write() and do_handshake()
++    // methods raise SSLEOFError without calling the underlying OpenSSL
++    // function. Set to 1 on PY_SSL_ERROR_EOF error.
++    //
++    // On OpenSSL 4, if SSL_read_ex() fails with
++    // SSL_R_UNEXPECTED_EOF_WHILE_READING, the following SSL_read_ex() call
++    // fails with a generic protocol error (ERR_peek_last_error() returns 0).
++    // Use got_eof_error to have the same behavior on OpenSSL 4 and newer and
++    // on OpenSSL 3 and older.
++    int got_eof_error;
+ } PySSLSocket;
+ 
+ #define PySSLSocket_CAST(op)    ((PySSLSocket *)(op))
+@@ -487,6 +502,10 @@
+     PyObject *init_value, *msg, *key;
+     PyUnicodeWriter *writer = NULL;
+ 
++    if (ssl_errno == PY_SSL_ERROR_EOF && sslsock != NULL) {
++        sslsock->got_eof_error = 1;
++    }
++
+     if (errcode != 0) {
+         int lib, reason;
+ 
+@@ -632,22 +651,27 @@
+     PyUnicodeWriter_Discard(writer);
+ }
+ 
+-static int
+-PySSL_ChainExceptions(PySSLSocket *sslsock) {
+-    if (sslsock->exc == NULL)
+-        return 0;
+ 
+-    _PyErr_ChainExceptions1(sslsock->exc);
+-    sslsock->exc = NULL;
+-    return -1;
++static void
++set_eof_error(PySSLSocket *sslsock)
++{
++    _sslmodulestate *state = get_state_sock(sslsock);
++    fill_and_set_sslerror(state, sslsock, state->PySSLEOFErrorObject,
++                          PY_SSL_ERROR_EOF,
++                          "EOF occurred in violation of protocol",
++                          __LINE__, 0);
+ }
+ 
++
++// Set the appropriate SSL error exception.
++// err - error information from SSL and libc
++// exc - if not NULL, an exception from _debughelpers.c callback to be chained
+ static PyObject *
+-PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
++PySSL_SetError(PySSLSocket *sslsock, _PySSLError err, PyObject *exc,
++               const char *filename, int lineno)
+ {
+     PyObject *type;
+     char *errstr = NULL;
+-    _PySSLError err;
+     enum py_ssl_error p = PY_SSL_ERROR_NONE;
+     unsigned long e = 0;
+ 
+@@ -660,8 +684,6 @@
+     e = ERR_peek_last_error();
+ 
+     if (sslsock->ssl != NULL) {
+-        err = sslsock->err;
+-
+         switch (err.ssl) {
+         case SSL_ERROR_ZERO_RETURN:
+             errstr = "TLS/SSL connection has been closed (EOF)";
+@@ -754,7 +776,7 @@
+     }
+     fill_and_set_sslerror(state, sslsock, type, p, errstr, lineno, e);
+     ERR_clear_error();
+-    PySSL_ChainExceptions(sslsock);
++    _PyErr_ChainExceptions1(exc);  // chain any exceptions from callbacks
+     return NULL;
+ }
+ 
+@@ -859,7 +881,6 @@
+ {
+     PySSLSocket *self;
+     SSL_CTX *ctx = sslctx->ctx;
+-    _PySSLError err = { 0 };
+ 
+     if ((socket_type == PY_SSL_SERVER) &&
+         (sslctx->protocol == PY_SSL_VERSION_TLS_CLIENT)) {
+@@ -887,8 +908,7 @@
+     self->shutdown_seen_zero = 0;
+     self->owner = NULL;
+     self->server_hostname = NULL;
+-    self->err = err;
+-    self->exc = NULL;
++    self->got_eof_error = 0;
+ 
+     /* Make sure the SSL error state is initialized */
+     ERR_clear_error();
+@@ -1009,6 +1029,7 @@
+ {
+     int ret;
+     _PySSLError err;
++    PyObject *exc = NULL;
+     int sockstate, nonblocking;
+     PySocketSockObject *sock = GET_SOCKET(self);
+     PyTime_t timeout, deadline = 0;
+@@ -1029,6 +1050,11 @@
+         BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+     }
+ 
++    if (self->got_eof_error) {
++        set_eof_error(self);
++        goto error;
++    }
++
+     timeout = GET_SOCKET_TIMEOUT(sock);
+     has_timeout = (timeout > 0);
+     if (has_timeout) {
+@@ -1043,7 +1069,12 @@
+         err = _PySSL_errno(ret < 1, self->ssl, ret);
+         Py_END_ALLOW_THREADS;
+         _PySSL_FIX_ERRNO;
+-        self->err = err;
++
++        // Get any exception that occurred in a debughelpers.c callback
++        exc = PyErr_GetRaisedException();
++        if (exc != NULL) {
++            break;
++        }
+ 
+         if (PyErr_CheckSignals())
+             goto error;
+@@ -1079,13 +1110,15 @@
+     Py_XDECREF(sock);
+ 
+     if (ret < 1)
+-        return PySSL_SetError(self, __FILE__, __LINE__);
+-    if (PySSL_ChainExceptions(self) < 0)
++        return PySSL_SetError(self, err, exc, __FILE__, __LINE__);
++    if (exc != NULL) {
++        PyErr_SetRaisedException(exc);
+         return NULL;
++    }
+     Py_RETURN_NONE;
+ error:
++    assert(exc == NULL);
+     Py_XDECREF(sock);
+-    PySSL_ChainExceptions(self);
+     return NULL;
+ }
+ 
+@@ -1134,7 +1167,7 @@
+ 
+ static PyObject *
+ _create_tuple_for_attribute(_sslmodulestate *state,
+-                            ASN1_OBJECT *name, ASN1_STRING *value)
++                            const ASN1_OBJECT *name, const ASN1_STRING *value)
+ {
+     Py_ssize_t buflen;
+     PyObject *pyattr;
+@@ -1163,16 +1196,16 @@
+ }
+ 
+ static PyObject *
+-_create_tuple_for_X509_NAME (_sslmodulestate *state, X509_NAME *xname)
++_create_tuple_for_X509_NAME(_sslmodulestate *state, const X509_NAME *xname)
+ {
+     PyObject *dn = NULL;    /* tuple which represents the "distinguished name" */
+     PyObject *rdn = NULL;   /* tuple to hold a "relative distinguished name" */
+     PyObject *rdnt;
+     PyObject *attr = NULL;   /* tuple to hold an attribute */
+     int entry_count = X509_NAME_entry_count(xname);
+-    X509_NAME_ENTRY *entry;
+-    ASN1_OBJECT *name;
+-    ASN1_STRING *value;
++    const X509_NAME_ENTRY *entry;
++    const ASN1_OBJECT *name;
++    const ASN1_STRING *value;
+     int index_counter;
+     int rdn_level = -1;
+     int retcode;
+@@ -2337,9 +2370,7 @@
+ static int
+ PySSL_traverse(PyObject *op, visitproc visit, void *arg)
+ {
+-    PySSLSocket *self = PySSLSocket_CAST(op);
+-    Py_VISIT(self->exc);
+-    Py_VISIT(Py_TYPE(self));
++    Py_VISIT(Py_TYPE(op));
+     return 0;
+ }
+ 
+@@ -2351,7 +2382,6 @@
+     Py_CLEAR(self->ctx);
+     Py_CLEAR(self->owner);
+     Py_CLEAR(self->server_hostname);
+-    Py_CLEAR(self->exc);
+     return 0;
+ }
+ 
+@@ -2471,6 +2501,7 @@
+     int retval;
+     int sockstate;
+     _PySSLError err;
++    PyObject *exc = NULL;
+     int nonblocking;
+     PySocketSockObject *sock = GET_SOCKET(self);
+     PyTime_t timeout, deadline = 0;
+@@ -2493,6 +2524,11 @@
+         BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+     }
+ 
++    if (self->got_eof_error) {
++        set_eof_error(self);
++        goto error;
++    }
++
+     timeout = GET_SOCKET_TIMEOUT(sock);
+     has_timeout = (timeout > 0);
+     if (has_timeout) {
+@@ -2520,7 +2556,11 @@
+         err = _PySSL_errno(retval == 0, self->ssl, retval);
+         Py_END_ALLOW_THREADS;
+         _PySSL_FIX_ERRNO;
+-        self->err = err;
++
++        exc = PyErr_GetRaisedException();
++        if (exc != NULL) {
++            break;
++        }
+ 
+         if (PyErr_CheckSignals())
+             goto error;
+@@ -2553,13 +2593,15 @@
+ 
+     Py_XDECREF(sock);
+     if (retval == 0)
+-        return PySSL_SetError(self, __FILE__, __LINE__);
+-    if (PySSL_ChainExceptions(self) < 0)
++        return PySSL_SetError(self, err, exc, __FILE__, __LINE__);
++    if (exc != NULL) {
++        PyErr_SetRaisedException(exc);
+         return NULL;
++    }
+     return PyLong_FromSize_t(count);
+ error:
++    assert(exc == NULL);
+     Py_XDECREF(sock);
+-    PySSL_ChainExceptions(self);
+     return NULL;
+ }
+ 
+@@ -2582,10 +2624,9 @@
+     err = _PySSL_errno(count < 0, self->ssl, count);
+     Py_END_ALLOW_THREADS;
+     _PySSL_FIX_ERRNO;
+-    self->err = err;
+ 
+     if (count < 0)
+-        return PySSL_SetError(self, __FILE__, __LINE__);
++        return PySSL_SetError(self, err, NULL, __FILE__, __LINE__);
+     else
+         return PyLong_FromLong(count);
+ }
+@@ -2613,6 +2654,7 @@
+     int retval;
+     int sockstate;
+     _PySSLError err;
++    PyObject *exc = NULL;
+     int nonblocking;
+     PySocketSockObject *sock = GET_SOCKET(self);
+     PyTime_t timeout, deadline = 0;
+@@ -2633,6 +2675,11 @@
+         Py_INCREF(sock);
+     }
+ 
++    if (self->got_eof_error) {
++        set_eof_error(self);
++        goto error;
++    }
++
+     if (!group_right_1) {
+         dest = PyBytes_FromStringAndSize(NULL, len);
+         if (dest == NULL)
+@@ -2677,7 +2724,11 @@
+         err = _PySSL_errno(retval == 0, self->ssl, retval);
+         Py_END_ALLOW_THREADS;
+         _PySSL_FIX_ERRNO;
+-        self->err = err;
++
++        exc = PyErr_GetRaisedException();
++        if (exc != NULL) {
++            break;
++        }
+ 
+         if (PyErr_CheckSignals())
+             goto error;
+@@ -2710,13 +2761,18 @@
+              err.ssl == SSL_ERROR_WANT_WRITE);
+ 
+     if (retval == 0) {
+-        PySSL_SetError(self, __FILE__, __LINE__);
++        PySSL_SetError(self, err, exc, __FILE__, __LINE__);
++        exc = NULL;
+         goto error;
+     }
+-    if (self->exc != NULL)
++    else if (exc != NULL) {
++        PyErr_SetRaisedException(exc);
++        exc = NULL;
+         goto error;
++    }
+ 
+ done:
++    assert(exc == NULL);
+     Py_XDECREF(sock);
+     if (!group_right_1) {
+         _PyBytes_Resize(&dest, count);
+@@ -2727,7 +2783,7 @@
+     }
+ 
+ error:
+-    PySSL_ChainExceptions(self);
++    assert(exc == NULL);
+     Py_XDECREF(sock);
+     if (!group_right_1)
+         Py_XDECREF(dest);
+@@ -2746,6 +2802,7 @@
+ /*[clinic end generated code: output=ca1aa7ed9d25ca42 input=98d9635cd4e16514]*/
+ {
+     _PySSLError err;
++    PyObject *exc = NULL;
+     int sockstate, nonblocking, ret;
+     int zeros = 0;
+     PySocketSockObject *sock = GET_SOCKET(self);
+@@ -2790,7 +2847,11 @@
+         err = _PySSL_errno(ret < 0, self->ssl, ret);
+         Py_END_ALLOW_THREADS;
+         _PySSL_FIX_ERRNO;
+-        self->err = err;
++
++        exc = PyErr_GetRaisedException();
++        if (exc != NULL) {
++            break;
++        }
+ 
+         /* If err == 1, a secure shutdown with SSL_shutdown() is complete */
+         if (ret > 0)
+@@ -2838,11 +2899,14 @@
+     }
+     if (ret < 0) {
+         Py_XDECREF(sock);
+-        PySSL_SetError(self, __FILE__, __LINE__);
++        PySSL_SetError(self, err, exc, __FILE__, __LINE__);
++        return NULL;
++    }
++    else if (exc != NULL) {
++        Py_XDECREF(sock);
++        PyErr_SetRaisedException(exc);
+         return NULL;
+     }
+-    if (self->exc != NULL)
+-        goto error;
+     if (sock)
+         /* It's already INCREF'ed */
+         return (PyObject *) sock;
+@@ -2850,8 +2914,8 @@
+         Py_RETURN_NONE;
+ 
+ error:
++    assert(exc == NULL);
+     Py_XDECREF(sock);
+-    PySSL_ChainExceptions(self);
+     return NULL;
+ }
+ 
+@@ -3054,7 +3118,6 @@
+     {Py_tp_getset, ssl_getsetlist},
+     {Py_tp_dealloc, PySSL_dealloc},
+     {Py_tp_traverse, PySSL_traverse},
+-    {Py_tp_clear, PySSL_clear},
+     {0, 0},
+ };
+ 
+@@ -6513,9 +6576,15 @@
+     ADD_INT_CONST("PROTOCOL_TLS", PY_SSL_VERSION_TLS);
+     ADD_INT_CONST("PROTOCOL_TLS_CLIENT", PY_SSL_VERSION_TLS_CLIENT);
+     ADD_INT_CONST("PROTOCOL_TLS_SERVER", PY_SSL_VERSION_TLS_SERVER);
++#ifndef OPENSSL_NO_TLS1
+     ADD_INT_CONST("PROTOCOL_TLSv1", PY_SSL_VERSION_TLS1);
++#endif
++#ifndef OPENSSL_NO_TLS1_1
+     ADD_INT_CONST("PROTOCOL_TLSv1_1", PY_SSL_VERSION_TLS1_1);
++#endif
++#ifndef OPENSSL_NO_TLS1_2
+     ADD_INT_CONST("PROTOCOL_TLSv1_2", PY_SSL_VERSION_TLS1_2);
++#endif
+ 
+ #define ADD_OPTION(NAME, VALUE) if (sslmodule_add_option(m, NAME, (VALUE)) < 0) return -1
+ 
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/getpath.c Python-3.14.7/Modules/getpath.c
+--- Python-3.14.7.orig/Modules/getpath.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/getpath.c	2026-08-05 10:29:49.000000000 +0000
+@@ -24,6 +24,10 @@
+ #  include <dlfcn.h>
+ #endif
+ 
++#ifndef MS_WINDOWS
++#  include <glob.h>
++#endif
++
+ /* Reference the precompiled getpath.py */
+ #include "Python/frozen_modules/getpath.h"
+ 
+@@ -563,10 +567,66 @@
+ }
+ 
+ 
++static PyObject *
++getpath_glob(PyObject *Py_UNUSED(self), PyObject *args)
++{
++    PyObject *pathobj;
++    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
++        return NULL;
++    }
++    wchar_t *wpath = PyUnicode_AsWideCharString(pathobj, NULL);
++    if (!wpath) {
++        return NULL;
++    }
++    char *pattern = Py_EncodeLocale(wpath, NULL);
++    PyMem_Free(wpath);
++    if (!pattern) {
++        PyErr_NoMemory();
++        return NULL;
++    }
++    PyObject *list = PyList_New(0);
++    if (!list) {
++        PyMem_Free(pattern);
++        return NULL;
++    }
++#ifndef MS_WINDOWS
++    glob_t g;
++    int rc = glob(pattern, GLOB_NOESCAPE | GLOB_KEEP_SLASHES, NULL, &g);
++    PyMem_Free(pattern);
++    if (rc == 0) {
++        for (size_t i = 0; i < g.gl_pathc; i++) {
++            size_t len;
++            wchar_t *w = Py_DecodeLocale(g.gl_pathv[i], &len);
++            if (!w) {
++                Py_DECREF(list);
++                globfree(&g);
++                PyErr_NoMemory();
++                return NULL;
++            }
++            PyObject *item = PyUnicode_FromWideChar(w, len);
++            PyMem_RawFree(w);
++            if (!item || PyList_Append(list, item) < 0) {
++                Py_XDECREF(item);
++                Py_DECREF(list);
++                globfree(&g);
++                return NULL;
++            }
++            Py_DECREF(item);
++        }
++        globfree(&g);
++    }
++#else
++    PyMem_Free(pattern);
++#endif
++    return list;
++}
++
++
+ static PyMethodDef getpath_methods[] = {
+     {"abspath", getpath_abspath, METH_VARARGS, NULL},
+     {"basename", getpath_basename, METH_VARARGS, NULL},
+     {"dirname", getpath_dirname, METH_VARARGS, NULL},
++    {"glob", getpath_glob, METH_VARARGS, NULL},
+     {"hassuffix", getpath_hassuffix, METH_VARARGS, NULL},
+     {"isabs", getpath_isabs, METH_VARARGS, NULL},
+     {"isdir", getpath_isdir, METH_VARARGS, NULL},
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/getpath.py Python-3.14.7/Modules/getpath.py
+--- Python-3.14.7.orig/Modules/getpath.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/getpath.py	2026-08-05 10:29:49.000000000 +0000
+@@ -283,7 +283,14 @@
+     # To properly isolate, launch Python with a full path.
+     for p in ENV_PATH.split(DELIM):
+         p = joinpath(p, program_name)
+-        if isxfile(p):
++        if '*' in p or '?' in p:
++            for gp in glob(p):
++                if isxfile(gp):
++                    executable = gp
++                    break
++            if executable:
++                break
++        elif isxfile(p):
+             executable = p
+             break
+ 
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/makesetup Python-3.14.7/Modules/makesetup
+--- Python-3.14.7.orig/Modules/makesetup	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/makesetup	2026-08-05 10:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # Convert templates into Makefile and config.c, based on the module
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/posixmodule.c Python-3.14.7/Modules/posixmodule.c
+--- Python-3.14.7.orig/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
+@@ -17113,6 +17113,47 @@
+ }
+ #endif /* __EMSCRIPTEN__ */
+ 
++#include <glob.h>
++
++static PyObject *
++os__glob(PyObject *module, PyObject *arg)
++{
++    PyObject *bytes = PyUnicode_EncodeFSDefault(arg);
++    if (bytes == NULL) {
++        return NULL;
++    }
++    const char *pattern = PyBytes_AS_STRING(bytes);
++    if ((size_t)PyBytes_GET_SIZE(bytes) != strlen(pattern)) {
++        Py_DECREF(bytes);
++        PyErr_SetString(PyExc_ValueError, "embedded null character");
++        return NULL;
++    }
++    glob_t g;
++    int rc = glob(pattern, GLOB_NOESCAPE | GLOB_KEEP_SLASHES, NULL, &g);
++    Py_DECREF(bytes);
++    PyObject *list = PyList_New(0);
++    if (list == NULL) {
++        if (rc == 0) {
++            globfree(&g);
++        }
++        return NULL;
++    }
++    if (rc == 0) {
++        for (size_t i = 0; i < g.gl_pathc; i++) {
++            PyObject *item = PyUnicode_DecodeFSDefault(g.gl_pathv[i]);
++            if (item == NULL || PyList_Append(list, item) < 0) {
++                Py_XDECREF(item);
++                Py_DECREF(list);
++                globfree(&g);
++                return NULL;
++            }
++            Py_DECREF(item);
++        }
++        globfree(&g);
++    }
++    return list;
++}
++
+ 
+ static PyMethodDef posix_methods[] = {
+     OS_STAT_METHODDEF
+@@ -17331,6 +17372,7 @@
+     OS__CREATE_ENVIRON_METHODDEF
+     OS__EMSCRIPTEN_DEBUGGER_METHODDEF
+     OS__EMSCRIPTEN_LOG_METHODDEF
++    {"_glob", os__glob, METH_O, NULL},
+     {NULL,              NULL}            /* Sentinel */
+ };
+ 
+diff --no-dereference -Naur Python-3.14.7.orig/configure Python-3.14.7/configure
+--- Python-3.14.7.orig/configure	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/configure	2026-08-05 10:29:49.000000000 +0000
+@@ -31104,7 +31104,7 @@
+ 
+     if ! $found; then
+         OPENSSL_INCLUDES=
+-        for ssldir in $ssldirs; do
++        for ssldir in /sw/* $ssldirs; do
+             { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for include/openssl/ssl.h in $ssldir" >&5
+ printf %s "checking for include/openssl/ssl.h in $ssldir... " >&6; }
+             if test -f "$ssldir/include/openssl/ssl.h"; then
+diff --no-dereference -Naur Python-3.14.7.orig/install-sh Python-3.14.7/install-sh
+--- Python-3.14.7.orig/install-sh	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/install-sh	2026-08-05 10:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2023-11-23.18; # UTC

@@ -10,7 +10,7 @@ VERSION=4.21.0
 HAS_LDFLAGS=-ltasn1
 
 ARCHIVES=(
-    1d8a444a223cc5464240777346e125de51d8e6abf0b8bac742ac84609167dc87 https://ftpmirror.gnu.org/libtasn1/libtasn1-$VERSION.tar.gz
+    1d8a444a223cc5464240777346e125de51d8e6abf0b8bac742ac84609167dc87 https://github.com/fluffy-linux/libtasn1/releases/download/v$VERSION/libtasn1-$VERSION.tar.gz
     7b26ae0d835b6bb1d1ca18c62c4d6767e733df4486313f9bed1dca3078c89982 file://libtasn1-$VERSION-fluffy-test.patch
 )
 

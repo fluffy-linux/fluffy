@@ -3,7 +3,7 @@ ON=host-build
 VERSION=9.11
 
 ARCHIVES=(
-    394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3 https://ftpmirror.gnu.org/coreutils/coreutils-$VERSION.tar.xz
+    394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3 https://github.com/fluffy-linux/coreutils/releases/download/v$VERSION/coreutils-$VERSION.tar.xz
 )
 
 NEEDS=(

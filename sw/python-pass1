@@ -6,9 +6,8 @@ HAS_CFLAGS=-I/sw/python/include/python3.14
 HAS_LDFLAGS=-lpython3.14
 
 ARCHIVES=(
-    3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz
-    9f4bd93197d639d7b970b8ecfe11f151f6a5732138d9f82bfe6b5808fbf46396 file://Python-$VERSION-fluffy-shell.patch
-    c67a6cd39e315fc44bb6e17b2fc637fbdb473ba82c87ae93e43cf702f1fe90e4 file://Python-$VERSION-fluffy-source.patch
+    3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/Python-$VERSION.tar.xz
+    6d21c5bcbbd11264782241fb382fda389e5af30d2227530ea61548ba59e2d4cf file://Python-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -49,9 +48,10 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i Python-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i Python-$VERSION-fluffy-source.patch
-    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/python \
         --enable-shared \
         --without-ensurepip \

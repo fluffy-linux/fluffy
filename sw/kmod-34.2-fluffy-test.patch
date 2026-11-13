@@ -1,0 +1,27 @@
+diff --no-dereference -Naur kmod-34.2.orig/scripts/sanitizer-env.sh kmod-34.2/scripts/sanitizer-env.sh
+--- kmod-34.2.orig/scripts/sanitizer-env.sh	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/scripts/sanitizer-env.sh	2025-03-28 04:01:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ # set -euo pipefail # don't set these, since this script is sourced
+ 
+diff --no-dereference -Naur kmod-34.2.orig/scripts/setup-modules.sh kmod-34.2/scripts/setup-modules.sh
+--- kmod-34.2.orig/scripts/setup-modules.sh	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/scripts/setup-modules.sh	2025-03-28 04:01:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ set -euo pipefail
+ 
+diff --no-dereference -Naur kmod-34.2.orig/scripts/setup-rootfs.sh kmod-34.2/scripts/setup-rootfs.sh
+--- kmod-34.2.orig/scripts/setup-rootfs.sh	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/scripts/setup-rootfs.sh	2025-03-28 04:01:47.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ set -euo pipefail
+ 

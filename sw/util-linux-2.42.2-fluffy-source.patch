@@ -279,3 +279,21 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/text-utils/pg.c util-linux-2.
  						if (!nobuf)
  							fclose(fbuf);
  						fclose(find);
+diff --no-dereference -Naur util-linux-2.42.2.orig/tools/all_errnos util-linux-2.42.2/tools/all_errnos
+--- util-linux-2.42.2.orig/tools/all_errnos	2026-06-16 09:34:39.468347619 +0000
++++ util-linux-2.42.2/tools/all_errnos	2026-06-16 09:34:39.468347619 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ # Derived from all_syscalls.
+ 
+diff --no-dereference -Naur util-linux-2.42.2.orig/tools/all_syscalls util-linux-2.42.2/tools/all_syscalls
+--- util-linux-2.42.2.orig/tools/all_syscalls	2026-06-16 09:34:39.468347619 +0000
++++ util-linux-2.42.2/tools/all_syscalls	2026-06-16 09:34:39.468347619 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ set -e
+ set -o pipefail

@@ -3,7 +3,7 @@ ON=host-build
 VERSION=4.11.0
 
 ARCHIVES=(
-    bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd https://ftpmirror.gnu.org/findutils/findutils-$VERSION.tar.xz
+    bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd https://github.com/fluffy-linux/findutils/releases/download/v$VERSION/findutils-$VERSION.tar.xz
 )
 
 NEEDS=(

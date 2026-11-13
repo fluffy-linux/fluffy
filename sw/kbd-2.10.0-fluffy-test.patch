@@ -1,0 +1,28 @@
+diff --no-dereference -Naur kbd-2.10.0.orig/tests/check-data-keymaps.sh kbd-2.10.0/tests/check-data-keymaps.sh
+--- kbd-2.10.0.orig/tests/check-data-keymaps.sh	2026-03-18 13:49:48.346054584 +0000
++++ kbd-2.10.0/tests/check-data-keymaps.sh	2026-03-18 13:49:48.346054584 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh -efu
++#!/sw/bash/bin/bash -efu
+ 
+ TTY="${TTY:-/dev/tty60}"
+ 
+diff --no-dereference -Naur kbd-2.10.0.orig/tests/libcommon/libcommon-test03.c kbd-2.10.0/tests/libcommon/libcommon-test03.c
+--- kbd-2.10.0.orig/tests/libcommon/libcommon-test03.c	2026-03-23 07:58:24.241356971 +0000
++++ kbd-2.10.0/tests/libcommon/libcommon-test03.c	2026-03-23 07:58:24.241356971 +0000
+@@ -1,3 +1,5 @@
++#include <sys/ioctl.h>
++#include <linux/kd.h>
+ #include <unistd.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -10,7 +12,8 @@
+ 	int console;
+ 	char *name;
+ 
+-	if (!isatty(0))
++	char arg = 0;
++	if (!isatty(0) || ioctl(0, KDGKBTYPE, &arg) != 0 || (arg != KB_101 && arg != KB_84))
+ 		return EXIT_SUCCESS;
+ 
+ 	console = getfd(NULL);

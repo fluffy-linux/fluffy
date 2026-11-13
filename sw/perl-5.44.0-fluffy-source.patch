@@ -1,0 +1,29 @@
+diff --no-dereference -Naur perl-5.44.0.orig/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm perl-5.44.0/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm
+--- perl-5.44.0.orig/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm	2026-06-22 14:48:00.000000000 +0000
++++ perl-5.44.0/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm	2026-06-22 14:48:00.000000000 +0000
+@@ -1997,11 +1997,11 @@
+ 
+     $self->{LD}         ||= 'ld';
+ 
+-    return $self->SUPER::init_tools(@_);
++    $self->SUPER::init_tools(@_);
+ 
+     # After SUPER::init_tools so $Config{shell} has a
+     # chance to get set.
+-    $self->{SHELL}      ||= '/bin/sh';
++    $self->{SHELL}      ||= $Config{sh} || '/sw/bash/bin/bash';
+ 
+     return;
+ }
+diff --no-dereference -Naur perl-5.44.0.orig/installman perl-5.44.0/installman
+--- perl-5.44.0.orig/installman	2026-05-14 00:58:29.000000000 +0000
++++ perl-5.44.0/installman	2026-05-14 00:58:29.000000000 +0000
+@@ -49,7 +49,7 @@
+ $opts{destdir} //= '';
+ 
+ foreach my $pre (qw(man1 man3)) {
+-    $opts{"${pre}dir"} //= $opts{destdir} . $Config{"install${pre}dir"};
++    $opts{"${pre}dir"} //= length($Config{"install${pre}dir"}) ? $opts{destdir} . $Config{"install${pre}dir"} : "";
+     $opts{"${pre}ext"} //= $Config{"${pre}ext"};
+ }
+ $opts{verbose} ||= $opts{notify};

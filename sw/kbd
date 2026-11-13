@@ -8,10 +8,10 @@ fi
 VERSION=2.10.0
 
 ARCHIVES=(
-    6e5ca4f8d76ee9e3a8db700b667f13e12aac9933828a64e1aaad93d26be9b479 https://www.kernel.org/pub/linux/utils/kbd/kbd-$VERSION.tar.xz
-    8be28dcb11420624a500f2ea4fe975f771174bffee50e54ec8cd295a2dec104e https://www.linuxfromscratch.org/patches/lfs/13.1/kbd-$VERSION-backspace-1.patch
-    161527a337e9caf2c7e668a2e5a34718a00d6d9a3fde4c822b702f80ed80b5e3 file://kbd-$VERSION-fluffy-shell.patch
-    d136ed31fd3ce99b2e31158a189f5de410edb4d0020e9ef9e06285a22447da71 file://kbd-$VERSION-fluffy-source.patch
+    6e5ca4f8d76ee9e3a8db700b667f13e12aac9933828a64e1aaad93d26be9b479 https://github.com/fluffy-linux/kbd/releases/download/v$VERSION/kbd-$VERSION.tar.xz
+    8be28dcb11420624a500f2ea4fe975f771174bffee50e54ec8cd295a2dec104e file://kbd-$VERSION-backspace-1.patch
+    2e4261029fa3cc1da9adb2c6449e1d6580a5109580374b1a9ba48fccce11aaf4 file://kbd-$VERSION-fluffy-source.patch
+    ab4cc59862782ac4f2daeff0115306c3f9968fac54d9227c802f866c22d541c2 file://kbd-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -73,10 +73,11 @@ fi
 
 MAKE() {
     patch -Z -Np1 -i kbd-$VERSION-backspace-1.patch
-    patch -Z -Np1 -i kbd-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i kbd-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i kbd-$VERSION-fluffy-test.patch
 
-    ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    $CONFIG_SHELL ./configure \
         --prefix=/sw/kbd \
         --disable-vlock
     make

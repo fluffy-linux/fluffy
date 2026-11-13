@@ -10,8 +10,8 @@ VERSION=1.47.4
 HAS_LDFLAGS="-lext2fs -lcom_err"
 
 ARCHIVES=(
-    da274408bebbfd13a5a2fc3cfc66e3ffff17c48534673aa67f88d49b99123b96 https://kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v$VERSION/e2fsprogs-$VERSION.tar.gz
-    75d42e058c7a0af47cb85676b9863a06762e51bad320b6530e405254a98453d9 file://e2fsprogs-$VERSION-fluffy-shell.patch
+    da274408bebbfd13a5a2fc3cfc66e3ffff17c48534673aa67f88d49b99123b96 https://github.com/fluffy-linux/e2fsprogs/releases/download/v$VERSION/e2fsprogs-$VERSION.tar.gz
+    044835caedaf093dfb3c48593d0b056eec30db85f24c13f1542e552324497435 file://e2fsprogs-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -68,14 +68,15 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i e2fsprogs-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i e2fsprogs-$VERSION-fluffy-source.patch
 
     mkdir -p build
     cd build
 
+    export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site \
     PKG_CONFIG="false" \
-    ../configure \
+    $CONFIG_SHELL ../configure \
         --prefix=/sw/e2fsprogs \
         --bindir=/sw/e2fsprogs/bin \
         --sbindir=/sw/e2fsprogs/bin \

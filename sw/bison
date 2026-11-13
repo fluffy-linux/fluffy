@@ -8,9 +8,8 @@ fi
 VERSION=3.8.2
 
 ARCHIVES=(
-    9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2 https://ftpmirror.gnu.org/bison/bison-$VERSION.tar.xz
-    10b3c52bcffc7b4c3ca8bcb8c43070232c098a33d90e034179ff6763e643a969 file://bison-$VERSION-fluffy-shell.patch
-    2d66c392b5ea54ecccd46ad01d20238b087d165b4ad7d46fd2af1ae1a0e6d51c file://bison-$VERSION-fluffy-test.patch
+    9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2 https://github.com/fluffy-linux/bison/releases/download/v$VERSION/bison-$VERSION.tar.xz
+    12fddada7b0fb9d9374a2e7fff40b23de5ea354946a095b356afc0b9f18b3380 file://bison-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -68,10 +67,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i bison-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i bison-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i bison-$VERSION-fluffy-source.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/bison \
         --docdir=/sw/bison/share/doc/bison-$VERSION \
         M4=/sw/m4/bin/m4

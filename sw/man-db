@@ -8,9 +8,9 @@ fi
 VERSION=2.13.1
 
 ARCHIVES=(
-    8afebb6f7eb6bb8542929458841f5c7e6f240e30c86358c1fbcefbea076c87d9 https://download.savannah.gnu.org/releases/man-db/man-db-$VERSION.tar.xz
-    35dd7ad2ab5e8f527033943196c7f509f51546667d672dd7fd25f3e3ddbbfb05 file://man-db-$VERSION-fluffy-shell.patch
-    13ae6425da91496c8fb4eb46a05855dbd533231f84d9c298d796368b02161b19 file://man-db-$VERSION-fluffy-source.patch
+    8afebb6f7eb6bb8542929458841f5c7e6f240e30c86358c1fbcefbea076c87d9 https://github.com/fluffy-linux/man-db/releases/download/$VERSION/man-db-$VERSION.tar.xz
+    85e507321ae90dd1ba77cc8b2d5fcb94ea7b7dada2f37486c9dc0a0f5a82ddaf file://man-db-$VERSION-fluffy-source.patch
+    9c835417d019c59191806abc806b87bdaf998808f5826c84533b5f71c94d1c7f file://man-db-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -78,13 +78,14 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i man-db-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i man-db-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i man-db-$VERSION-fluffy-test.patch
 
+    export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site \
     libpipeline_CFLAGS=" " \
     libpipeline_LIBS="-lpipeline" \
-    ./configure \
+    $CONFIG_SHELL ./configure \
         --prefix=/sw/man-db \
         --sbindir=/sw/man-db/bin \
         --docdir=/sw/man-db/share/doc/man-db-$VERSION \

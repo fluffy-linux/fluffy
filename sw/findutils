@@ -8,7 +8,7 @@ fi
 VERSION=4.11.0
 
 ARCHIVES=(
-    bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd https://ftpmirror.gnu.org/findutils/findutils-$VERSION.tar.xz
+    bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd https://github.com/fluffy-linux/findutils/releases/download/v$VERSION/findutils-$VERSION.tar.xz
     1b5338e5a912f92962533191a482d97a57f2e923966dacaa5446c79df1b455a2 file://findutils-$VERSION-fluffy-shell.patch
     b7440a6c91a02bd8ecf1825d3285f85dd219fce4e09cd7e636e77850bdf6bc40 file://findutils-$VERSION-fluffy-test.patch
 )

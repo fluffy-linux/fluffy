@@ -8,7 +8,7 @@ fi
 VERSION=3.1.6
 
 ARCHIVES=(
-    0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d https://pypi.org/packages/source/J/Jinja2/jinja2-$VERSION.tar.gz
+    0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d https://github.com/fluffy-linux/jinja/releases/download/$VERSION/jinja2-$VERSION.tar.gz
 )
 
 NEEDS=(

@@ -10,7 +10,7 @@ VERSION=7.1
 HAS_LDFLAGS="-lbtrfs -lbtrfsutil"
 
 ARCHIVES=(
-    d1f55cc2971398c9142eaa79d203e63d586a3b4b867f956664a1d68322cd4e34 https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v$VERSION.tar.xz
+    d1f55cc2971398c9142eaa79d203e63d586a3b4b867f956664a1d68322cd4e34 https://github.com/fluffy-linux/btrfs-progs/releases/download/v$VERSION/btrfs-progs-v$VERSION.tar.xz
     18b74d5ca7f026cb79351ece40af5db7eed1a5990164ff58b703bae6723a201a file://btrfs-progs-v$VERSION-fluffy-source.patch
 )
 

@@ -10,7 +10,7 @@ VERSION=6.3.0
 HAS_LDFLAGS=-lgmp
 
 ARCHIVES=(
-    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$VERSION.tar.xz
+    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://github.com/fluffy-linux/gmp/releases/download/gmp-$VERSION/gmp-$VERSION.tar.xz
     87441888f5bb1b30afd1fb6f32693e4c92786de47f98d3efb79e46996c7ce822 file://gmp-$VERSION-fluffy-source.patch
 )
 

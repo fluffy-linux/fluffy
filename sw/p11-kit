@@ -11,7 +11,7 @@ HAS_CFLAGS=-I/sw/p11-kit/include/p11-kit-1
 HAS_LDFLAGS=-lp11-kit
 
 ARCHIVES=(
-    f2cc09111e44bf3fea58f023180b33acea90aa82d042d6fbb623fbc5ba033bb7 https://github.com/p11-glue/p11-kit/releases/download/$VERSION/p11-kit-$VERSION.tar.xz
+    f2cc09111e44bf3fea58f023180b33acea90aa82d042d6fbb623fbc5ba033bb7 https://github.com/fluffy-linux/p11-kit/releases/download/$VERSION/p11-kit-$VERSION.tar.xz
     dce356808741d5a1045a2cc9a7d7eb5b834e1a9ab5cf8ed1e41a3c66cd8041b5 file://p11-kit-$VERSION-fluffy-source.patch
     b169b0e9542f6dc06a9474748eedc97c854dc6608bec3a0b1ddc03d202716a33 file://p11-kit-$VERSION-fluffy-test.patch
 )

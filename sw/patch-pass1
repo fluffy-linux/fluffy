@@ -3,7 +3,7 @@ ON=host-build
 VERSION=2.8
 
 ARCHIVES=(
-    f87cee69eec2b4fcbf60a396b030ad6aa3415f192aa5f7ee84cad5e11f7f5ae3 https://ftpmirror.gnu.org/patch/patch-$VERSION.tar.xz
+    f87cee69eec2b4fcbf60a396b030ad6aa3415f192aa5f7ee84cad5e11f7f5ae3 https://github.com/fluffy-linux/patch/releases/download/v$VERSION/patch-$VERSION.tar.xz
 )
 
 NEEDS=(

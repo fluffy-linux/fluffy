@@ -1,6 +1,6 @@
-diff -Naur tcl8.6.18.orig/generic/tclFileName.c tcl8.6.18/generic/tclFileName.c
---- tcl8.6.18.orig/generic/tclFileName.c	2026-07-25 23:00:00.000000000 +0000
-+++ tcl8.6.18/generic/tclFileName.c	2026-07-25 23:00:00.000000000 +0000
+diff --no-dereference -Naur tcl8.6.18.orig/generic/tclFileName.c tcl8.6.18/generic/tclFileName.c
+--- tcl8.6.18.orig/generic/tclFileName.c	2026-04-17 18:51:36.000000000 +0000
++++ tcl8.6.18/generic/tclFileName.c	2026-04-17 18:51:36.000000000 +0000
 @@ -2064,6 +2064,43 @@
   */
  
@@ -57,9 +57,9 @@ diff -Naur tcl8.6.18.orig/generic/tclFileName.c tcl8.6.18/generic/tclFileName.c
  	    return Tcl_FSMatchInDirectory(interp, matchesObj, pathPtr,
  		    pattern, types);
  	}
-diff -Naur tcl8.6.18.orig/generic/tclFileSystem.h tcl8.6.18/generic/tclFileSystem.h
---- tcl8.6.18.orig/generic/tclFileSystem.h	2026-07-25 23:00:00.000000000 +0000
-+++ tcl8.6.18/generic/tclFileSystem.h	2026-07-25 23:00:00.000000000 +0000
+diff --no-dereference -Naur tcl8.6.18.orig/generic/tclFileSystem.h tcl8.6.18/generic/tclFileSystem.h
+--- tcl8.6.18.orig/generic/tclFileSystem.h	2026-04-17 18:51:36.000000000 +0000
++++ tcl8.6.18/generic/tclFileSystem.h	2026-04-17 18:51:36.000000000 +0000
 @@ -57,6 +57,7 @@
  			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
  MODULE_SCOPE int	TclFSEpochOk(size_t filesystemEpoch);
@@ -68,9 +68,9 @@ diff -Naur tcl8.6.18.orig/generic/tclFileSystem.h tcl8.6.18/generic/tclFileSyste
  MODULE_SCOPE Tcl_Obj *	TclWinVolumeRelativeNormalize(Tcl_Interp *interp,
  			    const char *path, Tcl_Obj **useThisCwdPtr);
  
-diff -Naur tcl8.6.18.orig/generic/tclIOUtil.c tcl8.6.18/generic/tclIOUtil.c
---- tcl8.6.18.orig/generic/tclIOUtil.c	2026-07-25 23:00:00.000000000 +0000
-+++ tcl8.6.18/generic/tclIOUtil.c	2026-07-25 23:00:00.000000000 +0000
+diff --no-dereference -Naur tcl8.6.18.orig/generic/tclIOUtil.c tcl8.6.18/generic/tclIOUtil.c
+--- tcl8.6.18.orig/generic/tclIOUtil.c	2026-04-17 18:51:36.000000000 +0000
++++ tcl8.6.18/generic/tclIOUtil.c	2026-04-17 18:51:36.000000000 +0000
 @@ -465,6 +465,15 @@
  }
  
@@ -87,9 +87,9 @@ diff -Naur tcl8.6.18.orig/generic/tclIOUtil.c tcl8.6.18/generic/tclIOUtil.c
  TclFSCwdIsNative(void)
  {
      ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
-diff -Naur tcl8.6.18.orig/generic/tclPathObj.c tcl8.6.18/generic/tclPathObj.c
---- tcl8.6.18.orig/generic/tclPathObj.c	2026-07-25 23:00:00.000000000 +0000
-+++ tcl8.6.18/generic/tclPathObj.c	2026-07-25 23:00:00.000000000 +0000
+diff --no-dereference -Naur tcl8.6.18.orig/generic/tclPathObj.c tcl8.6.18/generic/tclPathObj.c
+--- tcl8.6.18.orig/generic/tclPathObj.c	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18/generic/tclPathObj.c	2026-04-17 18:51:37.000000000 +0000
 @@ -1310,7 +1310,7 @@
       * that by mounting on path prefixes like foo:// which cannot be the
       * name of a file or directory read from a native [glob] operation.
@@ -99,9 +99,9 @@ diff -Naur tcl8.6.18.orig/generic/tclPathObj.c tcl8.6.18/generic/tclPathObj.c
  	Tcl_Obj *tail = Tcl_NewStringObj(addStrRep, len);
  
  	pathPtr = AppendPath(dirPtr, tail);
-diff -Naur tcl8.6.18.orig/library/init.tcl tcl8.6.18/library/init.tcl
---- tcl8.6.18.orig/library/init.tcl	2026-07-25 23:00:00.000000000 +0000
-+++ tcl8.6.18/library/init.tcl	2026-07-25 23:00:00.000000000 +0000
+diff --no-dereference -Naur tcl8.6.18.orig/library/init.tcl tcl8.6.18/library/init.tcl
+--- tcl8.6.18.orig/library/init.tcl	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18/library/init.tcl	2026-04-17 18:51:37.000000000 +0000
 @@ -66,9 +66,17 @@
  	    lappend ::auto_path $Dir
  	}
@@ -153,45 +153,30 @@ diff -Naur tcl8.6.18.orig/library/init.tcl tcl8.6.18/library/init.tcl
  	}
      }
      return ""
-diff -Naur tcl8.6.18.orig/tests/unixFile.test tcl8.6.18/tests/unixFile.test
---- tcl8.6.18.orig/tests/unixFile.test	2026-07-25 23:00:00.000000000 +0000
-+++ tcl8.6.18/tests/unixFile.test	2026-07-25 23:00:00.000000000 +0000
-@@ -56,6 +56,32 @@
-     set env(PATH) ":/dummy"
-     testfindexecutable junk
- } $absPath
-+test unixFile-1.8 {Tcl_FindExecutable wildcard PATH} -constraints {testfindexecutable unix} -setup {
-+    file mkdir pkg_b/bin pkg_a/bin
-+    file attributes [makeFile "" pkg_b/bin/wjunk] -perm 0o777
-+    file attributes [makeFile "" pkg_a/bin/wjunk] -perm 0o777
-+} -body {
-+    set env(PATH) "/dummy:[pwd]/pkg_*/bin"
-+    testfindexecutable wjunk
-+} -cleanup {
-+    removeFile pkg_a/bin/wjunk
-+    removeFile pkg_b/bin/wjunk
-+    file delete -force pkg_a pkg_b
-+} -result [file join [temporaryDirectory] pkg_a bin wjunk]
-+test unixFile-1.9 {auto_execok wildcard PATH} -constraints {unix} -setup {
-+    auto_reset
-+    file mkdir pkg_b/bin pkg_a/bin
-+    file attributes [makeFile "" pkg_b/bin/wjunk2] -perm 0o777
-+    file attributes [makeFile "" pkg_a/bin/wjunk2] -perm 0o777
-+} -body {
-+    set env(PATH) "/dummy:[pwd]/pkg_*/bin"
-+    auto_execok wjunk2
-+} -cleanup {
-+    auto_reset
-+    removeFile pkg_a/bin/wjunk2
-+    removeFile pkg_b/bin/wjunk2
-+    file delete -force pkg_a pkg_b
-+} -result [list [file join [temporaryDirectory] pkg_a bin wjunk2]]
- 
- # cleanup
- catch {set env(PATH) $oldPath}
-diff -Naur tcl8.6.18.orig/unix/tclUnixFile.c tcl8.6.18/unix/tclUnixFile.c
---- tcl8.6.18.orig/unix/tclUnixFile.c	2026-07-25 23:00:00.000000000 +0000
-+++ tcl8.6.18/unix/tclUnixFile.c	2026-07-25 23:00:00.000000000 +0000
+diff --no-dereference -Naur tcl8.6.18.orig/pkgs/sqlite3.53.0/compat/sqlite3/spaceanal.tcl tcl8.6.18/pkgs/sqlite3.53.0/compat/sqlite3/spaceanal.tcl
+--- tcl8.6.18.orig/pkgs/sqlite3.53.0/compat/sqlite3/spaceanal.tcl	2026-04-10 11:13:09.000000000 +0000
++++ tcl8.6.18/pkgs/sqlite3.53.0/compat/sqlite3/spaceanal.tcl	2026-04-10 11:13:09.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # restart with tclsh \
+ exec tclsh "$0" ${1+"$@"}
+ package require sqlite3
+diff --no-dereference -Naur tcl8.6.18.orig/unix/Makefile.in tcl8.6.18/unix/Makefile.in
+--- tcl8.6.18.orig/unix/Makefile.in	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18/unix/Makefile.in	2026-04-17 18:51:37.000000000 +0000
+@@ -1735,7 +1735,7 @@
+ 		    mkdir -p $(PKG_DIR)/$$pkg; \
+ 		    if [ ! -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+ 			( cd $(PKG_DIR)/$$pkg; \
+-			  $$i/configure --with-tcl=../.. \
++			  $(SHELL) $$i/configure --with-tcl=../.. \
+ 			      --with-tclinclude=$(GENERIC_DIR) \
+ 			      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
+ 			      --enable-shared --enable-threads; ) || exit $$?; \
+diff --no-dereference -Naur tcl8.6.18.orig/unix/tclUnixFile.c tcl8.6.18/unix/tclUnixFile.c
+--- tcl8.6.18.orig/unix/tclUnixFile.c	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18/unix/tclUnixFile.c	2026-04-17 18:51:37.000000000 +0000
 @@ -12,6 +12,10 @@
  
  #include "tclInt.h"

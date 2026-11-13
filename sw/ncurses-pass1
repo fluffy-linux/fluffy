@@ -5,7 +5,7 @@ VERSION=6.6
 HAS_LDFLAGS=-lncursesw
 
 ARCHIVES=(
-    355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://invisible-mirror.net/archives/ncurses/ncurses-$VERSION.tar.gz
+    355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://github.com/fluffy-linux/ncurses-snapshots/releases/download/v${VERSION//./_}/ncurses-$VERSION.tar.gz
 )
 
 NEEDS=(

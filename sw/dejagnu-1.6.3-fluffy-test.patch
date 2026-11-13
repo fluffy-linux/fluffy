@@ -1,4 +1,54 @@
-diff -Naur dejagnu-1.6.3.orig/testsuite/runtest.libs/utils.test dejagnu-1.6.3/testsuite/runtest.libs/utils.test
+diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/launcher.all/command/commands/bar.sh dejagnu-1.6.3/testsuite/launcher.all/command/commands/bar.sh
+--- dejagnu-1.6.3.orig/testsuite/launcher.all/command/commands/bar.sh	2018-12-21 05:18:13.000000000 +0000
++++ dejagnu-1.6.3/testsuite/launcher.all/command/commands/bar.sh	2018-12-21 05:18:13.000000000 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ exit 0
+diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/launcher.all/command/commands/foo.sh dejagnu-1.6.3/testsuite/launcher.all/command/commands/foo.sh
+--- dejagnu-1.6.3.orig/testsuite/launcher.all/command/commands/foo.sh	2018-12-21 05:18:13.000000000 +0000
++++ dejagnu-1.6.3/testsuite/launcher.all/command/commands/foo.sh	2018-12-21 05:18:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # ##help
+ # #foo.sh help message
+diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/report-card.all/onetest.exp dejagnu-1.6.3/testsuite/report-card.all/onetest.exp
+--- dejagnu-1.6.3.orig/testsuite/report-card.all/onetest.exp	2021-05-19 02:42:42.000000000 +0000
++++ dejagnu-1.6.3/testsuite/report-card.all/onetest.exp	2021-05-19 02:42:42.000000000 +0000
+@@ -40,7 +40,7 @@
+ 
+ set stty_init { -onlcr -onlret }
+ 
+-spawn /bin/sh -c \
++spawn /sw/bash/bin/bash -c \
+     "cd [testsuite file -object -test onetest]\
+      && exec $LAUNCHER report-card"
+ 
+@@ -172,7 +172,7 @@
+ # Ensure that totals map correctly by reading each file one at a time
+ foreach name $test_names {
+     set separator_count 0
+-    spawn /bin/sh -c \
++    spawn /sw/bash/bin/bash -c \
+ 	"cd [testsuite file -object -test onetest]\
+ 	 && exec $LAUNCHER report-card one-${name}.sum"
+     # skip header
+diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/report-card.all/passes.exp dejagnu-1.6.3/testsuite/report-card.all/passes.exp
+--- dejagnu-1.6.3.orig/testsuite/report-card.all/passes.exp	2020-06-03 20:52:45.000000000 +0000
++++ dejagnu-1.6.3/testsuite/report-card.all/passes.exp	2020-06-03 20:52:45.000000000 +0000
+@@ -183,7 +183,7 @@
+ 
+     # run the dejagnu-report-card tool
+     set separator_count 0
+-    spawn /bin/sh -c \
++    spawn /sw/bash/bin/bash -c \
+ 	"cd [testsuite file -object -test passes]\
+ 	 && exec $LAUNCHER report-card ${filetag}-*.sum"
+ 
+diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/runtest.libs/utils.test dejagnu-1.6.3/testsuite/runtest.libs/utils.test
 --- dejagnu-1.6.3.orig/testsuite/runtest.libs/utils.test	2021-05-20 22:04:35.000000000 +0000
 +++ dejagnu-1.6.3/testsuite/runtest.libs/utils.test	2021-05-20 22:04:35.000000000 +0000
 @@ -139,12 +139,12 @@
@@ -18,3 +68,12 @@ diff -Naur dejagnu-1.6.3.orig/testsuite/runtest.libs/utils.test dejagnu-1.6.3/te
  }
  
  ### Do not adjust the comment on the next line. The grep test case
+diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/runtest.main/pr48155-csh.sh dejagnu-1.6.3/testsuite/runtest.main/pr48155-csh.sh
+--- dejagnu-1.6.3.orig/testsuite/runtest.main/pr48155-csh.sh	2021-05-05 21:45:09.000000000 +0000
++++ dejagnu-1.6.3/testsuite/runtest.main/pr48155-csh.sh	2021-05-05 21:45:09.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ cat <<EOF 1>&2
+ timestamp=2021-01-25: Command not found.

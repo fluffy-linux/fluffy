@@ -3,7 +3,7 @@ ON=host-build
 VERSION=4.10
 
 ARCHIVES=(
-    b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7 https://ftpmirror.gnu.org/sed/sed-$VERSION.tar.xz
+    b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7 https://github.com/fluffy-linux/sed/releases/download/v$VERSION/sed-$VERSION.tar.xz
 )
 
 NEEDS=(

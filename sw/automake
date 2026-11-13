@@ -8,7 +8,7 @@ fi
 VERSION=1.18.1
 
 ARCHIVES=(
-    168aa363278351b89af56684448f525a5bce5079d0b6842bd910fdd3f1646887 https://ftpmirror.gnu.org/automake/automake-$VERSION.tar.xz
+    168aa363278351b89af56684448f525a5bce5079d0b6842bd910fdd3f1646887 https://github.com/fluffy-linux/automake/releases/download/v$VERSION/automake-$VERSION.tar.xz
     30a7d776810643b45feb4a3345dc0384ab37ca0b208a2ea273a94333859d75f4 file://automake-$VERSION-fluffy-shell.patch
 )
 
