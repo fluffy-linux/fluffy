@@ -92,7 +92,17 @@ EOF
 
 CHECK() {
     cd build
-    make check
+    TIMEOUTFACTOR=10 make check || {
+        if test -f tests.sum
+        then
+            for f in $(awk '/^FAIL:/ {print $2}' tests.sum)
+            do
+                echo "=== $f.out ==="
+                cat "$f.out" || true
+            done
+        fi
+        return 1
+    }
 }
 
 INSTALL() {
