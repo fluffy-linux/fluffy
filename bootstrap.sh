@@ -3,6 +3,16 @@ set -euo pipefail
 
 DIR="$(dirname "$(realpath "$0")")"
 FLUFFY="${FLUFFY:-/mnt/fluffy}"
+BUILDER_UID="${SUDO_UID:-1000}"
+BUILDER_GID="${SUDO_GID:-1000}"
+if (( BUILDER_UID == 0 ))
+then
+    BUILDER_UID=1000
+fi
+if (( BUILDER_GID == 0 ))
+then
+    BUILDER_GID=1000
+fi
 
 if ! mountpoint -q "$FLUFFY"
 then
@@ -35,7 +45,7 @@ do
     then
         echo "$entry" >> "$FLUFFY/etc/passwd"
     fi
-done << "PW_EOF"
+done << PW_EOF
 root:x:0:0:root:/root:/sw/bash/bin/bash
 bin:x:1:1:bin:/dev/null:/sw/coreutils/bin/false
 daemon:x:6:6:Daemon User:/dev/null:/sw/coreutils/bin/false
@@ -49,7 +59,7 @@ systemd-timesync:x:78:78:systemd Time Synchronization:/:/sw/coreutils/bin/false
 systemd-coredump:x:79:79:systemd Core Dumper:/:/sw/coreutils/bin/false
 uuidd:x:80:80:UUID Generation Daemon User:/dev/null:/sw/coreutils/bin/false
 systemd-oom:x:81:81:systemd Out Of Memory Daemon:/:/sw/coreutils/bin/false
-builder:x:1000:1000::/home/builder:/sw/bash/bin/bash
+builder:x:${BUILDER_UID}:${BUILDER_GID}::/home/builder:/sw/bash/bin/bash
 nobody:x:65534:65534:Unprivileged User:/dev/null:/sw/coreutils/bin/false
 PW_EOF
 
@@ -62,7 +72,7 @@ do
     then
         echo "$entry" >> "$FLUFFY/etc/group"
     fi
-done << "GRP_EOF"
+done << GRP_EOF
 root:x:0:
 bin:x:1:
 sys:x:2:
@@ -97,7 +107,7 @@ uuidd:x:80:
 systemd-oom:x:81:
 wheel:x:97:
 users:x:999:
-builder:x:1000:
+builder:x:${BUILDER_GID}:
 nogroup:x:65534:
 GRP_EOF
 
