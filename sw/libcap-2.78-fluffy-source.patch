@@ -1,4 +1,13 @@
-diff -Naur libcap-2.78.orig/progs/capsh.c libcap-2.78/progs/capsh.c
+diff --no-dereference -Naur libcap-2.78.orig/go/cgo-required.sh libcap-2.78/go/cgo-required.sh
+--- libcap-2.78.orig/go/cgo-required.sh	2021-02-05 06:06:25.000000000 +0000
++++ libcap-2.78/go/cgo-required.sh	2021-02-05 06:06:25.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ #
+ # Runtime check for whether or not syscall.AllThreadsSyscall is
+ # available to the working go runtime or not. If it isn't we always
+diff --no-dereference -Naur libcap-2.78.orig/progs/capsh.c libcap-2.78/progs/capsh.c
 --- libcap-2.78.orig/progs/capsh.c	2025-02-22 20:18:47.000000000 +0000
 +++ libcap-2.78/progs/capsh.c	2025-02-22 20:18:47.000000000 +0000
 @@ -34,7 +34,7 @@
@@ -10,3 +19,12 @@ diff -Naur libcap-2.78.orig/progs/capsh.c libcap-2.78/progs/capsh.c
  #endif /* ndef SHELL */
  
  #include "./capshdoc.h"
+diff --no-dereference -Naur libcap-2.78.orig/progs/mkcapshdoc.sh libcap-2.78/progs/mkcapshdoc.sh
+--- libcap-2.78.orig/progs/mkcapshdoc.sh	2022-10-09 23:21:46.000000000 +0000
++++ libcap-2.78/progs/mkcapshdoc.sh	2022-10-09 23:21:46.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ # This script generates some C code for inclusion in the capsh binary.
+ # The Makefile generally only generates the .c code and compares it
+ # with the checked in code in the progs directory.

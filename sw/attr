@@ -11,8 +11,7 @@ HAS_LDFLAGS=-lattr
 
 ARCHIVES=(
     d42fa374513180bb48cb11a46696f488240e5124ff1e6ad88b0abff706985612 https://download.savannah.gnu.org/releases/attr/attr-$VERSION.tar.gz
-    b0a3eaaa98754244076f5fa821b5749de1041a743d0f7fb16f60c1142c988540 file://attr-$VERSION-fluffy-shell.patch
-    3dcb5bf880e30c2d40ecb4bad26651f37e5b91ad334667acd25bc4d1027c89bd file://attr-$VERSION-fluffy-test.patch
+    4fe15575f01abb0491890e93899695bbb398a34e7c00590398362e571d667f14 file://attr-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -61,10 +60,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i attr-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i attr-$VERSION-fluffy-test.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/attr \
         --disable-static \
         --sysconfdir=/sw/attr/etc \

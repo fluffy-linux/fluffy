@@ -9,7 +9,8 @@ VERSION=1.13.2
 
 ARCHIVES=(
     974d6b2f4eeefa25625d34da3cb36bdcebe7fbce40f4c16ac0835fd1c0cbae17 https://github.com/ninja-build/ninja/archive/v$VERSION/ninja-$VERSION.tar.gz
-    a54b8043038fcd174e6a61be750ad318b825837ec66f7d49cb53879832fee88b file://ninja-$VERSION-fluffy-shell.patch
+    e7208618eb196cd1d01a69d81f4cee608ced14b94a9b4db8618901e520318188 file://ninja-$VERSION-fluffy-source.patch
+    106abac771d2ca5187cfef6889bdf6ee10143c3bf47caab324e99e637ee70ef3 file://ninja-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -53,7 +54,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ninja-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ninja-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ninja-$VERSION-fluffy-test.patch
 
     sed -i '/int Guess/a \
   int   j = 0;\

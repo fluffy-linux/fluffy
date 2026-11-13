@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lmpfr
 
 ARCHIVES=(
     b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://ftpmirror.gnu.org/mpfr/mpfr-$VERSION.tar.xz
-    d6e5b7179a943a375757600a250b15e572d713ba12873126524bd25b692ad6be file://mpfr-$VERSION-fluffy-shell.patch
+    722260587205e6697cd7c55ee98b8eb648f46eadc560b74e5f1c76169e77c5f6 file://mpfr-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -63,9 +63,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i mpfr-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i mpfr-$VERSION-fluffy-source.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/mpfr \
         --disable-static \
         --enable-thread-safe \

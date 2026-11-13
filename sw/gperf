@@ -9,7 +9,7 @@ VERSION=3.3
 
 ARCHIVES=(
     fd87e0aba7e43ae054837afd6cd4db03a3f2693deb3619085e6ed9d8d9604ad8 https://ftpmirror.gnu.org/gperf/gperf-$VERSION.tar.gz
-    9a56a3a7a8cf1054524571d5ca9738125d4df95ba14b9e1db815a5ca1e5d5de5 file://gperf-$VERSION-fluffy-shell.patch
+    00012bcccd09a2a2a3ade32e8a84c69952d26f1753425adcc196c5164399675c file://gperf-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -64,9 +64,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i gperf-$VERSION-fluffy-shell.patch
-
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    patch -Z -Np1 -i gperf-$VERSION-fluffy-test.patch
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gperf \
         --docdir=/sw/gperf/share/doc/gperf-$VERSION
     make

@@ -9,7 +9,6 @@ VERSION=3.12
 
 ARCHIVES=(
     2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9 https://ftpmirror.gnu.org/grep/grep-$VERSION.tar.xz
-    5daa063aad39f4db4a03b01a5c717978a48042caed94659262796c4edf722550 file://grep-$VERSION-fluffy-shell.patch
     e1c951e867e80d1918bee4eafcd47a5161d5277a6727c235aa962347d651c54e file://grep-$VERSION-fluffy-source.patch
 )
 
@@ -66,17 +65,18 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i grep-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i grep-$VERSION-fluffy-source.patch
 
     sed -i "s/echo/#echo/" src/egrep.sh
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/grep
     make
 }
 
 CHECK() {
-    make check
+    make -C tests check
+    make -C gnulib-tests 'LOG_COMPILER=bash -c '\''case "$$0" in *.sh) exec bash "$$0" "$$@";; *) exec "$$0" "$$@";; esac'\''' check
 }
 
 INSTALL() {

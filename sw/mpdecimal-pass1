@@ -6,9 +6,6 @@ HAS_LDFLAGS=-lmpdec
 
 ARCHIVES=(
     96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8 https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-$VERSION.tar.gz
-    fa764141dcd8cc3c933f378f44e2ffaf3c99024606896ede316be5d80d26ea59 file://mpdecimal-$VERSION-fluffy-shell.patch
-    8c1d4bf2c05c3faed875fc863a0ba12e11e1d62fe514faf435a76214feb1e52a file://mpdecimal-$VERSION-fluffy-source.patch
-    044080cc4b86b7cf2992d004a77d29a5d2277b711bdc8b3fd27ebbf086310044 file://mpdecimal-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -39,10 +36,8 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i mpdecimal-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i mpdecimal-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i mpdecimal-$VERSION-fluffy-test.patch
-    CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/mpdecimal \
         --disable-static \
         --docdir=/sw/mpdecimal/share/doc/mpdecimal-$VERSION

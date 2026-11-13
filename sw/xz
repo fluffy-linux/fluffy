@@ -11,7 +11,6 @@ HAS_LDFLAGS=-llzma
 
 ARCHIVES=(
     fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6 https://github.com/tukaani-project/xz/releases/download/v$VERSION/xz-$VERSION.tar.xz
-    e3b881e891a9611614dd4a4f40eb2aeac91d35d443006ac4637b7a4c6e690717 file://xz-$VERSION-fluffy-shell.patch
     526f289fe73f03d3e96f92709b0859e989738e4d9974968fb94c7375d0fa3092 file://xz-$VERSION-fluffy-test.patch
 )
 
@@ -61,9 +60,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i xz-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i xz-$VERSION-fluffy-test.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/xz \
         --disable-static \
         --docdir=/sw/xz/share/doc/xz-$VERSION

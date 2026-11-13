@@ -1,0 +1,12 @@
+diff --no-dereference -Naur psmisc-23.7.orig/testsuite/config/unix.exp psmisc-23.7/testsuite/config/unix.exp
+--- psmisc-23.7.orig/testsuite/config/unix.exp	2023-03-09 09:55:52.328169595 +0000
++++ psmisc-23.7/testsuite/config/unix.exp	2023-03-09 09:55:52.328169595 +0000
+@@ -33,7 +33,7 @@
+ 
+ proc kill_process pid {
+     set cmdline "kill $pid"
+-    if { [catch { exec /bin/sh -c $cmdline } msg]} {
++    if { [catch { exec /sw/bash/bin/bash -c $cmdline } msg]} {
+         warning "Could not kill process: $msg\n"
+     }
+ }

@@ -9,7 +9,8 @@ VERSION=704
 
 ARCHIVES=(
     20a0b0a2bb2525fa53c7eee9beb854b4c9cf172eabb209af7020743547bfe9fb https://www.greenwoodsoftware.com/less/less-$VERSION.tar.gz
-    c013ac298913733d55598338bb1a93ae0b8f071875a2252edc46af734fc09bf0 file://less-$VERSION-fluffy-shell.patch
+    89d014808ffa1063f4b6c602c6898829329dbb66428f3418e4de59e15b1e38be file://less-$VERSION-fluffy-source.patch
+    80ad0eb07fe85df9ffd1c53f64a495fddae4eb4cd4e78fa5204e71bb6deb3ccd file://less-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -65,9 +66,11 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i less-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i less-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i less-$VERSION-fluffy-test.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/less \
         --sysconfdir=/sw/less/etc
     make

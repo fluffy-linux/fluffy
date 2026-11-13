@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lpcre2-8
 
 ARCHIVES=(
     47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7 https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$VERSION/pcre2-$VERSION.tar.bz2
-    14c4174e09eee2a481213a1475ca234431cb3fa12571ee1e64ccf38c6b242772 file://pcre2-$VERSION-fluffy-shell.patch
+    1250912274d44649a860e62e4e2a541ca2992903c8dddc4541c97a6815f00fbc file://pcre2-$VERSION-fluffy-source.patch
     7017025f0da44ec4fdebeaabe72eb25ea7e8adb7f9e370fb25d65ba8625d6be6 file://pcre2-$VERSION-fluffy-test.patch
 )
 
@@ -66,9 +66,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i pcre2-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i pcre2-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i pcre2-$VERSION-fluffy-test.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/pcre2 \
         --docdir=/sw/pcre2/share/doc/pcre2-$VERSION \
         --enable-unicode \

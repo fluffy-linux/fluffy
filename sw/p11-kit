@@ -12,7 +12,7 @@ HAS_LDFLAGS=-lp11-kit
 
 ARCHIVES=(
     f2cc09111e44bf3fea58f023180b33acea90aa82d042d6fbb623fbc5ba033bb7 https://github.com/p11-glue/p11-kit/releases/download/$VERSION/p11-kit-$VERSION.tar.xz
-    960049bfc0358bd36ed0a440e6b64782b2ee6009e32de1a55545dc14d16dfd0f file://p11-kit-$VERSION-fluffy-shell.patch
+    dce356808741d5a1045a2cc9a7d7eb5b834e1a9ab5cf8ed1e41a3c66cd8041b5 file://p11-kit-$VERSION-fluffy-source.patch
     b169b0e9542f6dc06a9474748eedc97c854dc6608bec3a0b1ddc03d202716a33 file://p11-kit-$VERSION-fluffy-test.patch
 )
 
@@ -72,9 +72,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i p11-kit-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i p11-kit-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i p11-kit-$VERSION-fluffy-test.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/p11-kit \
         --sysconfdir=/sw/p11-kit/etc \
         --with-trust-paths=/etc/pki/anchors:/sw/ca-certificates/etc/ssl/certs/ca-certificates.crt \

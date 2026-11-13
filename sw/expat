@@ -11,7 +11,6 @@ HAS_LDFLAGS=-lexpat
 
 ARCHIVES=(
     f6256df90c906773d344da084402b7d3e4f22ed41b1a59c989098a83d3ea0c85 https://github.com/libexpat/libexpat/releases/download/R_2_8_3/expat-$VERSION.tar.xz
-    3c8d4d7076a4547e7a9ca1a2ca86d3a74942cefdac3809617fc2a2d2a5896059 file://expat-$VERSION-fluffy-shell.patch
 )
 
 NEEDS=(
@@ -62,9 +61,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i expat-$VERSION-fluffy-shell.patch
-
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/expat \
         --disable-static \
         --docdir=/sw/expat/share/doc/expat-$VERSION
@@ -72,7 +70,7 @@ MAKE() {
 }
 
 CHECK() {
-    make check
+    make LOG_DRIVER='$(SHELL) $(top_srcdir)/conftools/test-driver' check
 }
 
 INSTALL() {

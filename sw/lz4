@@ -11,7 +11,6 @@ HAS_LDFLAGS=-llz4
 
 ARCHIVES=(
     537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b https://github.com/lz4/lz4/releases/download/v$VERSION/lz4-$VERSION.tar.gz
-    31046072217f8f540b7a493d9bf1407865eeaa310399c913f71714d608ef143e file://lz4-$VERSION-fluffy-shell.patch
     65c03362297ef58fdec56cce67b39d99784775c90a22cf76abe5107cec325195 file://lz4-$VERSION-fluffy-test.patch
 )
 
@@ -57,7 +56,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i lz4-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i lz4-$VERSION-fluffy-test.patch
     make BUILD_STATIC=no PREFIX=/sw/lz4
 }

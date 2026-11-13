@@ -1,0 +1,18 @@
+diff --no-dereference -Naur zstd-1.5.7.orig/programs/zstdgrep zstd-1.5.7/programs/zstdgrep
+--- zstd-1.5.7.orig/programs/zstdgrep	2025-02-19 00:04:24.000000000 +0000
++++ zstd-1.5.7/programs/zstdgrep	2025-02-19 00:04:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright (c) 2003 Thomas Klausner.
+ #
+diff --no-dereference -Naur zstd-1.5.7.orig/programs/zstdless zstd-1.5.7/programs/zstdless
+--- zstd-1.5.7.orig/programs/zstdless	2025-02-19 00:04:24.000000000 +0000
++++ zstd-1.5.7/programs/zstdless	2025-02-19 00:04:24.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ zstd=${ZSTD:-zstd}
+ 

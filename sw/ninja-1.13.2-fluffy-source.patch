@@ -1,0 +1,23 @@
+diff --no-dereference -Naur ninja-1.13.2.orig/src/inline.sh ninja-1.13.2/src/inline.sh
+--- ninja-1.13.2.orig/src/inline.sh	2025-11-20 16:26:20.000000000 +0000
++++ ninja-1.13.2/src/inline.sh	2025-11-20 16:26:20.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # Copyright 2001 Google Inc. All Rights Reserved.
+ #
+diff --no-dereference -Naur ninja-1.13.2.orig/src/subprocess-posix.cc ninja-1.13.2/src/subprocess-posix.cc
+--- ninja-1.13.2.orig/src/subprocess-posix.cc	2025-11-20 16:26:20.000000000 +0000
++++ ninja-1.13.2/src/subprocess-posix.cc	2025-11-20 16:26:20.000000000 +0000
+@@ -129,8 +129,8 @@
+   if (err != 0)
+     Fatal("posix_spawnattr_setflags: %s", strerror(err));
+ 
+-  const char* spawned_args[] = { "/bin/sh", "-c", command.c_str(), NULL };
+-  err = posix_spawn(&pid_, "/bin/sh", &action, &attr,
++  const char* spawned_args[] = { "/sw/bash/bin/bash", "-c", command.c_str(), NULL };
++  err = posix_spawn(&pid_, "/sw/bash/bin/bash", &action, &attr,
+         const_cast<char**>(spawned_args), environ);
+   if (err != 0)
+     Fatal("posix_spawn: %s", strerror(err));

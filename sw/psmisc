@@ -9,7 +9,7 @@ VERSION=23.7
 
 ARCHIVES=(
     58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327 https://downloads.sourceforge.net/psmisc/psmisc-$VERSION.tar.xz
-    2b3229fd2b71695fe93c059226e2a66284b7188dd2d4dc214653b57743ebc8d7 file://psmisc-$VERSION-fluffy-shell.patch
+    6e8008deb93c7fcb54ef9baa5156893d2c6655d301316a7d1ff53c3985d9a971 file://psmisc-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -65,9 +65,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i psmisc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i psmisc-$VERSION-fluffy-test.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/psmisc
     make
 }

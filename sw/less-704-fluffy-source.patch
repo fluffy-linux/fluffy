@@ -1,0 +1,18 @@
+diff --no-dereference -Naur less-704.orig/less-osc8-open.sh less-704/less-osc8-open.sh
+--- less-704.orig/less-osc8-open.sh	2026-05-30 23:55:08.000000000 +0000
++++ less-704/less-osc8-open.sh	2026-05-30 23:55:08.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Less OSC 8 handler.
+ 
+diff --no-dereference -Naur less-704.orig/mkinstalldirs less-704/mkinstalldirs
+--- less-704.orig/mkinstalldirs	2026-05-30 23:55:07.000000000 +0000
++++ less-704/mkinstalldirs	2026-05-30 23:55:07.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # mkinstalldirs --- make directory hierarchy
+ # Author: Noah Friedman <friedman@prep.ai.mit.edu>
+ # Created: 1993-05-16

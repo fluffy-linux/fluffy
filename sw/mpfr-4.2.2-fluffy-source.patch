@@ -1,0 +1,9 @@
+diff --no-dereference -Naur mpfr-4.2.2.orig/tools/get_patches.sh mpfr-4.2.2/tools/get_patches.sh
+--- mpfr-4.2.2.orig/tools/get_patches.sh	2025-02-01 23:44:50.000000000 +0000
++++ mpfr-4.2.2/tools/get_patches.sh	2025-02-01 23:44:50.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ set -e
+ 

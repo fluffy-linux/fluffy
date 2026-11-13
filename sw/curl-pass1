@@ -6,8 +6,7 @@ HAS_LDFLAGS=-lcurl
 
 ARCHIVES=(
     8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5 https://curl.se/download/curl-$VERSION.tar.xz
-    b1fc8dfae54424bea6a546125d59d1a5a293c4aa79b0978179bd50e225bd5d3e file://curl-$VERSION-fluffy-shell.patch
-    afe278436da2a91bffe1aa4556424eb5f22aca3c3061a5856bfcec36f662315c file://curl-$VERSION-fluffy-source.patch
+    2594eb98f8272a60df111235b94bc5b0ea79ec5cff750801d02e270cd0fe037d file://curl-$VERSION-fluffy-source.patch
     a3f92fc9cec3592efcb089bcec37fa5025b8b7f3b67d22ca4a8abac343c4e4b7 file://curl-$VERSION-fluffy-test.patch
 )
 
@@ -33,13 +32,13 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i curl-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i curl-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i curl-$VERSION-fluffy-test.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/curl \
         --host=$FLUFFY_TGT \
-        --build=$(./config.guess) \
+        --build=$($CONFIG_SHELL ./config.guess) \
         --disable-static \
         --with-openssl \
         --without-libpsl \

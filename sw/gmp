@@ -11,8 +11,7 @@ HAS_LDFLAGS=-lgmp
 
 ARCHIVES=(
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://ftpmirror.gnu.org/gmp/gmp-$VERSION.tar.xz
-    f771fd5ba22d4f88f767694508ef19a99e649e3c60a0ebef7aa894055b9704b3 file://gmp-$VERSION-fluffy-shell.patch
-    75a7b0a73fb0f15620053673ad113ae39a75a978c60344c207df64afadbefa1d file://gmp-$VERSION-fluffy-source.patch
+    87441888f5bb1b30afd1fb6f32693e4c92786de47f98d3efb79e46996c7ce822 file://gmp-$VERSION-fluffy-source.patch
 )
 
 if test -v CROSS
@@ -76,10 +75,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i gmp-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i gmp-$VERSION-fluffy-source.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gmp \
         --enable-cxx \
         --disable-static \

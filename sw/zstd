@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lzstd
 
 ARCHIVES=(
     eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3 https://github.com/facebook/zstd/releases/download/v$VERSION/zstd-$VERSION.tar.gz
-    1fa8da4aae3c3a47eb01266fc23aa0312b2615c6c39985d0a799954b3f826695 file://zstd-$VERSION-fluffy-shell.patch
+    e272e701c83fa96fd32888aaf7299a407eeb82ccd45a17380f2cbcec3a8942a4 file://zstd-$VERSION-fluffy-source.patch
     43e1e3ea0f9fc4b3a01a5a4842b797504ac74e5f3e092cc60cca520114d275d4 file://zstd-$VERSION-fluffy-test.patch
 )
 
@@ -66,7 +66,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i zstd-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i zstd-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i zstd-$VERSION-fluffy-test.patch
     make prefix=/sw/zstd
 }

@@ -9,7 +9,7 @@ VERSION=7.0.3
 
 ARCHIVES=(
     91eb74caed0ee6655b669711a4f350c25579778694df248e28363318e03c7fc4 https://github.com/gavinhoward/bc/releases/download/$VERSION/bc-$VERSION.tar.xz
-    08b81ba97528fc70ef02a3afc7a07f551180ac0a3e3839e1ca557ebdfe766eb5 file://bc-$VERSION-fluffy-shell.patch
+    3762f32a86a1d877a554e08472ba2d14fa4dc5f3be76110f8c841f3855e83468 file://bc-$VERSION-fluffy-source.patch
     fd4efad468a1d66ab2ae8b31fed9c8c012743c8d698e8e9aa17b038059522dd8 file://bc-$VERSION-fluffy-test.patch
 )
 
@@ -64,10 +64,11 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i bc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i bc-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i bc-$VERSION-fluffy-test.patch
+    export CONFIG_SHELL=/sw/bash/bin/bash
     CC='gcc -std=c99' \
-    ./configure \
+    $CONFIG_SHELL ./configure \
         --prefix=/sw/bc \
         -G \
         -O3 \

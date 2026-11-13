@@ -9,7 +9,6 @@ VERSION=1.4.21
 
 ARCHIVES=(
     f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66 https://ftpmirror.gnu.org/m4/m4-$VERSION.tar.xz
-    204c0cd08d4fa12e0b37c5f4f8456177bb6c7d8904bb629fed2bc58bbce3b01d file://m4-$VERSION-fluffy-shell.patch
     bc769803aa7f5825b8152ea8ebae4f7f6c279a8c2c554dd25b9db7527a0d54a5 file://m4-$VERSION-fluffy-test.patch
 )
 
@@ -59,9 +58,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i m4-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i m4-$VERSION-fluffy-test.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/m4
     make
 }

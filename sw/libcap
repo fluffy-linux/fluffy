@@ -11,8 +11,7 @@ HAS_LDFLAGS=-lcap
 
 ARCHIVES=(
     0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11 https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-$VERSION.tar.xz
-    362bae376e6c93e3fd27e0864ca38b1cc54561ca79155beb599a669340ad1da5 file://libcap-$VERSION-fluffy-shell.patch
-    b5ff8c5cefecfd9a9da62b3465690b062ea814ffb6abbdc88eab777deb4d25e9 file://libcap-$VERSION-fluffy-source.patch
+    6d8d0f13b96dd7ec84fd4da53ff4b29f2c59e56af4bc22ebf10aa1b81171362b file://libcap-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -59,7 +58,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i libcap-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i libcap-$VERSION-fluffy-source.patch
 
     sed -i '/install -m.*STA/d' libcap/Makefile
