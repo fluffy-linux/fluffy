@@ -1,4 +1,4 @@
-diff -Naur bzip2-1.0.8.orig/Makefile bzip2-1.0.8/Makefile
+diff --no-dereference -Naur bzip2-1.0.8.orig/Makefile bzip2-1.0.8/Makefile
 --- bzip2-1.0.8.orig/Makefile	2019-07-13 17:50:05.000000000 +0000
 +++ bzip2-1.0.8/Makefile	2019-07-13 17:50:05.000000000 +0000
 @@ -25,6 +25,7 @@
@@ -74,3 +74,30 @@ diff -Naur bzip2-1.0.8.orig/Makefile bzip2-1.0.8/Makefile
  
  clean: 
  	rm -f *.o libbz2.a bzip2 bzip2recover \
+diff --no-dereference -Naur bzip2-1.0.8.orig/bzdiff bzip2-1.0.8/bzdiff
+--- bzip2-1.0.8.orig/bzdiff	2019-07-13 17:50:05.000000000 +0000
++++ bzip2-1.0.8/bzdiff	2019-07-13 17:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # sh is buggy on RS/6000 AIX 3.2. Replace above line with #!/bin/ksh
+ 
+ # Bzcmp/diff wrapped for bzip2, 
+diff --no-dereference -Naur bzip2-1.0.8.orig/bzgrep bzip2-1.0.8/bzgrep
+--- bzip2-1.0.8.orig/bzgrep	2019-07-13 17:50:05.000000000 +0000
++++ bzip2-1.0.8/bzgrep	2019-07-13 17:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Bzgrep wrapped for bzip2, 
+ # adapted from zgrep by Philippe Troin <phil@fifi.org> for Debian GNU/Linux.
+diff --no-dereference -Naur bzip2-1.0.8.orig/bzmore bzip2-1.0.8/bzmore
+--- bzip2-1.0.8.orig/bzmore	2019-07-13 17:50:05.000000000 +0000
++++ bzip2-1.0.8/bzmore	2019-07-13 17:50:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # Bzmore wrapped for bzip2, 
+ # adapted from zmore by Philippe Troin <phil@fifi.org> for Debian GNU/Linux.

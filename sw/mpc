@@ -11,7 +11,6 @@ HAS_LDFLAGS=-lmpc
 
 ARCHIVES=(
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://ftpmirror.gnu.org/mpc/mpc-$VERSION.tar.xz
-    b8a8497e880e35f53687c65dd7bb25ef9cd937ec650c22fddf0fa902ef1d6782 file://mpc-$VERSION-fluffy-shell.patch
 )
 
 NEEDS=(
@@ -66,9 +65,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i mpc-$VERSION-fluffy-shell.patch
-
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/mpc \
         --disable-static \
         --docdir=/sw/mpc/share/doc/mpc-$VERSION

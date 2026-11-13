@@ -11,9 +11,8 @@ HAS_LDFLAGS=-lcrypt
 
 ARCHIVES=(
     71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071 https://github.com/besser82/libxcrypt/releases/download/v$VERSION/libxcrypt-$VERSION.tar.xz
-    c52bbf6498d194b9dc92dbbac213319421f2315b36be6f67ebfafc021acd870b file://libxcrypt-$VERSION-fluffy-shell.patch
-    0e2ec45ef1e38458d02b79205b4c911295f5a06a3d99f5fc2cc4004bafb22bd2 file://libxcrypt-$VERSION-fluffy-source.patch
-    e02212356aa16f69e3ac765bff970ca26c0578b19457937425eae0eac7851081 file://libxcrypt-$VERSION-fluffy-test.patch
+    0a0c1ff0c61708f89d3aec4d334345aac48b50d821b5e6c795ffd15f1774b44d file://libxcrypt-$VERSION-fluffy-source.patch
+    95c5ec81dd64182e87f5e9c0e7cb0c5b0dcada490e7d77b24bc50db45f6317ca file://libxcrypt-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -60,11 +59,11 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i libxcrypt-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i libxcrypt-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i libxcrypt-$VERSION-fluffy-test.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/libxcrypt \
         --enable-hashes=strong,glibc \
         --enable-obsolete-api=no \

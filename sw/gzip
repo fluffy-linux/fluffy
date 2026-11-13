@@ -9,7 +9,6 @@ VERSION=1.14
 
 ARCHIVES=(
     01a7b881bd220bfdf615f97b8718f80bdfd3f6add385b993dcf6efd14e8c0ac6 https://ftpmirror.gnu.org/gzip/gzip-$VERSION.tar.xz
-    462c17a167aa36ae20aadfdc526eefbe28f414a2fbfa7ff47b5736b59e36f7e9 file://gzip-$VERSION-fluffy-shell.patch
 )
 
 NEEDS=(
@@ -58,15 +57,14 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i gzip-$VERSION-fluffy-shell.patch
-
-    ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    $CONFIG_SHELL ./configure \
         --prefix=/sw/gzip
     make
 }
 
 CHECK() {
-    make check
+    make LOG_COMPILER=/sw/bash/bin/bash check
 }
 
 INSTALL() {

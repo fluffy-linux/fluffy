@@ -1,0 +1,37 @@
+diff --no-dereference -Naur procps-ng-4.0.7.orig/testsuite/config/unix.exp procps-ng-4.0.7/testsuite/config/unix.exp
+--- procps-ng-4.0.7.orig/testsuite/config/unix.exp	2026-07-07 08:30:50.361276397 +0000
++++ procps-ng-4.0.7/testsuite/config/unix.exp	2026-07-07 08:30:50.361276397 +0000
+@@ -9,7 +9,7 @@
+ 
+ proc kill_process pid {
+     set cmdline "kill $pid"
+-    if { [catch { exec /bin/sh -c $cmdline } msg]} {
++    if { [catch { exec /sw/bash/bin/bash -c $cmdline } msg]} {
+         warning "Could not kill process: $msg\n"
+     }
+ }
+@@ -219,7 +219,7 @@
+     # make a process with the argument set to a fraction of ARG_MAX length
+     # but small enough we do not run TCL out of memory for regular expressions
+     # nor do we get argument list too long (104857 was found to work on Ubuntu 18.04)
+-    set max_arg_len [ expr min([ exec /usr/bin/getconf ARG_MAX ], 104857) ]
++    set max_arg_len [ expr min([ exec getconf ARG_MAX ], 104857) ]
+     # ensure we have enough slack to launch the test prog and pgrep
+     set reserved_space [expr max([ string length $testproc_path ], [ string length $topdir ] + 10)]
+     set testproc_arg_str "a"
+diff --no-dereference -Naur procps-ng-4.0.7.orig/testsuite/lib.test/fileutils_badfd.sh procps-ng-4.0.7/testsuite/lib.test/fileutils_badfd.sh
+--- procps-ng-4.0.7.orig/testsuite/lib.test/fileutils_badfd.sh	2025-04-23 07:23:48.000282831 +0000
++++ procps-ng-4.0.7/testsuite/lib.test/fileutils_badfd.sh	2025-04-23 07:23:48.000282831 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${PWD}/../src/tests/test_fileutils >&-
+diff --no-dereference -Naur procps-ng-4.0.7.orig/testsuite/lib.test/fileutils_full.sh procps-ng-4.0.7/testsuite/lib.test/fileutils_full.sh
+--- procps-ng-4.0.7.orig/testsuite/lib.test/fileutils_full.sh	2025-04-23 07:23:48.000282831 +0000
++++ procps-ng-4.0.7/testsuite/lib.test/fileutils_full.sh	2025-04-23 07:23:48.000282831 +0000
+@@ -1,3 +1,3 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ ${PWD}/../src/tests/test_fileutils > /dev/full

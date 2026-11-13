@@ -9,7 +9,7 @@ VERSION=6.18
 
 ARCHIVES=(
     c934fadc8b59748c68227a34f6581d2ddf8282b73cdcd52546c8cd88b74b24d1 https://www.kernel.org/pub/linux/docs/man-pages/man-pages-$VERSION.tar.xz
-    716163999d231357e8a0539e34d2d6d0d66d89c9e57c8e03ea6efba507717c0a file://man-pages-$VERSION-fluffy-shell.patch
+    a833f7f585791611f1c25814a1c429406af0a3f03f81f01cf1f1f538e51a60c6 file://man-pages-$VERSION-fluffy-source.patch
     0d84d157288e440c1f6602472f57d27de6315be13d0c442e1bc3110664aec4a1 file://man-pages-$VERSION-fluffy-test.patch
 )
 
@@ -37,7 +37,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i man-pages-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i man-pages-$VERSION-fluffy-source.patch
     patch -Z -Np1 -i man-pages-$VERSION-fluffy-test.patch
     rm -vf man/man3/crypt*
 }

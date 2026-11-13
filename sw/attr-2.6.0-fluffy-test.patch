@@ -1,4 +1,4 @@
-diff -Naur attr-2.6.0.orig/test/run attr-2.6.0/test/run
+diff --no-dereference -Naur attr-2.6.0.orig/test/run attr-2.6.0/test/run
 --- attr-2.6.0.orig/test/run	2023-02-13 08:37:39.000000000 +0000
 +++ attr-2.6.0/test/run	2023-02-13 08:37:39.000000000 +0000
 @@ -1,4 +1,4 @@
@@ -7,7 +7,25 @@ diff -Naur attr-2.6.0.orig/test/run attr-2.6.0/test/run
  
  # Copyright (c) 2007, 2008 Andreas Gruenbacher.
  # All rights reserved.
-diff -Naur attr-2.6.0.orig/test/sort-getfattr-output attr-2.6.0/test/sort-getfattr-output
+@@ -346,7 +346,7 @@
+       # remove libtool 'lt-' prefixes on prog name output
+       s#^lt-##g;
+       if ($needs_shell) {
+-	s#^/bin/sh: line \d+: ##;
++	s#^/sw/bash/bin/bash: line \d+: ##;
+       }
+       push @$result, $_;
+     }
+@@ -367,7 +367,7 @@
+       or die "Can't join STDOUT and STDERR: $!";
+ 
+     if ($needs_shell) {
+-      exec ('/bin/sh', '-c', join(" ", @$prog));
++      exec ('/sw/bash/bin/bash', '-c', join(" ", @$prog));
+     } else {
+       exec @$prog;
+     }
+diff --no-dereference -Naur attr-2.6.0.orig/test/sort-getfattr-output attr-2.6.0/test/sort-getfattr-output
 --- attr-2.6.0.orig/test/sort-getfattr-output	2026-06-20 02:10:26.000000000 +0000
 +++ attr-2.6.0/test/sort-getfattr-output	2026-06-20 02:10:26.000000000 +0000
 @@ -1,4 +1,4 @@

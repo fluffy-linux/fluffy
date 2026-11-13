@@ -1,0 +1,22 @@
+diff --no-dereference -Naur ninja-1.13.2.orig/misc/jobserver_test.py ninja-1.13.2/misc/jobserver_test.py
+--- ninja-1.13.2.orig/misc/jobserver_test.py	2025-11-20 16:26:20.000000000 +0000
++++ ninja-1.13.2/misc/jobserver_test.py	2025-11-20 16:26:20.000000000 +0000
+@@ -319,6 +319,18 @@
+             prefix_args=[sys.executable, "-S", _JOBSERVER_POOL_SCRIPT]
+         )
+ 
++    def test_subprocess_uses_fluffy_bash(self):
++        build_plan = r"""
++rule shellcheck
++    command = printf '%s\n' "$$BASH"
++
++build all: shellcheck
++"""
++        with BuildDir(build_plan) as b:
++            ret = b.ninja_spawn(["--quiet", "all"])
++            self.assertEqual(ret.returncode, 0)
++            self.assertEqual(ret.stdout.strip(), "/sw/bash/bin/bash")
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

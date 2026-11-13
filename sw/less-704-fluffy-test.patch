@@ -1,0 +1,36 @@
+diff --no-dereference -Naur less-704.orig/lesstest/extract less-704/lesstest/extract
+--- less-704.orig/lesstest/extract	2026-05-30 23:55:13.000000000 +0000
++++ less-704/lesstest/extract	2026-05-30 23:55:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ use Getopt::Std;
+ 
+diff --no-dereference -Naur less-704.orig/lesstest/ltview less-704/lesstest/ltview
+--- less-704.orig/lesstest/ltview	2026-05-30 23:55:13.000000000 +0000
++++ less-704/lesstest/ltview	2026-05-30 23:55:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ use Getopt::Std;
+ use IO::Stty;
+diff --no-dereference -Naur less-704.orig/lesstest/maketest less-704/lesstest/maketest
+--- less-704.orig/lesstest/maketest	2026-05-30 23:55:13.000000000 +0000
++++ less-704/lesstest/maketest	2026-05-30 23:55:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ 
+ # Create a test file.
+diff --no-dereference -Naur less-704.orig/lesstest/runtest less-704/lesstest/runtest
+--- less-704.orig/lesstest/runtest	2026-05-30 23:55:13.000000000 +0000
++++ less-704/lesstest/runtest	2026-05-30 23:55:13.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!/sw/perl/bin/perl
+ use strict;
+ 
+ # Run one or more test files.

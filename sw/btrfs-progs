@@ -11,7 +11,7 @@ HAS_LDFLAGS="-lbtrfs -lbtrfsutil"
 
 ARCHIVES=(
     d1f55cc2971398c9142eaa79d203e63d586a3b4b867f956664a1d68322cd4e34 https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v$VERSION.tar.xz
-    574be7b1cd870b55e295146352ad9b1544255e53645219881aeea0f10c43a63b file://btrfs-progs-v$VERSION-fluffy-shell.patch
+    18b74d5ca7f026cb79351ece40af5db7eed1a5990164ff58b703bae6723a201a file://btrfs-progs-v$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -78,11 +78,12 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i btrfs-progs-v$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i btrfs-progs-v$VERSION-fluffy-source.patch
 
+    export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site \
     PKG_CONFIG="false" \
-    ./configure \
+    $CONFIG_SHELL ./configure \
         --prefix=/sw/btrfs-progs \
         --bindir=/sw/btrfs-progs/bin \
         --sbindir=/sw/btrfs-progs/bin \

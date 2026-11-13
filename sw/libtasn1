@@ -11,7 +11,6 @@ HAS_LDFLAGS=-ltasn1
 
 ARCHIVES=(
     1d8a444a223cc5464240777346e125de51d8e6abf0b8bac742ac84609167dc87 https://ftpmirror.gnu.org/libtasn1/libtasn1-$VERSION.tar.gz
-    c4d23b4cfc25a8bc74699a0376a7ef70919eb978b7dbfdbcd29580d0613e0fb7 file://libtasn1-$VERSION-fluffy-shell.patch
     7b26ae0d835b6bb1d1ca18c62c4d6767e733df4486313f9bed1dca3078c89982 file://libtasn1-$VERSION-fluffy-test.patch
 )
 
@@ -28,17 +27,17 @@ then
         coreutils-pass1
         diffutils-pass1
         findutils-pass1
-        gawk-pass1
+        gawk
         gcc
         glibc
         grep
-        gzip-pass1
+        gzip
         libgcc
         linux-headers
-        make-pass1
-        patch-pass1
+        make
+        patch
         sed
-        tar-pass1
+        tar
     )
 else
     BUILD_NEEDS=(
@@ -63,9 +62,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i libtasn1-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i libtasn1-$VERSION-fluffy-test.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/libtasn1 \
         --disable-static
     make

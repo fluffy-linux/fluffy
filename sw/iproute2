@@ -9,7 +9,6 @@ VERSION=7.1.0
 
 ARCHIVES=(
     fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-$VERSION.tar.xz
-    5b1dc95afad9bd216faa6b220f59743625c53e9ff5e3daf787b77c7cd0d2bef5 file://iproute2-$VERSION-fluffy-shell.patch
     485a89aa410ce30c0c0d77eb4e8a3908e8dc6938314de1b3bf64e3171a12797b file://iproute2-$VERSION-fluffy-source.patch
 )
 
@@ -71,10 +70,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i iproute2-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i iproute2-$VERSION-fluffy-source.patch
 
-    ./configure --prefix /sw/iproute2
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    $CONFIG_SHELL ./configure --prefix /sw/iproute2
     make \
         PREFIX=/sw/iproute2 \
         SBINDIR=/sw/iproute2/bin \

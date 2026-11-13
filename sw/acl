@@ -11,8 +11,7 @@ HAS_LDFLAGS=-lacl
 
 ARCHIVES=(
     e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3 https://download.savannah.gnu.org/releases/acl/acl-$VERSION.tar.xz
-    3b6fa9f9013c4b1b24fcd90927a1234e37a85083fff713db6e670e225303ce9e file://acl-$VERSION-fluffy-shell.patch
-    4347e0a8e4a38205518a9fd90d980698370b11ac464bbd715343806768538ab2 file://acl-$VERSION-fluffy-test.patch
+    107000ecaeed120e8175e4cb12cb02d5dd96d89fed5f5664c375019b41336d88 file://acl-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -64,10 +63,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i acl-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i acl-$VERSION-fluffy-test.patch
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/acl \
         --disable-static \
         --docdir=/sw/acl/share/doc/acl-$VERSION

@@ -1,4 +1,4 @@
-diff -Naur gmp-6.3.0.orig/acinclude.m4 gmp-6.3.0/acinclude.m4
+diff --no-dereference -Naur gmp-6.3.0.orig/acinclude.m4 gmp-6.3.0/acinclude.m4
 --- gmp-6.3.0.orig/acinclude.m4	2023-07-29 13:42:16.000000000 +0000
 +++ gmp-6.3.0/acinclude.m4	2023-07-29 13:42:16.000000000 +0000
 @@ -609,7 +609,7 @@
@@ -10,7 +10,7 @@ diff -Naur gmp-6.3.0.orig/acinclude.m4 gmp-6.3.0/acinclude.m4
  void h(){}
  static __inline__ t1 e(t2 rp,t2 up,int n,t1 v0)
  {t1 c,x,r;int i;if(v0){c=1;for(i=1;i<n;i++){x=up[i];r=x+1;rp[i]=r;}}return c;}
-diff -Naur gmp-6.3.0.orig/configure gmp-6.3.0/configure
+diff --no-dereference -Naur gmp-6.3.0.orig/configure gmp-6.3.0/configure
 --- gmp-6.3.0.orig/configure	2023-07-29 13:42:22.000000000 +0000
 +++ gmp-6.3.0/configure	2023-07-29 13:42:22.000000000 +0000
 @@ -6568,7 +6568,7 @@
@@ -31,3 +31,21 @@ diff -Naur gmp-6.3.0.orig/configure gmp-6.3.0/configure
  void h(){}
  static __inline__ t1 e(t2 rp,t2 up,int n,t1 v0)
  {t1 c,x,r;int i;if(v0){c=1;for(i=1;i<n;i++){x=up[i];r=x+1;rp[i]=r;}}return c;}
+diff --no-dereference -Naur gmp-6.3.0.orig/mpn/cpp-ccas gmp-6.3.0/mpn/cpp-ccas
+--- gmp-6.3.0.orig/mpn/cpp-ccas	2023-07-29 13:42:16.000000000 +0000
++++ gmp-6.3.0/mpn/cpp-ccas	2023-07-29 13:42:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # A helper script for Makeasm.am .S.lo rule.
+ 
+diff --no-dereference -Naur gmp-6.3.0.orig/mpn/m4-ccas gmp-6.3.0/mpn/m4-ccas
+--- gmp-6.3.0.orig/mpn/m4-ccas	2023-07-29 13:42:16.000000000 +0000
++++ gmp-6.3.0/mpn/m4-ccas	2023-07-29 13:42:16.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #
+ # A helper script for Makeasm.am .asm.lo rule.
+ 

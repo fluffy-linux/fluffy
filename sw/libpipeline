@@ -9,7 +9,6 @@ VERSION=1.5.8
 
 ARCHIVES=(
     1b1203ca152ccd63983c3f2112f7fe6fa5afd453218ede5153d1b31e11bb8405 https://download.savannah.gnu.org/releases/libpipeline/libpipeline-$VERSION.tar.gz
-    49ce3ad76f6ef484c17695174bba2ace15cdcab3bdb69a6d83b001c8933c43d5 file://libpipeline-$VERSION-fluffy-shell.patch
 )
 
 HAS_LDFLAGS="-lpipeline"
@@ -60,9 +59,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i libpipeline-$VERSION-fluffy-shell.patch
-
-    ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    $CONFIG_SHELL ./configure \
         --prefix=/sw/libpipeline
     make
 }

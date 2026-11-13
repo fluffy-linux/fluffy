@@ -1,4 +1,4 @@
-diff -Naur libxcrypt-4.5.2.orig/build-aux/scripts/BuildCommon.pm libxcrypt-4.5.2/build-aux/scripts/BuildCommon.pm
+diff --no-dereference -Naur libxcrypt-4.5.2.orig/build-aux/scripts/BuildCommon.pm libxcrypt-4.5.2/build-aux/scripts/BuildCommon.pm
 --- libxcrypt-4.5.2.orig/build-aux/scripts/BuildCommon.pm	2025-11-06 10:50:28.000000000 +0000
 +++ libxcrypt-4.5.2/build-aux/scripts/BuildCommon.pm	2025-11-06 10:50:28.000000000 +0000
 @@ -194,7 +194,7 @@
@@ -10,3 +10,15 @@ diff -Naur libxcrypt-4.5.2.orig/build-aux/scripts/BuildCommon.pm libxcrypt-4.5.2
              # Discard all entries that are not absolute paths.
              next unless file_name_is_absolute($d);
              # Discard all entries that are not directories, or don't
+diff --no-dereference -Naur libxcrypt-4.5.2.orig/test/TestCommon.pm libxcrypt-4.5.2/test/TestCommon.pm
+--- libxcrypt-4.5.2.orig/test/TestCommon.pm	2025-01-03 18:08:44.000000000 +0000
++++ libxcrypt-4.5.2/test/TestCommon.pm	2025-01-03 18:08:44.000000000 +0000
+@@ -84,7 +84,7 @@
+ 
+     state @SH;
+     if (!@SH) {
+-        @SH = which($ENV{SHELL} || $ENV{CONFIG_SHELL} || '/bin/sh');
++        @SH = which($ENV{SHELL} || $ENV{CONFIG_SHELL} || '/sw/bash/bin/bash');
+         error('no shell available???') if !@SH;
+     }
+ 

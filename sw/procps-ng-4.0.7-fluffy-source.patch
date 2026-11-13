@@ -1,0 +1,12 @@
+diff --no-dereference -Naur procps-ng-4.0.7.orig/configure procps-ng-4.0.7/configure
+--- procps-ng-4.0.7.orig/configure	2026-08-12 12:03:11.057308403 +0000
++++ procps-ng-4.0.7/configure	2026-08-12 12:03:11.057308403 +0000
+@@ -6840,7 +6840,7 @@
+ if test -z "$PKG_CONFIG"
+ then :
+ 
+-  as_fn_error $? "Could not find pkg-config" "$LINENO" 5
++  :
+ fi
+ 
+ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} sets \$(MAKE)" >&5

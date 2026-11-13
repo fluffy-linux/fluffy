@@ -1,4 +1,13 @@
-diff -Naur curl-8.23.0.orig/lib/vtls/openssl.c curl-8.23.0/lib/vtls/openssl.c
+diff --no-dereference -Naur curl-8.23.0.orig/curl-config.in curl-8.23.0/curl-config.in
+--- curl-8.23.0.orig/curl-config.in	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/curl-config.in	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ #***************************************************************************
+ #                                  _   _ ____  _
+ #  Project                     ___| | | |  _ \| |
+diff --no-dereference -Naur curl-8.23.0.orig/lib/vtls/openssl.c curl-8.23.0/lib/vtls/openssl.c
 --- curl-8.23.0.orig/lib/vtls/openssl.c	2026-10-14 05:54:05.000000000 +0000
 +++ curl-8.23.0/lib/vtls/openssl.c	2026-10-14 05:54:05.000000000 +0000
 @@ -70,6 +70,7 @@
@@ -80,3 +89,12 @@ diff -Naur curl-8.23.0.orig/lib/vtls/openssl.c curl-8.23.0/lib/vtls/openssl.c
      }
  #else
      /* tell OpenSSL where to find CA certificates that are used to verify the
+diff --no-dereference -Naur curl-8.23.0.orig/scripts/wcurl curl-8.23.0/scripts/wcurl
+--- curl-8.23.0.orig/scripts/wcurl	2026-10-14 05:54:05.000000000 +0000
++++ curl-8.23.0/scripts/wcurl	2026-10-14 05:54:05.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ # wcurl - a simple wrapper around curl to easily download files.
+ #

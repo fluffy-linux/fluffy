@@ -6,7 +6,6 @@ HAS_LDFLAGS=-lz
 
 ARCHIVES=(
     bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16 https://zlib.net/fossils/zlib-$VERSION.tar.gz
-    521833b4e36d84b9dc80e1bd393277861282ac1d72323b55270d3e47f91bc45c file://zlib-$VERSION-fluffy-shell.patch
     488dd373e46ae3fee312810f37cba3a27f3f93d4434c821d09e726a00d3b87da file://zlib-$VERSION-fluffy-source.patch
 )
 
@@ -21,7 +20,6 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i zlib-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i zlib-$VERSION-fluffy-source.patch
     CC="$FLUFFY_TGT-gcc" ./configure --prefix=/sw/zlib
     make

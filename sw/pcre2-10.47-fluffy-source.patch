@@ -1,0 +1,9 @@
+diff --no-dereference -Naur pcre2-10.47.orig/pcre2-config.in pcre2-10.47/pcre2-config.in
+--- pcre2-10.47.orig/pcre2-config.in	2025-10-20 11:35:02.000000000 +0000
++++ pcre2-10.47/pcre2-config.in	2025-10-20 11:35:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ prefix=@prefix@
+ exec_prefix=@exec_prefix@

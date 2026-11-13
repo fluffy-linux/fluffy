@@ -1,0 +1,9 @@
+diff --no-dereference -Naur gperf-3.3.orig/tests/validate gperf-3.3/tests/validate
+--- gperf-3.3.orig/tests/validate	2023-09-07 11:16:59.000000000 +0000
++++ gperf-3.3/tests/validate	2023-09-07 11:16:59.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ # Validate gperf's operation on a given input file.
+ # Usage: validate languages input.gperf [more gperf options]
+ # Uses the environment variables GPERF, CC, CFLAGS, CXX, CXXFLAGS.

@@ -11,7 +11,6 @@ HAS_LDFLAGS=-lmagic
 
 ARCHIVES=(
     ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283 https://astron.com/pub/file/file-$VERSION.tar.gz
-    7973df10da80fffb459395d2c11e5a4f7699ad6001b82ab7c446af737a6dfc1d file://file-$VERSION-fluffy-shell.patch
 )
 
 if test -v CROSS
@@ -81,8 +80,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i file-$VERSION-fluffy-shell.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/file
     make
 }

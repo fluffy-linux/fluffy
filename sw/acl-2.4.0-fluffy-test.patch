@@ -1,4 +1,13 @@
-diff -Naur acl-2.4.0.orig/test/run acl-2.4.0/test/run
+diff --no-dereference -Naur acl-2.4.0.orig/test/make-tree acl-2.4.0/test/make-tree
+--- acl-2.4.0.orig/test/make-tree	2023-02-13 08:38:02.000000000 +0000
++++ acl-2.4.0/test/make-tree	2023-02-13 08:38:02.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ 
+ LEVELS=3 ;		[ -z "$1" ] || LEVELS=$1
+ DIRS=10 ;		[ -z "$2" ] || DIRS=$2
+diff --no-dereference -Naur acl-2.4.0.orig/test/run acl-2.4.0/test/run
 --- acl-2.4.0.orig/test/run	2026-06-28 20:44:30.000000000 +0000
 +++ acl-2.4.0/test/run	2026-06-28 20:44:30.000000000 +0000
 @@ -1,4 +1,4 @@
@@ -7,7 +16,34 @@ diff -Naur acl-2.4.0.orig/test/run acl-2.4.0/test/run
  
  # Copyright (c) 2007, 2008 Andreas Gruenbacher.
  # All rights reserved.
-diff -Naur acl-2.4.0.orig/test/sort-getfacl-output acl-2.4.0/test/sort-getfacl-output
+@@ -344,7 +344,7 @@
+       # remove libtool 'lt-' prefixes on prog name output
+       s#^lt-##g;
+       if ($needs_shell) {
+-	s#^/bin/sh: line \d+: ##;
++	s#^/sw/bash/bin/bash: line \d+: ##;
+       }
+       push @$result, $_;
+     }
+@@ -365,7 +365,7 @@
+       or die "Can't join STDOUT and STDERR: $!";
+ 
+     if ($needs_shell) {
+-      exec ('/bin/sh', '-c', join(" ", @$prog));
++      exec ('/sw/bash/bin/bash', '-c', join(" ", @$prog));
+     } else {
+       exec @$prog;
+     }
+diff --no-dereference -Naur acl-2.4.0.orig/test/runwrapper acl-2.4.0/test/runwrapper
+--- acl-2.4.0.orig/test/runwrapper	2026-06-28 20:44:30.000000000 +0000
++++ acl-2.4.0/test/runwrapper	2026-06-28 20:44:30.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ cleanup() {
+ 	# remove the temporary location
+diff --no-dereference -Naur acl-2.4.0.orig/test/sort-getfacl-output acl-2.4.0/test/sort-getfacl-output
 --- acl-2.4.0.orig/test/sort-getfacl-output	2023-02-13 08:38:02.000000000 +0000
 +++ acl-2.4.0/test/sort-getfacl-output	2023-02-13 08:38:02.000000000 +0000
 @@ -1,4 +1,4 @@

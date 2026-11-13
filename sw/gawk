@@ -9,9 +9,8 @@ VERSION=5.4.1
 
 ARCHIVES=(
     07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://ftpmirror.gnu.org/gawk/gawk-$VERSION.tar.xz
-    dedef2b70a60868dd38498427795bddd8e8dfb05389fd6f5994b89e9e2cbcf68 file://gawk-$VERSION-fluffy-shell.patch
-    e22c60f6ea1ed1fab3eddb5790dba704e7df0d66f81793a72f41a723fd46d582 file://gawk-$VERSION-fluffy-source.patch
-    3aaa865218d26facfd6d8438eb2b8957a7894e0c2709f6c88b41032bd1cde4bf file://gawk-$VERSION-fluffy-ch8.patch
+    b9956cc9d1a2e50130c28244399853946ba76fa8896102e15f28398946c98ef4 file://gawk-$VERSION-fluffy-source.patch
+    e53b14e1924322ad37dd8c106b89fe119c04137b677a7817f6524be59568e3a9 file://gawk-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -76,12 +75,12 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i gawk-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i gawk-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i gawk-$VERSION-fluffy-ch8.patch
+    patch -Z -Np1 -i gawk-$VERSION-fluffy-test.patch
 
     sed -i 's/extras//' Makefile.in
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gawk
     make
 }
@@ -91,7 +90,7 @@ CHECK() {
 }
 
 INSTALL() {
-    make install
+    make INSTALL="/sw/coreutils/bin/install -c" install
     ln -sv gawk.1 $DESTDIR/sw/gawk/share/man/man1/awk.1
     install -vDm644 doc/{awkforai.txt,*.{eps,pdf,jpg}} -t $DESTDIR/sw/gawk/share/doc/gawk-$VERSION
     find $DESTDIR/sw/gawk -name '*.la' -delete
