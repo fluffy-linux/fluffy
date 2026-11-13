@@ -1,7 +1,10 @@
 steps:
-  - label: "binutils-pass1"
+  - label: "world"
+    timeout_in_minutes: 720
     env:
       FLUFFY: /mnt/ci
       CROSS: "1"
     command: |
-      sudo FLUFFY="$$FLUFFY" CROSS="$$CROSS" ./swctl build binutils-pass1
+      sudo FLUFFY="$$FLUFFY" ./bootstrap.sh
+      sudo FLUFFY="$$FLUFFY" CROSS="$$CROSS" ./swctl build world
+      sudo FLUFFY="$$FLUFFY" ./bootstrap.sh

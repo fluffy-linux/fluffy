@@ -1,0 +1,103 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.0
+
+NEEDS=(
+    acl
+    attr
+    autoconf
+    automake
+    bash
+    bc
+    binutils
+    bison
+    btrfs-progs
+    bzip2
+    ca-certificates
+    coreutils
+    curl
+    dbus
+    dejagnu
+    diffutils
+    e2fsprogs
+    expat
+    expect
+    file
+    findutils
+    flex
+    flit-core
+    gawk
+    gcc
+    gdbm
+    gettext
+    glibc
+    gmp
+    gperf
+    grep
+    groff
+    grub
+    gzip
+    iana-etc
+    inetutils
+    init
+    iproute2
+    jinja2
+    kbd
+    kmod
+    less
+    libcap
+    libelf
+    libffi
+    libgcc
+    libpipeline
+    libstdcpp
+    libtasn1
+    libtool
+    libxcrypt
+    linux
+    linux-headers
+    lz4
+    m4
+    make
+    man-db
+    man-pages
+    markupsafe
+    meson
+    mpc
+    mpdecimal
+    mpfr
+    ncurses
+    ninja
+    openssl
+    p11-kit
+    packaging
+    patch
+    pcre2
+    perl
+    procps-ng
+    psmisc
+    python
+    readline
+    sed
+    setuptools
+    shadow
+    sqlite
+    systemd
+    tar
+    tcl
+    texinfo
+    util-linux
+    vim
+    wheel
+    which
+    xz
+    zlib
+    zstd
+)
+
+BUILD_NEEDS=("${NEEDS[@]}")
