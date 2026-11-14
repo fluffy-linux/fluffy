@@ -141,14 +141,19 @@ then
     echo "fluffy" > "$FLUFFY/etc/hostname"
 fi
 
-if test ! -f "$FLUFFY/etc/hosts"
+if test ! -f "$FLUFFY/etc/hosts" || ! grep -Eq '^::1[[:space:]].*(^|[[:space:]])localhost([[:space:]]|$)' "$FLUFFY/etc/hosts"
 then
     cat << "HOSTS_EOF" > "$FLUFFY/etc/hosts"
 127.0.0.1 localhost
-::1 ip6-localhost ip6-loopback
+::1 localhost ip6-localhost ip6-loopback
 ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 HOSTS_EOF
+fi
+
+if test ! -L "$FLUFFY/etc/mtab"
+then
+    ln -snfv ../proc/self/mounts "$FLUFFY/etc/mtab"
 fi
 
 if test ! -f "$FLUFFY/etc/nsswitch.conf" || ! grep -q "resolve" "$FLUFFY/etc/nsswitch.conf"
