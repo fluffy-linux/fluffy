@@ -9,7 +9,7 @@ VERSION=2.13.1
 
 ARCHIVES=(
     8afebb6f7eb6bb8542929458841f5c7e6f240e30c86358c1fbcefbea076c87d9 https://github.com/fluffy-linux/man-db/releases/download/$VERSION/man-db-$VERSION.tar.xz
-    a2646b06af65f438e42a9af2095ab602e146268bb2bfd122bc14f43b8726f65e file://man-db-$VERSION-fluffy-source.patch
+    6d87c5c80292f349f711c6a017ea2a1b7291b71152c58172a32a525ace53b163 file://man-db-$VERSION-fluffy-source.patch
     9c835417d019c59191806abc806b87bdaf998808f5826c84533b5f71c94d1c7f file://man-db-$VERSION-fluffy-test.patch
 )
 
@@ -83,6 +83,7 @@ MAKE() {
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site \
+    CPPFLAGS='-DVENDOR_CONFIG_PATH="\"/sw/*/etc/man_db.conf\""' \
     libpipeline_CFLAGS=" " \
     libpipeline_LIBS="-lpipeline" \
     $CONFIG_SHELL ./configure \
@@ -104,14 +105,17 @@ MAKE() {
 CHECK() {
     make check
 
+    MAN_SYSTEM_CONFIG_PATH="$PWD/src/man_db.conf" MANPATH=/sw/*/share/man ./src/man -w ls | grep -Fq '/sw/coreutils/share/man/man1/ls.1'
+    MAN_SYSTEM_CONFIG_PATH="$PWD/src/man_db.conf" MANPATH= ./src/man -w ls | grep -Fq '/sw/coreutils/share/man/man1/ls.1'
+
     local td
     td=$(mktemp -d)
     mkdir -p "$td/sw/pkgA/etc" "$td/etc" "$td/man1" "$td/man2"
     printf 'MANDATORY_MANPATH\t%s/man1\nSECTION\t1 8\n' "$td" > "$td/sw/pkgA/etc/man_db.conf"
-    test "$(HOME="$td" MANPATH= MAN_SYSTEM_CONFIG_PATH="$td/sw/*/etc/man_db.conf:$td/etc/man_db.conf" ./src/manpath -g)" = "$td/man1"
+    test "$(HOME="$td" MANPATH= MAN_SYSTEM_CONFIG_PATH=":$td/sw/*/etc/man_db.conf:$td/etc/man_db.conf" ./src/manpath -g)" = "$td/man1"
 
     printf 'MANDATORY_MANPATH\t%s/man2\nSECTION\t8 1\n' "$td" > "$td/etc/man_db.conf"
-    test "$(HOME="$td" MANPATH= MAN_SYSTEM_CONFIG_PATH="$td/sw/*/etc/man_db.conf:$td/etc/man_db.conf" ./src/manpath -g)" = "$td/man1:$td/man2"
+    test "$(HOME="$td" MANPATH= MAN_SYSTEM_CONFIG_PATH=":$td/sw/*/etc/man_db.conf:$td/etc/man_db.conf" ./src/manpath -g)" = "$td/man1:$td/man2"
     rm -rf "$td"
 }
 

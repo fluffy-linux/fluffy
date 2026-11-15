@@ -12,7 +12,7 @@ HAS_LDFLAGS="-lssl -lcrypto"
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/fluffy-linux/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
     d41db2346162560a7f13cf61ebefbcc181a06a596aaea83a7efbbc10fd249808 file://openssl-$VERSION-fluffy-ch8.patch
-    fcba612593e5ca9c40129ce372de8f45d176cf0c5aa26a27188f7e91da144f46 file://openssl-$VERSION-fluffy-source.patch
+    9f04bdece1eaed057c2bb5c78414d0f954a8324bd9a6881bf6d2573ee8991bba file://openssl-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -82,7 +82,108 @@ MAKE() {
 }
 
 CHECK() {
-    make test
+    HARNESS_JOBS=$(nproc) make test
+
+    local top=$PWD
+    local td
+    td=$(mktemp -d)
+    mkdir -p "$td/sw/pkgA/etc/ssl/certs" "$td/sw/pkgB/etc/ssl/certs" "$td/etc/ssl/certs" "$td/cwd"
+    ossl() {
+        OPENSSL_CONF="$top/apps/openssl.cnf" "$top/util/wrap.pl" "$top/apps/openssl" "$@"
+    }
+
+    ossl req -x509 -newkey rsa:2048 -nodes -days 1 \
+        -subj "/CN=Fluffy Trusted Root" \
+        -addext "basicConstraints=critical,CA:TRUE" \
+        -addext "keyUsage=critical,keyCertSign,cRLSign" \
+        -keyout "$td/ca1.key" -out "$td/ca1.pem" 2>/dev/null
+    ossl req -newkey rsa:2048 -nodes \
+        -subj "/CN=localhost" \
+        -addext "basicConstraints=CA:FALSE" \
+        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" \
+        -keyout "$td/leaf1.key" -out "$td/leaf1.csr" 2>/dev/null
+    ossl x509 -req -days 1 -in "$td/leaf1.csr" \
+        -CA "$td/ca1.pem" -CAkey "$td/ca1.key" -CAcreateserial \
+        -copy_extensions copyall -out "$td/leaf1.pem" 2>/dev/null
+
+    ossl req -x509 -newkey rsa:2048 -nodes -days 1 \
+        -subj "/CN=Fluffy Untrusted CWD Root" \
+        -addext "basicConstraints=critical,CA:TRUE" \
+        -addext "keyUsage=critical,keyCertSign,cRLSign" \
+        -keyout "$td/ca2.key" -out "$td/ca2.pem" 2>/dev/null
+    ossl req -newkey rsa:2048 -nodes \
+        -subj "/CN=evil.local" \
+        -keyout "$td/leaf2.key" -out "$td/leaf2.csr" 2>/dev/null
+    ossl x509 -req -days 1 -in "$td/leaf2.csr" \
+        -CA "$td/ca2.pem" -CAkey "$td/ca2.key" -CAcreateserial \
+        -out "$td/leaf2.pem" 2>/dev/null
+
+    local h1 h2
+    h1=$(ossl x509 -hash -noout -in "$td/ca1.pem")
+    h2=$(ossl x509 -hash -noout -in "$td/ca2.pem")
+    cp "$td/ca1.pem" "$td/sw/pkgB/etc/ssl/certs/ca-certificates.crt"
+    ln -s "$td/ca1.pem" "$td/sw/pkgB/etc/ssl/certs/${h1}.0"
+    mkdir -p "$td/sw/p:g/etc/ssl/certs" "$td/sw/[unclosed/sub" \
+             "$td/sw/pkgA/etc/ssl/crl" "$td/sw/pkgB/etc/ssl/crl" "$td/ca_db"
+    ln -s "$td/ca1.pem" "$td/sw/p:g/etc/ssl/certs/${h1}.0"
+    : > "$td/sw/pkgA/etc/ssl/certs/ca-certificates.crt"
+    ln -s "$td/ca2.pem" "$td/cwd/${h2}.0"
+
+    ossl req -newkey rsa:2048 -nodes -subj "/CN=revoked.local" \
+        -keyout "$td/rev.key" -out "$td/rev.csr" 2>/dev/null
+    ossl x509 -req -days 1 -in "$td/rev.csr" \
+        -CA "$td/ca1.pem" -CAkey "$td/ca1.key" -CAcreateserial \
+        -out "$td/rev.pem" 2>/dev/null
+    : > "$td/ca_db/index.txt"
+    echo "01" > "$td/ca_db/crlnumber"
+    cat > "$td/ca.cnf" << EOF
+[ ca ]
+default_ca = CA_default
+[ CA_default ]
+database = $td/ca_db/index.txt
+crlnumber = $td/ca_db/crlnumber
+default_md = sha256
+default_crl_days = 1
+EOF
+    ossl ca -config "$td/ca.cnf" -keyfile "$td/ca1.key" -cert "$td/ca1.pem" -revoke "$td/rev.pem" 2>/dev/null
+    ossl ca -config "$td/ca.cnf" -keyfile "$td/ca1.key" -cert "$td/ca1.pem" -gencrl -out "$td/sw/pkgB/etc/ssl/crl/ca1.pem" 2>/dev/null
+    : > "$td/sw/pkgA/etc/ssl/crl/empty.pem"
+
+    cat > "$td/crl_api.c" << 'EOF'
+#include <openssl/x509.h>
+int main(int argc, char **argv) {
+    if (argc != 2) return 2;
+    X509_STORE *st = X509_STORE_new();
+    X509_LOOKUP *lu = X509_STORE_add_lookup(st, X509_LOOKUP_file());
+    int n = X509_load_crl_file(lu, argv[1], X509_FILETYPE_PEM);
+    X509_STORE_free(st);
+    return (n == 1) ? 0 : 1;
+}
+EOF
+    gcc -I"$top/include" "$td/crl_api.c" -L"$top" -Wl,-rpath,"$top" -lcrypto -o "$td/crl_api"
+    "$td/crl_api" "$td/sw/*/etc/ssl/crl/*.pem"
+
+    (
+        cd "$td/cwd"
+        ossl verify -no-CAfile -no-CAstore -CApath ":$td/sw/*/etc/ssl/certs:$td/etc/ssl/certs" "$td/leaf1.pem"
+        ossl verify -no-CAfile -no-CAstore -CApath "$td/sw/[unclosed/sub:$td/sw/p[k:]g/etc/ssl/certs" "$td/leaf1.pem"
+        ! ossl verify -no-CAfile -no-CAstore -CApath ":$td/sw/*/etc/ssl/certs:" "$td/leaf2.pem" 2>/dev/null
+        ! ossl verify -no-CAfile -no-CAstore -CApath ":" "$td/leaf1.pem" 2>/dev/null
+        ossl verify -no-CApath -no-CAstore -CAfile "$td/sw/*/etc/ssl/certs/ca-certificates.crt" "$td/leaf1.pem"
+        ossl verify -no-CApath -no-CAstore -CAfile "$td/sw/*/etc/ssl/certs/ca-certificates.crt" \
+            -CRLfile "$td/sw/*/etc/ssl/crl/*.pem" -crl_check "$td/leaf1.pem"
+        ! ossl verify -no-CApath -no-CAstore -CAfile "$td/sw/*/etc/ssl/certs/ca-certificates.crt" \
+            -CRLfile "$td/sw/*/etc/ssl/crl/*.pem" -crl_check "$td/rev.pem" 2>/dev/null
+        SSL_CERT_FILE="$td/sw/*/etc/ssl/certs/ca-certificates.crt" \
+        SSL_CERT_DIR=":$td/sw/*/etc/ssl/certs:" \
+            ossl verify "$td/leaf1.pem"
+        ! SSL_CERT_FILE="$td/sw/*/etc/ssl/certs/ca-certificates.crt" \
+          SSL_CERT_DIR=":$td/sw/*/etc/ssl/certs:" \
+            ossl verify "$td/leaf2.pem" 2>/dev/null
+        ! ossl verify -no-CApath -no-CAstore -CAfile "$td/sw/*/nonexistent/*.crt" "$td/leaf1.pem" 2>/dev/null
+        ( unset OPENSSL_CONF; "$top/util/wrap.pl" "$top/apps/openssl" version -a | grep -Fq 'OPENSSLDIR: "/sw/*/etc/ssl"' )
+    )
+    rm -rf "$td"
 }
 
 INSTALL() {

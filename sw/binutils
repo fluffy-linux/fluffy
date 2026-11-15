@@ -10,7 +10,7 @@ VERSION=2.47
 ARCHIVES=(
     154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff https://github.com/fluffy-linux/binutils-gdb/releases/download/binutils-${VERSION//./_}/binutils-$VERSION.tar.xz
     4602feb91bec5a8053b8683a5032a835d35940f0d1e3aa17a28c6db42adfbd9a file://binutils-$VERSION-fluffy-shell.patch
-    b336826eebce46174f9237c3d5c1acef3ed00a74de8431cc97c9eb6b95d4977b file://binutils-$VERSION-fluffy-source.patch
+    4b5e142aeb2d78cc4ab7f4a3621267313a142dbd89340cb486dcf97a03c77f60 file://binutils-$VERSION-fluffy-source.patch
     a90a0a242ac4af22d0ab9dea370faeb189a20a1613763c106c1fc53ecaa96b29 file://binutils-$VERSION-fluffy-test.patch
 )
 
@@ -137,6 +137,98 @@ CHECK() {
     cd build
     unset SOURCE_DATE_EPOCH
     make -k check
+
+    # Fluffy wildcard SEARCH_DIR, indirect DT_NEEDED, --sysroot, and [1] -L checks
+    ./ld/ld-new --verbose | grep -q 'SEARCH_DIR("=/sw/\*/lib")'
+
+    local td
+    td="$(mktemp -d)"
+
+    # (a) Live /sw/*/lib direct -l and secondary DT_NEEDED without -L or -rpath-link
+    cat > "$td/live.c" << 'EOF'
+extern const char *zlibVersion(void);
+extern unsigned ZSTD_versionNumber(void);
+extern void *__cxa_allocate_exception(unsigned long);
+int main(void) {
+    return !(zlibVersion() != 0 && ZSTD_versionNumber() > 0 && __cxa_allocate_exception != 0);
+}
+EOF
+    gcc -c "$td/live.c" -o "$td/live.o"
+    ./ld/ld-new -dynamic-linker /sw/glibc/lib/ld-linux-x86-64.so.2 \
+        /sw/glibc/lib/Scrt1.o /sw/glibc/lib/crti.o "$td/live.o" \
+        -lstdc++ -lz -lzstd -lc /sw/glibc/lib/crtn.o -o "$td/live_app"
+    "$td/live_app"
+
+    # (b) --sysroot with [1] across separate $sysroot/sw/{pkg_top,pkg_dep}/lib
+    #     using unique synthetic library names absent from live /sw/*/lib
+    mkdir -p "$td/sys[1]/sw/pkg_top/lib" "$td/sys[1]/sw/pkg_dep/lib"
+    cat > "$td/dep.c" << 'EOF'
+int fluffy_sysroot_dep_probe(void) { return 7; }
+EOF
+    cat > "$td/top.c" << 'EOF'
+extern int fluffy_sysroot_dep_probe(void);
+int fluffy_sysroot_top_probe(void) { return fluffy_sysroot_dep_probe() + 35; }
+EOF
+    cat > "$td/sys_app.c" << 'EOF'
+extern int fluffy_sysroot_top_probe(void);
+void _start(void) {
+    long code = (fluffy_sysroot_top_probe() == 42) ? 0 : 1;
+    __asm__ volatile ("syscall" :: "a"(60L), "D"(code) : "rcx", "r11", "memory");
+    __builtin_unreachable();
+}
+EOF
+    gcc -fPIC -shared -nostdlib "$td/dep.c" \
+        -Wl,-soname,libfluffy_sysroot_dep.so.1 \
+        -o "$td/sys[1]/sw/pkg_dep/lib/libfluffy_sysroot_dep.so.1"
+    gcc -fPIC -shared -nostdlib "$td/top.c" \
+        -L"$td/sys[1]/sw/pkg_dep/lib" -l:libfluffy_sysroot_dep.so.1 \
+        -Wl,-soname,libfluffy_sysroot_top.so.1 \
+        -o "$td/sys[1]/sw/pkg_top/lib/libfluffy_sysroot_top.so"
+    gcc -c -fno-pic "$td/sys_app.c" -o "$td/sys_app.o"
+    ./ld/ld-new -dynamic-linker /sw/glibc/lib/ld-linux-x86-64.so.2 \
+        --sysroot="$td/sys[1]" "$td/sys_app.o" -lfluffy_sysroot_top -o "$td/sys_app"
+    LD_LIBRARY_PATH="$td/sys[1]/sw/pkg_top/lib:$td/sys[1]/sw/pkg_dep/lib" "$td/sys_app"
+
+    # (c) -L wildcard expansion over a directory containing [1] (non-recursive gl_pathv)
+    mkdir -p "$td/wild/pkg[1]/lib"
+    cp "$td/sys[1]/sw/pkg_dep/lib/libfluffy_sysroot_dep.so.1" "$td/wild/pkg[1]/lib/libwtest.so"
+    cat > "$td/w_app.c" << 'EOF'
+extern int fluffy_sysroot_dep_probe(void);
+void _start(void) {
+    long code = (fluffy_sysroot_dep_probe() == 7) ? 0 : 1;
+    __asm__ volatile ("syscall" :: "a"(60L), "D"(code) : "rcx", "r11", "memory");
+    __builtin_unreachable();
+}
+EOF
+    gcc -c -fno-pic "$td/w_app.c" -o "$td/w_app.o"
+    ./ld/ld-new -dynamic-linker /sw/glibc/lib/ld-linux-x86-64.so.2 \
+        -L"$td/wild/*/lib" "$td/w_app.o" -lwtest -o "$td/w_app"
+    LD_LIBRARY_PATH="$td/wild/pkg[1]/lib" "$td/w_app"
+
+    # (d) Literal -L directory containing [1] wins over sibling lit1
+    mkdir -p "$td/lit[1]/lib" "$td/lit1/lib"
+    cat > "$td/lit_ok.c" << 'EOF'
+int lit_probe(void) { return 77; }
+EOF
+    cat > "$td/lit_bad.c" << 'EOF'
+int lit_probe(void) { return 13; }
+EOF
+    cat > "$td/lit_app.c" << 'EOF'
+extern int lit_probe(void);
+void _start(void) {
+    long code = (lit_probe() == 77) ? 0 : 1;
+    __asm__ volatile ("syscall" :: "a"(60L), "D"(code) : "rcx", "r11", "memory");
+    __builtin_unreachable();
+}
+EOF
+    gcc -fPIC -shared -nostdlib "$td/lit_ok.c" -Wl,-soname,liblitprobe.so -o "$td/lit[1]/lib/liblitprobe.so"
+    gcc -fPIC -shared -nostdlib "$td/lit_bad.c" -Wl,-soname,liblitprobe.so -o "$td/lit1/lib/liblitprobe.so"
+    gcc -c -fno-pic "$td/lit_app.c" -o "$td/lit_app.o"
+    ./ld/ld-new -dynamic-linker /sw/glibc/lib/ld-linux-x86-64.so.2 \
+        -L"$td/lit[1]/lib" -rpath "$td/lit[1]/lib" "$td/lit_app.o" -llitprobe -o "$td/lit_app"
+    "$td/lit_app"
+
+    rm -rf "$td"
 }
 
 INSTALL() {

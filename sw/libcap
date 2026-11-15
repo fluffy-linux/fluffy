@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lcap
 
 ARCHIVES=(
     0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11 https://github.com/fluffy-linux/libcap/releases/download/libcap-$VERSION/libcap-$VERSION.tar.xz
-    6d8d0f13b96dd7ec84fd4da53ff4b29f2c59e56af4bc22ebf10aa1b81171362b file://libcap-$VERSION-fluffy-source.patch
+    623b95d39afee29bc662f8f4e16389646009236c6a1cf112805fb5f4100bf44c file://libcap-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(

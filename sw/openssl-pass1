@@ -6,8 +6,8 @@ HAS_LDFLAGS="-lssl -lcrypto"
 
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/fluffy-linux/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
-    fcba612593e5ca9c40129ce372de8f45d176cf0c5aa26a27188f7e91da144f46 file://openssl-$VERSION-fluffy-source.patch
-    ea528a091f500129a418ad31db3bd75ca8fe3c351425b66c51d4c2a5bf9dcfc2 file://openssl-$VERSION-fluffy-test.patch
+    9f04bdece1eaed057c2bb5c78414d0f954a8324bd9a6881bf6d2573ee8991bba file://openssl-$VERSION-fluffy-source.patch
+    3f9bc13f6c5138f547a5dfb155861835c6dc079a62fd5094faac70ae14c478bd file://openssl-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(

@@ -6,6 +6,7 @@ HAS_LDFLAGS=-lncursesw
 
 ARCHIVES=(
     355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://github.com/fluffy-linux/ncurses-snapshots/releases/download/v${VERSION//./_}/ncurses-$VERSION.tar.gz
+    cdefcbf2a3aba49744668c4c69d994422f48576a20b1f7ff200efe378d39e8a7 file://ncurses-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -21,6 +22,8 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
+    patch -Z -Np1 -i ncurses-$VERSION-fluffy-source.patch
+
     mkdir -pv build
     pushd build
         CONFIG_SITE=/sw/glibc/share/config.site ../configure AWK=gawk
@@ -34,6 +37,7 @@ MAKE() {
         --build=$(./config.guess) \
         --mandir=/sw/ncurses/share/man \
         --with-manpage-format=normal \
+        --with-terminfo-dirs="/etc/terminfo:/sw/*/share/terminfo" \
         --with-shared \
         --without-normal \
         --with-cxx-shared \

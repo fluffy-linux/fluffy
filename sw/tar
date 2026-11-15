@@ -10,7 +10,7 @@ VERSION=1.35
 ARCHIVES=(
     4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16 https://github.com/fluffy-linux/tar/releases/download/v$VERSION/tar-$VERSION.tar.xz
     51cadccfcb2f29cfdb4ec18015360100aa167179a72ece040a6a8612aeec5081 file://tar-$VERSION-acl_fix-1.patch
-    0aaadf6e82861c9b77ee14a4ff413062d7edb33edf9138d62605cd3177b68515 file://tar-$VERSION-fluffy-source.patch
+    754d6eda1c3e8b407d858249ae58e8fdba1def25131dc2f81a93ed10cb1594b3 file://tar-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(

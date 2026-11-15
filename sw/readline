@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lreadline
 
 ARCHIVES=(
     fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc https://github.com/fluffy-linux/readline/releases/download/readline-$VERSION/readline-$VERSION.tar.gz
-    ba5a33a693465f387dd437e1ad61e4703042bfef610991edc61e7311b47e8d39 file://readline-$VERSION-fluffy-source.patch
+    1e7bfa1a4b47d35f816c85676b76dec8784e20fb7a148ab6d212c18fd57febbe file://readline-$VERSION-fluffy-source.patch
 )
 
 if test -v CROSS
@@ -75,7 +75,8 @@ MAKE() {
         --prefix=/sw/readline \
         --disable-static \
         --with-curses \
-        --docdir=/sw/readline/share/doc/readline-$VERSION
+        --docdir=/sw/readline/share/doc/readline-$VERSION \
+        CPPFLAGS='-DSYS_INPUTRC="\"/sw/*/etc/inputrc:/etc/inputrc\""'
     make
 }
 
@@ -83,9 +84,13 @@ CHECK() {
     local td
     td=$(mktemp -d)
     ln -snf "$PWD" "$td/readline"
-    mkdir -p "$td/sw/pkgA/etc" "$td/sw/pkgB/etc" "$td/etc"
+    ln -snf "libreadline.so.$VERSION" shlib/libreadline.so
+    ln -snf "libreadline.so.$VERSION" "shlib/libreadline.so.${VERSION%%.*}"
+    mkdir -p "$td/sw/pkgA/etc" "$td/sw/pkgB/etc" "$td/etc" "$td/home"
     printf 'set bell-style none\nset editing-mode emacs\n' > "$td/sw/pkgA/etc/inputrc"
     printf 'set completion-ignore-case on\n' > "$td/sw/pkgB/etc/inputrc"
+    printf 'set bell-style audible\nset editing-mode vi\n' > "$td/my:inputrc"
+    printf 'set bell-style visible\n' > "$td/home/.inputrc"
 
     cat > "$td/test_rl.c" << 'EOF'
 #include <stdio.h>
@@ -93,9 +98,13 @@ CHECK() {
 #include <readline/readline.h>
 
 int main(int argc, char **argv) {
+    int r;
     rl_initialize();
-    if (rl_read_init_file(argv[1]) != 0)
+    r = rl_read_init_file(argv[1]);
+    if (r != 0) {
+        printf("ERR:%d\n", r);
         return 1;
+    }
     printf("%s|%s|%s\n",
            rl_variable_value("bell-style") ?: "",
            rl_variable_value("editing-mode") ?: "",
@@ -105,10 +114,16 @@ int main(int argc, char **argv) {
 EOF
     gcc -I"$td" -L./shlib -Wl,-rpath,"$PWD/shlib" "$td/test_rl.c" -lreadline -o "$td/test_rl"
 
-    test "$("$td/test_rl" "$td/sw/*/etc/inputrc:$td/etc/inputrc")" = "none|emacs|on"
+    test "$(INPUTRC=/dev/null "$td/test_rl" "$td/sw/*/etc/inputrc:$td/etc/inputrc")" = "none|emacs|on"
+    test "$(INPUTRC=/dev/null "$td/test_rl" ":$td/sw/*/etc/inputrc:")" = "none|emacs|on"
+    test "$(INPUTRC=/dev/null "$td/test_rl" "$td/my:inputrc")" = "audible|vi|off"
+    test "$(HOME="$td/home" INPUTRC=/dev/null "$td/test_rl" "$td/sw/*/etc/inputrc:~/.inputrc")" = "visible|emacs|on"
+    test "$(HOME="$td/home" INPUTRC=/dev/null "$td/test_rl" "~/.inputrc:$td/sw/*/etc/inputrc")" = "none|emacs|on"
+    test "$(INPUTRC=/dev/null "$td/test_rl" ":" || true)" = "ERR:2"
 
     printf 'set bell-style visible\n' > "$td/etc/inputrc"
-    test "$("$td/test_rl" "$td/sw/*/etc/inputrc:$td/etc/inputrc")" = "visible|emacs|on"
+    test "$(INPUTRC=/dev/null "$td/test_rl" "$td/sw/*/etc/inputrc:$td/etc/inputrc")" = "visible|emacs|on"
+    rm -f shlib/libreadline.so "shlib/libreadline.so.${VERSION%%.*}"
     rm -rf "$td"
 }
 

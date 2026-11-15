@@ -1,17 +1,55 @@
 diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus/config-parser.c
 --- dbus-1.16.2.orig/bus/config-parser.c	2025-02-27 16:29:06.000000000 +0000
 +++ dbus-1.16.2/bus/config-parser.c	2025-02-27 16:29:06.000000000 +0000
-@@ -37,6 +37,9 @@
+@@ -37,6 +37,10 @@
  #include <dbus/dbus-sysdeps.h>
  #include <dbus/dbus-test-tap.h>
  #include <string.h>
 +#ifndef DBUS_WIN
 +#include <glob.h>
++#include <sys/stat.h>
 +#endif
  
  typedef enum
  {
-@@ -346,6 +349,42 @@
+@@ -266,15 +270,36 @@
+                        const char *dir)
+ {
+   DBusList *link;
++#ifndef DBUS_WIN
++  struct stat st_dir;
++  dbus_bool_t have_st_dir = FALSE;
++#endif
+ 
+   _dbus_assert (dir != NULL);
+ 
++#ifndef DBUS_WIN
++  if (*service_dirs != NULL && stat (dir, &st_dir) == 0)
++    have_st_dir = TRUE;
++#endif
++
+   for (link = *service_dirs; link; link = _dbus_list_get_next_link(service_dirs, link))
+     {
+       BusConfigServiceDir *link_dir = link->data;
+ 
+       if (strcmp (dir, link_dir->path) == 0)
+         return link_dir;
++
++#ifndef DBUS_WIN
++      if (have_st_dir)
++        {
++          struct stat st_link;
++
++          if (stat (link_dir->path, &st_link) == 0 &&
++              st_dir.st_dev == st_link.st_dev &&
++              st_dir.st_ino == st_link.st_ino)
++            return link_dir;
++        }
++#endif
+     }
+ 
+   return NULL;
+@@ -346,6 +371,63 @@
    return TRUE;
  }
  
@@ -20,8 +58,17 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
 +                    const char *dir)
 +{
 +  DBusList *link;
++#ifndef DBUS_WIN
++  struct stat st_dir;
++  dbus_bool_t have_st_dir = FALSE;
++#endif
 +
 +  _dbus_assert (dir != NULL);
++
++#ifndef DBUS_WIN
++  if (*conf_dirs != NULL && stat (dir, &st_dir) == 0)
++    have_st_dir = TRUE;
++#endif
 +
 +  for (link = *conf_dirs; link; link = _dbus_list_get_next_link (conf_dirs, link))
 +    {
@@ -29,6 +76,18 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
 +
 +      if (strcmp (dir, link_dir) == 0)
 +        return link_dir;
++
++#ifndef DBUS_WIN
++      if (have_st_dir)
++        {
++          struct stat st_link;
++
++          if (stat (link_dir, &st_link) == 0 &&
++              st_dir.st_dev == st_link.st_dev &&
++              st_dir.st_ino == st_link.st_ino)
++            return link_dir;
++        }
++#endif
 +    }
 +
 +  return NULL;
@@ -54,7 +113,7 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
  static dbus_bool_t
  merge_included (BusConfigParser *parser,
                  BusConfigParser *included,
-@@ -414,7 +453,7 @@
+@@ -414,7 +496,7 @@
      service_dirs_append_link_unique_or_free (&parser->service_dirs, link);
  
    while ((link = _dbus_list_pop_first_link (&included->conf_dirs)))
@@ -63,7 +122,7 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
    
    return TRUE;
  }
-@@ -2487,6 +2526,10 @@
+@@ -2487,6 +2569,10 @@
    DBusDirIter *dir;
    char *s;
    
@@ -74,7 +133,7 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
    if (!_dbus_string_init (&filename))
      {
        BUS_SET_OOM (error);
-@@ -2742,6 +2785,43 @@
+@@ -2742,6 +2828,44 @@
              _dbus_string_free (&full_path);
              goto nomem;
            }
@@ -86,7 +145,8 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
 +            int rc;
 +
 +            memset (&gl, 0, sizeof (gl));
-+            rc = glob (_dbus_string_get_const_data (&full_path), 0, NULL, &gl);
++            rc = glob (_dbus_string_get_const_data (&full_path),
++                       GLOB_ONLYDIR | GLOB_NOESCAPE, NULL, &gl);
 +            _dbus_string_free (&full_path);
 +
 +            if (rc == 0)
@@ -118,7 +178,7 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
          
          if (!include_dir (parser, &full_path, error))
            {
-@@ -2834,6 +2914,59 @@
+@@ -2834,6 +2958,60 @@
              _dbus_string_free (&full_path);
              goto nomem;
            }
@@ -130,7 +190,8 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
 +            int rc;
 +
 +            memset (&gl, 0, sizeof (gl));
-+            rc = glob (_dbus_string_get_const_data (&full_path), 0, NULL, &gl);
++            rc = glob (_dbus_string_get_const_data (&full_path),
++                       GLOB_ONLYDIR | GLOB_NOESCAPE, NULL, &gl);
 +            _dbus_string_free (&full_path);
 +
 +            if (rc == 0)
@@ -178,17 +239,21 @@ diff --no-dereference -Naur dbus-1.16.2.orig/bus/config-parser.c dbus-1.16.2/bus
          
          if (!_dbus_string_copy_data (&full_path, &s))
            {
-@@ -3993,6 +4126,13 @@
+@@ -3993,6 +4171,17 @@
    while ((link = _dbus_list_pop_first_link (&dirs)))
      {
        _dbus_test_diag ("    test service dir: %s", (char *)link->data);
-+      if (i == 0 && strncmp ((char *) link->data, "/sw/", 4) == 0 &&
++#ifdef VENDOR_PKG_PREFIX
++      if (i == 0 &&
++          strncmp ((char *) link->data, VENDOR_PKG_PREFIX "/",
++                   strlen (VENDOR_PKG_PREFIX "/")) == 0 &&
 +          strcmp ((char *) link->data, test_system_service_dir_matches[0]) != 0)
 +        {
 +          dbus_free (link->data);
 +          _dbus_list_free_link (link);
 +          continue;
 +        }
++#endif
        if (test_system_service_dir_matches[i] == NULL)
          {
            _dbus_test_diag ("more directories parsed than in match set");
@@ -256,69 +321,191 @@ diff --no-dereference -Naur dbus-1.16.2.orig/dbus/dbus-sysdeps-util-unix.c dbus-
  #include <sys/un.h>
  
  #ifdef HAVE_SYS_PRCTL_H
-@@ -1256,6 +1257,69 @@
+@@ -1256,6 +1257,191 @@
  #define DBUS_UNIX_STANDARD_SESSION_SERVICEDIR "/dbus-1/services"
  #define DBUS_UNIX_STANDARD_SYSTEM_SERVICEDIR "/dbus-1/system-services"
  
++static int
++dbus_scan_bracket_end (const char *s,
++                       int         pos,
++                       int         len)
++{
++  int p = pos + 1;
++
++  if (p < len && (s[p] == '!' || s[p] == '^'))
++    p++;
++  if (p < len && s[p] == ']')
++    p++;
++
++  while (p < len && s[p] != '/')
++    {
++      if (s[p] == ']')
++        return p;
++
++      if (s[p] == '[' && (p + 1) < len &&
++          (s[p + 1] == ':' || s[p + 1] == '.' || s[p + 1] == '='))
++        {
++          char ctype = s[p + 1];
++          int q = p + 2;
++
++          while (q < len && s[q] != '/' && (ctype == '.' || s[q] != ']'))
++            {
++              if (s[q] == ctype && (q + 1) < len && s[q + 1] == ']')
++                {
++                  p = q + 2;
++                  goto next_char;
++                }
++              q++;
++            }
++        }
++
++      p++;
++    next_char:;
++    }
++
++  return -1;
++}
++
++static int
++dbus_find_next_colon (const char *s,
++                      int         start,
++                      int         len)
++{
++  int i = start;
++
++  while (i < len)
++    {
++      if (s[i] == ':')
++        return i;
++
++      if (s[i] == '[')
++        {
++          int end = dbus_scan_bracket_end (s, i, len);
++
++          if (end >= 0)
++            {
++              i = end + 1;
++              continue;
++            }
++        }
++
++      i++;
++    }
++
++  return len;
++}
++
 +static dbus_bool_t
 +_dbus_split_glob_paths_and_append (DBusString *dirs,
 +                                   const char *suffix,
 +                                   DBusList  **dir_list)
 +{
-+  DBusList *raw_dirs = NULL;
-+  DBusList *link;
++  const char *raw;
++  int total_len;
++  int start;
++  DBusString file_suffix;
 +
-+  if (!_dbus_split_paths_and_append (dirs, suffix, &raw_dirs))
-+    return FALSE;
++  _dbus_string_init_const (&file_suffix, suffix);
++  raw = _dbus_string_get_const_data (dirs);
++  total_len = _dbus_string_get_length (dirs);
++  start = 0;
 +
-+  while ((link = _dbus_list_pop_first_link (&raw_dirs)) != NULL)
++  while (start <= total_len)
 +    {
-+      char *cpath = link->data;
++      int end = dbus_find_next_colon (raw, start, total_len);
++      int seg_len = end - start;
 +
-+      if (strpbrk (cpath, "*?[") != NULL)
++      if (seg_len > 0)
 +        {
-+          glob_t gl;
-+          int rc;
++          DBusString path;
 +
-+          _dbus_list_free_link (link);
-+          memset (&gl, 0, sizeof (gl));
-+          rc = glob (cpath, 0, NULL, &gl);
-+          dbus_free (cpath);
++          if (!_dbus_string_init (&path))
++            goto oom;
 +
-+          if (rc == 0)
++          if (!_dbus_string_copy_len (dirs, start, seg_len, &path, 0))
 +            {
-+              size_t j;
++              _dbus_string_free (&path);
++              goto oom;
++            }
 +
-+              for (j = 0; j < gl.gl_pathc; j++)
++          _dbus_string_chop_white (&path);
++
++          if (_dbus_string_get_length (&path) > 0)
++            {
++              const char *cpath;
++
++              if (!_dbus_concat_dir_and_file (&path, &file_suffix))
 +                {
-+                  char *matched = _dbus_strdup (gl.gl_pathv[j]);
++                  _dbus_string_free (&path);
++                  goto oom;
++                }
 +
-+                  if (matched == NULL || !_dbus_list_append (dir_list, matched))
++              cpath = _dbus_string_get_const_data (&path);
++              if (strpbrk (cpath, "*?[") != NULL)
++                {
++                  glob_t gl;
++                  int rc;
++
++                  memset (&gl, 0, sizeof (gl));
++                  rc = glob (cpath, GLOB_ONLYDIR | GLOB_NOESCAPE, NULL, &gl);
++                  _dbus_string_free (&path);
++
++                  if (rc == 0)
 +                    {
-+                      dbus_free (matched);
++                      size_t j;
++
++                      for (j = 0; j < gl.gl_pathc; j++)
++                        {
++                          char *matched = _dbus_strdup (gl.gl_pathv[j]);
++
++                          if (matched == NULL || !_dbus_list_append (dir_list, matched))
++                            {
++                              dbus_free (matched);
++                              globfree (&gl);
++                              goto oom;
++                            }
++                        }
++                    }
++                  else if (rc == GLOB_NOSPACE)
++                    {
 +                      globfree (&gl);
++                      goto oom;
++                    }
++
++                  globfree (&gl);
++                }
++              else
++                {
++                  char *owned = NULL;
++
++                  if (!_dbus_string_copy_data (&path, &owned))
++                    {
++                      _dbus_string_free (&path);
++                      goto oom;
++                    }
++                  _dbus_string_free (&path);
++
++                  if (!_dbus_list_append (dir_list, owned))
++                    {
++                      dbus_free (owned);
 +                      goto oom;
 +                    }
 +                }
 +            }
-+          else if (rc == GLOB_NOSPACE)
++          else
 +            {
-+              globfree (&gl);
-+              goto oom;
++              _dbus_string_free (&path);
 +            }
++        }
 +
-+          globfree (&gl);
-+        }
-+      else
-+        {
-+          _dbus_list_append_link (dir_list, link);
-+        }
++      if (end == total_len)
++        break;
++      start = end + 1;
 +    }
 +
 +  return TRUE;
 +
 +oom:
-+  _dbus_list_clear_full (&raw_dirs, dbus_free);
 +  _dbus_list_clear_full (dir_list, dbus_free);
 +  return FALSE;
 +}
@@ -326,16 +513,19 @@ diff --no-dereference -Naur dbus-1.16.2.orig/dbus/dbus-sysdeps-util-unix.c dbus-
  /**
   * Returns the standard directories for a session bus to look for
   * transient service activation files.
-@@ -1407,7 +1471,7 @@
+@@ -1407,7 +1593,11 @@
      }
    else
      {
--      if (!_dbus_string_append (&servicedir_path, "/usr/local/share:/usr/share:"))
-+      if (!_dbus_string_append (&servicedir_path, "/sw/*/share:/usr/local/share:/usr/share:"))
++#ifdef VENDOR_PKG_PREFIX
++      if (!_dbus_string_append (&servicedir_path, VENDOR_PKG_PREFIX "/*/share:/usr/local/share:/usr/share:"))
++#else
+       if (!_dbus_string_append (&servicedir_path, "/usr/local/share:/usr/share:"))
++#endif
          goto oom;
      }
  
-@@ -1420,9 +1484,9 @@
+@@ -1420,9 +1610,9 @@
    if (!_dbus_string_append (&servicedir_path, DBUS_DATADIR))
      goto oom;
  
@@ -348,15 +538,17 @@ diff --no-dereference -Naur dbus-1.16.2.orig/dbus/dbus-sysdeps-util-unix.c dbus-
      goto oom;
  
    _dbus_string_free (&servicedir_path);
-@@ -1465,6 +1529,7 @@
+@@ -1465,6 +1655,9 @@
     * be available.
     */
    static const char standard_search_path[] =
-+    "/sw/*/share:"
++#ifdef VENDOR_PKG_PREFIX
++    VENDOR_PKG_PREFIX "/*/share:"
++#endif
      "/usr/local/share:"
      "/usr/share:"
      DBUS_DATADIR ":"
-@@ -1473,9 +1538,9 @@
+@@ -1473,9 +1666,9 @@
  
    _dbus_string_init_const (&servicedir_path, standard_search_path);
  
@@ -369,13 +561,16 @@ diff --no-dereference -Naur dbus-1.16.2.orig/dbus/dbus-sysdeps-util-unix.c dbus-
  }
  
  
-@@ -1496,14 +1561,15 @@
+@@ -1496,14 +1689,19 @@
  {
    static const char standard_search_path[] =
      "/etc:"
--    "/run";
++#ifdef VENDOR_PKG_PREFIX
 +    "/run:"
-+    "/sw/*/etc";
++    VENDOR_PKG_PREFIX "/*/etc";
++#else
+     "/run";
++#endif
    DBusString servicedir_path;
  
    _dbus_string_init_const (&servicedir_path, standard_search_path);
@@ -389,10 +584,38 @@ diff --no-dereference -Naur dbus-1.16.2.orig/dbus/dbus-sysdeps-util-unix.c dbus-
  }
  
  /**
+diff --no-dereference -Naur dbus-1.16.2.orig/meson.build dbus-1.16.2/meson.build
+--- dbus-1.16.2.orig/meson.build	2025-02-27 16:29:06.000000000 +0000
++++ dbus-1.16.2/meson.build	2025-02-27 16:29:06.000000000 +0000
+@@ -229,6 +229,10 @@
+   config.set('WORDS_BIGENDIAN', 1)
+ endif
+ 
++if get_option('vendor_pkg_prefix') != ''
++  config.set_quoted('VENDOR_PKG_PREFIX', get_option('vendor_pkg_prefix'))
++endif
++
+ # Integer sizes
+ int_types = [
+     {
+diff --no-dereference -Naur dbus-1.16.2.orig/meson_options.txt dbus-1.16.2/meson_options.txt
+--- dbus-1.16.2.orig/meson_options.txt	2025-02-27 16:29:06.000000000 +0000
++++ dbus-1.16.2/meson_options.txt	2025-02-27 16:29:06.000000000 +0000
+@@ -305,3 +305,10 @@
+   value: false,
+   description: 'use OutputDebugString() to log messages to Windows debug port'
+ )
++
++option(
++  'vendor_pkg_prefix',
++  type: 'string',
++  value: '',
++  description: 'Wildcard package prefix (e.g. /sw) for late-bound vendor discovery'
++)
 diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus-1.16.2/test/internals/fluffy-config.c
 --- dbus-1.16.2.orig/test/internals/fluffy-config.c	1970-01-01 00:00:00.000000000 +0000
 +++ dbus-1.16.2/test/internals/fluffy-config.c	2025-02-27 16:29:06.000000000 +0000
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,357 @@
 +/*
 + * SPDX-License-Identifier: MIT
 + */
@@ -408,6 +631,7 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +#include "dbus/dbus-test-tap.h"
 +#include "test/test-utils.h"
 +
++#include <limits.h>
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <string.h>
@@ -460,10 +684,13 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +{
 +  char root_template[] = "/tmp/dbus-fluffy-test-XXXXXX";
 +  char *root;
++  char orig_cwd[PATH_MAX];
++  char cwd_trap[1024];
 +  char path_buf[2048];
 +  char conf_xml[8192];
 +  char pkg_a_sysd[1024];
 +  char pkg_b_sysd[1024];
++  char etc_sysd[1024];
 +  char pkg_a_svc[1024];
 +  char pkg_b_svc[1024];
 +  char main_conf[1024];
@@ -482,27 +709,44 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +  dbus_bool_t found_pkg_b = FALSE;
 +  dbus_bool_t ret = FALSE;
 +
++  if (getcwd (orig_cwd, sizeof (orig_cwd)) == NULL)
++    _dbus_test_fatal ("getcwd failed");
++
 +  root = mkdtemp (root_template);
 +  if (root == NULL)
 +    _dbus_test_fatal ("mkdtemp failed");
 +
-+  snprintf (pkg_a_sysd, sizeof (pkg_a_sysd), "%s/sw/dbus/share/dbus-1/system.d", root);
-+  snprintf (pkg_b_sysd, sizeof (pkg_b_sysd), "%s/sw/systemd/share/dbus-1/system.d", root);
-+  snprintf (pkg_a_svc, sizeof (pkg_a_svc), "%s/sw/dbus/share/dbus-1/system-services", root);
-+  snprintf (pkg_b_svc, sizeof (pkg_b_svc), "%s/sw/systemd/share/dbus-1/system-services", root);
++  snprintf (pkg_a_sysd, sizeof (pkg_a_sysd), "%s/pkgs/dbus/share/dbus-1/system.d", root);
++  snprintf (pkg_b_sysd, sizeof (pkg_b_sysd), "%s/pkgs/systemd/share/dbus-1/system.d", root);
++  snprintf (etc_sysd, sizeof (etc_sysd), "%s/etc/dbus-1/system.d", root);
++  snprintf (pkg_a_svc, sizeof (pkg_a_svc), "%s/pkgs/dbus/share/dbus-1/system-services", root);
++  snprintf (pkg_b_svc, sizeof (pkg_b_svc), "%s/pkgs/systemd/share/dbus-1/system-services", root);
 +
 +  mkdir_p (pkg_a_sysd);
 +  mkdir_p (pkg_b_sysd);
++  mkdir_p (etc_sysd);
 +  mkdir_p (pkg_a_svc);
 +  mkdir_p (pkg_b_svc);
 +
-+  snprintf (path_buf, sizeof (path_buf), "%s/sw/dbus/share/dbus-1/services", root);
++  snprintf (path_buf, sizeof (path_buf), "%s/pkgs/dbus/share/dbus-1/services", root);
 +  mkdir_p (path_buf);
-+  snprintf (path_buf, sizeof (path_buf), "%s/sw/systemd/share/dbus-1/services", root);
++  snprintf (path_buf, sizeof (path_buf), "%s/pkgs/systemd/share/dbus-1/services", root);
 +  mkdir_p (path_buf);
-+  /* Package without dbus-1 subdir should be ignored by glob */
-+  snprintf (path_buf, sizeof (path_buf), "%s/sw/bash/share/doc", root);
++  /* Package without dbus-1 subdir and regular file matching glob must be ignored */
++  snprintf (path_buf, sizeof (path_buf), "%s/pkgs/bash/share/doc", root);
 +  mkdir_p (path_buf);
++  snprintf (path_buf, sizeof (path_buf), "%s/pkgs/notadir/share/dbus-1", root);
++  mkdir_p (path_buf);
++  snprintf (path_buf, sizeof (path_buf), "%s/pkgs/notadir/share/dbus-1/services", root);
++  write_text_file (path_buf, "not a directory\n");
++
++  /* Symlinked aliases to existing <includedir> / <servicedir> must deduplicate by (st_dev, st_ino) */
++  snprintf (path_buf, sizeof (path_buf), "%s/alias-system.d", root);
++  if (symlink (pkg_a_sysd, path_buf) != 0)
++    _dbus_test_fatal ("symlink alias-system.d failed");
++  snprintf (path_buf, sizeof (path_buf), "%s/alias-system-services", root);
++  if (symlink (pkg_a_svc, path_buf) != 0)
++    _dbus_test_fatal ("symlink alias-system-services failed");
 +
 +  snprintf (path_buf, sizeof (path_buf), "%s/00-dbus.conf", pkg_a_sysd);
 +  write_text_file (path_buf,
@@ -523,20 +767,23 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +                   "  </policy>\n"
 +                   "</busconfig>\n");
 +
-+  snprintf (main_conf, sizeof (main_conf), "%s/sw/dbus/share/dbus-1/system.conf", root);
++  snprintf (main_conf, sizeof (main_conf), "%s/pkgs/dbus/share/dbus-1/system.conf", root);
 +  snprintf (conf_xml, sizeof (conf_xml),
 +            "<!DOCTYPE busconfig PUBLIC \"-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN\"\n"
 +            " \"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"
 +            "<busconfig>\n"
 +            "  <type>system</type>\n"
 +            "  <listen>unix:path=%s/system_bus_socket</listen>\n"
-+            "  <servicedir>%s/sw/*/share/dbus-1/system-services</servicedir>\n"
-+            "  <servicedir>%s/sw/*/nonexistent-services</servicedir>\n"
++            "  <servicedir>%s/pkgs/*/share/dbus-1/system-services</servicedir>\n"
++            "  <servicedir>%s/alias-system-services</servicedir>\n"
++            "  <servicedir>%s/pkgs/*/nonexistent-services</servicedir>\n"
 +            "  <includedir>system.d</includedir>\n"
-+            "  <includedir>%s/sw/*/share/dbus-1/system.d</includedir>\n"
-+            "  <includedir>%s/sw/*/etc/dbus-1/system.d</includedir>\n"
++            "  <includedir>%s/pkgs/*/share/dbus-1/system.d</includedir>\n"
++            "  <includedir>%s/alias-system.d</includedir>\n"
++            "  <includedir>%s/pkgs/*/etc/dbus-1/system.d</includedir>\n"
++            "  <includedir>%s/etc/dbus-1/system.d</includedir>\n"
 +            "</busconfig>\n",
-+            root, root, root, root, root);
++            root, root, root, root, root, root, root, root);
 +  write_text_file (main_conf, conf_xml);
 +
 +  _dbus_string_init_const (&conf_path, main_conf);
@@ -545,7 +792,7 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +    _dbus_test_fatal ("bus_config_load failed: %s", error.message);
 +
 +  /* system.d from basedir and from wildcard system.d paths must be deduplicated,
-+   * and alphabetical glob order means sw/systemd overrides sw/dbus pidfile */
++   * and alphabetical glob order means pkgs/systemd overrides pkgs/dbus pidfile */
 +  if (bus_config_parser_get_pidfile (parser) == NULL ||
 +      strcmp (bus_config_parser_get_pidfile (parser), "/run/systemd-login1.pid") != 0)
 +    {
@@ -570,9 +817,10 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +      count++;
 +    }
 +
-+  if (count != 2 || !found_pkg_a || !found_pkg_b)
++  /* 3 conf_dirs: pkgs/dbus, pkgs/systemd, and etc/dbus-1/system.d */
++  if (count != 3 || !found_pkg_a || !found_pkg_b)
 +    {
-+      _dbus_warn ("expected exactly 2 deduplicated conf_dirs, got %d", count);
++      _dbus_warn ("expected 3 deduplicated conf_dirs, got %d", count);
 +      goto out;
 +    }
 +
@@ -599,16 +847,56 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +      goto out;
 +    }
 +
-+  /* Verify _dbus_split_glob_paths_and_append via XDG_DATA_DIRS wildcard */
++  /* Verify /etc/dbus-1/system.d overrides all vendor packages */
++  bus_config_parser_unref (parser);
++  parser = NULL;
++  snprintf (path_buf, sizeof (path_buf), "%s/99-local.conf", etc_sysd);
++  write_text_file (path_buf,
++                   "<!DOCTYPE busconfig PUBLIC \"-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN\"\n"
++                   " \"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"
++                   "<busconfig>\n"
++                   "  <pidfile>/run/etc-override.pid</pidfile>\n"
++                   "</busconfig>\n");
++
++  parser = bus_config_load (&conf_path, TRUE, NULL, &error);
++  if (parser == NULL)
++    _dbus_test_fatal ("bus_config_load with /etc override failed: %s", error.message);
++
++  if (bus_config_parser_get_pidfile (parser) == NULL ||
++      strcmp (bus_config_parser_get_pidfile (parser), "/run/etc-override.pid") != 0)
++    {
++      _dbus_warn ("expected /etc override pidfile, got %s",
++                  bus_config_parser_get_pidfile (parser) ?
++                  bus_config_parser_get_pidfile (parser) : "(null)");
++      goto out;
++    }
++
++  /* Verify _dbus_split_glob_paths_and_append via XDG_DATA_DIRS wildcard,
++   * including empty ':' segments (which XDG requires skipping, NEVER mapping to '.'),
++   * '[[:alpha:]]' POSIX classes, '[a:]' bracketed colons, and unclosed '[' segments */
++  snprintf (cwd_trap, sizeof (cwd_trap), "%s/cwd_trap", root);
++  snprintf (path_buf, sizeof (path_buf), "%s/dbus-1/services", cwd_trap);
++  mkdir_p (path_buf);
++  snprintf (path_buf, sizeof (path_buf), "%s/pkgs/1:colon/share/dbus-1/services", root);
++  mkdir_p (path_buf);
++
 +  old_xdg_raw = getenv ("XDG_DATA_DIRS");
 +  if (old_xdg_raw != NULL)
 +    old_xdg_copy = strdup (old_xdg_raw);
 +
-+  snprintf (xdg_glob, sizeof (xdg_glob), "%s/sw/*/share", root);
++  if (chdir (cwd_trap) != 0)
++    _dbus_test_fatal ("chdir cwd_trap failed");
++
++  snprintf (xdg_glob, sizeof (xdg_glob),
++            ":%s/[unclosed/sub:%s/pkgs/[[:alpha:]]*/share:%s/pkgs/1[a:]colon/share::",
++            root, root, root);
 +  setenv ("XDG_DATA_DIRS", xdg_glob, 1);
 +
 +  if (!_dbus_get_standard_session_servicedirs (&session_dirs))
 +    _dbus_test_fatal ("_dbus_get_standard_session_servicedirs failed");
++
++  if (chdir (orig_cwd) != 0)
++    _dbus_test_fatal ("chdir orig_cwd failed");
 +
 +  if (old_xdg_copy != NULL)
 +    {
@@ -623,8 +911,10 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +
 +  found_pkg_a = FALSE;
 +  found_pkg_b = FALSE;
-+  snprintf (pkg_a_svc, sizeof (pkg_a_svc), "%s/sw/dbus/share/dbus-1/services", root);
-+  snprintf (pkg_b_svc, sizeof (pkg_b_svc), "%s/sw/systemd/share/dbus-1/services", root);
++  count = 0;
++  snprintf (pkg_a_svc, sizeof (pkg_a_svc), "%s/pkgs/dbus/share/dbus-1/services", root);
++  snprintf (pkg_b_svc, sizeof (pkg_b_svc), "%s/pkgs/systemd/share/dbus-1/services", root);
++  snprintf (path_buf, sizeof (path_buf), "%s/pkgs/1:colon/share/dbus-1/services", root);
 +
 +  for (link = _dbus_list_get_first_link (&session_dirs);
 +       link != NULL;
@@ -636,14 +926,21 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +        found_pkg_a = TRUE;
 +      else if (strcmp (d, pkg_b_svc) == 0)
 +        found_pkg_b = TRUE;
-+      else if (strstr (d, "/sw/bash/") != NULL)
++      else if (strcmp (d, path_buf) == 0)
++        count++;
++      else if (strstr (d, "/pkgs/bash/") != NULL ||
++               strstr (d, "/pkgs/notadir/") != NULL ||
++               strstr (d, "cwd_trap") != NULL ||
++               strcmp (d, "dbus-1/services") == 0 ||
++               strcmp (d, "./dbus-1/services") == 0 ||
++               strcmp (d, "/dbus-1/services") == 0)
 +        {
-+          _dbus_warn ("unexpected non-matching package dir %s", d);
++          _dbus_warn ("unexpected session service dir %s", d);
 +          goto out;
 +        }
 +    }
 +
-+  if (!found_pkg_a || !found_pkg_b)
++  if (!found_pkg_a || !found_pkg_b || count != 1)
 +    {
 +      _dbus_warn ("missing globbed session service dirs");
 +      goto out;
@@ -652,6 +949,8 @@ diff --no-dereference -Naur dbus-1.16.2.orig/test/internals/fluffy-config.c dbus
 +  ret = TRUE;
 +
 +out:
++  if (chdir (orig_cwd) != 0)
++    _dbus_test_fatal ("chdir orig_cwd failed");
 +  _dbus_list_clear_full (&session_dirs, dbus_free);
 +  if (parser != NULL)
 +    bus_config_parser_unref (parser);

@@ -112,8 +112,8 @@ diff --no-dereference -Naur groff-1.24.1.orig/src/libs/libgroff/relocate.cpp gro
 +      }
 +      delete[] path;
 +    }
-+    globfree(&gl);
 +  }
++  globfree(&gl);
 +  return 0;
 +#else
    size_t namelen = strlen(name);

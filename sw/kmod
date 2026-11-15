@@ -12,7 +12,7 @@ HAS_LDFLAGS=-lkmod
 ARCHIVES=(
     5a5d5073070cc7e0c7a7a3c6ec2a0e1780850c8b47b3e3892226b93ffcb9cb54 https://github.com/fluffy-linux/kmod/releases/download/v$VERSION/kmod-$VERSION.tar.xz
     e96a0f0805dd970126554b6b35c85b6ec73bb02394939c0c65e964b9ec2c0fb1 file://kmod-$VERSION-fluffy-test.patch
-    65d23f3fdf7662394b855990952c337079f82d01776156bf161e8c95e94ced6b file://kmod-$VERSION-fluffy.patch
+    298fcba178bb79d1621d21f421e2d4b620a441e7795b4e75ab6147d9470278bf file://kmod-$VERSION-fluffy.patch
 )
 
 NEEDS=(
@@ -82,9 +82,10 @@ MAKE() {
 
     mkdir -p build
     cd build
+    CFLAGS="-DVENDOR_PKG_PREFIX=\\\"/sw\\\" ${CFLAGS:-}" \
     meson setup --prefix=/sw/kmod \
         --buildtype=release \
-        --sysconfdir=/sw/kmod/etc \
+        --sysconfdir=/etc \
         --sbindir=/sw/kmod/bin \
         --libdir=/sw/kmod/lib \
         -Dmoduledir=/sw/linux/lib/modules \
@@ -100,4 +101,5 @@ CHECK() {
 
 INSTALL() {
     DESTDIR=$DESTDIR ninja -C build install
+    rm -rf "$DESTDIR/etc"
 }

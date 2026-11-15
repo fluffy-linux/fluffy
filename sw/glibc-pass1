@@ -7,7 +7,7 @@ ARCHIVES=(
     643552db030e2f2d7ffde4f558e0f5f83d3fabf34a2e0e56ebdb49750ac27b0d file://glibc-fhs-1.patch
     500567ff0a22e295bfe3b55e9b397796f71a19f01e1ff7fb29c9189482ee1809 file://glibc-$VERSION-upstream_fixes-1.patch
     aa7dc37d87cd1c3cd5edd70755415c3cc50c0165752cd519a58df225e9f66bdc file://glibc-$VERSION-fluffy-shell.patch
-    66b6ed7d6e828bf72ac87e018d5a85bce51729aadc8c6b5ed5a2da5417a074fd file://glibc-$VERSION-fluffy-source.patch
+    7239c0185fe8248fb2831824e8327e8e14fe9b78ab0b8f0b96ae29c80521ae5b file://glibc-$VERSION-fluffy-source.patch
     0d0ebdf6c6a81658e352a96e703815779105a3489a52bc3c74746e07d368dda0 file://glibc.passwd
     b2b74131611f9116dfbae38c97575816812fe6273ccf795582bb12a5c21e2fea file://glibc.group
 )

@@ -9,7 +9,7 @@ VERSION=5.3
 
 ARCHIVES=(
     0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://github.com/fluffy-linux/bash/releases/download/bash-$VERSION/bash-$VERSION.tar.gz
-    84f703111c9dbc212fac6b143437d50cd67eaace801753b404976843b3b7ed12 file://bash-$VERSION-fluffy-source.patch
+    f7b59e4800e659f04a0e9291a89d228fc8bd6a3fe9e638dcec146d4c1481c811 file://bash-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -79,7 +79,8 @@ MAKE() {
         --prefix=/sw/bash \
         --without-bash-malloc \
         --with-installed-readline \
-        --docdir=/sw/bash/share/doc/bash-$VERSION
+        --docdir=/sw/bash/share/doc/bash-$VERSION \
+        CPPFLAGS='-DSYS_PROFILE="\"/sw/*/etc/profile:/etc/profile\"" -DSYS_INPUTRC="\"/sw/*/etc/inputrc:/etc/inputrc\""'
     make
 }
 

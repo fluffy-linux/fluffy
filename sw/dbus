@@ -12,7 +12,7 @@ HAS_LDFLAGS="-ldbus-1"
 
 ARCHIVES=(
     0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2 https://github.com/fluffy-linux/dbus/releases/download/dbus-$VERSION/dbus-$VERSION.tar.xz
-    97f83dbc7d7e963e2b4d0a1b4597e0f1467e980f6eefac95c6c9f9a24a5b804f file://dbus-$VERSION-fluffy-source.patch
+    d7eaafd3f57d803f85181edd17093d18dd4e0349f85d75e77a88fe9859c52aa1 file://dbus-$VERSION-fluffy-source.patch
     2371a3a2b44d3968dda76cd687dd9f5a86a5d31eef0f02b4a9ecea2e7d9c3e29 file://dbus.passwd
     52e41a94ae1d317eda62cc90c4e0cf67af2161fb845668f020be20962a2ac552 file://dbus.group
 )
@@ -85,6 +85,7 @@ MAKE() {
         --buildtype=release \
         --wrap-mode=nofallback \
         -Dasserts=false \
+        -Dvendor_pkg_prefix=/sw \
         -Dsystem_socket=/run/dbus/system_bus_socket \
         -Dsystem_pid_file=/run/dbus/pid \
         -Dsystemd_system_unitdir=/sw/dbus/lib/systemd/system \

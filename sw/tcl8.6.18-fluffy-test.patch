@@ -1,52 +1,70 @@
-diff --no-dereference -Naur tcl8.6.18.orig/tests/chanio.test tcl8.6.18/tests/chanio.test
---- tcl8.6.18.orig/tests/chanio.test	2026-04-17 18:51:37.000000000 +0000
-+++ tcl8.6.18/tests/chanio.test	2026-04-17 18:51:37.000000000 +0000
+diff --no-dereference -Naur tcl8.6.18/tests/chanio.test tcl8.6.18.test/tests/chanio.test
+--- tcl8.6.18/tests/chanio.test	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18.test/tests/chanio.test	2026-04-17 18:51:37.000000000 +0000
 @@ -56,7 +56,7 @@
      # some tests can only be run is umask is 2 if "umask" cannot be run, the
      # tests will be skipped.
      set umaskValue 0
 -    testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
-+    testConstraint umask [expr {![catch {set umaskValue [scan [exec /sw/bash/bin/bash -c umask] %o]}]}]
++    testConstraint umask [expr {![catch {set umaskValue [scan [exec [expr {[file executable /sw/bash/bin/bash] ? "/sw/bash/bin/bash" : "/bin/sh"}] -c umask] %o]}]}]
  
      testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
  
-diff --no-dereference -Naur tcl8.6.18.orig/tests/exec.test tcl8.6.18/tests/exec.test
---- tcl8.6.18.orig/tests/exec.test	2026-05-07 17:12:36.000000000 +0000
-+++ tcl8.6.18/tests/exec.test	2026-05-07 17:12:36.000000000 +0000
-@@ -687,13 +687,13 @@
+diff --no-dereference -Naur tcl8.6.18/tests/exec.test tcl8.6.18.test/tests/exec.test
+--- tcl8.6.18/tests/exec.test	2026-05-07 17:12:36.000000000 +0000
++++ tcl8.6.18.test/tests/exec.test	2026-05-07 17:12:36.000000000 +0000
+@@ -687,13 +687,14 @@
  } -body {
      # Note that we have to allow for the current contents of the temporary
      # file, which is why the result is 14 and not 12
 -    exec /bin/sh -c \
-+    exec /sw/bash/bin/bash -c \
++    set shCmd [expr {[file executable /sw/bash/bin/bash] ? "/sw/bash/bin/bash" : "/bin/sh"}]
++    exec $shCmd -c \
  	    {for a in 1 2 3; do sleep 1; echo $a; done} >>$tmpfile &
 -    exec /bin/sh -c \
-+    exec /sw/bash/bin/bash -c \
++    exec $shCmd -c \
  	    {for a in 4 5 6; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
 -    exec /bin/sh -c \
-+    exec /sw/bash/bin/bash -c \
++    exec $shCmd -c \
  	    {for a in a b c; do sleep 1; echo $a; done} >>$tmpfile &
 -    exec /bin/sh -c \
-+    exec /sw/bash/bin/bash -c \
++    exec $shCmd -c \
  	    {for a in d e f; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
      # The above four shell invocations take about 3 seconds to finish, so allow
      # 5s (in case the machine is busy)
-diff --no-dereference -Naur tcl8.6.18.orig/tests/io.test tcl8.6.18/tests/io.test
---- tcl8.6.18.orig/tests/io.test	2026-04-17 18:51:37.000000000 +0000
-+++ tcl8.6.18/tests/io.test	2026-04-17 18:51:37.000000000 +0000
+@@ -703,6 +704,7 @@
+     # file descriptor in the [exec >>...]
+     file size $tmpfile
+ } -cleanup {
++    unset -nocomplain shCmd
+     removeFile $tmpfile
+ } -result 26
+ 
+diff --no-dereference -Naur tcl8.6.18/tests/io.test tcl8.6.18.test/tests/io.test
+--- tcl8.6.18/tests/io.test	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18.test/tests/io.test	2026-04-17 18:51:37.000000000 +0000
 @@ -59,7 +59,7 @@
  # some tests can only be run is umask is 2
  # if "umask" cannot be run, the tests will be skipped.
  set umaskValue 0
 -testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
-+testConstraint umask [expr {![catch {set umaskValue [scan [exec /sw/bash/bin/bash -c umask] %o]}]}]
++testConstraint umask [expr {![catch {set umaskValue [scan [exec [expr {[file executable /sw/bash/bin/bash] ? "/sw/bash/bin/bash" : "/bin/sh"}] -c umask] %o]}]}]
  
  testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
  
-diff --no-dereference -Naur tcl8.6.18.orig/tests/unixFile.test tcl8.6.18/tests/unixFile.test
---- tcl8.6.18.orig/tests/unixFile.test	2026-04-17 18:51:37.000000000 +0000
-+++ tcl8.6.18/tests/unixFile.test	2026-04-17 18:51:37.000000000 +0000
-@@ -56,6 +56,32 @@
+diff --no-dereference -Naur tcl8.6.18/tests/unixFile.test tcl8.6.18.test/tests/unixFile.test
+--- tcl8.6.18/tests/unixFile.test	2026-04-17 18:51:37.000000000 +0000
++++ tcl8.6.18.test/tests/unixFile.test	2026-04-17 18:51:37.000000000 +0000
+@@ -18,6 +18,8 @@
+ catch [list package require -exact Tcltest [info patchlevel]]
+ 
+ testConstraint testfindexecutable [llength [info commands testfindexecutable]]
++testConstraint testsimplefilesystem [llength [info commands testsimplefilesystem]]
++testConstraint testfilesystem [llength [info commands testfilesystem]]
+ 
+ set oldpwd [pwd]
+ cd [temporaryDirectory]
+@@ -56,6 +58,173 @@
      set env(PATH) ":/dummy"
      testfindexecutable junk
  } $absPath
@@ -68,7 +86,7 @@ diff --no-dereference -Naur tcl8.6.18.orig/tests/unixFile.test tcl8.6.18/tests/u
 +    file attributes [makeFile "" pkg_b/bin/wjunk2] -perm 0o777
 +    file attributes [makeFile "" pkg_a/bin/wjunk2] -perm 0o777
 +} -body {
-+    set env(PATH) "/dummy:[pwd]/pkg_*/bin"
++    set env(PATH) [format "-bad_opt*:/unclosed%cbrace*:%s/pkg_*/bin" 123 [pwd]]
 +    auto_execok wjunk2
 +} -cleanup {
 +    auto_reset
@@ -76,6 +94,147 @@ diff --no-dereference -Naur tcl8.6.18.orig/tests/unixFile.test tcl8.6.18/tests/u
 +    removeFile pkg_b/bin/wjunk2
 +    file delete -force pkg_a pkg_b
 +} -result [list [file join [temporaryDirectory] pkg_a bin wjunk2]]
++test unixFile-1.10 {native brace glob while simplefs:/ volume is mounted} -constraints {unix testsimplefilesystem} -setup {
++    file mkdir pkg_a/bin pkg_b/bin pkg_c/bin
++    makeFile "" pkg_a/bin/tool1
++    makeFile "" pkg_b/bin/tool2
++    makeFile "" pkg_c/bin/tool3
++    testsimplefilesystem 1
++} -body {
++    set nativeRes [lsort [glob -nocomplain [pwd]/{pkg_a,pkg_b}/bin/*]]
++    set vfsRes [glob -nocomplain simplefs:/pkg_a/bin/*]
++    set mixedRes [lsort [glob -nocomplain {{simplefs:/pkg_a,pkg_b}/bin/*}]]
++    list $nativeRes $vfsRes $mixedRes
++} -cleanup {
++    catch {testsimplefilesystem 0}
++    removeFile pkg_a/bin/tool1
++    removeFile pkg_b/bin/tool2
++    removeFile pkg_c/bin/tool3
++    file delete -force pkg_a pkg_b pkg_c
++} -result [list [list [file join [temporaryDirectory] pkg_a bin tool1] [file join [temporaryDirectory] pkg_b bin tool2]] {simplefs:/pkg_a/bin/tool1} {pkg_b/bin/tool2 simplefs:/pkg_a/bin/tool1}]
++test unixFile-1.11 {unclosed brace errors and literal braces in -directory} -constraints {unix} -setup {
++    set braceDir [file join [temporaryDirectory] {dir{1,2}}]
++    file mkdir $braceDir
++    close [open [file join $braceDir alpha.txt] w]
++    close [open [file join $braceDir beta.txt] w]
++} -body {
++    set c1 [list [catch {glob [pwd]/pkg_\{unclosed} m1] $m1]
++    set c2 [list [catch {glob [pwd]/pkg_unclosed\}} m2] $m2]
++    set c3 [lsort [glob -nocomplain -tails -directory $braceDir {{alpha,beta}.txt}]]
++    list $c1 $c2 $c3
++} -cleanup {
++    file delete -force $braceDir
++} -result {{1 {unmatched open-brace in file name}} {1 {unmatched close-brace in file name}} {alpha.txt beta.txt}}
++test unixFile-1.12 {testReportingFilesystem intercepts brace multi-glob} -constraints {unix testfilesystem} -setup {
++    file mkdir pkg_a/bin pkg_b/bin
++    makeFile "" pkg_a/bin/r1
++    makeFile "" pkg_b/bin/r2
++} -body {
++    testfilesystem 1
++    set ::filesystemReport {}
++    set matches [lsort [glob -nocomplain pkg_{a,b}/bin/*]]
++    testfilesystem 0
++    list $matches [expr {[string first matchindirectory $::filesystemReport] >= 0}]
++} -cleanup {
++    while {![catch {testfilesystem 0}]} {}
++    unset -nocomplain ::filesystemReport
++    removeFile pkg_a/bin/r1
++    removeFile pkg_b/bin/r2
++    file delete -force pkg_a pkg_b
++} -result {{pkg_a/bin/r1 pkg_b/bin/r2} 1}
++test unixFile-1.13 {Tcl bracket semantics preserved for [!a], [^a], and [z-a]} -constraints {unix} -setup {
++    set bdir [file join [temporaryDirectory] bkt_sem]
++    file mkdir $bdir
++    foreach fn {!hit ^hit ahit bmiss} {
++        close [open [file join $bdir $fn] w]
++    }
++} -body {
++    set r1 [lsort [glob -nocomplain -tails -directory $bdir {[!a]*}]]
++    set r2 [lsort [glob -nocomplain -tails -directory $bdir {[^a]*}]]
++    set r3 [lsort [glob -nocomplain -tails -directory $bdir {{[!a]*,[^a]*}}]]
++    set r4 [lsort [glob -nocomplain -tails -directory $bdir {[b-a]*}]]
++    list $r1 $r2 $r3 $r4
++} -cleanup {
++    file delete -force $bdir
++} -result {{!hit ahit} {^hit ahit} {!hit ^hit ahit ahit} {ahit bmiss}}
++test unixFile-1.14 {multi-component glob with ~ subdirectory does not escape to HOME} -constraints {unix} -setup {
++    set tdir [file join [temporaryDirectory] tilde_escape]
++    set fakeHome [file join [temporaryDirectory] fake_home]
++    file mkdir "$tdir/~" "$tdir/a/~" $fakeHome
++    close [open "$tdir/~/local_only" w]
++    close [open "$tdir/a/~/deep_only" w]
++    close [open [file join $fakeHome victim] w]
++    set savedHome [expr {[info exists ::env(HOME)] ? $::env(HOME) : ""}]
++    set hadHome [info exists ::env(HOME)]
++    set ::env(HOME) $fakeHome
++} -body {
++    set g1 [lsort [glob -nocomplain -directory $tdir */*]]
++    set g2 [lsort [glob -nocomplain -directory $tdir */*/*]]
++    set g3 [lsort [glob -nocomplain -tails -directory $tdir */*]]
++    set f1 [lindex $g1 1]
++    set f2 [lindex $g2 0]
++    list [file normalize $f1] [file exists $f1] [file normalize $f2] [file exists $f2] $g3 [file exists [file join $fakeHome victim]]
++} -cleanup {
++    if {$hadHome} {
++        set ::env(HOME) $savedHome
++    } else {
++        unset -nocomplain ::env(HOME)
++    }
++    file delete -force $tdir $fakeHome
++} -result [list "[file normalize [file join [temporaryDirectory] tilde_escape]]/~/local_only" 1 "[file normalize [file join [temporaryDirectory] tilde_escape]]/a/~/deep_only" 1 {a/~ ~/local_only} 1]
++test unixFile-1.15 {auto_execok bracket-aware colon split in PATH} -constraints {unix} -setup {
++    auto_reset
++    set cdir [file join [temporaryDirectory] "p:b" bin]
++    set udir [file join [temporaryDirectory] "\[unclosed" sub]
++    file mkdir $cdir $udir
++    set exe [file join $cdir bktcolon_cmd]
++    close [open $exe w]
++    file attributes $exe -perm 0o755
++} -body {
++    set env(PATH) "[file join [temporaryDirectory] \[unclosed sub]:[file join [temporaryDirectory] {p[a:]b} bin]"
++    set r1 [auto_execok bktcolon_cmd]
++    auto_reset
++    set env(PATH) [format {[[:alpha]:%s:[[:digit:]]} [file join [temporaryDirectory] {p[a:]b} bin]]
++    set r2 [auto_execok bktcolon_cmd]
++    list $r1 $r2
++} -cleanup {
++    auto_reset
++    file delete -force [file join [temporaryDirectory] "p:b"] [file join [temporaryDirectory] "\[unclosed"]
++} -result [list [list [file join [temporaryDirectory] "p:b" bin bktcolon_cmd]] [list [file join [temporaryDirectory] "p:b" bin bktcolon_cmd]]]
++test unixFile-1.16 {auto_execok GLOB_NOESCAPE parity on backslash, braces, and literal [1]} -constraints {unix} -setup {
++    auto_reset
++    set bsdir [file join [temporaryDirectory] "dir_bs\\"]
++    set litbr [file join [temporaryDirectory] "lit\[1\]" bin]
++    set lit1  [file join [temporaryDirectory] "lit1" bin]
++    set brdir [file join [temporaryDirectory] "br{a,b}" pkg bin]
++    file mkdir $bsdir $litbr $lit1 $brdir
++    foreach {d cmd} [list $litbr lit_cmd $brdir br_cmd] {
++        set exe [file join $d $cmd]
++        close [open $exe w]
++        file attributes $exe -perm 0o755
++    }
++} -body {
++    set env(PATH) "${bsdir}:${litbr}:[file join [temporaryDirectory] {br{a,b}} * bin]"
++    list [auto_execok lit_cmd] [auto_execok br_cmd]
++} -cleanup {
++    auto_reset
++    file delete -force $bsdir [file join [temporaryDirectory] "lit\[1\]"] [file join [temporaryDirectory] "lit1"] [file join [temporaryDirectory] "br{a,b}"]
++} -result [list [list [file join [temporaryDirectory] "lit\[1\]" bin lit_cmd]] [list [file join [temporaryDirectory] "br{a,b}" pkg bin br_cmd]]]
++test unixFile-1.17 {trailing slash and double-slash non-directory pruning} -constraints {unix} -setup {
++    set sdir [file join [temporaryDirectory] slash_prune]
++    file mkdir [file join $sdir adir] [file join $sdir pkg_a bin]
++    close [open [file join $sdir afile] w]
++    close [open [file join $sdir pkg_a bin tool] w]
++} -body {
++    set r1 [lsort [glob -nocomplain "$sdir/a*/"]]
++    set r2 [lsort [glob -nocomplain -directory $sdir "a*/"]]
++    set r3 [lsort [glob -nocomplain -tails -directory $sdir "a*/"]]
++    set r4 [lsort [glob -nocomplain "$sdir/pkg_a//bin/*"]]
++    set r5 [glob -nocomplain "$sdir/\[a\]file/"]
++    list $r1 $r2 $r3 $r4 $r5
++} -cleanup {
++    file delete -force $sdir
++} -result [list [list "[file join [temporaryDirectory] slash_prune adir]/"] [list "[file join [temporaryDirectory] slash_prune adir]/"] {adir/} [list [file join [temporaryDirectory] slash_prune pkg_a bin tool]] {}]
  
  # cleanup
  catch {set env(PATH) $oldPath}

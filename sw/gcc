@@ -10,7 +10,7 @@ VERSION=16.2.0
 ARCHIVES=(
     e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://github.com/fluffy-linux/gcc/releases/download/releases/gcc-$VERSION/gcc-$VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    c261da6b2739c1994bce6b572ea6956aeabacff6ccf3ecaf3c4bc6da05b5157e file://gcc-$VERSION-fluffy-source.patch
+    41b42588482513eb3195782f4c7c4bc343142f14cf56cfc27b58ddf545fdc999 file://gcc-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -187,6 +187,66 @@ EOF
     grep -q '=== gcc Summary ===' gcc/testsuite/gcc/gcc.sum
     grep -q '=== g++ Summary ===' gcc/testsuite/g++/g++.sum
     ! grep -E '^(FAIL|XPASS|UNRESOLVED|ERROR):' $(find . -name '*.sum')
+
+    # Fluffy regression checks: #include_next chaining, zero -I/-L multi-mount
+    # C/C++ builds, and [1] directory metacharacter safety with -I and --sysroot.
+    ./gcc/xg++ -B./gcc/ -E -x c++ - <<< '#include <cstdlib>' >/dev/null
+
+    local td
+    td=$(mktemp -d)
+    cat > "$td/t.c" << 'EOF'
+#include <stdio.h>
+#include <zlib.h>
+#include <zstd.h>
+int main(void) {
+    return (zlibVersion() != NULL && ZSTD_versionNumber() > 0) ? 0 : 1;
+}
+EOF
+    ./gcc/xgcc -B./gcc/ "$td/t.c" -lz -lzstd -o "$td/t_c"
+    "$td/t_c"
+
+    cat > "$td/t.cc" << 'EOF'
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include <zlib.h>
+#include <zstd.h>
+int main() {
+    std::ostringstream os;
+    os << zlibVersion() << ":" << ZSTD_versionNumber();
+    return os.str().empty() ? EXIT_FAILURE : EXIT_SUCCESS;
+}
+EOF
+    ./gcc/xg++ -B./gcc/ "$td/t.cc" -lz -lzstd -o "$td/t_cxx"
+    "$td/t_cxx"
+
+    mkdir -p "$td/wild/pkg[1]/include" "$td/sys[1]/sw/pkg[1]/include" \
+             "$td/lit[1]/include" "$td/lit1/include"
+    echo '#define WILD_OK 42' > "$td/wild/pkg[1]/include/wild_test.h"
+    echo '#define SYS_OK 99' > "$td/sys[1]/sw/pkg[1]/include/sys_test.h"
+    echo '#define LIT_OK 77' > "$td/lit[1]/include/lit_test.h"
+    echo '#define LIT_OK 13' > "$td/lit1/include/lit_test.h"
+    ./gcc/xgcc -B./gcc/ -I"$td/wild/*/include" -E -x c - <<< '#include <wild_test.h>
+#if WILD_OK != 42
+#error bad WILD_OK
+#endif' >/dev/null
+    ./gcc/xgcc -B./gcc/ --sysroot="$td/sys[1]" -E -x c - <<< '#include <sys_test.h>
+#if SYS_OK != 99
+#error bad SYS_OK
+#endif' >/dev/null
+    ./gcc/xgcc -B./gcc/ --sysroot="$td/sys[1]" -I'=/sw/*/include' -E -x c - <<< '#include <sys_test.h>
+#if SYS_OK != 99
+#error bad SYS_EQ_OK
+#endif' >/dev/null
+    ./gcc/xgcc -B./gcc/ -I"$td/lit[1]/include" -E -x c - <<< '#include <lit_test.h>
+#if LIT_OK != 77
+#error bad LIT_OK
+#endif' >/dev/null
+    if ./gcc/xgcc -B./gcc/ -Wmissing-include-dirs -Werror -I"$td/nonexistent_inc[1]" -E -x c - <<< 'int x;' >/dev/null 2>&1; then
+        echo "FAIL: -Wmissing-include-dirs did not trigger on unmatched user -I" >&2
+        return 1
+    fi
+    rm -rf "$td"
 }
 
 INSTALL() {

@@ -18,7 +18,77 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/disk-utils/fsck.c util-linux-
  static char *fsck_path;
  
  
-@@ -555,13 +556,18 @@
+@@ -543,25 +544,86 @@
+ 	return fs;
+ }
+ 
++static const char *fsck_next_path_colon(const char *p)
++{
++	while (*p != '\0' && *p != ':') {
++		if (*p == '[') {
++			const char *q = p + 1;
++			if (*q == '!' || *q == '^')
++				q++;
++			if (*q == ']')
++				q++;
++			while (*q != '\0' && *q != ']' && *q != '/') {
++				if (*q == '[' &&
++				    (q[1] == ':' || q[1] == '.' || q[1] == '=')) {
++					char ctype = q[1];
++					const char *inner = q + 2;
++					while (*inner != '\0' && *inner != '/' &&
++					       (ctype == '.' || *inner != ']') &&
++					       !(*inner == ctype && inner[1] == ']'))
++						inner++;
++					if (*inner == ctype && inner[1] == ']') {
++						q = inner + 2;
++						continue;
++					}
++				}
++				q++;
++			}
++			if (*q == ']') {
++				p = q + 1;
++				continue;
++			}
++		}
++		p++;
++	}
++	return p;
++}
++
++static void fsck_strip_empty_colons(char *s)
++{
++	char *d = s;
++	const char *p = s;
++
++	for (;;) {
++		const char *end = fsck_next_path_colon(p);
++		if (end > p) {
++			if (d != s)
++				*d++ = ':';
++			if (d != p)
++				memmove(d, p, (size_t)(end - p));
++			d += (size_t)(end - p);
++		}
++		if (*end == '\0')
++			break;
++		p = end + 1;
++	}
++	*d = '\0';
++}
++
+ /* Find fsck program for a given fs type. */
+ static int find_fsck(const char *type, char **progpath)
+ {
+-	char *s;
+ 	const char *tpl;
+ 	char *prog = NULL;
+ 	char *p = xstrdup(fsck_path);
+ 	int rc;
+ 
++	fsck_strip_empty_colons(p);
++
  	/* Are we looking for a program or just a type? */
  	tpl = (strncmp(type, "fsck.", 5) ? "%s/fsck.%s" : "%s/%s");
  
@@ -29,7 +99,7 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/disk-utils/fsck.c util-linux-
 -		free(prog);
 -		prog = NULL;
 +	glob_t g = { 0 };
-+	if (glob(p, GLOB_PATHS | GLOB_NOCHECK, NULL, &g) == 0) {
++	if (*p != '\0' && glob(p, GLOB_PATHS | GLOB_NOESCAPE | GLOB_NOCHECK, NULL, &g) == 0) {
 +		for (size_t i = 0; i < g.gl_pathc; i++) {
 +			xasprintf(&prog, tpl, g.gl_pathv[i], type);
 +			if (access(prog, X_OK) == 0)
@@ -39,7 +109,6 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/disk-utils/fsck.c util-linux-
 +		}
  	}
 +	globfree(&g);
-+	(void) s;
  
  	free(p);
  	rc = prog ? 1 : 0;
@@ -54,11 +123,10 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/include/pathnames.h util-linu
 -#undef _PATH_DEFPATH
 -
 -#ifdef USE_USRDIR_PATHS_ONLY
--# define _PATH_DEFPATH	        "/usr/local/bin:/usr/bin"
++#ifndef _PATH_DEFPATH
+ # define _PATH_DEFPATH	        "/usr/local/bin:/usr/bin"
 -#else
 -# define _PATH_DEFPATH	        "/usr/local/bin:/bin:/usr/bin"
-+#ifndef _PATH_DEFPATH
-+# define _PATH_DEFPATH	        "/sw/*/bin"
  #endif
  
 -#undef _PATH_DEFPATH_ROOT
@@ -89,37 +157,117 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/include/pathnames.h util-linu
 diff --no-dereference -Naur util-linux-2.42.2.orig/lib/configs.c util-linux-2.42.2/lib/configs.c
 --- util-linux-2.42.2.orig/lib/configs.c	2026-06-16 11:39:44.422424493 +0000
 +++ util-linux-2.42.2/lib/configs.c	2026-06-16 11:39:44.422424493 +0000
-@@ -8,8 +8,13 @@
+@@ -8,6 +8,7 @@
  #include <stdarg.h>
  #include <stdbool.h>
  #include <string.h>
 +#include <glob.h>
  #include <stdlib.h>
  #include <stdio.h>
-+
-+#ifndef GLOB_PATHS
-+# define GLOB_PATHS (1 << 29)
-+#endif
  #if defined(HAVE_SCANDIRAT) && defined(HAVE_OPENAT)
- #include <dirent.h>
- #endif
-@@ -242,17 +247,25 @@
+@@ -216,6 +217,62 @@
+ 	return 0;
+ }
+ 
++static const char *cfg_next_path_colon(const char *p)
++{
++	while (*p != '\0' && *p != ':') {
++		if (*p == '[') {
++			const char *q = p + 1;
++			if (*q == '!' || *q == '^')
++				q++;
++			if (*q == ']')
++				q++;
++			while (*q != '\0' && *q != ']' && *q != '/') {
++				if (*q == '[' &&
++				    (q[1] == ':' || q[1] == '.' || q[1] == '=')) {
++					char ctype = q[1];
++					const char *inner = q + 2;
++					while (*inner != '\0' && *inner != '/' &&
++					       (ctype == '.' || *inner != ']') &&
++					       !(*inner == ctype && inner[1] == ']'))
++						inner++;
++					if (*inner == ctype && inner[1] == ']') {
++						q = inner + 2;
++						continue;
++					}
++				}
++				q++;
++			}
++			if (*q == ']') {
++				p = q + 1;
++				continue;
++			}
++		}
++		p++;
++	}
++	return p;
++}
++
++static void cfg_strip_empty_colons(char *s)
++{
++	char *d = s;
++	const char *p = s;
++
++	for (;;) {
++		const char *end = cfg_next_path_colon(p);
++		if (end > p) {
++			if (d != s)
++				*d++ = ':';
++			if (d != p)
++				memmove(d, p, (size_t)(end - p));
++			d += (size_t)(end - p);
++		}
++		if (*end == '\0')
++			break;
++		p = end + 1;
++	}
++	*d = '\0';
++}
++
+ int ul_configs_file_list(struct list_head *file_list,
+ 			 const char *project,
+ 			 const char *etcdir,
+@@ -224,7 +281,7 @@
+ 			 const char *confname,
+ 			 const char *suffix)
+ {
+-	char *main_file = NULL;
++	char *main_file = NULL, *clean_usrdir = NULL;
+ 	struct list_head etc_list;
+ 	struct list_head run_list;
+ 	struct list_head usr_list;
+@@ -242,17 +299,39 @@
  		rundir = "";
  	if (!usrdir)
  		usrdir = "";
++#ifdef VENDOR_USRDIRS
 +	else if (strcmp(usrdir, "/usr/lib") == 0)
-+		usrdir = "/sw/*/etc:/sw/*/lib:/usr/lib";
++		usrdir = VENDOR_USRDIRS ":/usr/lib";
++#endif
  
  	if (!project)
  		project = "";
  
++	clean_usrdir = strdup(usrdir);
++	if (!clean_usrdir)
++		return -ENOMEM;
++	cfg_strip_empty_colons(clean_usrdir);
++
 +	glob_t usr_glob = { 0 };
-+	bool have_usr_glob = (*usrdir != '\0' &&
-+			      glob(usrdir, GLOB_PATHS | GLOB_NOCHECK, NULL, &usr_glob) == 0);
++	int grc = (*clean_usrdir != '\0')
++		? glob(clean_usrdir, GLOB_PATHS | GLOB_NOESCAPE | GLOB_NOCHECK, NULL, &usr_glob)
++		: GLOB_NOMATCH;
++	free(clean_usrdir);
++	if (grc == GLOB_NOSPACE) {
++		globfree(&usr_glob);
++		return -ENOMEM;
++	}
++	bool have_usr_glob = (grc == 0);
 +
  	/* Find "main" config file (but don't add to list yet) */
 -	/* Search order: /etc /run /usr */
-+	/* Search order: /etc /run /sw/*/etc /sw/*/lib /usr */
++	/* Search order: /etc /run vendor-usrdirs /usr */
  	main_file = main_configs(etcdir, project, confname, suffix);
  	if (main_file == NULL)
  		main_file = main_configs(rundir, project, confname, suffix);
@@ -132,22 +280,9 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/lib/configs.c util-linux-2.42
  
  	INIT_LIST_HEAD(&etc_list);
  	INIT_LIST_HEAD(&run_list);
-@@ -260,17 +273,37 @@
- 
- #if defined(HAVE_SCANDIRAT) && defined(HAVE_OPENAT)
- 	ret = read_dir(&etc_list, project, etcdir, confname, suffix);
--	if (ret == -ENOMEM)
-+	if (ret == -ENOMEM) {
-+		globfree(&usr_glob);
+@@ -267,9 +346,21 @@
+ 	if (ret == -ENOMEM)
  		goto finish;
-+	}
- 
- 	ret = read_dir(&run_list, project, rundir, confname, suffix);
--	if (ret == -ENOMEM)
-+	if (ret == -ENOMEM) {
-+		globfree(&usr_glob);
- 		goto finish;
-+	}
  
 -	ret = read_dir(&usr_list, project, usrdir, confname, suffix);
 -	if (ret == -ENOMEM)
@@ -159,22 +294,35 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/lib/configs.c util-linux-2.42
 +			ret = read_dir(&one_usr, project, usr_glob.gl_pathv[i], confname, suffix);
 +			if (ret == -ENOMEM) {
 +				ul_configs_free_list(&one_usr);
-+				globfree(&usr_glob);
 +				goto finish;
 +			}
 +			ret = config_merge_list(&usr_list, &one_usr);
 +			ul_configs_free_list(&one_usr);
-+			if (ret < 0) {
-+				globfree(&usr_glob);
++			if (ret < 0)
 +				goto finish;
-+			}
 +		}
 +	}
  #endif
-+	globfree(&usr_glob);
  
  	/* Merge drop-in directories in priority order (high to low) */
- 	if ((ret = config_merge_list(file_list, &etc_list)) < 0 ||
+@@ -281,13 +372,14 @@
+ 	/* Add main config file at the beginning (highest priority) */
+ 	if (main_file != NULL) {
+ 		ret = configs_refer_filename(file_list, main_file, 1);
+-		if (ret < 0) {
+-			free(main_file);
++		if (ret < 0)
+ 			goto finish;
+-		}
++		main_file = NULL;
+ 	}
+ 
+ finish:
++	free(main_file);
++	globfree(&usr_glob);
+ 	ul_configs_free_list(&etc_list);
+ 	ul_configs_free_list(&run_list);
+ 	ul_configs_free_list(&usr_list);
 diff --no-dereference -Naur util-linux-2.42.2.orig/lib/logindefs.c util-linux-2.42.2/lib/logindefs.c
 --- util-linux-2.42.2.orig/lib/logindefs.c	2026-06-16 11:39:44.422424493 +0000
 +++ util-linux-2.42.2/lib/logindefs.c	2026-06-16 11:39:44.422424493 +0000
@@ -186,7 +334,7 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/lib/logindefs.c util-linux-2.
  #include <limits.h>
  #include <stdio.h>
  #include <stdlib.h>
-@@ -157,9 +158,17 @@
+@@ -157,9 +158,21 @@
  
  static void load_defaults(void)
  {
@@ -196,12 +344,16 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/lib/logindefs.c util-linux-2.
 -	else
 +		return;
 +	}
++#ifdef VENDOR_LOGINDEFS
 +	glob_t g = { 0 };
-+	if (glob("/sw/*/etc/login.defs", 0, NULL, &g) == 0) {
-+		for (size_t i = 0; i < g.gl_pathc; i++)
-+			logindefs_load_file(g.gl_pathv[i]);
++	if (glob(VENDOR_LOGINDEFS, GLOB_PATHS | GLOB_NOESCAPE, NULL, &g) == 0) {
++		for (size_t i = 0; i < g.gl_pathc; i++) {
++			if (strcmp(g.gl_pathv[i], ".") != 0)
++				logindefs_load_file(g.gl_pathv[i]);
++		}
 +	}
 +	globfree(&g);
++#endif
 +	if (access(_PATH_LOGINDEFS, R_OK) == 0)
  		logindefs_load_file(_PATH_LOGINDEFS);
  }
@@ -217,15 +369,89 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/libmount/src/context.c util-l
  #include "mountP.h"
  #include "fileutils.h"
  #include "strutils.h"
-@@ -2272,14 +2273,16 @@
+@@ -2234,14 +2235,72 @@
+  * Returns: 0 on success or negative number in case of error. Note that success
+  * does not mean that there is any usable helper, you have to check cxt->helper.
+  */
++static const char *mnt_next_path_colon(const char *p)
++{
++	while (*p != '\0' && *p != ':') {
++		if (*p == '[') {
++			const char *q = p + 1;
++			if (*q == '!' || *q == '^')
++				q++;
++			if (*q == ']')
++				q++;
++			while (*q != '\0' && *q != ']' && *q != '/') {
++				if (*q == '[' &&
++				    (q[1] == ':' || q[1] == '.' || q[1] == '=')) {
++					char ctype = q[1];
++					const char *inner = q + 2;
++					while (*inner != '\0' && *inner != '/' &&
++					       (ctype == '.' || *inner != ']') &&
++					       !(*inner == ctype && inner[1] == ']'))
++						inner++;
++					if (*inner == ctype && inner[1] == ']') {
++						q = inner + 2;
++						continue;
++					}
++				}
++				q++;
++			}
++			if (*q == ']') {
++				p = q + 1;
++				continue;
++			}
++		}
++		p++;
++	}
++	return p;
++}
++
++static void mnt_strip_empty_colons(char *s)
++{
++	char *d = s;
++	const char *p = s;
++
++	for (;;) {
++		const char *end = mnt_next_path_colon(p);
++		if (end > p) {
++			if (d != s)
++				*d++ = ':';
++			if (d != p)
++				memmove(d, p, (size_t)(end - p));
++			d += (size_t)(end - p);
++		}
++		if (*end == '\0')
++			break;
++		p = end + 1;
++	}
++	*d = '\0';
++}
++
+ int mnt_context_prepare_helper(struct libmnt_context *cxt, const char *name,
+ 				const char *type)
+ {
+ 	char search_path[] = FS_SEARCH_PATH;		/* from config.h */
+-	char *p = NULL, *path;
++	char *path;
+ 	struct libmnt_ns *ns_old;
+ 	int rc = 0;
+ 
++	mnt_strip_empty_colons(search_path);
++
+ 	assert(cxt);
+ 	assert(cxt->fs);
+ 	assert((cxt->flags & MNT_FL_MOUNTFLAGS_MERGED));
+@@ -2272,14 +2331,16 @@
  
  	/* Ignore errors when search in $PATH and do not modify @rc
  	 */
 -	path = strtok_r(search_path, ":", &p);
 -	while (path) {
-+	(void) p;
 +	glob_t g = { 0 };
-+	if (glob(search_path, GLOB_PATHS | GLOB_NOCHECK, NULL, &g) == 0) {
++	if (*search_path != '\0' &&
++	    glob(search_path, GLOB_PATHS | GLOB_NOESCAPE | GLOB_NOCHECK, NULL, &g) == 0) {
 +	for (size_t gi = 0; gi < g.gl_pathc; gi++) {
  		char helper[PATH_MAX];
  		int len, found = 0;
@@ -237,7 +463,7 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/libmount/src/context.c util-l
  
  		if (len < 0 || (size_t) len >= sizeof(helper))
  			continue;
-@@ -2302,6 +2305,8 @@
+@@ -2302,6 +2363,8 @@
  		rc = strdup_to_struct_member(cxt, helper, helper);
  		break;
  	}
@@ -353,27 +579,37 @@ diff --no-dereference -Naur util-linux-2.42.2.orig/term-utils/agetty.c util-linu
  
  	free(options.osrelease);
  	free(options.autolog);
-@@ -1537,6 +1540,20 @@
+@@ -1536,6 +1539,18 @@
+ 	/* read the file only once */
  	if (!op->osrelease) {
  		fd = open(_PATH_OS_RELEASE_ETC, O_RDONLY);
- 		if (fd == -1) {
-+			static const char * const sw_pats[] = {
-+				"/sw/*/etc/os-release",
-+				"/sw/*/lib/os-release",
-+			};
-+			for (size_t i = 0; i < ARRAY_SIZE(sw_pats) && fd == -1; i++) {
-+				glob_t g = { 0 };
-+				if (glob(sw_pats[i], 0, NULL, &g) == 0) {
-+					for (size_t j = 0; j < g.gl_pathc && fd == -1; j++)
++#ifdef VENDOR_OS_RELEASE_PATH
++		if (fd == -1) {
++			glob_t g = { 0 };
++			if (glob(VENDOR_OS_RELEASE_PATH, GLOB_PATHS | GLOB_NOESCAPE, NULL, &g) == 0) {
++				for (size_t j = 0; j < g.gl_pathc && fd == -1; j++) {
++					if (strcmp(g.gl_pathv[j], ".") != 0)
 +						fd = open(g.gl_pathv[j], O_RDONLY);
 +				}
-+				globfree(&g);
 +			}
++			globfree(&g);
 +		}
-+		if (fd == -1) {
++#endif
+ 		if (fd == -1) {
  			fd = open(_PATH_OS_RELEASE_USR, O_RDONLY);
  			if (fd == -1) {
- 				log_warn(_("cannot open os-release file"));
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/run.sh util-linux-2.42.2/tests/run.sh
+--- util-linux-2.42.2.orig/tests/run.sh	2026-06-16 09:34:39.442347731 +0000
++++ util-linux-2.42.2/tests/run.sh	2026-06-16 09:34:39.442347731 +0000
+@@ -251,7 +251,7 @@
+ >| $top_builddir/tests/failures
+ printf "%s\n" ${comps[*]} |
+ 	sort |
+-	xargs -I '{}' -P $paraller_jobs -n 1 bash -c "'{}' \"$OPTS\" ||
++	xargs -I '{}' -P $paraller_jobs -n 1 bash -c "bash '{}' $OPTS ||
+ 		echo '{}' >> $top_builddir/tests/failures"
+ if [ $? != 0 ]; then
+ 	echo "xargs error" >&2
 diff --no-dereference -Naur util-linux-2.42.2.orig/text-utils/pg.c util-linux-2.42.2/text-utils/pg.c
 --- util-linux-2.42.2.orig/text-utils/pg.c	2026-06-16 11:39:44.565423872 +0000
 +++ util-linux-2.42.2/text-utils/pg.c	2026-06-16 11:39:44.565423872 +0000

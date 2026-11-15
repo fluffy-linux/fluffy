@@ -1,18 +1,24 @@
-diff --no-dereference -Naur Python-3.14.7.orig/Lib/_pyrepl/terminfo.py Python-3.14.7/Lib/_pyrepl/terminfo.py
---- Python-3.14.7.orig/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
-+++ Python-3.14.7/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
-@@ -99,8 +99,11 @@
-             if d:
-                 dirs.append(d)
+diff --no-dereference -Naur Python-3.14.7.orig/configure Python-3.14.7/configure
+--- Python-3.14.7.orig/configure	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/configure	2026-08-05 10:29:49.000000000 +0000
+@@ -31104,7 +31104,7 @@
  
-+    import glob
-+    dirs.extend(sorted(glob.glob("/sw/*/share/terminfo")))
-     dirs.extend(
-         [
-+            "/sw/ncurses/share/terminfo",
-             "/etc/terminfo",
-             "/lib/terminfo",
-             "/usr/lib/terminfo",
+     if ! $found; then
+         OPENSSL_INCLUDES=
+-        for ssldir in $ssldirs; do
++        for ssldir in /sw/* $ssldirs; do
+             { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for include/openssl/ssl.h in $ssldir" >&5
+ printf %s "checking for include/openssl/ssl.h in $ssldir... " >&6; }
+             if test -f "$ssldir/include/openssl/ssl.h"; then
+diff --no-dereference -Naur Python-3.14.7.orig/install-sh Python-3.14.7/install-sh
+--- Python-3.14.7.orig/install-sh	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/install-sh	2026-08-05 10:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/sw/bash/bin/bash
+ # install - install a program, script, or datafile
+ 
+ scriptversion=2023-11-23.18; # UTC
 diff --no-dereference -Naur Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib Python-3.14.7/Lib/ctypes/macholib/fetch_macholib
 --- Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholib	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/ctypes/macholib/fetch_macholib	2026-08-05 10:29:49.000000000 +0000
@@ -23,205 +29,340 @@ diff --no-dereference -Naur Python-3.14.7.orig/Lib/ctypes/macholib/fetch_macholi
 diff --no-dereference -Naur Python-3.14.7.orig/Lib/glob.py Python-3.14.7/Lib/glob.py
 --- Python-3.14.7.orig/Lib/glob.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/glob.py	2026-08-05 10:29:49.000000000 +0000
-@@ -1,14 +1,9 @@
- """Filename globbing utility."""
- 
--import contextlib
- import os
--import re
--import fnmatch
--import functools
--import itertools
--import operator
+@@ -10,6 +10,73 @@
  import stat
  import sys
-+import posix
  
++try:
++    import posix as _posix
++except ImportError:
++    _posix = None
++
++try:
++    import _locale
++except ImportError:
++    _locale = None
++
++_HAS_POSIX_FAST_GLOB = (
++    _posix is not None
++    and hasattr(_posix, "GLOB_KEEP_SLASHES")
++    and hasattr(_posix, "GLOB_SKIPDOTS")
++)
++if _HAS_POSIX_FAST_GLOB:
++    _POSIX_GLOB_BASE = (
++        _posix.GLOB_NOESCAPE | _posix.GLOB_KEEP_SLASHES | _posix.GLOB_SKIPDOTS
++    )
++    _POSIX_GLOB_HIDDEN = (
++        _posix.GLOB_PERIOD | getattr(_posix, "GLOB_DOTDOT", 0)
++    )
++
++
++def _is_utf8_fs():
++    return sys.getfilesystemencoding().lower() in ("utf-8", "utf8")
++
++
++def _is_valid_utf8(s):
++    if s.isascii():
++        return True
++    try:
++        s.encode("utf-8")
++        return True
++    except UnicodeEncodeError:
++        return False
++
++
++def _check_fast_brackets(pat):
++    i = 0
++    n = len(pat)
++    need_c_collate = False
++    while i < n:
++        if pat[i] == "[":
++            j = i + 1
++            if j < n and pat[j] in "!^":
++                return False
++            body_start = j
++            if j < n and pat[j] == "]":
++                j += 1
++            close = pat.find("]", j)
++            if close != -1 and "/" not in pat[body_start:close]:
++                body = pat[body_start:close]
++                if not body.isascii():
++                    return False
++                if "-" in body[1:-1]:
++                    need_c_collate = True
++                i = close + 1
++                continue
++        i += 1
++    if need_c_collate:
++        return (
++            _locale is not None
++            and _locale.setlocale(_locale.LC_COLLATE, None) in ("C", "POSIX")
++        )
++    return True
++
  
  __all__ = ["glob", "iglob", "escape", "translate"]
-@@ -40,6 +35,11 @@
+ 
+@@ -40,6 +107,36 @@
      If `recursive` is true, the pattern '**' will match any files and
      zero or more directories and subdirectories.
      """
-+    if (root_dir is None and dir_fd is None and not recursive and not include_hidden
-+            and isinstance(pathname, str) and not pathname.startswith('.') and '/.' not in pathname):
-+        sys.audit("glob.glob", pathname, recursive)
-+        sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
-+        return posix._glob(pathname)
++    if (
++        _HAS_POSIX_FAST_GLOB
++        and dir_fd is None
++        and isinstance(pathname, str)
++        and pathname
++        and "\x00" not in pathname
++        and ("*" in pathname or "[" in pathname)
++        and not isinstance(root_dir, bytes)
++        and not (isinstance(root_dir, str) and "\x00" in root_dir)
++        and os.path.normcase("abCD") == "abCD"
++    ):
++        can_fast = (
++            not (recursive and "**" in pathname)
++            and "//" not in pathname.rstrip("/")
++            and "?" not in pathname
++            and "[!" not in pathname
++            and "[^" not in pathname
++            and "[:" not in pathname
++            and "[." not in pathname
++            and "[=" not in pathname
++            and (pathname.isascii() or (_is_utf8_fs() and _is_valid_utf8(pathname)))
++            and ("[" not in pathname or _check_fast_brackets(pathname))
++        )
++        if can_fast:
++            sys.audit("glob.glob", pathname, recursive)
++            sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
++            flags = _POSIX_GLOB_BASE
++            if include_hidden:
++                flags |= _POSIX_GLOB_HIDDEN
++            return _posix._glob(pathname, flags, root_dir)
      return list(iglob(pathname, root_dir=root_dir, dir_fd=dir_fd, recursive=recursive,
                        include_hidden=include_hidden))
  
-@@ -82,6 +82,7 @@
-         try:
-             s = next(it)  # skip empty string
-             if s:
-+                import itertools
-                 it = itertools.chain((s,), it)
-         except StopIteration:
-             pass
-@@ -133,6 +134,7 @@
- # takes a literal basename (so it only has to check for its existence).
- 
- def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
-+    import fnmatch
-     names = _listdir(dirname, dir_fd, dironly)
-     if not (include_hidden or _ishidden(pattern)):
-         names = (x for x in names if not _ishidden(x))
-@@ -211,6 +213,7 @@
-         return
- 
- def _listdir(dirname, dir_fd, dironly):
-+    import contextlib
-     with contextlib.closing(_iterdir(dirname, dir_fd, dironly)) as it:
-         return list(it)
- 
-@@ -254,15 +257,11 @@
-         return dirname or basename
-     return os.path.join(dirname, basename)
- 
--magic_check = re.compile('([*?[])')
--magic_check_bytes = re.compile(b'([*?[])')
--
- def has_magic(s):
-     if isinstance(s, bytes):
--        match = magic_check_bytes.search(s)
-+        return b'*' in s or b'?' in s or b'[' in s
-     else:
--        match = magic_check.search(s)
--    return match is not None
-+        return '*' in s or '?' in s or '[' in s
- 
- def _ishidden(path):
-     return path[0] in ('.', b'.'[0])
-@@ -276,13 +275,14 @@
- def escape(pathname):
-     """Escape all special characters.
-     """
-+    import re
-     # Escaping is done by wrapping any of "*?[" between square brackets.
-     # Metacharacters do not work in the drive part and shouldn't be escaped.
-     drive, pathname = os.path.splitdrive(pathname)
-     if isinstance(pathname, bytes):
--        pathname = magic_check_bytes.sub(br'[\1]', pathname)
-+        pathname = re.sub(b'([*?[])', br'[\1]', pathname)
-     else:
--        pathname = magic_check.sub(r'[\1]', pathname)
-+        pathname = re.sub('([*?[])', r'[\1]', pathname)
-     return drive + pathname
- 
- 
-@@ -304,6 +304,8 @@
-     used to split the pattern into segments and match path separators.  If
-     not given, os.path.sep and os.path.altsep (where available) are used.
-     """
-+    import re
-+    import fnmatch
-     if not seps:
-         if os.path.altsep:
-             seps = (os.path.sep, os.path.altsep)
-@@ -346,13 +348,20 @@
-     return fr'(?s:{res})\z'
- 
- 
--@functools.lru_cache(maxsize=512)
-+_compile_pattern_cache = {}
- def _compile_pattern(pat, seps, case_sensitive, recursive=True):
-     """Compile given glob pattern to a re.Pattern object (observing case
-     sensitivity)."""
-+    key = (pat, seps, case_sensitive, recursive)
-+    if key in _compile_pattern_cache:
-+        return _compile_pattern_cache[key]
-+    import re
-     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-     regex = translate(pat, recursive=recursive, include_hidden=True, seps=seps)
--    return re.compile(regex, flags=flags).match
-+    res = re.compile(regex, flags=flags).match
-+    if len(_compile_pattern_cache) < 512:
-+        _compile_pattern_cache[key] = res
-+    return res
- 
- 
- class _GlobberBase:
-@@ -402,7 +411,7 @@
-             selector = self.recursive_selector
-         elif part in _special_parts:
-             selector = self.special_selector
--        elif not self.case_pedantic and magic_check.search(part) is None:
-+        elif not self.case_pedantic and not has_magic(part):
-             selector = self.literal_selector
-         else:
-             selector = self.wildcard_selector
-@@ -427,7 +436,7 @@
-         # Optimization: consume and join any subsequent literal parts here,
-         # rather than leaving them for the next selector. This reduces the
-         # number of string concatenation operations.
--        while parts and magic_check.search(parts[-1]) is None:
-+        while parts and not has_magic(parts[-1]):
-             part += self.sep + parts.pop()
-         if parts:
-             part += self.sep
-@@ -546,7 +555,9 @@
-     """Provides shell-style pattern matching and globbing for string paths.
-     """
-     lexists = staticmethod(os.path.lexists)
--    concat_path = operator.add
-+    @staticmethod
-+    def concat_path(path, text):
-+        return path + text
- 
-     @staticmethod
-     def scandir(path):
 diff --no-dereference -Naur Python-3.14.7.orig/Lib/os.py Python-3.14.7/Lib/os.py
 --- Python-3.14.7.orig/Lib/os.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/os.py	2026-08-05 10:29:49.000000000 +0000
-@@ -687,6 +687,15 @@
+@@ -68,6 +68,10 @@
+         from posix import _create_environ
+     except ImportError:
+         pass
++    try:
++        from posix import _glob
++    except ImportError:
++        pass
+ 
+     import posix
+     __all__.extend(_get_exports_list(posix))
+@@ -646,6 +650,109 @@
+     raise last_exc
+ 
+ 
++def _split_colon_path(path_list):
++    if isinstance(path_list, bytes):
++        if b'[' not in path_list:
++            return path_list.split(b':')
++        colon = ord(':')
++        lbrack = ord('[')
++        rbrack = ord(']')
++        slash = ord('/')
++        bang = ord('!')
++        caret = ord('^')
++        dot = ord('.')
++        equal = ord('=')
++        n = len(path_list)
++        res = []
++        seg_start = 0
++        i = 0
++        while i < n:
++            ch = path_list[i]
++            if ch == colon:
++                res.append(path_list[seg_start:i])
++                seg_start = i + 1
++                i += 1
++            elif ch == lbrack:
++                j = i + 1
++                if j < n and (path_list[j] == bang or path_list[j] == caret):
++                    j += 1
++                if j < n and path_list[j] == rbrack:
++                    j += 1
++                while j < n and path_list[j] != rbrack and path_list[j] != slash:
++                    if (
++                        path_list[j] == lbrack
++                        and j + 1 < n
++                        and path_list[j + 1] in (colon, dot, equal)
++                    ):
++                        kind = path_list[j + 1]
++                        k = j + 2
++                        while (
++                            k + 1 < n
++                            and path_list[k] != slash
++                            and (kind == dot or path_list[k] != rbrack)
++                        ):
++                            if path_list[k] == kind and path_list[k + 1] == rbrack:
++                                j = k + 2
++                                break
++                            k += 1
++                        else:
++                            j += 1
++                            continue
++                        continue
++                    j += 1
++                if j < n and path_list[j] == rbrack:
++                    i = j + 1
++                else:
++                    i += 1
++            else:
++                i += 1
++        res.append(path_list[seg_start:n])
++        return res
++
++    if '[' not in path_list:
++        return path_list.split(':')
++    n = len(path_list)
++    res = []
++    seg_start = 0
++    i = 0
++    while i < n:
++        ch = path_list[i]
++        if ch == ':':
++            res.append(path_list[seg_start:i])
++            seg_start = i + 1
++            i += 1
++        elif ch == '[':
++            j = i + 1
++            if j < n and path_list[j] in ('!', '^'):
++                j += 1
++            if j < n and path_list[j] == ']':
++                j += 1
++            while j < n and path_list[j] != ']' and path_list[j] != '/':
++                if (
++                    path_list[j] == '['
++                    and j + 1 < n
++                    and path_list[j + 1] in (':', '.', '=')
++                ):
++                    sub_end = path_list[j + 1] + ']'
++                    k = path_list.find(sub_end, j + 2)
++                    if (
++                        k != -1
++                        and '/' not in path_list[j + 2:k]
++                        and (path_list[j + 1] == '.' or ']' not in path_list[j + 2:k])
++                    ):
++                        j = k + 2
++                        continue
++                j += 1
++            if j < n and path_list[j] == ']':
++                i = j + 1
++            else:
++                i += 1
++        else:
++            i += 1
++    res.append(path_list[seg_start:n])
++    return res
++
++
+ def get_exec_path(env=None):
+     """Returns the sequence of directories that will be searched for the
+     named executable (similar to a shell) when launching a process.
+@@ -687,6 +794,18 @@
  
      if path_list is None:
          path_list = defpath
-+    if '*' in path_list or '?' in path_list:
-+        import glob
++    if (
++        name == 'posix'
++        and pathsep == ':'
++        and ('*' in path_list or '?' in path_list or '[' in path_list)
++    ):
 +        expanded = []
-+        for d in path_list.split(pathsep):
-+            if '*' in d or '?' in d:
-+                expanded.extend(sorted(glob.glob(d)))
++        for d in _split_colon_path(path_list):
++            if '*' in d or '?' in d or '[' in d:
++                expanded.extend(_glob(d, GLOB_NOESCAPE))
 +            else:
 +                expanded.append(d)
 +        return expanded
      return path_list.split(pathsep)
  
  
+diff --no-dereference -Naur Python-3.14.7.orig/Lib/_pyrepl/terminfo.py Python-3.14.7/Lib/_pyrepl/terminfo.py
+--- Python-3.14.7.orig/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Lib/_pyrepl/terminfo.py	2026-08-05 10:29:49.000000000 +0000
+@@ -95,13 +95,26 @@
+     # Check TERMINFO_DIRS
+     terminfo_dirs = os.environ.get("TERMINFO_DIRS", "")
+     if terminfo_dirs:
+-        for d in terminfo_dirs.split(":"):
++        raw_dirs = (
++            os._split_colon_path(terminfo_dirs)
++            if os.name == "posix"
++            else terminfo_dirs.split(":")
++        )
++        for d in raw_dirs:
+             if d:
+-                dirs.append(d)
++                if os.name == "posix" and ("*" in d or "?" in d or "[" in d):
++                    import posix
++                    dirs.extend(posix._glob(d, posix.GLOB_ONLYDIR | posix.GLOB_NOESCAPE))
++                else:
++                    dirs.append(d)
+ 
++    dirs.append("/etc/terminfo")
++    if os.name == "posix":
++        import posix
++        dirs.extend(posix._glob("/sw/*/share/terminfo", posix.GLOB_ONLYDIR | posix.GLOB_NOESCAPE))
+     dirs.extend(
+         [
+-            "/etc/terminfo",
++            "/sw/ncurses/share/terminfo",
+             "/lib/terminfo",
+             "/usr/lib/terminfo",
+             "/usr/share/terminfo",
 diff --no-dereference -Naur Python-3.14.7.orig/Lib/shutil.py Python-3.14.7/Lib/shutil.py
 --- Python-3.14.7.orig/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/shutil.py	2026-08-05 10:29:49.000000000 +0000
-@@ -1595,11 +1595,28 @@
+@@ -1595,10 +1595,41 @@
  
          if use_bytes:
              path = os.fsencode(path)
-+            has_wildcard = b'*' in path or b'?' in path
-             path = path.split(os.fsencode(os.pathsep))
+-            path = path.split(os.fsencode(os.pathsep))
++            has_wildcard = (
++                os.name == "posix"
++                and (b'*' in path or b'?' in path or b'[' in path)
++            )
++            if has_wildcard and os.pathsep == ':':
++                path = os._split_colon_path(path)
++            else:
++                path = path.split(os.fsencode(os.pathsep))
          else:
              path = os.fsdecode(path)
-+            has_wildcard = '*' in path or '?' in path
-             path = path.split(os.pathsep)
- 
-+        if has_wildcard:
-+            import glob
-+            expanded = []
-+            for d in path:
-+                d_str = os.fsdecode(d) if use_bytes else d
-+                if '*' in d_str or '?' in d_str:
-+                    matches = sorted(glob.glob(d_str))
-+                    if use_bytes:
-+                        expanded.extend(os.fsencode(m) for m in matches)
-+                    else:
-+                        expanded.extend(matches)
-+                else:
-+                    expanded.append(d)
-+            path = expanded
+-            path = path.split(os.pathsep)
++            has_wildcard = (
++                os.name == "posix"
++                and ('*' in path or '?' in path or '[' in path)
++            )
++            if has_wildcard and os.pathsep == ':':
++                path = os._split_colon_path(path)
++            else:
++                path = path.split(os.pathsep)
 +
++        if has_wildcard:
++            import posix
++            expanded = []
++            if use_bytes:
++                for d in path:
++                    if b'*' in d or b'?' in d or b'[' in d:
++                        expanded.extend(posix._glob(d, posix.GLOB_NOESCAPE))
++                    else:
++                        expanded.append(d)
++            else:
++                for d in path:
++                    if '*' in d or '?' in d or '[' in d:
++                        expanded.extend(posix._glob(d, posix.GLOB_NOESCAPE))
++                    else:
++                        expanded.append(d)
++            path = expanded
+ 
          if sys.platform == "win32" and _win_path_needs_curdir(cmd, mode):
              curdir = os.curdir
-             if use_bytes:
 diff --no-dereference -Naur Python-3.14.7.orig/Lib/site.py Python-3.14.7/Lib/site.py
 --- Python-3.14.7.orig/Lib/site.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/site.py	2026-08-05 10:29:49.000000000 +0000
@@ -234,18 +375,21 @@ diff --no-dereference -Naur Python-3.14.7.orig/Lib/site.py Python-3.14.7/Lib/sit
  # Enable per user site-packages directory
  # set it to False to disable the feature or True to force the feature
  ENABLE_USER_SITE = None
-@@ -394,6 +394,15 @@
+@@ -394,6 +394,18 @@
      if prefixes is None:
          prefixes = PREFIXES
  
-+    expanded_prefixes = []
-+    for prefix in prefixes:
-+        if prefix and ('*' in prefix or '?' in prefix):
-+            import glob
-+            expanded_prefixes.extend(sorted(glob.glob(prefix)))
-+        else:
-+            expanded_prefixes.append(prefix)
-+    prefixes = expanded_prefixes
++    if os.name == 'posix':
++        expanded_prefixes = []
++        for prefix in prefixes:
++            if prefix and ('*' in prefix or '?' in prefix or '[' in prefix):
++                import posix
++                expanded_prefixes.extend(
++                    posix._glob(prefix, posix.GLOB_ONLYDIR | posix.GLOB_NOESCAPE)
++                )
++            else:
++                expanded_prefixes.append(prefix)
++        prefixes = expanded_prefixes
 +
      for prefix in prefixes:
          if not prefix or prefix in seen:
@@ -253,12 +397,16 @@ diff --no-dereference -Naur Python-3.14.7.orig/Lib/site.py Python-3.14.7/Lib/sit
 diff --no-dereference -Naur Python-3.14.7.orig/Lib/subprocess.py Python-3.14.7/Lib/subprocess.py
 --- Python-3.14.7.orig/Lib/subprocess.py	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Lib/subprocess.py	2026-08-05 10:29:49.000000000 +0000
-@@ -1847,7 +1847,7 @@
+@@ -1846,8 +1846,10 @@
+ 
              if shell:
                  # On Android the default shell is at '/system/bin/sh'.
-                 unix_shell = ('/system/bin/sh' if
+-                unix_shell = ('/system/bin/sh' if
 -                          hasattr(sys, 'getandroidapilevel') else '/bin/sh')
-+                          hasattr(sys, 'getandroidapilevel') else '/sw/bash/bin/bash')
++                unix_shell = (
++                    '/system/bin/sh' if hasattr(sys, 'getandroidapilevel')
++                    else ('/sw/bash/bin/bash' if os.path.exists('/sw/bash/bin/bash') else '/bin/sh')
++                )
                  args = [unix_shell, "-c"] + args
                  if executable:
                      args[0] = executable
@@ -283,6 +431,820 @@ diff --no-dereference -Naur Python-3.14.7.orig/Misc/python-config.sh.in Python-3
  
  # Keep this script in sync with python-config.in
  
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/getpath.c Python-3.14.7/Modules/getpath.c
+--- Python-3.14.7.orig/Modules/getpath.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/getpath.c	2026-08-05 10:29:49.000000000 +0000
+@@ -24,6 +24,10 @@
+ #  include <dlfcn.h>
+ #endif
+ 
++#ifndef MS_WINDOWS
++#  include <glob.h>
++#endif
++
+ /* Reference the precompiled getpath.py */
+ #include "Python/frozen_modules/getpath.h"
+ 
+@@ -563,10 +567,72 @@
+ }
+ 
+ 
++static PyObject *
++getpath_glob(PyObject *Py_UNUSED(self), PyObject *args)
++{
++    PyObject *pathobj;
++    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
++        return NULL;
++    }
++    wchar_t *wpath = PyUnicode_AsWideCharString(pathobj, NULL);
++    if (!wpath) {
++        return NULL;
++    }
++    char *pattern = Py_EncodeLocale(wpath, NULL);
++    PyMem_Free(wpath);
++    if (!pattern) {
++        PyErr_NoMemory();
++        return NULL;
++    }
++    PyObject *list = PyList_New(0);
++    if (!list) {
++        PyMem_Free(pattern);
++        return NULL;
++    }
++#ifndef MS_WINDOWS
++    glob_t g = { 0 };
++    int rc = glob(pattern, GLOB_ONLYDIR | GLOB_NOESCAPE, NULL, &g);
++    PyMem_Free(pattern);
++    if (rc == GLOB_NOSPACE) {
++        globfree(&g);
++        Py_DECREF(list);
++        PyErr_NoMemory();
++        return NULL;
++    }
++    if (rc == 0) {
++        for (size_t i = 0; i < g.gl_pathc; i++) {
++            size_t len;
++            wchar_t *w = Py_DecodeLocale(g.gl_pathv[i], &len);
++            if (!w) {
++                Py_DECREF(list);
++                globfree(&g);
++                PyErr_NoMemory();
++                return NULL;
++            }
++            PyObject *item = PyUnicode_FromWideChar(w, len);
++            PyMem_RawFree(w);
++            if (!item || PyList_Append(list, item) < 0) {
++                Py_XDECREF(item);
++                Py_DECREF(list);
++                globfree(&g);
++                return NULL;
++            }
++            Py_DECREF(item);
++        }
++    }
++    globfree(&g);
++#else
++    PyMem_Free(pattern);
++#endif
++    return list;
++}
++
++
+ static PyMethodDef getpath_methods[] = {
+     {"abspath", getpath_abspath, METH_VARARGS, NULL},
+     {"basename", getpath_basename, METH_VARARGS, NULL},
+     {"dirname", getpath_dirname, METH_VARARGS, NULL},
++    {"glob", getpath_glob, METH_VARARGS, NULL},
+     {"hassuffix", getpath_hassuffix, METH_VARARGS, NULL},
+     {"isabs", getpath_isabs, METH_VARARGS, NULL},
+     {"isdir", getpath_isdir, METH_VARARGS, NULL},
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/getpath.py Python-3.14.7/Modules/getpath.py
+--- Python-3.14.7.orig/Modules/getpath.py	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/getpath.py	2026-08-05 10:29:49.000000000 +0000
+@@ -211,6 +211,47 @@
+         prefix = dirname(prefix)
+ 
+ 
++def split_path(s, delim):
++    if delim != ':' or '[' not in s:
++        return s.split(delim)
++    n = len(s)
++    res = []
++    seg_start = 0
++    i = 0
++    while i < n:
++        ch = s[i]
++        if ch == ':':
++            res.append(s[seg_start:i])
++            seg_start = i + 1
++            i += 1
++        elif ch == '[':
++            j = i + 1
++            if j < n and s[j] in ('!', '^'):
++                j += 1
++            if j < n and s[j] == ']':
++                j += 1
++            while j < n and s[j] != ']' and s[j] != '/':
++                if s[j] == '[' and j + 1 < n and s[j + 1] in (':', '.', '='):
++                    sub_end = s[j + 1] + ']'
++                    k = s.find(sub_end, j + 2)
++                    if (
++                        k != -1
++                        and '/' not in s[j + 2:k]
++                        and (s[j + 1] == '.' or ']' not in s[j + 2:k])
++                    ):
++                        j = k + 2
++                        continue
++                j += 1
++            if j < n and s[j] == ']':
++                i = j + 1
++            else:
++                i += 1
++        else:
++            i += 1
++    res.append(s[seg_start:n])
++    return res
++
++
+ # ******************************************************************************
+ # READ VARIABLES FROM config
+ # ******************************************************************************
+@@ -281,11 +322,20 @@
+     # Resolve names against PATH.
+     # NOTE: The use_environment value is ignored for this lookup.
+     # To properly isolate, launch Python with a full path.
+-    for p in ENV_PATH.split(DELIM):
+-        p = joinpath(p, program_name)
+-        if isxfile(p):
+-            executable = p
+-            break
++    for d in split_path(ENV_PATH, DELIM):
++        if '*' in d or '?' in d or '[' in d:
++            for gd in glob(d):
++                p = joinpath(gd, program_name)
++                if isxfile(p):
++                    executable = p
++                    break
++            if executable:
++                break
++        else:
++            p = joinpath(d, program_name)
++            if isxfile(p):
++                executable = p
++                break
+ 
+ if not executable:
+     executable = ''
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/makesetup Python-3.14.7/Modules/makesetup
+--- Python-3.14.7.orig/Modules/makesetup	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/makesetup	2026-08-05 10:29:49.000000000 +0000
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#!/sw/bash/bin/bash
+ set -e
+ 
+ # Convert templates into Makefile and config.c, based on the module
+diff --no-dereference -Naur Python-3.14.7.orig/Modules/posixmodule.c Python-3.14.7/Modules/posixmodule.c
+--- Python-3.14.7.orig/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
++++ Python-3.14.7/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
+@@ -17113,6 +17113,565 @@
+ }
+ #endif /* __EMSCRIPTEN__ */
+ 
++#ifndef MS_WINDOWS
++#include <glob.h>
++
++static int
++os_glob_allowed_flags(void)
++{
++    int allowed = 0;
++#ifdef GLOB_ERR
++    allowed |= GLOB_ERR;
++#endif
++#ifdef GLOB_MARK
++    allowed |= GLOB_MARK;
++#endif
++#ifdef GLOB_NOSORT
++    allowed |= GLOB_NOSORT;
++#endif
++#ifdef GLOB_NOCHECK
++    allowed |= GLOB_NOCHECK;
++#endif
++#ifdef GLOB_NOESCAPE
++    allowed |= GLOB_NOESCAPE;
++#endif
++#ifdef GLOB_PERIOD
++    allowed |= GLOB_PERIOD;
++#endif
++#ifdef GLOB_BRACE
++    allowed |= GLOB_BRACE;
++#endif
++#ifdef GLOB_NOMAGIC
++    allowed |= GLOB_NOMAGIC;
++#endif
++#ifdef GLOB_TILDE
++    allowed |= GLOB_TILDE;
++#endif
++#ifdef GLOB_ONLYDIR
++    allowed |= GLOB_ONLYDIR;
++#endif
++#ifdef GLOB_TILDE_CHECK
++    allowed |= GLOB_TILDE_CHECK;
++#endif
++#ifdef GLOB_PATHS
++    allowed |= GLOB_PATHS;
++#endif
++#ifdef GLOB_KEEP_SLASHES
++    allowed |= GLOB_KEEP_SLASHES;
++#endif
++#ifdef GLOB_EXTMATCH
++    allowed |= GLOB_EXTMATCH;
++#endif
++#ifdef GLOB_CASEFOLD
++    allowed |= GLOB_CASEFOLD;
++#endif
++#ifdef GLOB_SKIPDOTS
++    allowed |= GLOB_SKIPDOTS;
++#endif
++#ifdef GLOB_GLOBSTAR
++    allowed |= GLOB_GLOBSTAR;
++#endif
++#ifdef GLOB_DOTDOT
++    allowed |= GLOB_DOTDOT;
++#endif
++    return allowed;
++}
++
++static int
++os_glob_pat_has_magic(const char *pat, int flags)
++{
++    int quote = !(flags & GLOB_NOESCAPE);
++#ifdef GLOB_CASEFOLD
++    if (flags & GLOB_CASEFOLD) {
++        return 1;
++    }
++#endif
++#ifdef GLOB_BRACE
++    int gbrace = (flags & GLOB_BRACE) != 0;
++#else
++    int gbrace = 0;
++#endif
++#ifdef GLOB_EXTMATCH
++    int extm = (flags & GLOB_EXTMATCH) != 0;
++#else
++    int extm = 0;
++#endif
++    int gtilde = 0;
++#ifdef GLOB_TILDE
++    if (flags & GLOB_TILDE) gtilde = 1;
++#endif
++#ifdef GLOB_TILDE_CHECK
++    if (flags & GLOB_TILDE_CHECK) gtilde = 1;
++#endif
++    if (gtilde && pat[0] == '~') {
++        return 1;
++    }
++    int has_brace = 0;
++    for (const char *p = pat; *p != '\0'; p++) {
++        switch (*p) {
++        case '\\':
++            if (quote && p[1] != '\0') {
++                p++;
++            }
++            break;
++        case '*':
++        case '?':
++        case '[':
++            return 1;
++        case '+':
++        case '@':
++        case '!':
++            if (extm && p[1] == '(') {
++                return 1;
++            }
++            break;
++        case '{':
++            if (gbrace) {
++                has_brace = 1;
++            }
++            break;
++        case '}':
++            if (has_brace) {
++                return 1;
++            }
++            break;
++        default:
++            break;
++        }
++    }
++    return 0;
++}
++
++static int
++os_glob_root_needs_escape(const char *root_str, size_t rlen, int flags)
++{
++#ifdef GLOB_PATHS
++    int gpaths = (flags & GLOB_PATHS) != 0;
++#else
++    int gpaths = 0;
++#endif
++#ifdef GLOB_EXTMATCH
++    int extm = (flags & GLOB_EXTMATCH) != 0;
++#else
++    int extm = 0;
++#endif
++#ifdef GLOB_BRACE
++    int gbrace = (flags & GLOB_BRACE) != 0;
++#else
++    int gbrace = 0;
++#endif
++    int gtilde = 0;
++#ifdef GLOB_TILDE
++    if (flags & GLOB_TILDE) gtilde = 1;
++#endif
++#ifdef GLOB_TILDE_CHECK
++    if (flags & GLOB_TILDE_CHECK) gtilde = 1;
++#endif
++    for (size_t i = 0; i < rlen; i++) {
++        char c = root_str[i];
++        if (c == '*' || c == '?' || c == '['
++            || (gpaths && c == ':')
++            || (extm && c == '(')
++            || (gbrace && (c == '{' || c == '}'))
++            || (gtilde && i == 0 && c == '~')) {
++            return 1;
++        }
++    }
++    return 0;
++}
++
++static char *
++os_glob_build_rooted_pattern(const char *root_str, size_t rlen,
++                             const char *pat_str, size_t pat_len, int flags,
++                             int *out_call_flags, size_t *out_esc_prefix_len,
++                             int *out_doubled_bs)
++{
++    int force_bs = ((flags & GLOB_NOESCAPE)
++                    && os_glob_root_needs_escape(root_str, rlen, flags));
++    int call_flags = force_bs ? (flags & ~GLOB_NOESCAPE) : flags;
++    *out_call_flags = call_flags;
++    *out_doubled_bs = force_bs;
++
++    /* Worst case: each byte in root_str expands to 3 bytes ("[c]"), and under
++       force_bs each '\\' in pat_str doubles to 2 bytes, plus '/' and NUL. */
++    if (pat_len > SIZE_MAX / 2
++        || rlen > (SIZE_MAX - pat_len * 2 - 2) / 3) {
++        PyErr_NoMemory();
++        return NULL;
++    }
++    char *buf = PyMem_Malloc(rlen * 3 + 1 + pat_len * 2 + 1);
++    if (buf == NULL) {
++        PyErr_NoMemory();
++        return NULL;
++    }
++    char *d = buf;
++    if (rlen == 1 && root_str[0] == '/') {
++        *d++ = '/';
++    } else {
++        int noesc = (call_flags & GLOB_NOESCAPE) != 0;
++#ifdef GLOB_PATHS
++        int gpaths = (call_flags & GLOB_PATHS) != 0;
++#else
++        int gpaths = 0;
++#endif
++#ifdef GLOB_EXTMATCH
++        int extm = (call_flags & GLOB_EXTMATCH) != 0;
++#else
++        int extm = 0;
++#endif
++#ifdef GLOB_BRACE
++        int gbrace = (call_flags & GLOB_BRACE) != 0;
++#else
++        int gbrace = 0;
++#endif
++        int gtilde = 0;
++#ifdef GLOB_TILDE
++        if (call_flags & GLOB_TILDE) gtilde = 1;
++#endif
++#ifdef GLOB_TILDE_CHECK
++        if (call_flags & GLOB_TILDE_CHECK) gtilde = 1;
++#endif
++        for (size_t i = 0; i < rlen; i++) {
++            char c = root_str[i];
++            if (noesc) {
++                if (c == '*' || c == '?' || c == '['
++                    || (gpaths && c == ':')
++                    || (extm && c == '(')
++                    || (gbrace && (c == '{' || c == '}'))
++                    || (gtilde && i == 0 && c == '~')) {
++                    *d++ = '[';
++                    *d++ = c;
++                    *d++ = ']';
++                } else {
++                    *d++ = c;
++                }
++            } else {
++                if (c == '\\' || c == '*' || c == '?' || c == '[' || c == ':'
++                    || c == '{' || c == '}' || c == '~' || c == '(') {
++                    *d++ = '\\';
++                }
++                *d++ = c;
++            }
++        }
++        *d++ = '/';
++    }
++    *out_esc_prefix_len = (size_t)(d - buf);
++    if (force_bs) {
++        for (size_t i = 0; i < pat_len; i++) {
++            if (pat_str[i] == '\\') {
++                *d++ = '\\';
++            }
++            *d++ = pat_str[i];
++        }
++        *d = '\0';
++    } else {
++        memcpy(d, pat_str, pat_len + 1);
++    }
++    return buf;
++}
++
++static PyObject *
++os__glob(PyObject *Py_UNUSED(module), PyObject *args, PyObject *kwargs)
++{
++    static char *kwlist[] = {"pattern", "flags", "root_dir", NULL};
++    PyObject *pat_obj = NULL;
++    int flags = 0;
++    PyObject *root_obj = Py_None;
++
++    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iO:_glob", kwlist,
++                                     &pat_obj, &flags, &root_obj)) {
++        return NULL;
++    }
++
++    if ((flags & ~os_glob_allowed_flags()) != 0) {
++        PyErr_SetString(PyExc_ValueError, "unsupported glob flags");
++        return NULL;
++    }
++
++    int is_bytes = 0;
++    PyObject *pat_bytes = NULL;
++    if (PyUnicode_Check(pat_obj)) {
++        pat_bytes = PyUnicode_EncodeFSDefault(pat_obj);
++        if (pat_bytes == NULL) {
++            return NULL;
++        }
++    } else if (PyBytes_Check(pat_obj)) {
++        is_bytes = 1;
++        pat_bytes = Py_NewRef(pat_obj);
++    } else {
++        PyErr_Format(PyExc_TypeError,
++                     "pathname should be str or bytes, not %T", pat_obj);
++        return NULL;
++    }
++
++    const char *pat_str = PyBytes_AS_STRING(pat_bytes);
++    size_t pat_len = (size_t)PyBytes_GET_SIZE(pat_bytes);
++    if (pat_len != strlen(pat_str)) {
++        Py_DECREF(pat_bytes);
++        PyErr_SetString(PyExc_ValueError, "embedded null character");
++        return NULL;
++    }
++
++    PyObject *root_bytes = NULL;
++    const char *root_str = NULL;
++    size_t root_len = 0;
++    if (root_obj != NULL && root_obj != Py_None) {
++        PyObject *root_fspath = PyOS_FSPath(root_obj);
++        if (root_fspath == NULL) {
++            Py_DECREF(pat_bytes);
++            return NULL;
++        }
++        if ((is_bytes && !PyBytes_Check(root_fspath))
++            || (!is_bytes && !PyUnicode_Check(root_fspath))) {
++            Py_DECREF(root_fspath);
++            Py_DECREF(pat_bytes);
++            PyErr_SetString(PyExc_TypeError,
++                            "Can't mix strings and bytes in path components");
++            return NULL;
++        }
++        if (is_bytes) {
++            root_bytes = root_fspath;
++        } else {
++            root_bytes = PyUnicode_EncodeFSDefault(root_fspath);
++            Py_DECREF(root_fspath);
++            if (root_bytes == NULL) {
++                Py_DECREF(pat_bytes);
++                return NULL;
++            }
++        }
++        root_str = PyBytes_AS_STRING(root_bytes);
++        root_len = (size_t)PyBytes_GET_SIZE(root_bytes);
++        if (root_len != strlen(root_str)) {
++            Py_DECREF(root_bytes);
++            Py_DECREF(pat_bytes);
++            PyErr_SetString(PyExc_ValueError, "embedded null character");
++            return NULL;
++        }
++    }
++
++#ifdef GLOB_PATHS
++    int has_glob_paths = (flags & GLOB_PATHS) != 0;
++#else
++    int has_glob_paths = 0;
++#endif
++    if (pat_len == 0 && !has_glob_paths) {
++        Py_XDECREF(root_bytes);
++        Py_DECREF(pat_bytes);
++        return PyList_New(0);
++    }
++
++    char *norm_root = NULL;
++    char *alloc_pat = NULL;
++    const char *c_pattern = pat_str;
++    int call_flags = flags;
++    size_t rlen = 0;
++    size_t strip_len = 0;
++    size_t esc_prefix_len = 0;
++    int doubled_bs = 0;
++    size_t orig_pat_slashes = 0;
++    int pat_has_magic = 0;
++#ifdef GLOB_KEEP_SLASHES
++    if (flags & GLOB_KEEP_SLASHES) {
++        while (orig_pat_slashes < pat_len
++               && pat_str[pat_len - 1 - orig_pat_slashes] == '/') {
++            orig_pat_slashes++;
++        }
++        if (orig_pat_slashes > 1) {
++            pat_has_magic = os_glob_pat_has_magic(pat_str, flags);
++        }
++    }
++#endif
++    int tilde_rel = 0;
++#ifdef GLOB_TILDE
++    if ((flags & GLOB_TILDE) && pat_str[0] == '~') tilde_rel = 1;
++#endif
++#ifdef GLOB_TILDE_CHECK
++    if ((flags & GLOB_TILDE_CHECK) && pat_str[0] == '~') tilde_rel = 1;
++#endif
++    if (root_bytes != NULL && root_len > 0 && pat_str[0] != '/' && !tilde_rel
++        && !has_glob_paths) {
++        norm_root = PyMem_Malloc(root_len + 1);
++        if (norm_root == NULL) {
++            Py_DECREF(root_bytes);
++            Py_DECREF(pat_bytes);
++            return PyErr_NoMemory();
++        }
++        size_t nr = 0;
++        for (size_t i = 0; i < root_len; i++) {
++            if (root_str[i] == '/' && nr > 0 && norm_root[nr - 1] == '/') {
++                continue;
++            }
++            norm_root[nr++] = root_str[i];
++        }
++        while (nr > 1 && norm_root[nr - 1] == '/') {
++            nr--;
++        }
++        norm_root[nr] = '\0';
++        rlen = nr;
++        strip_len = (rlen == 1 && norm_root[0] == '/') ? 1 : (rlen + 1);
++        alloc_pat = os_glob_build_rooted_pattern(norm_root, rlen, pat_str,
++                                                 pat_len, flags, &call_flags,
++                                                 &esc_prefix_len, &doubled_bs);
++        if (alloc_pat == NULL) {
++            PyMem_Free(norm_root);
++            Py_DECREF(root_bytes);
++            Py_DECREF(pat_bytes);
++            return NULL;
++        }
++        c_pattern = alloc_pat;
++    }
++
++    int nomatch_return_pat = 0;
++    if (strip_len > 0) {
++#ifdef GLOB_NOCHECK
++        if (flags & GLOB_NOCHECK) {
++            nomatch_return_pat = 1;
++        }
++#endif
++#ifdef GLOB_NOMAGIC
++        if (!nomatch_return_pat && (flags & GLOB_NOMAGIC)
++            && !os_glob_pat_has_magic(pat_str, flags)
++            && ((flags & GLOB_NOESCAPE) || strchr(pat_str, '\\') == NULL)) {
++            nomatch_return_pat = 1;
++        }
++#endif
++    }
++
++    glob_t g = { 0 };
++    int rc;
++    Py_BEGIN_ALLOW_THREADS
++    rc = glob(c_pattern, call_flags, NULL, &g);
++    Py_END_ALLOW_THREADS
++
++    Py_DECREF(pat_bytes);
++    Py_XDECREF(root_bytes);
++
++    if (rc == GLOB_NOSPACE) {
++        globfree(&g);
++        PyMem_Free(alloc_pat);
++        PyMem_Free(norm_root);
++        return PyErr_NoMemory();
++    }
++
++    PyObject *list = PyList_New(0);
++    if (list == NULL) {
++        globfree(&g);
++        PyMem_Free(alloc_pat);
++        PyMem_Free(norm_root);
++        return NULL;
++    }
++
++    int allow_nocheck_fb = 0;
++#ifdef GLOB_NOCHECK
++    if (flags & GLOB_NOCHECK) allow_nocheck_fb = 1;
++#endif
++#ifdef GLOB_NOMAGIC
++    if (flags & GLOB_NOMAGIC) allow_nocheck_fb = 1;
++#endif
++
++    if (rc == 0) {
++        for (size_t i = 0; i < g.gl_pathc; i++) {
++            const char *s = g.gl_pathv[i];
++            int is_nocheck_fb = 0;
++            if (strip_len > 0) {
++                if (strncmp(s, norm_root, rlen) == 0
++                    && ((rlen == 1 && norm_root[0] == '/') || s[rlen] == '/')) {
++                    s += strip_len;
++                } else if (allow_nocheck_fb && esc_prefix_len > 0
++                           && alloc_pat != NULL
++                           && strncmp(s, alloc_pat, esc_prefix_len) == 0) {
++                    s += esc_prefix_len;
++                    is_nocheck_fb = 1;
++                } else {
++                    continue;
++                }
++            }
++            PyObject *item = NULL;
++            size_t slen = strlen(s);
++            char *unesc_fb = NULL;
++            if (is_nocheck_fb && doubled_bs) {
++                unesc_fb = PyMem_Malloc(slen + 1);
++                if (unesc_fb == NULL) {
++                    Py_DECREF(list);
++                    globfree(&g);
++                    PyMem_Free(alloc_pat);
++                    PyMem_Free(norm_root);
++                    return PyErr_NoMemory();
++                }
++                size_t ulen = 0;
++                for (size_t k = 0; k < slen; k++) {
++                    if (s[k] == '\\' && s[k + 1] == '\\') {
++                        k++;
++                    }
++                    unesc_fb[ulen++] = s[k];
++                }
++                unesc_fb[ulen] = '\0';
++                s = unesc_fb;
++                slen = ulen;
++            }
++            size_t cur_slashes = 0;
++            if (orig_pat_slashes > 1 && pat_has_magic && !allow_nocheck_fb) {
++                while (slen > 1 && s[slen - 1] == '/' && s[slen - 2] == '/') {
++                    slen--;
++                }
++            } else if (strip_len > 0 && orig_pat_slashes > 1 && !pat_has_magic) {
++                while (cur_slashes < slen && s[slen - 1 - cur_slashes] == '/') {
++                    cur_slashes++;
++                }
++            }
++            if (cur_slashes > 0 && cur_slashes < orig_pat_slashes) {
++                size_t add_slashes = orig_pat_slashes - cur_slashes;
++                char *tmp = PyMem_Malloc(slen + add_slashes + 1);
++                if (tmp == NULL) {
++                    PyMem_Free(unesc_fb);
++                    Py_DECREF(list);
++                    globfree(&g);
++                    PyMem_Free(alloc_pat);
++                    PyMem_Free(norm_root);
++                    return PyErr_NoMemory();
++                }
++                memcpy(tmp, s, slen);
++                memset(tmp + slen, '/', add_slashes);
++                tmp[slen + add_slashes] = '\0';
++                item = is_bytes
++                       ? PyBytes_FromStringAndSize(tmp, (Py_ssize_t)(slen + add_slashes))
++                       : PyUnicode_DecodeFSDefaultAndSize(tmp, (Py_ssize_t)(slen + add_slashes));
++                PyMem_Free(tmp);
++            } else {
++                item = is_bytes
++                       ? PyBytes_FromStringAndSize(s, (Py_ssize_t)slen)
++                       : PyUnicode_DecodeFSDefaultAndSize(s, (Py_ssize_t)slen);
++            }
++            PyMem_Free(unesc_fb);
++            if (item == NULL || PyList_Append(list, item) < 0) {
++                Py_XDECREF(item);
++                Py_DECREF(list);
++                globfree(&g);
++                PyMem_Free(alloc_pat);
++                PyMem_Free(norm_root);
++                return NULL;
++            }
++            Py_DECREF(item);
++        }
++    }
++    if ((rc == GLOB_NOMATCH || (rc == 0 && PyList_GET_SIZE(list) == 0))
++        && nomatch_return_pat) {
++        if (PyList_Append(list, pat_obj) < 0) {
++            Py_DECREF(list);
++            globfree(&g);
++            PyMem_Free(alloc_pat);
++            PyMem_Free(norm_root);
++            return NULL;
++        }
++    }
++    globfree(&g);
++    PyMem_Free(alloc_pat);
++    PyMem_Free(norm_root);
++
++    return list;
++}
++#endif /* !MS_WINDOWS */
++
+ 
+ static PyMethodDef posix_methods[] = {
+     OS_STAT_METHODDEF
+@@ -17331,6 +17890,9 @@
+     OS__CREATE_ENVIRON_METHODDEF
+     OS__EMSCRIPTEN_DEBUGGER_METHODDEF
+     OS__EMSCRIPTEN_LOG_METHODDEF
++#ifndef MS_WINDOWS
++    {"_glob", _PyCFunction_CAST(os__glob), METH_VARARGS | METH_KEYWORDS, NULL},
++#endif
+     {NULL,              NULL}            /* Sentinel */
+ };
+ 
+@@ -17967,6 +18529,61 @@
+     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_SYSTEM32", LOAD_LIBRARY_SEARCH_SYSTEM32)) return -1;
+     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_USER_DIRS", LOAD_LIBRARY_SEARCH_USER_DIRS)) return -1;
+     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR", LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)) return -1;
++#else
++#ifdef GLOB_ERR
++    if (PyModule_AddIntMacro(m, GLOB_ERR)) return -1;
++#endif
++#ifdef GLOB_MARK
++    if (PyModule_AddIntMacro(m, GLOB_MARK)) return -1;
++#endif
++#ifdef GLOB_NOSORT
++    if (PyModule_AddIntMacro(m, GLOB_NOSORT)) return -1;
++#endif
++#ifdef GLOB_NOCHECK
++    if (PyModule_AddIntMacro(m, GLOB_NOCHECK)) return -1;
++#endif
++#ifdef GLOB_NOESCAPE
++    if (PyModule_AddIntMacro(m, GLOB_NOESCAPE)) return -1;
++#endif
++#ifdef GLOB_PERIOD
++    if (PyModule_AddIntMacro(m, GLOB_PERIOD)) return -1;
++#endif
++#ifdef GLOB_BRACE
++    if (PyModule_AddIntMacro(m, GLOB_BRACE)) return -1;
++#endif
++#ifdef GLOB_NOMAGIC
++    if (PyModule_AddIntMacro(m, GLOB_NOMAGIC)) return -1;
++#endif
++#ifdef GLOB_TILDE
++    if (PyModule_AddIntMacro(m, GLOB_TILDE)) return -1;
++#endif
++#ifdef GLOB_ONLYDIR
++    if (PyModule_AddIntMacro(m, GLOB_ONLYDIR)) return -1;
++#endif
++#ifdef GLOB_TILDE_CHECK
++    if (PyModule_AddIntMacro(m, GLOB_TILDE_CHECK)) return -1;
++#endif
++#ifdef GLOB_PATHS
++    if (PyModule_AddIntMacro(m, GLOB_PATHS)) return -1;
++#endif
++#ifdef GLOB_KEEP_SLASHES
++    if (PyModule_AddIntMacro(m, GLOB_KEEP_SLASHES)) return -1;
++#endif
++#ifdef GLOB_EXTMATCH
++    if (PyModule_AddIntMacro(m, GLOB_EXTMATCH)) return -1;
++#endif
++#ifdef GLOB_CASEFOLD
++    if (PyModule_AddIntMacro(m, GLOB_CASEFOLD)) return -1;
++#endif
++#ifdef GLOB_SKIPDOTS
++    if (PyModule_AddIntMacro(m, GLOB_SKIPDOTS)) return -1;
++#endif
++#ifdef GLOB_GLOBSTAR
++    if (PyModule_AddIntMacro(m, GLOB_GLOBSTAR)) return -1;
++#endif
++#ifdef GLOB_DOTDOT
++    if (PyModule_AddIntMacro(m, GLOB_DOTDOT)) return -1;
++#endif
+ #endif
+ 
+     return 0;
 diff --no-dereference -Naur Python-3.14.7.orig/Modules/_ssl/cert.c Python-3.14.7/Modules/_ssl/cert.c
 --- Python-3.14.7.orig/Modules/_ssl/cert.c	2026-08-05 10:29:49.000000000 +0000
 +++ Python-3.14.7/Modules/_ssl/cert.c	2026-08-05 10:29:49.000000000 +0000
@@ -791,192 +1753,3 @@ diff --no-dereference -Naur Python-3.14.7.orig/Modules/_ssl.c Python-3.14.7/Modu
  
  #define ADD_OPTION(NAME, VALUE) if (sslmodule_add_option(m, NAME, (VALUE)) < 0) return -1
  
-diff --no-dereference -Naur Python-3.14.7.orig/Modules/getpath.c Python-3.14.7/Modules/getpath.c
---- Python-3.14.7.orig/Modules/getpath.c	2026-08-05 10:29:49.000000000 +0000
-+++ Python-3.14.7/Modules/getpath.c	2026-08-05 10:29:49.000000000 +0000
-@@ -24,6 +24,10 @@
- #  include <dlfcn.h>
- #endif
- 
-+#ifndef MS_WINDOWS
-+#  include <glob.h>
-+#endif
-+
- /* Reference the precompiled getpath.py */
- #include "Python/frozen_modules/getpath.h"
- 
-@@ -563,10 +567,66 @@
- }
- 
- 
-+static PyObject *
-+getpath_glob(PyObject *Py_UNUSED(self), PyObject *args)
-+{
-+    PyObject *pathobj;
-+    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
-+        return NULL;
-+    }
-+    wchar_t *wpath = PyUnicode_AsWideCharString(pathobj, NULL);
-+    if (!wpath) {
-+        return NULL;
-+    }
-+    char *pattern = Py_EncodeLocale(wpath, NULL);
-+    PyMem_Free(wpath);
-+    if (!pattern) {
-+        PyErr_NoMemory();
-+        return NULL;
-+    }
-+    PyObject *list = PyList_New(0);
-+    if (!list) {
-+        PyMem_Free(pattern);
-+        return NULL;
-+    }
-+#ifndef MS_WINDOWS
-+    glob_t g;
-+    int rc = glob(pattern, GLOB_NOESCAPE | GLOB_KEEP_SLASHES, NULL, &g);
-+    PyMem_Free(pattern);
-+    if (rc == 0) {
-+        for (size_t i = 0; i < g.gl_pathc; i++) {
-+            size_t len;
-+            wchar_t *w = Py_DecodeLocale(g.gl_pathv[i], &len);
-+            if (!w) {
-+                Py_DECREF(list);
-+                globfree(&g);
-+                PyErr_NoMemory();
-+                return NULL;
-+            }
-+            PyObject *item = PyUnicode_FromWideChar(w, len);
-+            PyMem_RawFree(w);
-+            if (!item || PyList_Append(list, item) < 0) {
-+                Py_XDECREF(item);
-+                Py_DECREF(list);
-+                globfree(&g);
-+                return NULL;
-+            }
-+            Py_DECREF(item);
-+        }
-+        globfree(&g);
-+    }
-+#else
-+    PyMem_Free(pattern);
-+#endif
-+    return list;
-+}
-+
-+
- static PyMethodDef getpath_methods[] = {
-     {"abspath", getpath_abspath, METH_VARARGS, NULL},
-     {"basename", getpath_basename, METH_VARARGS, NULL},
-     {"dirname", getpath_dirname, METH_VARARGS, NULL},
-+    {"glob", getpath_glob, METH_VARARGS, NULL},
-     {"hassuffix", getpath_hassuffix, METH_VARARGS, NULL},
-     {"isabs", getpath_isabs, METH_VARARGS, NULL},
-     {"isdir", getpath_isdir, METH_VARARGS, NULL},
-diff --no-dereference -Naur Python-3.14.7.orig/Modules/getpath.py Python-3.14.7/Modules/getpath.py
---- Python-3.14.7.orig/Modules/getpath.py	2026-08-05 10:29:49.000000000 +0000
-+++ Python-3.14.7/Modules/getpath.py	2026-08-05 10:29:49.000000000 +0000
-@@ -283,7 +283,14 @@
-     # To properly isolate, launch Python with a full path.
-     for p in ENV_PATH.split(DELIM):
-         p = joinpath(p, program_name)
--        if isxfile(p):
-+        if '*' in p or '?' in p:
-+            for gp in glob(p):
-+                if isxfile(gp):
-+                    executable = gp
-+                    break
-+            if executable:
-+                break
-+        elif isxfile(p):
-             executable = p
-             break
- 
-diff --no-dereference -Naur Python-3.14.7.orig/Modules/makesetup Python-3.14.7/Modules/makesetup
---- Python-3.14.7.orig/Modules/makesetup	2026-08-05 10:29:49.000000000 +0000
-+++ Python-3.14.7/Modules/makesetup	2026-08-05 10:29:49.000000000 +0000
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- set -e
- 
- # Convert templates into Makefile and config.c, based on the module
-diff --no-dereference -Naur Python-3.14.7.orig/Modules/posixmodule.c Python-3.14.7/Modules/posixmodule.c
---- Python-3.14.7.orig/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
-+++ Python-3.14.7/Modules/posixmodule.c	2026-08-05 10:29:49.000000000 +0000
-@@ -17113,6 +17113,47 @@
- }
- #endif /* __EMSCRIPTEN__ */
- 
-+#include <glob.h>
-+
-+static PyObject *
-+os__glob(PyObject *module, PyObject *arg)
-+{
-+    PyObject *bytes = PyUnicode_EncodeFSDefault(arg);
-+    if (bytes == NULL) {
-+        return NULL;
-+    }
-+    const char *pattern = PyBytes_AS_STRING(bytes);
-+    if ((size_t)PyBytes_GET_SIZE(bytes) != strlen(pattern)) {
-+        Py_DECREF(bytes);
-+        PyErr_SetString(PyExc_ValueError, "embedded null character");
-+        return NULL;
-+    }
-+    glob_t g;
-+    int rc = glob(pattern, GLOB_NOESCAPE | GLOB_KEEP_SLASHES, NULL, &g);
-+    Py_DECREF(bytes);
-+    PyObject *list = PyList_New(0);
-+    if (list == NULL) {
-+        if (rc == 0) {
-+            globfree(&g);
-+        }
-+        return NULL;
-+    }
-+    if (rc == 0) {
-+        for (size_t i = 0; i < g.gl_pathc; i++) {
-+            PyObject *item = PyUnicode_DecodeFSDefault(g.gl_pathv[i]);
-+            if (item == NULL || PyList_Append(list, item) < 0) {
-+                Py_XDECREF(item);
-+                Py_DECREF(list);
-+                globfree(&g);
-+                return NULL;
-+            }
-+            Py_DECREF(item);
-+        }
-+        globfree(&g);
-+    }
-+    return list;
-+}
-+
- 
- static PyMethodDef posix_methods[] = {
-     OS_STAT_METHODDEF
-@@ -17331,6 +17372,7 @@
-     OS__CREATE_ENVIRON_METHODDEF
-     OS__EMSCRIPTEN_DEBUGGER_METHODDEF
-     OS__EMSCRIPTEN_LOG_METHODDEF
-+    {"_glob", os__glob, METH_O, NULL},
-     {NULL,              NULL}            /* Sentinel */
- };
- 
-diff --no-dereference -Naur Python-3.14.7.orig/configure Python-3.14.7/configure
---- Python-3.14.7.orig/configure	2026-08-05 10:29:49.000000000 +0000
-+++ Python-3.14.7/configure	2026-08-05 10:29:49.000000000 +0000
-@@ -31104,7 +31104,7 @@
- 
-     if ! $found; then
-         OPENSSL_INCLUDES=
--        for ssldir in $ssldirs; do
-+        for ssldir in /sw/* $ssldirs; do
-             { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for include/openssl/ssl.h in $ssldir" >&5
- printf %s "checking for include/openssl/ssl.h in $ssldir... " >&6; }
-             if test -f "$ssldir/include/openssl/ssl.h"; then
-diff --no-dereference -Naur Python-3.14.7.orig/install-sh Python-3.14.7/install-sh
---- Python-3.14.7.orig/install-sh	2026-08-05 10:29:49.000000000 +0000
-+++ Python-3.14.7/install-sh	2026-08-05 10:29:49.000000000 +0000
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- # install - install a program, script, or datafile
- 
- scriptversion=2023-11-23.18; # UTC

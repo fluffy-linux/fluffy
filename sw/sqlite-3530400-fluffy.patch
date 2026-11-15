@@ -1,6 +1,6 @@
-diff -Naur sqlite-autoconf-3530400/autosetup/autosetup sqlite-autoconf-3530400.mod/autosetup/autosetup
---- sqlite-autoconf-3530400/autosetup/autosetup	2026-07-24 15:28:58.000000000 -0400
-+++ sqlite-autoconf-3530400.mod/autosetup/autosetup	2026-07-24 15:28:58.000000000 -0400
+diff --no-dereference -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup sqlite-autoconf-3530400/autosetup/autosetup
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup	2026-07-24 19:28:58.000000000 +0000
++++ sqlite-autoconf-3530400/autosetup/autosetup	2026-07-24 19:28:58.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
@@ -25,15 +25,104 @@ diff -Naur sqlite-autoconf-3530400/autosetup/autosetup sqlite-autoconf-3530400.m
  			user-error $alias
  		}
  	}
-@@ -2086,7 +2086,15 @@
+@@ -2086,7 +2086,104 @@
  } else {
  	# unix separates $PATH with colons and has and executable bit
  	proc split-path {} {
 -		split [getenv PATH .] :
++		set pathStr [getenv PATH .]
++		if {[string first {[} $pathStr] < 0} {
++			set raw [split $pathStr :]
++		} else {
++			set raw {}
++			set pathLen [string length $pathStr]
++			set segStart 0
++			set idx 0
++			while {$idx < $pathLen} {
++				set ch [string index $pathStr $idx]
++				if {$ch eq ":"} {
++					lappend raw [string range $pathStr $segStart [expr {$idx - 1}]]
++					incr idx
++					set segStart $idx
++					continue
++				}
++				if {$ch eq "\["} {
++					set q [expr {$idx + 1}]
++					if {$q < $pathLen && [string index $pathStr $q] in {! ^}} {
++						incr q
++					}
++					if {$q < $pathLen && [string index $pathStr $q] eq "\]"} {
++						incr q
++					}
++					while {$q < $pathLen} {
++						set qc [string index $pathStr $q]
++						if {$qc eq "\]" || $qc eq "/"} {
++							break
++						}
++						if {$qc eq "\[" && ($q + 1) < $pathLen
++								&& [string index $pathStr [expr {$q + 1}]] in {: . =}} {
++							set ctype [string index $pathStr [expr {$q + 1}]]
++							set inner [expr {$q + 2}]
++							while {$inner < $pathLen} {
++								set ic [string index $pathStr $inner]
++								if {$ic eq "/" || ($ctype ne "." && $ic eq "\]")} {
++									break
++								}
++								if {$ic eq $ctype && ($inner + 1) < $pathLen
++										&& [string index $pathStr [expr {$inner + 1}]] eq "\]"} {
++									set q [expr {$inner + 2}]
++									set inner -1
++									break
++								}
++								incr inner
++							}
++							if {$inner == -1} {
++								continue
++							}
++						}
++						incr q
++					}
++					if {$q < $pathLen && [string index $pathStr $q] eq "\]"} {
++						set idx [expr {$q + 1}]
++						continue
++					}
++				}
++				incr idx
++			}
++			lappend raw [string range $pathStr $segStart end]
++		}
 +		set dirs {}
-+		foreach p [split [getenv PATH .] :] {
-+			if {[string match {*[*?]*} $p]} {
-+				lappend dirs {*}[glob -nocomplain -types d -- $p]
++		foreach p $raw {
++			if {$p ne "" && [file isdirectory $p]} {
++				lappend dirs $p
++			} elseif {[string first * $p] >= 0
++					|| [string first ? $p] >= 0
++					|| [string first "\[" $p] >= 0} {
++				set gpat [string map {\\ \\\\ \{ \\{ \} \\}} $p]
++				if {$::autosetup(istcl)} {
++					if {[string index $gpat 0] eq "~"} {
++						set gpat "\\$gpat"
++					}
++					if {![catch {glob -nocomplain -types d -- $gpat} matches] && [llength $matches] > 0} {
++						lappend dirs {*}[lsort -ascii $matches]
++					} else {
++						lappend dirs $p
++					}
++				} else {
++					set matches {}
++					if {![catch {glob -nocomplain -- $gpat} raw_matches]} {
++						foreach m [lsort $raw_matches] {
++							if {[file isdirectory $m]} {
++								lappend matches $m
++							}
++						}
++					}
++					if {[llength $matches] > 0} {
++						lappend dirs {*}$matches
++					} else {
++						lappend dirs $p
++					}
++				}
 +			} else {
 +				lappend dirs $p
 +			}
@@ -42,36 +131,36 @@ diff -Naur sqlite-autoconf-3530400/autosetup/autosetup sqlite-autoconf-3530400.m
  	}
  	# Check for an executable file
  	proc file-isexec {exec} {
-diff -Naur sqlite-autoconf-3530400/autosetup/autosetup-config.guess sqlite-autoconf-3530400.mod/autosetup/autosetup-config.guess
---- sqlite-autoconf-3530400/autosetup/autosetup-config.guess	2026-07-24 15:28:58.000000000 -0400
-+++ sqlite-autoconf-3530400.mod/autosetup/autosetup-config.guess	2026-07-24 15:28:58.000000000 -0400
+diff --no-dereference -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup-config.guess sqlite-autoconf-3530400/autosetup/autosetup-config.guess
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup-config.guess	2026-07-24 19:28:58.000000000 +0000
++++ sqlite-autoconf-3530400/autosetup/autosetup-config.guess	2026-07-24 19:28:58.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Attempt to guess a canonical system name.
  #   Copyright 1992-2024 Free Software Foundation, Inc.
  
-diff -Naur sqlite-autoconf-3530400/autosetup/autosetup-config.sub sqlite-autoconf-3530400.mod/autosetup/autosetup-config.sub
---- sqlite-autoconf-3530400/autosetup/autosetup-config.sub	2026-07-24 15:28:58.000000000 -0400
-+++ sqlite-autoconf-3530400.mod/autosetup/autosetup-config.sub	2026-07-24 15:28:58.000000000 -0400
+diff --no-dereference -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup-config.sub sqlite-autoconf-3530400/autosetup/autosetup-config.sub
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup-config.sub	2026-07-24 19:28:58.000000000 +0000
++++ sqlite-autoconf-3530400/autosetup/autosetup-config.sub	2026-07-24 19:28:58.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /bin/sh
 +#!/sw/bash/bin/bash
  # Configuration validation subroutine script.
  #   Copyright 1992-2024 Free Software Foundation, Inc.
  
-diff -Naur sqlite-autoconf-3530400/autosetup/autosetup-find-tclsh sqlite-autoconf-3530400.mod/autosetup/autosetup-find-tclsh
---- sqlite-autoconf-3530400/autosetup/autosetup-find-tclsh	2026-07-24 15:28:58.000000000 -0400
-+++ sqlite-autoconf-3530400.mod/autosetup/autosetup-find-tclsh	2026-07-24 15:28:58.000000000 -0400
+diff --no-dereference -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup-find-tclsh sqlite-autoconf-3530400/autosetup/autosetup-find-tclsh
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup-find-tclsh	2026-07-24 19:28:58.000000000 +0000
++++ sqlite-autoconf-3530400/autosetup/autosetup-find-tclsh	2026-07-24 19:28:58.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  # Looks for a suitable tclsh or jimsh in the PATH
  # If not found, builds a bootstrap jimsh in current dir from source
  # Prefer $autosetup_tclsh if is set in the environment (unless ./jimsh0 works)
-diff -Naur sqlite-autoconf-3530400/autosetup/autosetup-test-tclsh sqlite-autoconf-3530400.mod/autosetup/autosetup-test-tclsh
---- sqlite-autoconf-3530400/autosetup/autosetup-test-tclsh	2026-07-24 15:28:58.000000000 -0400
-+++ sqlite-autoconf-3530400.mod/autosetup/autosetup-test-tclsh	2026-07-24 15:28:58.000000000 -0400
+diff --no-dereference -Naur sqlite-autoconf-3530400.orig/autosetup/autosetup-test-tclsh sqlite-autoconf-3530400/autosetup/autosetup-test-tclsh
+--- sqlite-autoconf-3530400.orig/autosetup/autosetup-test-tclsh	2026-07-24 19:28:58.000000000 +0000
++++ sqlite-autoconf-3530400/autosetup/autosetup-test-tclsh	2026-07-24 19:28:58.000000000 +0000
 @@ -13,7 +13,11 @@
  	}
  } elseif {[catch {info tclversion} version] == 0} {
@@ -85,9 +174,9 @@ diff -Naur sqlite-autoconf-3530400/autosetup/autosetup-test-tclsh sqlite-autocon
  		exit 0
  	}
  }
-diff -Naur sqlite-autoconf-3530400/autosetup/proj.tcl sqlite-autoconf-3530400.mod/autosetup/proj.tcl
---- sqlite-autoconf-3530400/autosetup/proj.tcl	2026-07-24 15:28:58.000000000 -0400
-+++ sqlite-autoconf-3530400.mod/autosetup/proj.tcl	2026-07-24 15:28:58.000000000 -0400
+diff --no-dereference -Naur sqlite-autoconf-3530400.orig/autosetup/proj.tcl sqlite-autoconf-3530400/autosetup/proj.tcl
+--- sqlite-autoconf-3530400.orig/autosetup/proj.tcl	2026-07-24 19:28:58.000000000 +0000
++++ sqlite-autoconf-3530400/autosetup/proj.tcl	2026-07-24 19:28:58.000000000 +0000
 @@ -1629,7 +1629,7 @@
    lappend shBody "exit"
    set shBody [join $shBody "\n"]
@@ -97,18 +186,18 @@ diff -Naur sqlite-autoconf-3530400/autosetup/proj.tcl sqlite-autoconf-3530400.mo
  }
  
  #
-diff -Naur sqlite-autoconf-3530400/configure sqlite-autoconf-3530400.mod/configure
---- sqlite-autoconf-3530400/configure	2026-07-24 15:28:36.000000000 -0400
-+++ sqlite-autoconf-3530400.mod/configure	2026-07-24 15:28:36.000000000 -0400
+diff --no-dereference -Naur sqlite-autoconf-3530400.orig/configure sqlite-autoconf-3530400/configure
+--- sqlite-autoconf-3530400.orig/configure	2026-07-24 19:28:36.000000000 +0000
++++ sqlite-autoconf-3530400/configure	2026-07-24 19:28:36.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  dir="`dirname "$0"`/autosetup"
  #@@INITCHECK@@#
  WRAPPER="$0"; export WRAPPER; exec "`"$dir/autosetup-find-tclsh"`" "$dir/autosetup" "$@"
-diff -Naur sqlite-autoconf-3530400/tea/configure sqlite-autoconf-3530400.mod/tea/configure
---- sqlite-autoconf-3530400/tea/configure	2026-07-24 15:28:58.000000000 -0400
-+++ sqlite-autoconf-3530400.mod/tea/configure	2026-07-24 15:28:58.000000000 -0400
+diff --no-dereference -Naur sqlite-autoconf-3530400.orig/tea/configure sqlite-autoconf-3530400/tea/configure
+--- sqlite-autoconf-3530400.orig/tea/configure	2026-07-24 19:28:58.000000000 +0000
++++ sqlite-autoconf-3530400/tea/configure	2026-07-24 19:28:58.000000000 +0000
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash

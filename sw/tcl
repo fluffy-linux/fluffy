@@ -12,8 +12,8 @@ HAS_LDFLAGS=-ltcl8.6
 ARCHIVES=(
     14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-src.tar.gz
     bee2d83a19ce50624eeae951be29fe5f654b171357a6391123caf18107cec543 https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-html.tar.gz
-    65b998a705a2b8812c22a731ed3c001589d79590edf184a3300d25bfd7f9a067 file://tcl$VERSION-fluffy-source.patch
-    97296312735d79b0fbfcf9d70e67e84cd18d681481f34a8a5d4b7445f220bbba file://tcl$VERSION-fluffy-test.patch
+    85485fb414275222d9aee02c3be3b70242bd5fca472cf600bd1c43543c470cde file://tcl$VERSION-fluffy-source.patch
+    399f5e678105656c779c0f9d64578f895ad935effd57ee143bea63c78bff40f9 file://tcl$VERSION-fluffy-test.patch
 )
 
 NEEDS=(

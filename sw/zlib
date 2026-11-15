@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lz
 
 ARCHIVES=(
     bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16 https://github.com/fluffy-linux/zlib/releases/download/v$VERSION/zlib-$VERSION.tar.gz
-    488dd373e46ae3fee312810f37cba3a27f3f93d4434c821d09e726a00d3b87da file://zlib-$VERSION-fluffy-source.patch
+    f4628bd4a76cac6b819416615daf7670e3305bf60ba4aa60c2512bec9235d641 file://zlib-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(

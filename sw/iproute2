@@ -9,7 +9,7 @@ VERSION=7.1.0
 
 ARCHIVES=(
     fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c https://github.com/fluffy-linux/iproute2/releases/download/v$VERSION/iproute2-$VERSION.tar.xz
-    eee787b0f100c0719e935a62b8dc8e183d0e5748319441cdc732867297413264 file://iproute2-$VERSION-fluffy-source.patch
+    21700434e6d51359dc0842c3e657f8c64ca37dbefb7d4dadbcf840e5acb09807 file://iproute2-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -74,6 +74,7 @@ MAKE() {
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     $CONFIG_SHELL ./configure --prefix /sw/iproute2
+    CFLAGS='-DCONF_VENDOR_DIR="\"/sw/*/etc/iproute2\""' \
     make \
         PREFIX=/sw/iproute2 \
         SBINDIR=/sw/iproute2/bin \
@@ -84,6 +85,55 @@ MAKE() {
 
 CHECK() {
     ./ip/ip -V
+    ./tc/tc -V
+
+    local td
+    td=$(mktemp -d)
+    mkdir -p "$td/sw/iproute2/etc/iproute2" "$td/sw/pkgB/etc/iproute2/rt_tables.d" "$td/usr/etc/iproute2"
+    cp -a etc/iproute2/* "$td/sw/iproute2/etc/iproute2/"
+    printf '42\tfluffy_vendor\n' >> "$td/sw/iproute2/etc/iproute2/rt_tables"
+    printf '43\tfluffy_dropin\n' > "$td/sw/pkgB/etc/iproute2/rt_tables.d/extra.conf"
+    printf '1:10\tfluffy_root\n' > "$td/sw/pkgB/etc/iproute2/tc_cls"
+
+    cat > "$td/test_conf.c" << 'EOF'
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include "utils.h"
+#include "rt_names.h"
+#include "names.h"
+#include "tc_util.h"
+bool use_names = true;
+int main(int argc, char **argv) {
+    char buf[64];
+    assert(argc == 3);
+    assert(strcmp(rtnl_rttable_n2a(255, buf, sizeof(buf)), "local") == 0);
+    assert(strcmp(rtnl_rttable_n2a(42, buf, sizeof(buf)), argv[1]) == 0);
+    assert(strcmp(rtnl_rttable_n2a(43, buf, sizeof(buf)), "fluffy_dropin") == 0);
+    assert(strcmp(rtnl_rtprot_n2a(2, buf, sizeof(buf)), "kernel") == 0);
+    assert(cls_names_init(NULL) == 0);
+    sprint_tc_classid(0x00010010, buf);
+    assert(strcmp(buf, argv[2]) == 0);
+    cls_names_uninit();
+    return 0;
+}
+EOF
+
+    ${CC:-gcc} -D_GNU_SOURCE -Iinclude -Iinclude/uapi -Itc \
+        -DCONF_VENDOR_DIR="\"$td/sw/*/etc/iproute2\"" \
+        -DCONF_USR_DIR="\"$td/usr/etc/iproute2\"" \
+        -DCONF_ETC_DIR="\"$td/etc/iproute2\"" \
+        "$td/test_conf.c" lib/rt_names.c tc/tc_util.c lib/libutil.a lib/libnetlink.a -lm \
+        -o "$td/test_conf"
+
+    "$td/test_conf" fluffy_vendor "fluffy_root#1:10"
+    mkdir -p "$td/etc/iproute2"
+    printf '42\tfluffy_etc\n' > "$td/etc/iproute2/rt_tables"
+    printf '1:10\tfluffy_etc_cls\n' > "$td/etc/iproute2/tc_cls"
+    "$td/test_conf" fluffy_etc "fluffy_etc_cls#1:10"
+
+    rm -rf "$td"
 }
 
 INSTALL() {

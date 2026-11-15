@@ -9,7 +9,7 @@ VERSION=4.4.1
 
 ARCHIVES=(
     dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3 https://github.com/fluffy-linux/make/releases/download/$VERSION/make-$VERSION.tar.gz
-    3ce9ccec18591a1b9e802800ec1b9fea93f0f541fddeb9fbf5a1fb420f5ef79e file://make-$VERSION-fluffy-source.patch
+    e0af2f05d59bf8989d97706bd78f5a9342d895faa70b245c292df273e617a876 file://make-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
