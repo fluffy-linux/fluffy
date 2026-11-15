@@ -37,7 +37,15 @@ diff --no-dereference -Naur tar-1.35.orig/scripts/restore.in tar-1.35/scripts/re
 diff --no-dereference -Naur tar-1.35.orig/src/system.c tar-1.35/src/system.c
 --- tar-1.35.orig/src/system.c	2023-07-10 07:29:17.000000000 +0000
 +++ tar-1.35/src/system.c	2023-07-10 07:29:17.000000000 +0000
-@@ -27,14 +27,25 @@
+@@ -20,6 +20,7 @@
+ 
+ #include "common.h"
+ #include <priv-set.h>
++#include <paths.h>
+ #include <rmt.h>
+ #include <signal.h>
+ #include <wordsplit.h>
+@@ -27,14 +28,23 @@
  static _Noreturn void
  xexec (const char *cmd)
  {
@@ -47,15 +55,13 @@ diff --no-dereference -Naur tar-1.35.orig/src/system.c tar-1.35/src/system.c
 -  argv[0] = (char *) "/bin/sh";
 +  if (access (sh, X_OK) != 0)
 +    {
-+      if (access ("/sw/bash/bin/sh", X_OK) == 0)
-+        sh = "/sw/bash/bin/sh";
-+      else if (access ("/sw/bash/bin/bash", X_OK) == 0)
-+        sh = "/sw/bash/bin/bash";
++      if (access (_PATH_BSHELL, X_OK) == 0)
++        sh = _PATH_BSHELL;
 +      else
 +        sh = "sh";
 +    }
 +
-+  argv[0] = (char *) sh;
++  argv[0] = (char *) "sh";
    argv[1] = (char *) "-c";
    argv[2] = (char *) cmd;
    argv[3] = NULL;
@@ -65,7 +71,7 @@ diff --no-dereference -Naur tar-1.35.orig/src/system.c tar-1.35/src/system.c
    exec_fatal (cmd);
  }
  
-@@ -231,7 +242,16 @@
+@@ -231,7 +241,14 @@
    pid_t child;
    const char *shell = getenv ("SHELL");
    if (! shell)
@@ -73,10 +79,8 @@ diff --no-dereference -Naur tar-1.35.orig/src/system.c tar-1.35/src/system.c
 +    {
 +      if (access ("/bin/sh", X_OK) == 0)
 +        shell = "/bin/sh";
-+      else if (access ("/sw/bash/bin/sh", X_OK) == 0)
-+        shell = "/sw/bash/bin/sh";
-+      else if (access ("/sw/bash/bin/bash", X_OK) == 0)
-+        shell = "/sw/bash/bin/bash";
++      else if (access (_PATH_BSHELL, X_OK) == 0)
++        shell = _PATH_BSHELL;
 +      else
 +        shell = "sh";
 +    }

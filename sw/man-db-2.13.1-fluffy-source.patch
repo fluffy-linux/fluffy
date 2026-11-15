@@ -1,6 +1,6 @@
 diff --no-dereference -Naur man-db-2.13.1.orig/init/systemd/man-db.service.in man-db-2.13.1/init/systemd/man-db.service.in
---- man-db-2.13.1.orig/init/systemd/man-db.service.in	2025-05-02 12:49:29.000000000 +0000
-+++ man-db-2.13.1/init/systemd/man-db.service.in	2025-05-02 12:49:29.000000000 +0000
+--- man-db-2.13.1.orig/init/systemd/man-db.service.in	2025-05-02 08:49:29.000000000 -0400
++++ man-db-2.13.1/init/systemd/man-db.service.in	2025-05-02 08:49:29.000000000 -0400
 @@ -6,7 +6,7 @@
  [Service]
  Type=oneshot
@@ -11,21 +11,18 @@ diff --no-dereference -Naur man-db-2.13.1.orig/init/systemd/man-db.service.in ma
  ExecStart=@bindir@/mandb --quiet
  User=@cache_top_owner@
 diff --no-dereference -Naur man-db-2.13.1.orig/lib/pathsearch.c man-db-2.13.1/lib/pathsearch.c
---- man-db-2.13.1.orig/lib/pathsearch.c	2025-05-02 12:49:29.000000000 +0000
-+++ man-db-2.13.1/lib/pathsearch.c	2025-05-02 12:49:29.000000000 +0000
-@@ -30,6 +30,11 @@
+--- man-db-2.13.1.orig/lib/pathsearch.c	2025-05-02 08:49:29.000000000 -0400
++++ man-db-2.13.1/lib/pathsearch.c	2025-05-02 08:49:29.000000000 -0400
+@@ -30,6 +30,8 @@
  #include <stdlib.h>
  #include <string.h>
  
 +#include <glob.h>
-+#ifndef GLOB_PATHS
-+# define GLOB_PATHS (1 << 29)
-+#endif
 +
  #include <sys/stat.h>
  #include <sys/types.h>
  #include <unistd.h>
-@@ -48,11 +53,9 @@
+@@ -48,11 +50,9 @@
  
  static bool pathsearch (const char *name, const mode_t bits)
  {
@@ -38,7 +35,7 @@ diff --no-dereference -Naur man-db-2.13.1.orig/lib/pathsearch.c man-db-2.13.1/li
  	bool ret = false;
  
  	if (!path)
-@@ -68,39 +71,22 @@
+@@ -68,39 +68,22 @@
  		return false;
  	}
  
@@ -82,19 +79,17 @@ diff --no-dereference -Naur man-db-2.13.1.orig/lib/pathsearch.c man-db-2.13.1/li
 -			ret = true;
 -			break;
  		}
-+		globfree (&gl);
  	}
++	globfree (&gl);
  
 -	free (path);
 -	free (cwd);
  	return ret;
  }
  
-@@ -111,36 +97,24 @@
- 
- bool directory_on_path (const char *dir)
+@@ -113,34 +96,36 @@
  {
--	char *cwd = NULL;
+ 	char *cwd = NULL;
  	char *path = getenv ("PATH");
 -	char *pathtok;
 -	const char *element;
@@ -122,35 +117,55 @@ diff --no-dereference -Naur man-db-2.13.1.orig/lib/pathsearch.c man-db-2.13.1/li
 -			ret = true;
 -			break;
 +	memset (&gl, 0, sizeof (gl));
-+	if (glob (path, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++	if (glob (path, GLOB_PATHS | GLOB_NOESCAPE | GLOB_NOCHECK, NULL, &gl) == 0) {
 +		for (size_t i = 0; i < gl.gl_pathc; ++i) {
-+			if (STREQ (gl.gl_pathv[i], dir)) {
++			const char *element = gl.gl_pathv[i];
++			if (STREQ (element, dir)) {
 +				ret = true;
 +				break;
 +			}
++			if (STREQ (element, ".")) {
++				if (!cwd)
++					cwd = xgetcwd ();
++				if (!cwd)
++					fatal (errno, _ ("can't determine current "
++					                 "directory"));
++				if (STREQ (cwd, dir)) {
++					ret = true;
++					break;
++				}
++			}
  		}
-+		globfree (&gl);
  	}
++	globfree (&gl);
  
 -	free (path);
--	free (cwd);
+ 	free (cwd);
  	return ret;
  }
 diff --no-dereference -Naur man-db-2.13.1.orig/src/man.c man-db-2.13.1/src/man.c
---- man-db-2.13.1.orig/src/man.c	2025-05-02 12:49:29.000000000 +0000
-+++ man-db-2.13.1/src/man.c	2025-05-02 12:49:29.000000000 +0000
-@@ -1535,7 +1535,7 @@
+--- man-db-2.13.1.orig/src/man.c	2025-05-02 08:49:29.000000000 -0400
++++ man-db-2.13.1/src/man.c	2025-05-02 08:49:29.000000000 -0400
+@@ -45,6 +45,7 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <limits.h>
++#include <paths.h>
+ #include <signal.h>
+ #include <stdarg.h>
+ #include <stdbool.h>
+@@ -1535,7 +1536,7 @@
  		free (esc_file);
  	}
  
 -	cmd = pipecmd_new_args ("/bin/sh", "-c", browser, nullptr);
-+	cmd = pipecmd_new_args ("/sw/bash/bin/bash", "-c", browser, nullptr);
++	cmd = pipecmd_new_args (_PATH_BSHELL, "-c", browser, nullptr);
  	pipecmd_pre_exec (cmd, drop_privs, NULL, NULL);
  	p = pipeline_new_commands (cmd, nullptr);
  	pipeline_ignore_signals (p, 1);
 diff --no-dereference -Naur man-db-2.13.1.orig/src/man_db.conf.in man-db-2.13.1/src/man_db.conf.in
---- man-db-2.13.1.orig/src/man_db.conf.in	2025-05-02 12:49:29.000000000 +0000
-+++ man-db-2.13.1/src/man_db.conf.in	2025-05-02 12:49:29.000000000 +0000
+--- man-db-2.13.1.orig/src/man_db.conf.in	2025-05-02 08:49:29.000000000 -0400
++++ man-db-2.13.1/src/man_db.conf.in	2025-05-02 08:49:29.000000000 -0400
 @@ -17,9 +17,10 @@
  #
  #MANDATORY_MANPATH 			/usr/src/pvm3/man
@@ -174,20 +189,17 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/man_db.conf.in man-db-2.13.1/
  MANDB_MAP	/usr/share/man		/var/cache/man
  MANDB_MAP	/usr/local/man		/var/cache/man/oldlocal
 diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp.c
---- man-db-2.13.1.orig/src/manp.c	2025-05-02 12:49:29.000000000 +0000
-+++ man-db-2.13.1/src/manp.c	2025-05-02 12:49:29.000000000 +0000
-@@ -50,6 +50,10 @@
+--- man-db-2.13.1.orig/src/manp.c	2025-05-02 08:49:29.000000000 -0400
++++ man-db-2.13.1/src/manp.c	2025-05-02 08:49:29.000000000 -0400
+@@ -50,6 +50,7 @@
  #include <assert.h>
  #include <ctype.h>
  #include <dirent.h>
 +#include <glob.h>
-+#ifndef GLOB_PATHS
-+#  define GLOB_PATHS (1 << 29)
-+#endif
  #include <errno.h>
  #include <stdbool.h>
  #include <stdio.h>
-@@ -129,6 +133,21 @@
+@@ -129,6 +130,21 @@
  static void add_config (const char *key, const char *cont,
                          enum config_flag flag)
  {
@@ -209,7 +221,7 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp
  	struct config_item *item = XMALLOC (struct config_item);
  	item->key = xstrdup (key);
  	item->cont = xstrdup (cont);
-@@ -136,6 +155,19 @@
+@@ -136,6 +152,19 @@
  	gl_list_add_last (config, item);
  }
  
@@ -229,7 +241,7 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp
  static const char *ATTRIBUTE_PURE get_config (const char *key,
                                                enum config_flag flag)
  {
-@@ -756,6 +788,7 @@
+@@ -756,6 +785,7 @@
  	char key[512], cont[512];
  	int val;
  	int c;
@@ -237,7 +249,7 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp
  
  	while (getline (&buf, &n, config_file) >= 0) {
  		bp = buf;
-@@ -786,11 +819,14 @@
+@@ -786,11 +816,14 @@
  		else if ((c = sscanf (bp, "DEFINE %511s %511[^\n]", key,
  		                      cont)) > 0)
  			add_def (key, c == 2 ? cont : "", user);
@@ -256,7 +268,7 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp
  		else if (sscanf (bp, "MINCATWIDTH %d", &val) == 1)
  			min_cat_width = val;
  		else if (sscanf (bp, "MAXCATWIDTH %d", &val) == 1)
-@@ -847,8 +883,56 @@
+@@ -847,8 +880,61 @@
  	}
  
  	if (getenv ("MAN_TEST_DISABLE_SYSTEM_CONFIG") == NULL) {
@@ -264,9 +276,12 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp
 -		if (config_file == NULL) {
 +		const char *sys_path = getenv ("MAN_SYSTEM_CONFIG_PATH");
 +		bool custom_sys_path = (sys_path != NULL && *sys_path != '\0');
-+		const char *pattern = custom_sys_path
-+		        ? sys_path
-+		        : "/sw/*/etc/man_db.conf:/etc/man_db.conf";
++#ifdef VENDOR_CONFIG_PATH
++		const char *default_sys_path = VENDOR_CONFIG_PATH ":/etc/man_db.conf";
++#else
++		const char *default_sys_path = "/etc/man_db.conf";
++#endif
++		const char *pattern = custom_sys_path ? sys_path : default_sys_path;
 +		glob_t gl;
 +		bool loaded_any = false;
 +		bool loaded_default = false;
@@ -275,6 +290,8 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp
 +		if (glob (pattern, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
 +			for (size_t i = 0; i < gl.gl_pathc; ++i) {
 +				const char *p = gl.gl_pathv[i];
++				if (STREQ (p, "."))
++					continue;
 +				if (!custom_sys_path && STREQ (p, "/etc/man_db.conf"))
 +					continue;
 +				if (STREQ (p, CONFIG_FILE))
@@ -287,8 +304,8 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp
 +					loaded_any = true;
 +				}
 +			}
-+			globfree (&gl);
 +		}
++		globfree (&gl);
 +
 +		if (!custom_sys_path && !loaded_default &&
 +		    !STREQ (CONFIG_FILE, "/etc/man_db.conf")) {
@@ -315,7 +332,7 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp
  			if (optional)
  				debug ("can't open %s; continuing anyway\n",
  				       CONFIG_FILE);
-@@ -857,11 +941,6 @@
+@@ -857,11 +943,6 @@
  				       _ ("can't open the manpath "
  				          "configuration file %s"),
  				       CONFIG_FILE);

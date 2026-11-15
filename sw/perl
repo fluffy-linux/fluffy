@@ -9,8 +9,8 @@ VERSION=5.44.0
 
 ARCHIVES=(
     505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://github.com/fluffy-linux/perl5/releases/download/v$VERSION/perl-$VERSION.tar.xz
-    76d5b2c38546637ae9847dbee846f3dc38440b662c94c9455f5f68a995c9bd8b file://perl-$VERSION-fluffy-source.patch
-    2dbbf22a0f2fd0114d14851b95df2546e715b3deef7d3b03308cc78d0070a0de file://perl-$VERSION-fluffy-test.patch
+    e471c1213eeb00d07e1e3fe234e594c5d287c648e71c14e7ad5acfe3547d11e4 file://perl-$VERSION-fluffy-source.patch
+    7af2262fb9665be711858a7c0eb9e3bf70380d57b719e5814c265d25ff85fe99 file://perl-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -93,6 +93,7 @@ MAKE() {
         -D sitearch=/sw/perl/lib/perl5/5.44/site_perl \
         -D vendorlib=/sw/perl/lib/perl5/5.44/vendor_perl \
         -D vendorarch=/sw/perl/lib/perl5/5.44/vendor_perl \
+        -D otherlibdirs="/sw/*/lib/perl5/5.44/site_perl:/sw/*/lib/perl5/5.44/vendor_perl" \
         -D man1dir=/sw/perl/share/man/man1 \
         -D man3dir=/sw/perl/share/man/man3 \
         -D pager="/sw/less/bin/less -isR" \

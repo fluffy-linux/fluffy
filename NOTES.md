@@ -14,15 +14,15 @@
      - **Self-Documenting File Ownership**: The pathname `/sw/<pkg>/...` directly and unambiguously identifies which package owns every binary, library, header, and asset on the system with zero database queries (`dpkg -S`, `rpm -qf`).
      - **Transparent Deduplication & Compression**: Zstandard compression at rest with shared page cache entries across all processes, containers, and namespaces on the host.
 
-2. **Immutable Mount Namespaces (Zero Torn Installs, Zero-Logout Desktop UX)**
-   - Running processes keep their existing mount namespace (`CLONE_NEWNS`) across package installs/upgrades.
-   - Installing or upgrading a package updates the canonical system mount namespace (`/proc/1/ns/mnt`).
-   - A running process can never experience a torn upgrade (e.g. halfway through loading shared libraries or reading data files while files change underneath).
-   - **Desktop / Interactive UX**: Users do *not* need to log out to use newly installed or upgraded software. Opening a new shell/terminal tab or launching an application enters `/proc/1/ns/mnt` (`setns`), immediately forks a fresh private mount namespace (`unshare(CLONE_NEWNS)`) with `MS_PRIVATE`, and execs the shell/app—so new shells and newly launched apps see the new environment immediately while already-running apps continue uninterrupted until restarted.
-   - Old `.squashfs` mounts stay alive in existing namespaces until the last process using them exits.
+2. **Immutable Mount Namespaces via PID 1 `setns` Cutover (Zero Torn Installs, Zero Per-App `unshare` Overhead)**
+   - Running processes inherit PID 1's mount namespace normally at launch—no per-shell or per-app `unshare(CLONE_NEWNS)` wrapper is needed!
+   - When packages are upgraded or removed, `swctl` constructs a brand-new mount namespace (`CLONE_NEWNS` with `MS_PRIVATE`), mounts the complete target `/sw/*` closure inside it, and hands that namespace FD to PID 1 (`systemd`) across `systemctl daemon-reexec` (`setns(fd, CLONE_NEWNS)` in `finish_reexecute()` immediately prior to `execv()`).
+   - Because PID 1 moves into the *new* mount namespace rather than mutating the old namespace in place, **every pre-existing process stays undisturbed inside the untouched prior mount namespace**—never experiencing a torn upgrade (e.g. halfway through loading shared libraries or reading data files while files change underneath).
+   - **Desktop / Interactive UX**: Any newly spawned systemd service, new login session, or terminal/launcher that enters `/proc/1/ns/mnt` immediately lands in the upgraded generation, while already-running apps continue uninterrupted in the previous generation's namespace until restarted.
+   - Old `.squashfs` mounts stay alive in previous generation namespaces until the last process using them exits.
    - **New Installs vs. Package Upgrades**:
-     - **Fresh Package Installs (Additions)**: Do *not* require a new mount namespace. Mounting a brand-new package at `/sw/<pkg>` carries zero risk of torn state since no active process was running against it. Combined with the shared CoW index below, newly installed commands become available immediately in existing shells.
-     - **Package Upgrades (Replacements)**: Only package *upgrades* necessitate namespace isolation. Existing processes remain pinned to their older squashfs generation in their private namespace, avoiding torn shared libraries or clobbered assets until restarted.
+     - **Fresh Package Installs (Additions)**: Do *not* even require a new mount namespace. Mounting a brand-new package at `/sw/<pkg>` in `/proc/1/ns/mnt` carries zero risk of torn state since no active process was running against it, making newly installed commands available immediately in existing shells.
+     - **Package Upgrades / Removals**: `swctl` stages a fresh generation mount namespace and transitions PID 1 into it via `daemon-reexec`, leaving existing processes pinned safely to the prior untouched namespace.
 
 3. **Stateless `/etc`: Read-Only Package Defaults (`/sw/*/etc/<file>`) & `/etc/<file>` User Overlay**
    - **Package Creation vs. System Configuration**:
@@ -104,6 +104,9 @@
      - **Universal `<glob.h>` Primitive, Language Runtime Delegation & `FSWC` v5 SquashFS Cache (`glibc`)**:
        - `ldconfig` and `USE_LDCONFIG` (`ld.so.cache`) are completely disabled (`use_ldconfig=no`) in `glibc`. Instead of subsystem-specific caches or leaked userland helpers, POSIX `<glob.h>` and `<fnmatch.h>` in `glibc` serve as Fluffy's single universal late-binding primitive across `ld.so`, `execvpe`/`posix_spawnp`, `gcc`/`binutils`, shells (`bash`, `readline`), language runtimes (`python`, `perl`, `tcl`), and stateless-`/etc` consumers (`systemd`, `kmod`, `dbus`, `util-linux`, `man-db`, `openssl`, `curl`, etc.).
        - Custom `<glob.h>` / `<fnmatch.h>` flags (`GLOB_KEEP_SLASHES`, `GLOB_PATHS`, `GLOB_EXTMATCH`, `GLOB_CASEFOLD`, `GLOB_SKIPDOTS`, `GLOB_GLOBSTAR`, `GLOB_DOTDOT`, `FNM_DOTDOT`), language runtime delegation, the internal `FSWC` v5 Merged Virtual Trie shared-memory cache (`GLIBC_TUNABLES=glibc.fswc.{mode,max_inodes}`), per-package test suite requirements, and the phased implementation roadmap are specified in **[GLOB.md](GLOB.md)**.
+     - **TODO: Cross-Package File Collision Vetting Tool (`<relpath>\t<pkg>`)**:
+       - Because `/sw/*` late binding resolves matches in alphabetical (`alphasort`) package order, two packages accidentally shipping the same relative file path (binary, header, shared library, unit, or config default) would silently shadow the alphabetically later package rather than failing loudly.
+       - Provide a standalone vetting script that enumerates all non-directory entries (files and symlinks, ignoring shared directory paths like `bin`, `lib`, `include`, `share/man/man1`) across built `.squashfs` images or mounted `/sw/*` packages as `<relpath>\t<pkg>`, loads them into a Bash associative array keyed by `<relpath>`, and reports collisions across packages so overlaps are caught deterministically in CI/local builds.
 
 5. **Hermetic, Unprivileged Builds & Unified Tooling (`swctl build`, `swctl install`)**
    - **Developer Environment Convention (`direnv` & `sudo --preserve-env`)**:
@@ -204,25 +207,28 @@
        - A `build` group and separate storage/namespace boundaries between system squashfs images (requiring `CAP_SYS_ADMIN` / system install privileges) and user-built squashfs images allow unprivileged users to run `swctl build` out of their own home-directory recipe clones (and even drop into a shell with a custom `fstab` software set) without granting them unrestricted root access to the system.
    - **Host vs. Native Detection via `$FLUFFY` & `/sw` Bind-Mount Normalization**:
 
-6. **The Dual-Manifest Model (`/sw/.build/fstab` vs. `/etc/fluffy/fstab`)**
-   - **1. `/sw/.build/fstab` — The Available Package Index**:
-     - Records every built or downloaded `.squashfs` image available in `/sw/` (including `*-pass1`, `*-pass2`, build-only libraries, and uninstalled packages), formatted as a self-signed `fstab(5)` file:
+6. **The Manifest & System Installer Architecture (`/sw/.build/fstab`, Remote `fstab`s & `/etc/fluffy/fstab`)**
+   - **1. `/sw/.build/fstab` — The Local Build & Available Package Index**:
+     - Records every locally built or staged `.squashfs` image available in `/sw/` (including `/builder` harness packages, `*-pass1`, `*-pass2`, build-only libraries, and uninstalled packages), formatted as a self-signed `fstab(5)` file:
        ```fstab
        # fluffy.signature=<base64-ed25519-signature-over-remaining-lines>
        /sw/foo-1.23.squashfs /sw/foo squashfs X-mount.mkdir,X-fluffy.image-checksum=<sha256>,X-fluffy.needs="bar,baz",X-fluffy.recipe-checksum=<sha256> 0 0
        /sw/bar-2.0.squashfs /sw/bar squashfs X-mount.mkdir,X-fluffy.image-checksum=<sha256>,X-fluffy.needs="bar,baz",X-fluffy.recipe-checksum=<sha256> 0 0
        ```
-   - **2. `/etc/fluffy/fstab` — The Installed System Manifest**:
-     - Records the exact topological set of `.squashfs` packages actually **installed** on the system (written/updated when `swctl install` installs packages into the system).
+   - **2. Remote Source `fstab` Manifest(s) — Signed Upstream Bottle Indexes**:
+     - Fetched from configured remote repositories (`/etc/sw/repositories`) and cryptographically verified against trusted `signify` public keys (`/etc/sw/*.pub` / `/sw/*/etc/sw/*.pub`) before any bottle metadata or `.squashfs` digest is trusted.
+   - **3. `/etc/fluffy/fstab` — The Currently Installed System Manifest**:
+     - Records the exact topological set of `.squashfs` packages actually **installed** in the active system generation.
      - Free of duplicate mountpoint collisions (`*-pass1` vs. final packages) and build-only clutter.
-     - Because it lives under `/etc`, Btrfs snapshots of `/etc` automatically snapshot and roll back the installed software state alongside system configuration.
-   - **Why this design is so powerful**:
-     - **Directly mountable by standard tools**: `libmount`, `mount -a -T`, and `systemd-fstab-generator` treat `#` as a comment line by default. No stripping or pre-processing is needed to use either `fstab` as a mount table.
+     - Because it lives under `/etc` on the Btrfs root subvolume, Btrfs system snapshots automatically capture `/etc/fluffy/fstab`, `/etc` configuration, and the referenced `.squashfs` extents together as a single atomic generation.
+   - **Why `fstab(5)` as the Manifest Format Is So Powerful**:
+     - **Directly mountable by standard tools**: `libmount`, `mount -a -T`, and `systemd-fstab-generator` treat `#` as a comment line by default. No stripping or pre-processing is needed to use an `fstab` as a mount table.
      - **Standard Userspace Options (`X-appname.option`)**: In accordance with the `mount(8)` and `libmount` standard specification, all user-space / application-specific mount options are prefixed with `X-<appname>.<option>` without leading hyphens:
        - `X-fluffy.image-checksum=<sha256>`: package image SHA-256 checksum (preserved across rebuilds when the new `.squashfs` is byte-identical).
        - `X-fluffy.needs="<dep1>,<dep2>"`: comma-separated list of runtime dependency packages.
        - `X-fluffy.recipe-checksum=<sha256>`: sha256 checksum of the multipart MIME envelope (`format_recipe_mime`) containing `sw/<pkg>`, any sourced includes, and the sorted `<dep>:<X-fluffy.image-checksum>` pairs of its direct `$ON` + `BUILD_NEEDS` dependencies, recording both recipe and dependency provenance without mutating recipe files on disk.
-        - `X-fluffy.cflags="..."` / `X-fluffy.ldflags="..."`: Package compile and link metadata declared via `HAS_CFLAGS=` and `HAS_LDFLAGS=` in library recipes (e.g. `HAS_LDFLAGS=-lzstd` in `sw/zstd`, `HAS_LDFLAGS="-lssl -lcrypto"` in `sw/openssl`). During `lockdown_exec`, `swctl` inspects `X-fluffy.cflags` and `X-fluffy.ldflags` for every dependency in `BUILD_NEEDS` and automatically exports `<DEP>_CFLAGS`, `<DEP>_LDFLAGS`, and `<DEP>_LIBS` (defaulting `<DEP>_CFLAGS` to `" "` when only `X-fluffy.ldflags` is set so Autoconf `pkg.m4` accepts the override without `pkg-config`), so consuming a library never requires manually specifying `pkg-config`, `CFLAGS`, `LDFLAGS`, or `LIBS`.
+       - `X-fluffy.cflags="..."` / `X-fluffy.ldflags="..."`: Package compile and link metadata declared via `HAS_CFLAGS=` and `HAS_LDFLAGS=` in library recipes (e.g. `HAS_LDFLAGS=-lzstd` in `sw/zstd`, `HAS_LDFLAGS="-lssl -lcrypto"` in `sw/openssl`). During `lockdown_exec`, `swctl` inspects `X-fluffy.cflags` and `X-fluffy.ldflags` for every dependency in `BUILD_NEEDS` and automatically exports `<DEP>_CFLAGS`, `<DEP>_LDFLAGS`, and `<DEP>_LIBS` (defaulting `<DEP>_CFLAGS` to `" "` when only `X-fluffy.ldflags` is set so Autoconf `pkg.m4` accepts the override without `pkg-config`), so consuming a library never requires manually specifying `pkg-config`, `CFLAGS`, `LDFLAGS`, or `LIBS`.
+         - **Multi-Library Package Splitting Rule**: Rather than re-inventing multi-target `pkg-config` sub-packages inside `X-fluffy.{cflags,ldflags}`, upstream projects that ship multiple distinct libraries with separate link/compile contracts (e.g. `glib` vs. `gio` vs. `gobject`) are split along library boundaries into separate `/sw/<subpkg>` recipes so the 1-package-to-1-`<DEP>_{CFLAGS,LIBS}` mapping stays universal.
      - **Compact Ed25519 signatures**: Raw Ed25519 signatures are exactly 64 bytes (88 base64 characters; 100 characters in OpenBSD signify format)—no massive ASCII armor blocks or multi-kilobyte RSA blobs.
      - **Single-file verification**: The signature on line 1 covers lines 2 through EOF. Verifying line 1 against the trusted public key validates the entire repository index in one shot (all package filenames, mountpoints, squashfs image checksums, and dependency closures) without needing separate detached `.sig` files or per-package signatures:
        ```bash
@@ -231,6 +237,22 @@
        ```
      - **Trust Root / Bootstrap**: The distro release signing public key cannot live inside a package squashfs (which would be circular). Instead, it lives alongside the manifest at `/sw/.build/release.pub` (or embedded in the bootstrap script / `/init`), providing the root of trust from day one.
      - **In-process parsing & mounting**: `libmount` (`<libmount/libmount.h>` called via `ctypes.sh`) parses the manifest, resolves dependencies, checks options (`X-mount.mkdir`, `X-fluffy.image-checksum`, `X-fluffy.needs`, `X-fluffy.recipe-checksum`), and mounts the squashfs images directly in-process.
+   - **TODO: Proper System Installer, Namespace Transition & Btrfs Rollback Architecture**:
+     - **1. Remote Manifest Loading & Validation**: Fetch remote `fstab` manifests over HTTPS, verify `signify` Ed25519 signatures against trusted public keys before parsing, and verify downloaded `.squashfs` SHA-256 digests against `X-fluffy.image-checksum` prior to staging into `/sw/`.
+     - **2. Coexistence of Build, Remote & Installed `fstab`s**: Define crisp resolution and precedence rules across `/sw/.build/fstab` (local builds + `/builder` harness), cached remote repository `fstab`(s) (signed upstream bottles), and `/etc/fluffy/fstab` (currently installed system generation), so local developer overrides, remote binary upgrades, and installed-state queries compose cleanly without clobbering one another.
+     - **3. Transactional Upgrades, Staged `CLONE_NEWNS` Handoff & `systemctl daemon-reexec` (`finish_reexecute()`)**:
+       - Rather than mutating mounts one-by-one inside `/proc/1/ns/mnt` (or forcing every launched process/shell to `unshare(CLONE_NEWNS)` defensively on startup), `swctl` constructs and verifies the **entire** target `/sw/*` mount closure inside a freshly unshared mount namespace (`CLONE_NEWNS`, `MS_PRIVATE`). If any loop mount or checksum check fails, the transaction aborts with PID 1 and the running system completely untouched.
+       - Once verified, `swctl` bind-mounts the prepared namespace FD into shared `/run` (e.g. `/run/fluffy/next-mntns`) and invokes `systemctl daemon-reexec`.
+       - **Kernel & `systemd` Implementation (~15 LOC in `finish_reexecute()`)**:
+         - In Linux `fs/namespace.c:mntns_install`, `setns(fd, CLONE_NEWNS)` only rejects shared `CLONE_FS` / multithreaded callers (`current->fs->users != 1`) or anonymous `OPEN_TREE_CLONE` namespaces—unlike `CLONE_NEWPID`/`CLONE_NEWUSER`, there is **zero** child-reaper / PID 1 restriction on `CLONE_NEWNS`, and `systemd` strictly forbids threads in PID 1 (`Threads: 1`).
+         - Right before `execv("/sw/systemd/lib/systemd/systemd", ...)` inside `finish_reexecute()`, a small Fluffy patch opens `/run/fluffy/next-mntns` (if present), calls `setns(fd, CLONE_NEWNS)`, detaches/unlinks the handoff node, and calls `chdir("/")`.
+         - Because `setns()` runs *immediately prior* to `execv()`, that very `execv()` resolves the newly mounted `/sw/systemd` and `/sw/glibc` in a single restart (even when `systemd` or `glibc` itself was upgraded!), releases all of PID 1's `mmap`s on old `.squashfs` images, reloads `/sw/*/lib/systemd/system` units, and leaves every pre-existing process untouched inside the previous mount namespace with zero per-session `unshare` gymnastics.
+     - **4. Pre-Install Btrfs System Snapshots & Immediate Safe Unlinking**: Take an atomic Btrfs snapshot of the root subvolume prior to committing any install, upgrade, or uninstall transaction. Once the new `/etc/fluffy/fstab` and namespace are active, no-longer-referenced `.squashfs` files can be `unlink(2)`ed immediately in the live subvolume: POSIX open-file / loop-backing semantics keep blocks alive for any still-running old namespaces, while the pre-install Btrfs snapshot retains zero-copy CoW references to the historical `.squashfs` images for instant rollback.
+     - **5. GRUB Pre-Install Snapshot Boot & Rollback**: Integrate Btrfs snapshots with GRUB configuration so users can select and boot directly into pre-install Btrfs snapshots from the GRUB menu (and roll back cleanly if an upgrade fails to boot or misbehaves).
+     - **6. Boot-Critical Uninstall Protection**: Refuse to uninstall packages required to boot and mount the system (e.g. `linux`, `init`, `systemd`, `glibc`, `bash`, `util-linux`, `btrfs-progs`, or any transitive dependency of the boot-critical root set).
+     - **7. The Pre-Mount Exception Theorem (Zero General-Purpose Post-Install Scripts)**: Never introduce arbitrary package-supplied post-install/post-upgrade maintainer scripts. The *only* system artifacts that cannot live exclusively inside `/sw/<pkg>` are those executed **before** `/etc/fluffy/fstab` is mounted (`GRUB → vmlinuz → /init`), making the exception list provably closed and handled declaratively inside `swctl`:
+       - `sw/linux` upgrade → update the active kernel `.squashfs` path / boot entries in `/boot/grub/grub.cfg` (alongside snapshot entries).
+       - `sw/init` upgrade → atomically install `/sw/init/bin/init` to `/init` on the root filesystem.
 
 7. **Runtime State Separation (`/var/<pkg>`) & Dynamic Users**
    - Packages in `/sw/<pkg>` are strictly immutable, code/asset-only squashfs images packed with `-all-root` (everything owned by `root:root`).
@@ -247,22 +269,18 @@
        - `sw/fluffy-build`: `NEEDS=(bzip2 coreutils ctypes-sh curl gzip signify squashfs-tools tar util-linux xz zstd)` (the final native Fluffy self-hosting environment).
        - `sw/world`: `ON=host-build`, `VERSION=1.0`, `NEEDS=(...)` explicitly listing every final package on the Fluffy system image according to Chapter 8 of Linux From Scratch (untrimmed), enabling `swctl build world` in CI and `swctl install world` on target systems.
      - Regular package definitions reference builder profiles directly via `$ON`, which defaults to `fluffy-build`. `swctl` transitively resolves the builder profile's `NEEDS` to set up the build environment for each stage before mounting package-specific requirements.
-   - **Builder Harness Isolation (`/sw/.build/<pkg>`) & Rebuilt Build Dependencies**:
-     - **TODO: Post-Boot Priority: Implement `/sw/.build/<pkg>` Harness Isolation**:
+   - **Builder Harness Isolation (`/builder` vs. `/sw/.build/<pkg>`) & Self-Referential `ON=<self>`**:
+     - **TODO: Post-Boot Priority: Isolate Minimal `swctl` Builder Harness**:
        - As observed during Chapter 8 (`zstd` discovering `zlib` and `xz` from `cross-build`), mounting builder tools directly in `/sw/*` allows configure checks to accidentally discover and link against build-harness libraries.
-       - Immediately once the system boots natively, rebuild the build harness under `/sw/.build/<pkg>` and isolate compiler/linker include/lib search strictly to `/sw/*` (since `.build` starts with `.`, standard `/sw/*` wildcard globs automatically skip `/sw/.build` without needing a separate top-level `/builder` directory on `/`).
+       - Once the system boots natively, compile an isolated, bare-minimum subset of what `swctl` needs to live into a dedicated builder prefix—either a top-level `/builder/<pkg>` prefix or `/sw/.build/<pkg>`—and register those images in `/sw/.build/fstab` while keeping compiler/linker include and library globs strictly pointed at `/sw/*`.
      - **Problem with Accidental Linkage**: Packages being built can accidentally discover and link against libraries or headers provided by the builder harness (`$ON` profiles like `cross-build` or `fluffy-build`). Post-install closure verification is finicky and brittle; statically linking the entire build harness runs counter to LFS and Glibc design.
-     - **Isolation via Dedicated `/sw/.build/<pkg>` Prefix**:
-       - Packages belonging to the build toolkit are rebuilt specifically under a `/sw/.build/<pkg>` prefix rather than `/sw/<pkg>`, and mounted under `/sw/.build/<pkg>`, keeping them completely invisible to `/sw/*` globs.
-     - **Magic Detection via Self-Referential Circular Dependency (`ON=<self>`)**:
-       - If a builder profile or recipe (e.g. `sw/foo-builder`) declares `ON=foo-builder` (a synthetic self-referential / circular dependency), the build engine magically detects that this package and all of its transitive dependencies are intended for `/sw/.build/<pkg>`.
-       - **Unhardcoding Paths**: Build staging and prefixes transition from hardcoded `/sw` to dynamic root paths (e.g. `$PKG_ROOT` or `$BUILD_PREFIX` resolving to `/sw/.build` vs `/sw`), allowing recipes and build logic to target `/sw/.build` cleanly without duplicating recipe definitions.
+     - **Isolation via Dedicated `/builder/<pkg>` (or `/sw/.build/<pkg>`) Prefix**:
+       - Packages belonging to the minimal `swctl` build harness are compiled for and mounted under `/builder/<pkg>` (or `/sw/.build/<pkg>`), keeping their headers and shared libraries completely invisible to `/sw/*` globs.
+     - **Self-Referential Build Environment Detection (`ON=<self>`)**:
+       - When a builder environment package declares itself as its own `ON=` (`ON=<self>`, e.g. `sw/builder` setting `ON=builder`), `swctl` treats that self-loop as the fixed-point marker identifying a root build environment and compiles/mounts its closure under the isolated builder prefix (`/builder/<pkg>` or `/sw/.build/<pkg>`), recording those entries in `/sw/.build/fstab`.
+       - **Unhardcoding Paths**: Build staging and prefixes transition from hardcoded `/sw` to dynamic root paths (e.g. `$PKG_ROOT` or `$BUILD_PREFIX` resolving to `/builder` or `/sw/.build` vs. `/sw`), allowing recipes or minimal builder definitions to target the isolated prefix cleanly.
      - **Clean Path Semantics**:
-       - Environment path execution is straightforward:
-         ```bash
-         PATH='/sw/.build/*/bin:/sw/*/bin'
-         ```
-       - Compilers, dynamic linkers, and include preprocessors only scan `/sw/*/{include,lib}` for dependencies. Because the builder harness lives under `/sw/.build/*` (skipped by `/sw/*` globs), packages can invoke build tools from `/sw/.build/*/bin` without ever accidentally resolving or linking against build-time harness libraries.
+       - Environment path execution places the isolated builder tools on `PATH` alongside `/sw/*/bin` (e.g. `PATH='/sw/*/bin:/builder/*/bin'` or `PATH='/builder/*/bin:/sw/*/bin'`), while compilers, linkers, and preprocessors scan only `/sw/*/{include,lib}`—so `swctl` and build scripts can run harness binaries without any package ever linking against harness libraries.
    - **Strict Circular Dependency Detection & Topological Mount Order**:
      - Before performing any mount operations, `swctl install` executes a recursive depth-first search (DFS) tracking node states (0 = unvisited, 1 = visiting/active in-stack, 2 = visited/completed).
      - Any circular dependency (direct or transitive) is rejected immediately with a fatal diagnostic displaying the exact dependency cycle path before touching mounts or namespaces.
@@ -289,19 +307,15 @@
         - Enforced `signify` Ed25519 verification (`verify_fstab_signature`) in `reload_fstab` before `libmount` parses `$FSTAB`, and atomic same-directory temp replacement in `sign_and_save_fstab`.
         - Overmounted `/sw/.build` (`sign.sec`, `toushun.sec`, `keys`, `fstab`) with an ephemeral read-only `tmpfs` inside unprivileged `lockdown_exec` phases (`MAKE`, `CHECK`, `INSTALL`), permanently dropped saved-UID/GID `0` before `PREPARE` network `curl` + `tar --no-same-owner --no-same-permissions`, added `resolve_in_chroot` symlink-escape and `validate_pkg_name` guards, fixed `src_matches_pkg` prefix collisions and version-bump `UP-TO-DATE` checks, removed `/tmp/.fluffy_ns_sealed`, and wired a session-scoped `/dev/shm` `tmpfs` across chroot builds.
 
-9. **Garbage Collection & Retention Model (`prune`)**
-   - **Git-Style Lazy Garbage Collection**:
-     - Upgrades and package removals do not delete active `.squashfs` files immediately. They update `/etc/fluffy/fstab` (and `/sw/.build/fstab`) and rebind mounts in new namespaces.
-     - Running processes continue to execute against old `.squashfs` images safely in their private mount namespaces.
-   - **Pruning Policy (`<pkgmgr> prune`)**:
-     - Scans `/sw/*.squashfs` periodically (cron/timer) or manually.
-     - An image is a candidate for deletion if:
-       1. It is no longer referenced by `/etc/fluffy/fstab` or `/sw/.build/fstab`.
-       2. It is not currently held open/mounted in any running mount namespace (verified via `/proc/*/mountinfo`).
-       3. Optional retention window: unreferenced, unmounted images can be kept for a grace period (e.g. 30 days) to allow instant rollback to older generations.
-   - **Btrfs Snapshot Protection**:
-     - System generations and `/etc` are preserved via Btrfs snapshots.
-     - Standard Linux POSIX file semantics ensure that even if an image is unlinked while still open in a dying namespace, its disk blocks remain allocated until the last referencing process exits.
+9. **Snapshot-Backed Retention & Immediate Unlink Model (Zero Separate `prune` Daemon Needed)**
+   - **Pre-Transaction Btrfs Snapshot + Immediate `unlink(2)` in Live `/sw`**:
+     - Prior to applying an upgrade or package removal, the installer takes an atomic Btrfs snapshot of the system subvolume.
+     - Once `/etc/fluffy/fstab` (and `/sw/.build/fstab` where applicable) is updated, superseded/unreferenced `.squashfs` files are `unlink(2)`ed immediately from the live `/sw/` directory rather than accumulating loose historical versions in `/sw/`.
+   - **Why Immediate Unlink Is Double-Safe (Running Processes + Rollback)**:
+     - **Running Processes (POSIX Refcounting)**: Standard Linux VFS/loop semantics keep an unlinked `.squashfs` inode's extents alive as long as any loop mount in any active process's private mount namespace (`CLONE_NEWNS`) still references it, freeing the blocks automatically the instant the last process exits (with zero `/proc/*/mountinfo` polling needed).
+     - **System Rollbacks (Btrfs CoW Snapshots)**: Because the pre-install Btrfs snapshot shares the `.squashfs` data extents via Copy-on-Write, unlinking the old `.squashfs` in the live subvolume costs zero extra disk copies while preserving the exact bootable historical generation (`/etc/fluffy/fstab`, `/etc`, `/init`, and `/sw/*.squashfs`).
+   - **Retention Policy Equals Snapshot Pruning**:
+     - Keeping 30 days (or $N$ generations) of instant GRUB-bootable rollbacks—and reclaiming disk space afterward—reduces entirely to standard Btrfs snapshot retention (`btrfs subvolume delete`) rather than maintaining a custom package garbage collector.
 
 10. **Boot Architecture: GRUB Direct-Mount, Kernel Squashfs & Static `/init`**
     - **Kernel & Modules in `/sw/linux`**:

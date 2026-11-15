@@ -10,12 +10,15 @@ diff --no-dereference -Naur libcap-2.78.orig/go/cgo-required.sh libcap-2.78/go/c
 diff --no-dereference -Naur libcap-2.78.orig/progs/capsh.c libcap-2.78/progs/capsh.c
 --- libcap-2.78.orig/progs/capsh.c	2025-02-22 20:18:47.000000000 +0000
 +++ libcap-2.78/progs/capsh.c	2025-02-22 20:18:47.000000000 +0000
-@@ -34,7 +34,7 @@
+@@ -32,9 +32,10 @@
+ #include <sys/securebits.h>
+ #include <sys/wait.h>
  #include <unistd.h>
++#include <paths.h>
  
  #ifndef SHELL
 -#define SHELL "/bin/bash"
-+#define SHELL "/sw/bash/bin/bash"
++#define SHELL _PATH_BSHELL
  #endif /* ndef SHELL */
  
  #include "./capshdoc.h"

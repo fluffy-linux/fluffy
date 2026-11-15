@@ -1,22 +1,3 @@
-diff --no-dereference -Naur bash-5.3.orig/Makefile.in bash-5.3/Makefile.in
---- bash-5.3.orig/Makefile.in	2025-05-16 18:56:31.000000000 +0000
-+++ bash-5.3/Makefile.in	2025-05-16 18:56:31.000000000 +0000
-@@ -370,12 +370,12 @@
- GLOB_LDFLAGS = -L$(GLOB_LIBDIR)
- GLOB_DEP = $(GLOB_LIBRARY)
- 
--GLOB_SOURCE = $(GLOB_LIBSRC)/glob.c $(GLOB_LIBSRC)/strmatch.c \
-+GLOB_SOURCE = $(GLOB_LIBSRC)/strmatch.c \
- 	      $(GLOB_LIBSRC)/smatch.c $(GLOB_LIBSRC)/xmbsrtowcs.c \
--	      $(GLOB_LIBSRC)/glob_loop.c $(GLOB_LIBSRC)/sm_loop.c \
-+	      $(GLOB_LIBSRC)/sm_loop.c \
- 	      $(GLOB_LIBSRC)/gmisc.c \
- 	      $(GLOB_LIBSRC)/glob.h $(GLOB_LIBSRC)/strmatch.h
--GLOB_OBJ    = $(GLOB_LIBDIR)/glob.o $(GLOB_LIBDIR)/strmatch.o \
-+GLOB_OBJ    = $(GLOB_LIBDIR)/strmatch.o \
- 	      $(GLOB_LIBDIR)/smatch.o $(GLOB_LIBDIR)/xmbsrtowcs.o \
- 	      $(GLOB_LIBDIR)/gmisc.o
- 
 diff --no-dereference -Naur bash-5.3.orig/bashline.c bash-5.3/bashline.c
 --- bash-5.3.orig/bashline.c	2025-06-25 19:53:44.000000000 +0000
 +++ bash-5.3/bashline.c	2025-06-25 19:53:44.000000000 +0000
@@ -450,58 +431,6 @@ diff --no-dereference -Naur bash-5.3.orig/findcmd.c bash-5.3/findcmd.c
  	}
      }
  
-diff --no-dereference -Naur bash-5.3.orig/lib/glob/Makefile.in bash-5.3/lib/glob/Makefile.in
---- bash-5.3.orig/lib/glob/Makefile.in	2024-11-11 20:06:25.000000000 +0000
-+++ bash-5.3/lib/glob/Makefile.in	2024-11-11 20:06:25.000000000 +0000
-@@ -67,16 +67,16 @@
- LIBRARY_NAME = libglob.a
- 
- # The C code source files for this library.
--CSOURCES = $(srcdir)/glob.c $(srcdir)/strmatch.c $(srcdir)/smatch.c \
-+CSOURCES = $(srcdir)/strmatch.c $(srcdir)/smatch.c \
- 	   $(srcdir)/gmisc.c \
- 	   $(srcdir)/xmbsrtowcs.c
- 
--LOOP_FILES = $(srcdir)/glob_loop.c $(srcdir)/gm_loop.c $(srcdir)/sm_loop.c
-+LOOP_FILES = $(srcdir)/gm_loop.c $(srcdir)/sm_loop.c
- 
- # The header files for this library.
- HSOURCES = $(srcdir)/strmatch.h
- 
--OBJECTS = glob.o strmatch.o smatch.o xmbsrtowcs.o gmisc.o
-+OBJECTS = strmatch.o smatch.o xmbsrtowcs.o gmisc.o
- 
- # The texinfo files which document this library.
- DOCSOURCE = doc/glob.texi
-@@ -146,14 +146,6 @@
- strmatch.o: $(BUILD_DIR)/config.h
- strmatch.o: $(BASHINCDIR)/stdc.h
- 
--glob.o: $(BUILD_DIR)/config.h
--glob.o: $(topdir)/shell.h $(BUILD_DIR)/pathnames.h
--glob.o: $(topdir)/bashtypes.h $(BASHINCDIR)/ansi_stdlib.h $(topdir)/bashansi.h
--glob.o: $(BASHINCDIR)/posixstat.h $(BASHINCDIR)/memalloc.h
--glob.o: strmatch.h glob.h
--glob.o: $(BASHINCDIR)/shmbutil.h
--glob.o: $(topdir)/xmalloc.h
--
- gmisc.o: $(BUILD_DIR)/config.h
- gmisc.o: $(topdir)/bashtypes.h $(BASHINCDIR)/ansi_stdlib.h $(topdir)/bashansi.h
- gmisc.o: $(BASHINCDIR)/shmbutil.h
-@@ -163,13 +155,11 @@
- xmbsrtowcs.o: ${BASHINCDIR}/shmbutil.h
- 
- # Rules for deficient makes, like SunOS and Solaris
--glob.o: glob.c
- gmisc.o: gmisc.c
- strmatch.o: strmatch.c
- smatch.o: smatch.c
- xmbsrtowcs.o: xmbsrtowcs.c
- 
- # dependencies for C files that include other C files
--glob.o: glob_loop.c
- gmisc.o: gm_loop.c
- smatch.o: sm_loop.c
 diff --no-dereference -Naur bash-5.3.orig/lib/glob/glob.c bash-5.3/lib/glob/glob.c
 --- bash-5.3.orig/lib/glob/glob.c	2023-07-20 15:28:53.000000000 +0000
 +++ bash-5.3/lib/glob/glob.c	1970-01-01 00:00:00.000000000 +0000
@@ -2244,6 +2173,58 @@ diff --no-dereference -Naur bash-5.3.orig/lib/glob/gmisc.c bash-5.3/lib/glob/gmi
 -  return d;
 -}
 -#endif /* EXTENDED_GLOB */
+diff --no-dereference -Naur bash-5.3.orig/lib/glob/Makefile.in bash-5.3/lib/glob/Makefile.in
+--- bash-5.3.orig/lib/glob/Makefile.in	2024-11-11 20:06:25.000000000 +0000
++++ bash-5.3/lib/glob/Makefile.in	2024-11-11 20:06:25.000000000 +0000
+@@ -67,16 +67,16 @@
+ LIBRARY_NAME = libglob.a
+ 
+ # The C code source files for this library.
+-CSOURCES = $(srcdir)/glob.c $(srcdir)/strmatch.c $(srcdir)/smatch.c \
++CSOURCES = $(srcdir)/strmatch.c $(srcdir)/smatch.c \
+ 	   $(srcdir)/gmisc.c \
+ 	   $(srcdir)/xmbsrtowcs.c
+ 
+-LOOP_FILES = $(srcdir)/glob_loop.c $(srcdir)/gm_loop.c $(srcdir)/sm_loop.c
++LOOP_FILES = $(srcdir)/gm_loop.c $(srcdir)/sm_loop.c
+ 
+ # The header files for this library.
+ HSOURCES = $(srcdir)/strmatch.h
+ 
+-OBJECTS = glob.o strmatch.o smatch.o xmbsrtowcs.o gmisc.o
++OBJECTS = strmatch.o smatch.o xmbsrtowcs.o gmisc.o
+ 
+ # The texinfo files which document this library.
+ DOCSOURCE = doc/glob.texi
+@@ -146,14 +146,6 @@
+ strmatch.o: $(BUILD_DIR)/config.h
+ strmatch.o: $(BASHINCDIR)/stdc.h
+ 
+-glob.o: $(BUILD_DIR)/config.h
+-glob.o: $(topdir)/shell.h $(BUILD_DIR)/pathnames.h
+-glob.o: $(topdir)/bashtypes.h $(BASHINCDIR)/ansi_stdlib.h $(topdir)/bashansi.h
+-glob.o: $(BASHINCDIR)/posixstat.h $(BASHINCDIR)/memalloc.h
+-glob.o: strmatch.h glob.h
+-glob.o: $(BASHINCDIR)/shmbutil.h
+-glob.o: $(topdir)/xmalloc.h
+-
+ gmisc.o: $(BUILD_DIR)/config.h
+ gmisc.o: $(topdir)/bashtypes.h $(BASHINCDIR)/ansi_stdlib.h $(topdir)/bashansi.h
+ gmisc.o: $(BASHINCDIR)/shmbutil.h
+@@ -163,13 +155,11 @@
+ xmbsrtowcs.o: ${BASHINCDIR}/shmbutil.h
+ 
+ # Rules for deficient makes, like SunOS and Solaris
+-glob.o: glob.c
+ gmisc.o: gmisc.c
+ strmatch.o: strmatch.c
+ smatch.o: smatch.c
+ xmbsrtowcs.o: xmbsrtowcs.c
+ 
+ # dependencies for C files that include other C files
+-glob.o: glob_loop.c
+ gmisc.o: gm_loop.c
+ smatch.o: sm_loop.c
 diff --no-dereference -Naur bash-5.3.orig/lib/glob/smatch.c bash-5.3/lib/glob/smatch.c
 --- bash-5.3.orig/lib/glob/smatch.c	2023-05-29 18:15:17.000000000 +0000
 +++ bash-5.3/lib/glob/smatch.c	2023-05-29 18:15:17.000000000 +0000
@@ -2331,78 +2312,108 @@ diff --no-dereference -Naur bash-5.3.orig/lib/readline/bind.c bash-5.3/lib/readl
      {
        FREE (last_readline_init_file);
        last_readline_init_file = savestring (filename);
-@@ -1129,6 +1133,71 @@
+@@ -1129,6 +1133,69 @@
    return (0);
  }
  
 +static int
 +_rl_read_init_file (const char *filename, int include_level)
 +{
-+  static int reading_sys_inputrc = 0;
-+  const char *pattern = 0;
++  int r;
 +
 +  if (filename == 0)
 +    return (ENOENT);
 +
-+  if (strcmp (filename, SYS_INPUTRC) == 0 && reading_sys_inputrc == 0)
-+    pattern = "/sw/*/etc/inputrc:" SYS_INPUTRC;
-+  else if (strpbrk (filename, "*?[") != 0 || strchr (filename, ':') != 0)
-+    pattern = filename;
-+
-+  if (pattern != 0)
++  if (strpbrk (filename, "*?[") == 0)
 +    {
-+      glob_t gl;
-+      int any_ok = 0;
-+      int last_err = ENOENT;
-+      int was_sys = (strcmp (filename, SYS_INPUTRC) == 0);
-+
-+      if (was_sys)
-+	reading_sys_inputrc = 1;
-+
-+      memset (&gl, 0, sizeof (gl));
-+      if (glob (pattern, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0)
-+	{
-+	  size_t gi;
-+	  for (gi = 0; gi < gl.gl_pathc; ++gi)
-+	    {
-+	      const char *old_file = current_readline_init_file;
-+	      int old_line = current_readline_init_lineno;
-+	      int old_level = current_readline_init_include_level;
-+	      int old_reading = currently_reading_init_file;
-+	      int r = _rl_read_init_file_single (gl.gl_pathv[gi], 0, include_level);
-+	      current_readline_init_file = old_file;
-+	      current_readline_init_lineno = old_line;
-+	      current_readline_init_include_level = old_level;
-+	      currently_reading_init_file = old_reading;
-+	      if (r == 0)
-+		any_ok = 1;
-+	      else
-+		last_err = r;
-+	    }
-+	  globfree (&gl);
-+	}
-+
-+      if (was_sys)
-+	reading_sys_inputrc = 0;
-+
-+      if (any_ok)
-+	{
-+	  if (include_level == 0 && filename != last_readline_init_file)
-+	    {
-+	      FREE (last_readline_init_file);
-+	      last_readline_init_file = savestring (filename);
-+	    }
-+	  return (0);
-+	}
-+      return (last_err);
++      r = _rl_read_init_file_single (filename, 1, include_level);
++      if (r == 0 || strchr (filename, ':') == 0 || r != ENOENT)
++	return (r);
 +    }
 +
-+  return (_rl_read_init_file_single (filename, 1, include_level));
++  {
++    glob_t gl;
++    int any_ok = 0;
++    int last_err = ENOENT;
++
++    memset (&gl, 0, sizeof (gl));
++    if (glob (filename, GLOB_PATHS | GLOB_NOESCAPE | GLOB_TILDE, NULL, &gl) == 0)
++      {
++	size_t gi;
++	for (gi = 0; gi < gl.gl_pathc; ++gi)
++	  {
++	    struct stat st;
++	    const char *old_file;
++	    int old_line, old_level, old_reading;
++
++	    if (stat (gl.gl_pathv[gi], &st) == 0 && S_ISDIR (st.st_mode))
++	      continue;
++
++	    old_file = current_readline_init_file;
++	    old_line = current_readline_init_lineno;
++	    old_level = current_readline_init_include_level;
++	    old_reading = currently_reading_init_file;
++	    r = _rl_read_init_file_single (gl.gl_pathv[gi], 0, include_level);
++	    current_readline_init_file = old_file;
++	    current_readline_init_lineno = old_line;
++	    current_readline_init_include_level = old_level;
++	    currently_reading_init_file = old_reading;
++	    if (r == 0)
++	      any_ok = 1;
++	    else
++	      last_err = r;
++	  }
++      }
++    globfree (&gl);
++
++    if (any_ok)
++      {
++	if (include_level == 0 && filename != last_readline_init_file)
++	  {
++	    FREE (last_readline_init_file);
++	    last_readline_init_file = savestring (filename);
++	  }
++	return (0);
++      }
++    return (last_err);
++  }
 +}
 +
  static void
  _rl_init_file_error (const char *format, ...)
  {
+diff --no-dereference -Naur bash-5.3.orig/lib/readline/rlconf.h bash-5.3/lib/readline/rlconf.h
+--- bash-5.3.orig/lib/readline/rlconf.h	2023-12-13 15:27:05.000000000 +0000
++++ bash-5.3/lib/readline/rlconf.h	2023-12-13 15:27:05.000000000 +0000
+@@ -43,7 +43,9 @@
+ #define DEFAULT_INPUTRC "~/.inputrc"
+ 
+ /* The ultimate last-ditch filename for an init file -- system-wide. */
++#if !defined (SYS_INPUTRC)
+ #define SYS_INPUTRC "/etc/inputrc"
++#endif
+ 
+ /* If defined, expand tabs to spaces. */
+ #define DISPLAY_TABS
+diff --no-dereference -Naur bash-5.3.orig/Makefile.in bash-5.3/Makefile.in
+--- bash-5.3.orig/Makefile.in	2025-05-16 18:56:31.000000000 +0000
++++ bash-5.3/Makefile.in	2025-05-16 18:56:31.000000000 +0000
+@@ -370,12 +370,12 @@
+ GLOB_LDFLAGS = -L$(GLOB_LIBDIR)
+ GLOB_DEP = $(GLOB_LIBRARY)
+ 
+-GLOB_SOURCE = $(GLOB_LIBSRC)/glob.c $(GLOB_LIBSRC)/strmatch.c \
++GLOB_SOURCE = $(GLOB_LIBSRC)/strmatch.c \
+ 	      $(GLOB_LIBSRC)/smatch.c $(GLOB_LIBSRC)/xmbsrtowcs.c \
+-	      $(GLOB_LIBSRC)/glob_loop.c $(GLOB_LIBSRC)/sm_loop.c \
++	      $(GLOB_LIBSRC)/sm_loop.c \
+ 	      $(GLOB_LIBSRC)/gmisc.c \
+ 	      $(GLOB_LIBSRC)/glob.h $(GLOB_LIBSRC)/strmatch.h
+-GLOB_OBJ    = $(GLOB_LIBDIR)/glob.o $(GLOB_LIBDIR)/strmatch.o \
++GLOB_OBJ    = $(GLOB_LIBDIR)/strmatch.o \
+ 	      $(GLOB_LIBDIR)/smatch.o $(GLOB_LIBDIR)/xmbsrtowcs.o \
+ 	      $(GLOB_LIBDIR)/gmisc.o
+ 
 diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 --- bash-5.3.orig/pathexp.c	2025-06-26 15:34:29.000000000 +0000
 +++ bash-5.3/pathexp.c	2025-06-26 15:34:29.000000000 +0000
@@ -2433,7 +2444,7 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
  /* Control whether the extended globbing features are enabled. */
  int extended_glob = EXTGLOB_DEFAULT;
  
-@@ -436,33 +443,81 @@
+@@ -436,33 +443,78 @@
    return temp;
  }
  
@@ -2483,8 +2494,7 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 -  if (results && ((GLOB_FAILED (results)) == 0))
 +  if (interrupt_state || terminating_signal)
 +    {
-+      if (g.gl_pathv)
-+	globfree (&g);
++      globfree (&g);
 +      QUIT;
 +    }
 +  run_pending_traps ();
@@ -2508,20 +2518,18 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
      }
 +  else if (r == GLOB_NOMATCH)
 +    {
-+      if (g.gl_pathv)
-+	globfree (&g);
++      globfree (&g);
 +      results = (char **)&glob_error_return;
 +    }
 +  else
 +    {
-+      if (g.gl_pathv)
-+	globfree (&g);
++      globfree (&g);
 +      results = (char **)NULL;
 +    }
  
    return (results);
  }
-@@ -471,24 +526,291 @@
+@@ -471,24 +523,410 @@
  char **
  noquote_glob_filename (char *pathname)
  {
@@ -2542,8 +2550,7 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 -  results = glob_filename (pathname, gflags);
 +  if (interrupt_state || terminating_signal)
 +    {
-+      if (g.gl_pathv)
-+	globfree (&g);
++      globfree (&g);
 +      QUIT;
 +    }
 +  run_pending_traps ();
@@ -2552,8 +2559,7 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 -    results = (char **)NULL;
 +  if (r != 0)
 +    {
-+      if (g.gl_pathv)
-+	globfree (&g);
++      globfree (&g);
 +      return ((char **)NULL);
 +    }
  
@@ -2567,36 +2573,40 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
  }
  #endif
  
-+char **
-+shell_glob_path (const char *path_list)
++static const char *
++shell_scan_bracket_end (const char *open_brack, const char *end)
 +{
-+  glob_t g;
-+  int gflags, r;
++  const char *p = open_brack + 1;
 +
-+  noglob_dot_filenames = glob_dot_filenames == 0;
-+  QUIT;
-+  gflags = bash_glob_flags () | GLOB_PATHS;
-+  if (posixly_correct == 0)
-+    gflags |= GLOB_TILDE;
-+  memset (&g, 0, sizeof (g));
-+  r = glob (path_list ? path_list : "", gflags, NULL, &g);
-+
-+  if (interrupt_state || terminating_signal)
++  if (p < end && (*p == '!' || *p == '^'))
++    ++p;
++  if (p < end && *p == ']')
++    ++p;
++  while (p < end && *p != '\0' && *p != ']' && *p != '/')
 +    {
-+      if (g.gl_pathv)
-+	globfree (&g);
-+      QUIT;
++      if (*p == '\\' && p + 1 < end && p[1] != '\0' && p[1] != '/')
++	{
++	  p += 2;
++	  continue;
++	}
++      if (p[0] == '[' && p + 1 < end
++	  && (p[1] == ':' || p[1] == '.' || p[1] == '='))
++	{
++	  char ctype = p[1];
++	  const char *t = p + 2;
++	  while (t < end && *t != '\0' && *t != '/'
++		 && (ctype == '.' || *t != ']')
++		 && !(t[0] == ctype && t + 1 < end && t[1] == ']'))
++	    ++t;
++	  if (t < end && t[0] == ctype && t + 1 < end && t[1] == ']')
++	    {
++	      p = t + 2;
++	      continue;
++	    }
++	}
++      ++p;
 +    }
-+  run_pending_traps ();
-+
-+  if (r != 0)
-+    {
-+      if (g.gl_pathv)
-+	globfree (&g);
-+      return ((char **)NULL);
-+    }
-+
-+  return (g.gl_pathv);
++  return (p < end && *p == ']') ? (p + 1) : ((const char *)NULL);
 +}
 +
 +static const char *
@@ -2622,36 +2632,11 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 +	}
 +      else if (*cp == '[')
 +	{
-+	  const char *p = cp + 1;
-+	  if (p < end && (*p == '!' || *p == '^'))
-+	    ++p;
-+	  if (p < end && *p == ']')
-+	    ++p;
-+	  while (p < end && *p != '\0' && *p != ']')
-+	    {
-+	      if (*p == '\\' && p + 1 < end)
-+		++p;
-+	      else if (p[0] == '[' && p + 1 < end
-+		       && (p[1] == ':' || p[1] == '.' || p[1] == '='))
-+		{
-+		  char ctype = p[1];
-+		  const char *t = p + 2;
-+		  while (t < end && *t != '\0' && (ctype == '.' || *t != ']'))
-+		    {
-+		      if (*t == ctype && t + 1 < end && t[1] == ']')
-+			{
-+			  p = t + 1;
-+			  break;
-+			}
-+		      ++t;
-+		    }
-+		}
-+	      ++p;
-+	    }
-+	  if (p < end && *p == ']')
++	  const char *bend = shell_scan_bracket_end (cp, end);
++	  if (bend)
 +	    {
 +	      has_glob = 1;
-+	      cp = p + 1;
++	      cp = bend;
 +	    }
 +	  else
 +	    ++cp;
@@ -2662,10 +2647,22 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 +	{
 +	  const char *p = cp + 2;
 +	  int depth = 1;
-+	  while (p < end && *p != '\0' && depth > 0)
++	  while (p < end && *p != '\0' && *p != '/' && depth > 0)
 +	    {
-+	      if (*p == '\\' && p + 1 < end)
-+		++p;
++	      if (*p == '\\' && p + 1 < end && p[1] != '\0' && p[1] != '/')
++		{
++		  p += 2;
++		  continue;
++		}
++	      if (*p == '[')
++		{
++		  const char *bend = shell_scan_bracket_end (p, end);
++		  if (bend)
++		    {
++		      p = bend;
++		      continue;
++		    }
++		}
 +	      else if (*p == '(')
 +		++depth;
 +	      else if (*p == ')')
@@ -2689,6 +2686,137 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 +  *has_glob_p = has_glob;
 +  *has_bs_p = has_bs;
 +  return cp;
++}
++
++static char *
++shell_tilde_expand_seg (const char *seg_start, size_t seg_len, int escape_colon)
++{
++  const char *slash, *rest;
++  size_t plen, rlen, i, d;
++  char *prefix, *exp_home, *out;
++
++  if (posixly_correct != 0 || seg_len == 0 || seg_start[0] != '~')
++    return ((char *)NULL);
++
++  slash = (const char *)memchr (seg_start, '/', seg_len);
++  plen = slash ? (size_t)(slash - seg_start) : seg_len;
++  rest = seg_start + plen;
++  rlen = seg_len - plen;
++
++  prefix = (char *)xmalloc (plen + 1);
++  memcpy (prefix, seg_start, plen);
++  prefix[plen] = '\0';
++
++  exp_home = bash_tilde_expand (prefix, 0);
++  if (exp_home == 0 || strcmp (exp_home, prefix) == 0)
++    {
++      free (prefix);
++      FREE (exp_home);
++      return ((char *)NULL);
++    }
++
++  out = (char *)xmalloc ((strlen (exp_home) * 2) + rlen + 1);
++  d = 0;
++  for (i = 0; exp_home[i] != '\0'; ++i)
++    {
++      char c = exp_home[i];
++      if (c == '\\' || c == '*' || c == '?' || c == '['
++	  || c == '(' || c == ')' || (escape_colon && c == ':'))
++	out[d++] = '\\';
++      out[d++] = c;
++    }
++  if (rlen > 0)
++    memcpy (out + d, rest, rlen);
++  out[d + rlen] = '\0';
++
++  free (prefix);
++  free (exp_home);
++  return (out);
++}
++
++static char *
++shell_tilde_expand_path_list (const char *path_list)
++{
++  const char *end, *seg_start, *colon;
++  size_t cap, len;
++  char *buf;
++
++  if (posixly_correct != 0 || path_list == 0 || strchr (path_list, '~') == 0)
++    return ((char *)NULL);
++
++  end = path_list + strlen (path_list);
++  cap = (size_t)(end - path_list) + 64;
++  buf = (char *)xmalloc (cap);
++  len = 0;
++  seg_start = path_list;
++
++  for (;;)
++    {
++      int has_glob, has_bs;
++      size_t seg_len, add_len;
++      char *tseg;
++      const char *src;
++
++      colon = shell_scan_path_colon (seg_start, end, &has_glob, &has_bs);
++      seg_len = (size_t)(colon - seg_start);
++      tseg = shell_tilde_expand_seg (seg_start, seg_len, 1);
++      src = tseg ? tseg : seg_start;
++      add_len = tseg ? strlen (tseg) : seg_len;
++
++      while (len + add_len + 2 > cap)
++	{
++	  cap *= 2;
++	  buf = (char *)xrealloc (buf, cap);
++	}
++      if (add_len > 0)
++	{
++	  memcpy (buf + len, src, add_len);
++	  len += add_len;
++	}
++      FREE (tseg);
++
++      if (*colon == ':')
++	{
++	  buf[len++] = ':';
++	  seg_start = colon + 1;
++	}
++      else
++	break;
++    }
++
++  buf[len] = '\0';
++  return (buf);
++}
++
++char **
++shell_glob_path (const char *path_list)
++{
++  glob_t g;
++  int gflags, r;
++  char *tlist;
++
++  noglob_dot_filenames = glob_dot_filenames == 0;
++  QUIT;
++  tlist = shell_tilde_expand_path_list (path_list);
++  gflags = bash_glob_flags () | GLOB_PATHS;
++  memset (&g, 0, sizeof (g));
++  r = glob (tlist ? tlist : (path_list ? path_list : ""), gflags, NULL, &g);
++  FREE (tlist);
++
++  if (interrupt_state || terminating_signal)
++    {
++      globfree (&g);
++      QUIT;
++    }
++  run_pending_traps ();
++
++  if (r != 0)
++    {
++      globfree (&g);
++      return ((char **)NULL);
++    }
++
++  return (g.gl_pathv);
 +}
 +
 +char *
@@ -2747,27 +2875,26 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 +{
 +  glob_t g;
 +  int gflags, r;
++  char *tpat;
 +
 +  noglob_dot_filenames = glob_dot_filenames == 0;
 +  QUIT;
++  tpat = pat ? shell_tilde_expand_seg (pat, strlen (pat), 0) : (char *)NULL;
 +  gflags = bash_glob_flags ();
-+  if (posixly_correct == 0)
-+    gflags |= GLOB_TILDE;
 +  memset (&g, 0, sizeof (g));
-+  r = glob (pat, gflags, NULL, &g);
++  r = glob (tpat ? tpat : pat, gflags, NULL, &g);
++  FREE (tpat);
 +
 +  if (interrupt_state || terminating_signal)
 +    {
-+      if (g.gl_pathv)
-+	globfree (&g);
++      globfree (&g);
 +      QUIT;
 +    }
 +  run_pending_traps ();
 +
 +  if (r != 0)
 +    {
-+      if (g.gl_pathv)
-+	globfree (&g);
++      globfree (&g);
 +      return ((char **)NULL);
 +    }
 +
@@ -2822,7 +2949,7 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
  /* Stuff for GLOBIGNORE. */
  
  static struct ignorevar globignore =
-@@ -682,7 +1004,6 @@
+@@ -682,7 +1120,6 @@
  /* Functions to handle sorting glob results in different ways depending on
     the value of the GLOBSORT variable. */
  
@@ -2852,6 +2979,19 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.h bash-5.3/pathexp.h
  
  /* Filename completion ignore.  Used to implement the "fignore" facility of
     tcsh, GLOBIGNORE (like ksh-93 FIGNORE), and EXECIGNORE.
+diff --no-dereference -Naur bash-5.3.orig/pathnames.h.in bash-5.3/pathnames.h.in
+--- bash-5.3.orig/pathnames.h.in	2024-04-25 20:30:01.000000000 +0000
++++ bash-5.3/pathnames.h.in	2024-04-25 20:30:01.000000000 +0000
+@@ -25,7 +25,9 @@
+ #define DEFAULT_HOSTS_FILE "/etc/hosts"
+ 
+ /* The default login shell startup file. */
++#if !defined (SYS_PROFILE)
+ #define SYS_PROFILE "/etc/profile"
++#endif
+ 
+ /* The default location of the bash debugger initialization/startup file. */
+ #define DEBUGGER_START_FILE	"@DEBUGGER_START_FILE@"
 diff --no-dereference -Naur bash-5.3.orig/shell.c bash-5.3/shell.c
 --- bash-5.3.orig/shell.c	2025-03-26 20:40:19.000000000 +0000
 +++ bash-5.3/shell.c	2025-03-26 20:40:19.000000000 +0000
@@ -2870,7 +3010,7 @@ diff --no-dereference -Naur bash-5.3.orig/shell.c bash-5.3/shell.c
 -  maybe_execute_file (SYS_PROFILE, 1);
 +  char **profiles;
 +
-+  profiles = shell_glob_path ("/sw/*/etc/profile:" SYS_PROFILE);
++  profiles = shell_glob_path (SYS_PROFILE);
 +  if (profiles)
 +    {
 +      int i;
@@ -2907,7 +3047,7 @@ diff --no-dereference -Naur bash-5.3.orig/support/bashbug.sh.in bash-5.3/support
 diff --no-dereference -Naur bash-5.3.orig/tests/glob.right bash-5.3/tests/glob.right
 --- bash-5.3.orig/tests/glob.right	2024-06-12 20:13:01.000000000 +0000
 +++ bash-5.3/tests/glob.right	2024-06-12 20:13:01.000000000 +0000
-@@ -277,3 +277,8 @@
+@@ -277,3 +277,13 @@
  argv[1] = <*>
  argv[1] = <man/man1/bash.1>
  argv[1] = <man/man1/bash.1>
@@ -2916,10 +3056,15 @@ diff --no-dereference -Naur bash-5.3.orig/tests/glob.right bash-5.3/tests/glob.r
 +m_wild/pkg_a/bin/myprog
 +m_wild/pkg_b/bin/myprog
 +a_last/bin/myprog
++ok tilde 1
++ok tilde 2
++fluffytilde_prog
++fluffytilde_wild
++m_wild/pkg_a/bin/myprog
 diff --no-dereference -Naur bash-5.3.orig/tests/glob.tests bash-5.3/tests/glob.tests
 --- bash-5.3.orig/tests/glob.tests	2023-09-25 14:48:40.000000000 +0000
 +++ bash-5.3/tests/glob.tests	2023-09-25 14:48:40.000000000 +0000
-@@ -404,6 +404,18 @@
+@@ -404,6 +404,39 @@
  
  # this is for the benefit of pure coverage, so it writes the pcv file
  # in the right place, and for gprof
@@ -2933,6 +3078,27 @@ diff --no-dereference -Naur bash-5.3.orig/tests/glob.tests bash-5.3/tests/glob.t
 +PATH="z_first/bin:m_wild/*/bin:a_last/bin"
 +type -P myprog
 +type -a -p myprog
++PATH=$OPATH
++
++OHOME=$HOME
++export -n HOME
++HOME="$PWD/h[1]:dir"
++mkdir -p "$HOME/bin" "$HOME/pkgs/p1/bin"
++touch "$HOME/bin/fluffytilde_prog" "$HOME/pkgs/p1/bin/fluffytilde_wild"
++chmod +x "$HOME/bin/fluffytilde_prog" "$HOME/pkgs/p1/bin/fluffytilde_wild"
++PATH="~/bin:~/*/p1/bin"
++type -P fluffytilde_prog >/dev/null && echo ok tilde 1
++type -P fluffytilde_wild >/dev/null && echo ok tilde 2
++tilde_cg=$(compgen -c fluffytilde_)
++PATH=$OPATH
++printf '%s\n' "$tilde_cg" | LC_ALL=C sort
++HOME=$OHOME
++export HOME
++
++shopt -s extglob
++PATH="[unclosed/sub:@(unclosed/sub:m_wild/@([):x]|pkg_a)/bin:]"
++type -P myprog
++shopt -u extglob
 +PATH=$OPATH
 +
  builtin cd $MYDIR

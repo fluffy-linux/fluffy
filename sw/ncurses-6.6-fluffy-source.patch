@@ -1,0 +1,237 @@
+diff --no-dereference -Naur ncurses-6.6.orig/ncurses/tinfo/db_iterator.c ncurses-6.6/ncurses/tinfo/db_iterator.c
+--- ncurses-6.6.orig/ncurses/tinfo/db_iterator.c	2025-12-25 18:19:46.000000000 +0000
++++ ncurses-6.6/ncurses/tinfo/db_iterator.c	2025-12-25 18:19:46.000000000 +0000
+@@ -37,6 +37,7 @@
+ 
+ #include <curses.priv.h>
+ 
++#include <glob.h>
+ #include <time.h>
+ #include <tic.h>
+ 
+@@ -55,6 +56,7 @@
+ #define my_time          _nc_globals.dbd_time
+ #define my_vars          _nc_globals.dbd_vars
+ 
++#if !(defined(GLOB_PATHS) && NCURSES_USE_DATABASE)
+ static void
+ add_to_blob(const char *text, size_t limit)
+ {
+@@ -67,6 +69,7 @@
+ 	_nc_STRCPY(last, text, limit);
+     }
+ }
++#endif
+ 
+ static bool
+ check_existence(const char *name, struct stat *sb)
+@@ -281,6 +284,179 @@
+     return result;
+ }
+ 
++#if defined(GLOB_PATHS) && NCURSES_USE_DATABASE
++static const char *
++nc_scan_bracket_end(const char *p)
++{
++    ++p;
++    if (*p == '!' || *p == '^')
++	++p;
++    if (*p == ']')
++	++p;
++    while (*p != '\0' && *p != '/') {
++	if (*p == ']')
++	    return p;
++	if (*p == '[' && (p[1] == ':' || p[1] == '.' || p[1] == '=')) {
++	    char ctype = p[1];
++	    const char *q = p + 2;
++	    while (*q != '\0' && *q != '/' && (ctype == '.' || *q != ']')) {
++		if (*q == ctype && q[1] == ']') {
++		    p = q + 2;
++		    goto next_ch;
++		}
++		++q;
++	    }
++	}
++	++p;
++      next_ch:;
++    }
++    return NULL;
++}
++
++static bool
++append_nul_entry(char **buf, size_t *len, size_t *cap, size_t *count,
++		 const char *src, size_t slen)
++{
++    while (*len + slen + 1 > *cap) {
++	size_t ncap = (*cap == 0) ? 256 : (*cap * 2);
++	char *tmp = realloc(*buf, ncap);
++	if (tmp == NULL)
++	    return FALSE;
++	*buf = tmp;
++	*cap = ncap;
++    }
++    if (slen > 0)
++	memcpy(*buf + *len, src, slen);
++    (*buf)[*len + slen] = '\0';
++    *len += slen + 1;
++    ++(*count);
++    return TRUE;
++}
++
++static char *
++build_db_blob(const char *const values[dbdLAST], size_t *out_blobsize)
++{
++    char *buf = NULL;
++    size_t len = 0;
++    size_t cap = 0;
++    size_t count = 0;
++    int j;
++#ifdef TERMINFO
++    const char *empty_fallback = TERMINFO;
++#else
++    const char *empty_fallback = "";
++#endif
++
++    for (j = 0; j < dbdLAST; ++j) {
++	const char *val = values[j];
++	const char *seg;
++	const char *p;
++	bool do_glob = (j == dbdCfgList || j == dbdEnvList);
++
++	if (val == NULL || *val == '\0')
++	    continue;
++
++	seg = val;
++	p = val;
++	for (;;) {
++	    if (*p == NCURSES_PATHSEP || *p == '\0') {
++		size_t slen = (size_t) (p - seg);
++
++		if (*p == NCURSES_PATHSEP && slen == 3 && quick_prefix(seg)) {
++		    ++p;
++		    continue;
++		}
++
++		if (slen == 0) {
++		    if (!append_nul_entry(&buf, &len, &cap, &count,
++					  empty_fallback,
++					  strlen(empty_fallback))) {
++			free(buf);
++			return NULL;
++		    }
++		} else if (do_glob
++			   && !(slen >= 4 && quick_prefix(seg))
++			   && (memchr(seg, '*', slen) != NULL
++			       || memchr(seg, '?', slen) != NULL
++			       || memchr(seg, '[', slen) != NULL)) {
++		    char *pat = malloc(slen + 1);
++		    glob_t gbuf;
++
++		    if (pat == NULL) {
++			free(buf);
++			return NULL;
++		    }
++		    memcpy(pat, seg, slen);
++		    pat[slen] = '\0';
++		    trim_formatting(pat);
++		    memset(&gbuf, 0, sizeof(gbuf));
++		    if (pat[0] != '\0'
++			&& !quick_prefix(pat)
++			&& strpbrk(pat, "*?[") != NULL
++			&& glob(pat, GLOB_NOESCAPE | GLOB_ONLYDIR | GLOB_NOCHECK,
++				NULL, &gbuf) == 0) {
++			size_t gi;
++			for (gi = 0; gi < gbuf.gl_pathc; ++gi) {
++			    if (!append_nul_entry(&buf, &len, &cap, &count,
++						  gbuf.gl_pathv[gi],
++						  strlen(gbuf.gl_pathv[gi]))) {
++				globfree(&gbuf);
++				free(pat);
++				free(buf);
++				return NULL;
++			    }
++			}
++			globfree(&gbuf);
++			free(pat);
++		    } else {
++			globfree(&gbuf);
++			free(pat);
++			if (!append_nul_entry(&buf, &len, &cap, &count,
++					      seg, slen)) {
++			    free(buf);
++			    return NULL;
++			}
++		    }
++		} else {
++		    if (!append_nul_entry(&buf, &len, &cap, &count,
++					  seg, slen)) {
++			free(buf);
++			return NULL;
++		    }
++		}
++
++		if (*p == '\0')
++		    break;
++		seg = ++p;
++		continue;
++	    }
++
++	    if (do_glob && *p == '['
++		&& !((size_t) (p - seg) >= 4 && quick_prefix(seg))) {
++		const char *bend = nc_scan_bracket_end(p);
++		if (bend != NULL) {
++		    p = bend + 1;
++		    continue;
++		}
++	    }
++
++	    ++p;
++	}
++    }
++
++    if (count == 0) {
++	if (!append_nul_entry(&buf, &len, &cap, &count,
++			      empty_fallback, strlen(empty_fallback))) {
++	    free(buf);
++	    return NULL;
++	}
++    }
++
++    *out_blobsize = count + 1;
++    return buf;
++}
++#endif
++
+ NCURSES_EXPORT(void)
+ _nc_first_db(DBDIRS * state, int *offset)
+ {
+@@ -343,6 +519,21 @@
+ #endif /* NCURSES_USE_TERMCAP */
+ 	}
+ 
++#if defined(GLOB_PATHS) && NCURSES_USE_DATABASE
++	my_blob = build_db_blob(values, &blobsize);
++	if (my_blob != NULL) {
++	    my_list = typeCalloc(char *, blobsize);
++	    my_stat = typeCalloc(struct stat, blobsize);
++	    if (my_list != NULL && my_stat != NULL) {
++		int k = 0;
++		char *cur = my_blob;
++		size_t idx;
++		for (idx = 0; idx + 1 < blobsize; ++idx) {
++		    my_list[k++] = cur;
++		    cur += strlen(cur) + 1;
++		}
++		my_list[k] = NULL;
++#else
+ 	for (j = 0; j < dbdLAST; ++j) {
+ 	    if (values[j] == NULL)
+ 		values[j] = "";
+@@ -377,6 +568,7 @@
+ 			my_list[k++] = &my_blob[j + 1];
+ 		    }
+ 		}
++#endif
+ 
+ 		/*
+ 		 * Eliminate duplicates from the list.

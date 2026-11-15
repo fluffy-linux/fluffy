@@ -80,43 +80,54 @@ diff --no-dereference -Naur shadow-4.20.2.orig/etc/shadow-maint/userdel-pre.d/01
  
  # Check user exists, and if so, send sigkill to processes that the user owns
  
-diff --no-dereference -Naur shadow-4.20.2.orig/lib/age.c shadow-4.20.2/lib/age.c
---- shadow-4.20.2.orig/lib/age.c	2026-08-04 18:02:12.996395611 +0000
-+++ shadow-4.20.2/lib/age.c	2026-08-04 18:02:12.996395611 +0000
-@@ -26,7 +26,7 @@
- #ident "$Id$"
- 
- #ifndef PASSWD_PROGRAM
--#define PASSWD_PROGRAM "/bin/passwd"
-+#define PASSWD_PROGRAM "/sw/shadow/bin/passwd"
- #endif
- /*
-  * expire - force password change if password expired
 diff --no-dereference -Naur shadow-4.20.2.orig/lib/btrfs.c shadow-4.20.2/lib/btrfs.c
 --- shadow-4.20.2.orig/lib/btrfs.c	2026-08-04 18:02:12.996395611 +0000
 +++ shadow-4.20.2/lib/btrfs.c	2026-08-04 18:02:12.996395611 +0000
-@@ -10,7 +10,7 @@
+@@ -10,7 +10,9 @@
  #include "prototypes.h"
  
  
--#define PATH_ENV  "/usr/bin/env"
-+#define PATH_ENV  "/sw/coreutils/bin/env"
++#ifndef PATH_ENV
+ #define PATH_ENV  "/usr/bin/env"
++#endif
  
  
  static int run_btrfs_subvolume_cmd(const char *subcmd, const char *arg1, const char *arg2)
 diff --no-dereference -Naur shadow-4.20.2.orig/lib/commonio.c shadow-4.20.2/lib/commonio.c
 --- shadow-4.20.2.orig/lib/commonio.c	2026-08-08 12:07:10.932739516 +0000
 +++ shadow-4.20.2/lib/commonio.c	2026-08-08 12:07:10.932739516 +0000
-@@ -592,7 +592,7 @@
+@@ -306,10 +306,20 @@
+ }
+ 
+ 
++static bool in_prefix_setname = false;
++
++
++void commonio_set_prefix_mode (bool enable)
++{
++	in_prefix_setname = enable;
++}
++
++
+ int commonio_setname (struct commonio_db *db, const char *name)
+ {
+ 	stprintf_a(db->filename, "%s", name);
+ 	db->setname = true;
++	db->prefix_db = in_prefix_setname;
+ 	return 1;
+ }
+ 
+@@ -592,7 +602,8 @@
  	 * created by commonio_close().  We have no entries to read yet.  --marekm
  	 */
  	if (NULL == db->fp) {
 -		if (((flags & O_CREAT) != 0) && (ENOENT == errno)) {
-+		if (ENOENT == errno) {
++		if ((((flags & O_CREAT) != 0) || !db->setname || db->prefix_db)
++		    && (ENOENT == errno)) {
  			db->isopen = true;
  			return 1;
  		}
-@@ -899,8 +899,8 @@
+@@ -899,8 +910,8 @@
  		 * Default permissions for new [g]shadow files.
  		 */
  		sb.st_mode = db->st_mode;
@@ -127,6 +138,61 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/commonio.c shadow-4.20.2/lib/
  	}
  
  	if (stprintf_a(tmpf, "%s.cioXXXXXX", db->filename) == -1)
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/commonio.h shadow-4.20.2/lib/commonio.h
+--- shadow-4.20.2.orig/lib/commonio.h	2026-07-20 14:56:15.706087611 +0000
++++ shadow-4.20.2/lib/commonio.h	2026-07-20 14:56:15.706087611 +0000
+@@ -113,8 +113,10 @@
+ 	bool locked:1;
+ 	bool readonly:1;
+ 	bool setname:1;
++	bool prefix_db:1;
+ };
+ 
++extern void commonio_set_prefix_mode (bool);
+ extern int commonio_setname (struct commonio_db *, const char *);
+ extern bool commonio_present (const struct commonio_db *db);
+ extern int commonio_lock (struct commonio_db *);
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/defines.h shadow-4.20.2/lib/defines.h
+--- shadow-4.20.2.orig/lib/defines.h	2026-08-04 18:02:12.996395611 +0000
++++ shadow-4.20.2/lib/defines.h	2026-08-04 18:02:12.996395611 +0000
+@@ -137,4 +137,37 @@
+ #define PASS_MAX  BUFSIZ - 1
+ #endif
+ 
++static inline char *shadow_vendor_glob_pattern (const char *pfx, size_t plen,
++                                                const char *vendor_rel)
++{
++	size_t extra = 0;
++	size_t rlen = strlen (vendor_rel);
++	char *out, *d;
++
++	while (plen > 0 && pfx[plen - 1] == '/') {
++		plen--;
++	}
++	for (size_t i = 0; i < plen; i++) {
++		if (pfx[i] == '*' || pfx[i] == '?' || pfx[i] == '[') {
++			extra += 2;
++		}
++	}
++	out = malloc (plen + extra + rlen + 1);
++	if (NULL == out) {
++		return NULL;
++	}
++	d = out;
++	for (size_t i = 0; i < plen; i++) {
++		if (pfx[i] == '*' || pfx[i] == '?' || pfx[i] == '[') {
++			*d++ = '[';
++			*d++ = pfx[i];
++			*d++ = ']';
++		} else {
++			*d++ = pfx[i];
++		}
++	}
++	memcpy (d, vendor_rel, rlen + 1);
++	return out;
++}
++
+ #endif				/* _DEFINES_H_ */
 diff --no-dereference -Naur shadow-4.20.2.orig/lib/getdef.c shadow-4.20.2/lib/getdef.c
 --- shadow-4.20.2.orig/lib/getdef.c	2026-08-08 12:08:13.732326072 +0000
 +++ shadow-4.20.2/lib/getdef.c	2026-08-08 12:08:13.732326072 +0000
@@ -138,14 +204,19 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/getdef.c shadow-4.20.2/lib/ge
  #include <stddef.h>
  #include <stdio.h>
  #include <stdlib.h>
-@@ -530,70 +531,83 @@
+@@ -465,6 +466,7 @@
+ #endif
+ #else
+ 	def_fname = file;
++	def_loaded = false;
+ #endif
+ }
+ 
+@@ -530,70 +532,78 @@
  	econf_free (defs_file);
  }
  #else /* USE_ECONF */
 -static void def_load (void)
-+#ifndef VENDOR_LOGINDEFS
-+#define VENDOR_LOGINDEFS "/sw/*/etc/login.defs"
-+#endif
 +
 +static void def_load_file (const char *fname)
  {
@@ -223,35 +294,33 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/getdef.c shadow-4.20.2/lib/ge
 +
 +static void def_load (void)
 +{
-+	size_t flen, slen;
-+
 +	/*
 +	 * Set the initialized flag.
 +	 * (do it early to prevent recursion in putdef_str())
 +	 */
 +	def_loaded = true;
 +
-+	flen = strlen (def_fname);
-+	slen = strlen (LOGINDEFS);
-+	if (flen >= slen && streq (def_fname + flen - slen, LOGINDEFS)) {
-+		size_t plen = flen - slen;
-+		char *pat;
-+		glob_t gl;
++#ifdef VENDOR_LOGINDEFS
++	{
++		size_t flen = strlen (def_fname);
++		size_t slen = strlen (LOGINDEFS);
++		if (flen >= slen && streq (def_fname + flen - slen, LOGINDEFS)) {
++			char *pat = shadow_vendor_glob_pattern (def_fname, flen - slen, VENDOR_LOGINDEFS);
++			glob_t gl;
 +
-+		while (plen > 0 && def_fname[plen - 1] == '/') {
-+			plen--;
-+		}
-+		pat = aprintf ("%.*s%s", (int) plen, def_fname, VENDOR_LOGINDEFS);
-+		if (NULL != pat) {
-+			if (glob (pat, 0, NULL, &gl) == 0) {
-+				for (size_t i = 0; i < gl.gl_pathc; i++) {
-+					def_load_file (gl.gl_pathv[i]);
++			if (NULL != pat) {
++				memset (&gl, 0, sizeof (gl));
++				if (glob (pat, GLOB_NOESCAPE, NULL, &gl) == 0) {
++					for (size_t i = 0; i < gl.gl_pathc; i++) {
++						def_load_file (gl.gl_pathv[i]);
++					}
 +				}
 +				globfree (&gl);
++				free (pat);
 +			}
-+			free (pat);
 +		}
 +	}
++#endif
 +
 +	def_load_file (def_fname);
 +}
@@ -272,16 +341,23 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/groupio.c shadow-4.20.2/lib/g
  
  #include "alloc/calloc.h"
  #include "alloc/malloc.h"
-@@ -146,9 +149,109 @@
+@@ -123,7 +126,8 @@
+ 	false,			/* isopen */
+ 	false,			/* locked */
+ 	false,			/* readonly */
+-	false			/* setname */
++	false,			/* setname */
++	false			/* prefix_db */
+ };
+ 
+ int gr_setdbname (const char *filename)
+@@ -146,9 +150,111 @@
  	return commonio_open (&group_db, mode);
  }
  
-+#ifndef VENDOR_GROUP_FILES
-+#define VENDOR_GROUP_FILES "/sw/*/etc/group"
-+#endif
-+
 +static struct group *vendor_gr = NULL;
 +
++#ifdef VENDOR_GROUP_FILES
 +static bool seen_gr_name (char **names, size_t count, const char *name)
 +{
 +	for (size_t i = 0; i < count; i++) {
@@ -291,14 +367,20 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/groupio.c shadow-4.20.2/lib/g
 +	}
 +	return false;
 +}
++#endif
 +
 +static const struct group *vendor_gr_locate_common (const char *name,
 +                                                    gid_t gid,
 +                                                    bool by_gid)
 +{
++#ifndef VENDOR_GROUP_FILES
++	(void) name;
++	(void) gid;
++	(void) by_gid;
++	return NULL;
++#else
 +	size_t flen = strlen (group_db.filename);
 +	size_t slen = strlen (GROUP_FILE);
-+	size_t plen;
 +	char *pat;
 +	glob_t gl;
 +	char **seen = NULL;
@@ -308,15 +390,13 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/groupio.c shadow-4.20.2/lib/g
 +	if (flen < slen || !streq (group_db.filename + flen - slen, GROUP_FILE)) {
 +		return NULL;
 +	}
-+	plen = flen - slen;
-+	while (plen > 0 && group_db.filename[plen - 1] == '/') {
-+		plen--;
-+	}
-+	pat = aprintf ("%.*s%s", (int) plen, group_db.filename, VENDOR_GROUP_FILES);
++	pat = shadow_vendor_glob_pattern (group_db.filename, flen - slen, VENDOR_GROUP_FILES);
 +	if (NULL == pat) {
 +		return NULL;
 +	}
-+	if (glob (pat, 0, NULL, &gl) != 0) {
++	memset (&gl, 0, sizeof (gl));
++	if (glob (pat, GLOB_NOESCAPE, NULL, &gl) != 0) {
++		globfree (&gl);
 +		free (pat);
 +		return NULL;
 +	}
@@ -369,6 +449,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/groupio.c shadow-4.20.2/lib/g
 +	free (seen);
 +	globfree (&gl);
 +	return found;
++#endif
 +}
 +
  /*@observer@*/ /*@null@*/const struct group *gr_locate (const char *name)
@@ -383,7 +464,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/groupio.c shadow-4.20.2/lib/g
  }
  
  /*@observer@*/ /*@null@*/const struct group *gr_locate_gid (gid_t gid)
-@@ -159,8 +262,11 @@
+@@ -159,8 +265,11 @@
  	while (   ((grp = gr_next ()) != NULL)
  	       && (grp->gr_gid != gid)) {
  	}
@@ -396,10 +477,119 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/groupio.c shadow-4.20.2/lib/g
  }
  
  int gr_update (const struct group *gr)
+@@ -168,6 +277,97 @@
+ 	return commonio_update (&group_db, gr);
+ }
+ 
++int gr_materialize_member (const char *username)
++{
++#ifndef VENDOR_GROUP_FILES
++	(void) username;
++	return 1;
++#else
++	size_t flen, slen;
++	char *pat;
++	glob_t gl;
++	char **seen = NULL;
++	size_t seen_cnt = 0, seen_cap = 0;
++	int ok = 1;
++
++	if (NULL == username || !group_db.isopen || group_db.readonly) {
++		return 1;
++	}
++	flen = strlen (group_db.filename);
++	slen = strlen (GROUP_FILE);
++	if (flen < slen || !streq (group_db.filename + flen - slen, GROUP_FILE)) {
++		return 1;
++	}
++	pat = shadow_vendor_glob_pattern (group_db.filename, flen - slen, VENDOR_GROUP_FILES);
++	if (NULL == pat) {
++		return 0;
++	}
++	memset (&gl, 0, sizeof (gl));
++	if (glob (pat, GLOB_NOESCAPE, NULL, &gl) != 0) {
++		globfree (&gl);
++		free (pat);
++		return 1;
++	}
++	free (pat);
++
++	for (size_t i = 0; i < gl.gl_pathc && ok; i++) {
++		FILE *fp = fopen (gl.gl_pathv[i], "r");
++		struct group *gr;
++
++		if (NULL == fp) {
++			continue;
++		}
++		while (NULL != (gr = fgetgrent (fp))) {
++			bool has_member = false;
++
++			if (commonio_locate (&group_db, gr->gr_name) != NULL) {
++				continue;
++			}
++			if (seen_gr_name (seen, seen_cnt, gr->gr_name)) {
++				continue;
++			}
++			if (seen_cnt == seen_cap) {
++				size_t ncap = (0 == seen_cap) ? 16 : seen_cap * 2;
++				char **nseen = realloc (seen, ncap * sizeof (*nseen));
++				if (NULL == nseen) {
++					ok = 0;
++					break;
++				}
++				seen = nseen;
++				seen_cap = ncap;
++			}
++			seen[seen_cnt] = strdup (gr->gr_name);
++			if (NULL == seen[seen_cnt]) {
++				ok = 0;
++				break;
++			}
++			seen_cnt++;
++
++			for (size_t m = 0; NULL != gr->gr_mem && NULL != gr->gr_mem[m]; m++) {
++				if (streq (gr->gr_mem[m], username)) {
++					has_member = true;
++					break;
++				}
++			}
++			if (has_member) {
++				if (commonio_update (&group_db, gr) == 0) {
++					ok = 0;
++					break;
++				}
++			}
++		}
++		(void) fclose (fp);
++	}
++
++	for (size_t i = 0; i < seen_cnt; i++) {
++		free (seen[i]);
++	}
++	free (seen);
++	globfree (&gl);
++	return ok;
++#endif
++}
++
+ int gr_remove (const char *name)
+ {
+ 	return commonio_remove (&group_db, name);
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/groupio.h shadow-4.20.2/lib/groupio.h
+--- shadow-4.20.2.orig/lib/groupio.h	2026-07-20 14:56:15.706087611 +0000
++++ shadow-4.20.2/lib/groupio.h	2026-07-20 14:56:15.706087611 +0000
+@@ -28,6 +28,7 @@
+ extern int gr_rewind (void);
+ extern int gr_unlock (bool process_selinux);
+ extern int gr_update (const struct group *gr);
++extern int gr_materialize_member (const char *username);
+ extern int gr_sort (void);
+ 
+ #endif
 diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/lib/prefix_flag.c
 --- shadow-4.20.2.orig/lib/prefix_flag.c	2026-08-04 18:02:13.000285869 +0000
 +++ shadow-4.20.2/lib/prefix_flag.c	2026-08-04 18:02:13.000285869 +0000
-@@ -7,8 +7,12 @@
+@@ -7,14 +7,19 @@
  
  #include "config.h"
  
@@ -412,7 +602,14 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  
  #include "atoi/getnum.h"
  #include "defines.h"
-@@ -40,8 +44,22 @@
+ #include "prototypes.h"
+ /*@-exitarg@*/
+ #include "exitcodes.h"
++#include "commonio.h"
+ #include "groupio.h"
+ #include "io/fprintf.h"
+ #include "pwio.h"
+@@ -40,8 +45,22 @@
  static char *suid_db_file = NULL;
  static char *sgid_db_file = NULL;
  MAYBE_UNUSED static char *def_conf_file = NULL;
@@ -435,19 +632,39 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  
  /*
   * process_prefix_flag - prefix all paths if given the --prefix option
-@@ -108,9 +126,11 @@
+@@ -107,10 +126,22 @@
+ 			exit (E_BAD_ARG);
  		}
  
++		commonio_set_prefix_mode(true);
++
  		passwd_db_file = xaprintf("%s/%s", prefix, PASSWD_FILE);
-+		vendor_passwd_glob = xaprintf("%s/sw/*/etc/passwd", prefix);
++#ifdef VENDOR_PASSWD_FILES
++		vendor_passwd_glob = shadow_vendor_glob_pattern(prefix, strlen(prefix), VENDOR_PASSWD_FILES);
++		if (NULL == vendor_passwd_glob)
++			exit(EXIT_FAILURE);
++#endif
  		pw_setdbname(passwd_db_file);
  
  		group_db_file = xaprintf("%s/%s", prefix, GROUP_FILE);
-+		vendor_group_glob = xaprintf("%s/sw/*/etc/group", prefix);
++#ifdef VENDOR_GROUP_FILES
++		vendor_group_glob = shadow_vendor_glob_pattern(prefix, strlen(prefix), VENDOR_GROUP_FILES);
++		if (NULL == vendor_group_glob)
++			exit(EXIT_FAILURE);
++#endif
  		gr_setdbname(group_db_file);
  
  #ifdef  SHADOWGRP
-@@ -143,20 +163,68 @@
+@@ -129,6 +160,8 @@
+ 		sub_gid_setdbname(sgid_db_file);
+ #endif
+ 
++		commonio_set_prefix_mode(false);
++
+ #ifdef USE_ECONF
+ 		setdef_config_file(prefix);
+ #else
+@@ -143,20 +176,71 @@
  }
  
  
@@ -505,16 +722,19 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
 +			if (grp)
 +				return grp;
 +		}
-+		if (vendor_group_glob && glob(vendor_group_glob, 0, NULL, &gl) == 0) {
-+			for (size_t i = 0; i < gl.gl_pathc && !grp; i++) {
-+				fg = fopen(gl.gl_pathv[i], "r");
-+				if (!fg)
-+					continue;
-+				while (NULL != (grp = fgetgrent(fg))) {
-+					if (streq(name, grp->gr_name))
-+						break;
++		if (vendor_group_glob) {
++			memset(&gl, 0, sizeof(gl));
++			if (glob(vendor_group_glob, GLOB_NOESCAPE, NULL, &gl) == 0) {
++				for (size_t i = 0; i < gl.gl_pathc && !grp; i++) {
++					fg = fopen(gl.gl_pathv[i], "r");
++					if (!fg)
++						continue;
++					while (NULL != (grp = fgetgrent(fg))) {
++						if (streq(name, grp->gr_name))
++							break;
++					}
++					fclose(fg);
 +				}
-+				fclose(fg);
 +			}
 +			globfree(&gl);
  		}
@@ -522,7 +742,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  		return grp;
  	}
  
-@@ -168,15 +236,39 @@
+@@ -168,15 +252,42 @@
  	if (group_db_file) {
  		FILE* fg;
  		struct group * grp = NULL;
@@ -549,18 +769,21 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
 +			}
  		}
 -		fclose(fg);
-+		if (vendor_group_glob && glob(vendor_group_glob, 0, NULL, &gl) == 0) {
-+			for (size_t i = 0; i < gl.gl_pathc && !grp; i++) {
-+				fg = fopen(gl.gl_pathv[i], "r");
-+				if (!fg)
-+					continue;
-+				while (NULL != (grp = fgetgrent(fg))) {
-+					if (prefix_seen_add(&seen, &seen_cnt, &seen_cap, grp->gr_name))
++		if (vendor_group_glob) {
++			memset(&gl, 0, sizeof(gl));
++			if (glob(vendor_group_glob, GLOB_NOESCAPE, NULL, &gl) == 0) {
++				for (size_t i = 0; i < gl.gl_pathc && !grp; i++) {
++					fg = fopen(gl.gl_pathv[i], "r");
++					if (!fg)
 +						continue;
-+					if (gid == grp->gr_gid)
-+						break;
++					while (NULL != (grp = fgetgrent(fg))) {
++						if (prefix_seen_add(&seen, &seen_cnt, &seen_cap, grp->gr_name))
++							continue;
++						if (gid == grp->gr_gid)
++							break;
++					}
++					fclose(fg);
 +				}
-+				fclose(fg);
 +			}
 +			globfree(&gl);
 +		}
@@ -568,7 +791,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  		return grp;
  	}
  
-@@ -188,15 +280,39 @@
+@@ -188,15 +299,42 @@
  	if (passwd_db_file) {
  		FILE* fg;
  		struct passwd *pwd = NULL;
@@ -595,18 +818,21 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
 +			}
  		}
 -		fclose(fg);
-+		if (vendor_passwd_glob && glob(vendor_passwd_glob, 0, NULL, &gl) == 0) {
-+			for (size_t i = 0; i < gl.gl_pathc && !pwd; i++) {
-+				fg = fopen(gl.gl_pathv[i], "r");
-+				if (!fg)
-+					continue;
-+				while (NULL != (pwd = fgetpwent(fg))) {
-+					if (prefix_seen_add(&seen, &seen_cnt, &seen_cap, pwd->pw_name))
++		if (vendor_passwd_glob) {
++			memset(&gl, 0, sizeof(gl));
++			if (glob(vendor_passwd_glob, GLOB_NOESCAPE, NULL, &gl) == 0) {
++				for (size_t i = 0; i < gl.gl_pathc && !pwd; i++) {
++					fg = fopen(gl.gl_pathv[i], "r");
++					if (!fg)
 +						continue;
-+					if (uid == pwd->pw_uid)
-+						break;
++					while (NULL != (pwd = fgetpwent(fg))) {
++						if (prefix_seen_add(&seen, &seen_cnt, &seen_cap, pwd->pw_name))
++							continue;
++						if (uid == pwd->pw_uid)
++							break;
++					}
++					fclose(fg);
 +				}
-+				fclose(fg);
 +			}
 +			globfree(&gl);
 +		}
@@ -614,7 +840,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  		return pwd;
  	}
  	else {
-@@ -208,15 +324,31 @@
+@@ -208,15 +346,34 @@
  	if (passwd_db_file) {
  		FILE* fg;
  		struct passwd *pwd = NULL;
@@ -635,16 +861,19 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
 +			if (pwd)
 +				return pwd;
 +		}
-+		if (vendor_passwd_glob && glob(vendor_passwd_glob, 0, NULL, &gl) == 0) {
-+			for (size_t i = 0; i < gl.gl_pathc && !pwd; i++) {
-+				fg = fopen(gl.gl_pathv[i], "r");
-+				if (!fg)
-+					continue;
-+				while (NULL != (pwd = fgetpwent(fg))) {
-+					if (streq(name, pwd->pw_name))
-+						break;
++		if (vendor_passwd_glob) {
++			memset(&gl, 0, sizeof(gl));
++			if (glob(vendor_passwd_glob, GLOB_NOESCAPE, NULL, &gl) == 0) {
++				for (size_t i = 0; i < gl.gl_pathc && !pwd; i++) {
++					fg = fopen(gl.gl_pathv[i], "r");
++					if (!fg)
++						continue;
++					while (NULL != (pwd = fgetpwent(fg))) {
++						if (streq(name, pwd->pw_name))
++							break;
++					}
++					fclose(fg);
 +				}
-+				fclose(fg);
 +			}
 +			globfree(&gl);
  		}
@@ -652,7 +881,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  		return pwd;
  	}
  	else {
-@@ -229,17 +361,38 @@
+@@ -229,17 +386,41 @@
  {
  	if (passwd_db_file) {
  		FILE* fg;
@@ -679,18 +908,21 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  		}
 -		fclose(fg);
 -		return ret;
-+		if (vendor_passwd_glob && glob(vendor_passwd_glob, 0, NULL, &gl) == 0) {
-+			for (size_t i = 0; i < gl.gl_pathc; i++) {
-+				fg = fopen(gl.gl_pathv[i], "r");
-+				if (!fg)
-+					continue;
-+				while ((ret = fgetpwent_r(fg, pwd, buf, buflen, result)) == 0) {
-+					if (streq(name, pwd->pw_name))
++		if (vendor_passwd_glob) {
++			memset(&gl, 0, sizeof(gl));
++			if (glob(vendor_passwd_glob, GLOB_NOESCAPE, NULL, &gl) == 0) {
++				for (size_t i = 0; i < gl.gl_pathc; i++) {
++					fg = fopen(gl.gl_pathv[i], "r");
++					if (!fg)
++						continue;
++					while ((ret = fgetpwent_r(fg, pwd, buf, buflen, result)) == 0) {
++						if (streq(name, pwd->pw_name))
++							break;
++					}
++					fclose(fg);
++					if (*result != NULL || ret == ERANGE)
 +						break;
 +				}
-+				fclose(fg);
-+				if (*result != NULL || ret == ERANGE)
-+					break;
 +			}
 +			globfree(&gl);
 +		}
@@ -698,7 +930,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  	}
  	else {
  		return getpwnam_r(name, pwd, buf, buflen, result);
-@@ -275,20 +428,37 @@
+@@ -275,20 +456,42 @@
  	}
  	if (fp_pwent)
  		fclose (fp_pwent);
@@ -713,8 +945,13 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  	fp_pwent = fopen(passwd_db_file, "r");
 -	if (!fp_pwent)
 -		return;
-+	if (vendor_passwd_glob && glob(vendor_passwd_glob, 0, NULL, &gl_pwent) == 0)
-+		gl_pwent_active = true;
++	if (vendor_passwd_glob) {
++		memset(&gl_pwent, 0, sizeof(gl_pwent));
++		if (glob(vendor_passwd_glob, GLOB_NOESCAPE, NULL, &gl_pwent) == 0)
++			gl_pwent_active = true;
++		else
++			globfree(&gl_pwent);
++	}
  }
  extern struct passwd* prefix_getpwent(void)
  {
@@ -741,7 +978,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  }
  extern void prefix_endpwent(void)
  {
-@@ -299,6 +469,12 @@
+@@ -299,6 +502,12 @@
  	if (fp_pwent)
  		fclose(fp_pwent);
  	fp_pwent = NULL;
@@ -754,7 +991,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  }
  
  extern void prefix_setgrent(void)
-@@ -309,17 +485,37 @@
+@@ -309,17 +518,42 @@
  	}
  	if (fp_grent)
  		fclose (fp_grent);
@@ -769,8 +1006,13 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  	fp_grent = fopen(group_db_file, "r");
 -	if (!fp_grent)
 -		return;
-+	if (vendor_group_glob && glob(vendor_group_glob, 0, NULL, &gl_grent) == 0)
-+		gl_grent_active = true;
++	if (vendor_group_glob) {
++		memset(&gl_grent, 0, sizeof(gl_grent));
++		if (glob(vendor_group_glob, GLOB_NOESCAPE, NULL, &gl_grent) == 0)
++			gl_grent_active = true;
++		else
++			globfree(&gl_grent);
++	}
  }
  extern struct group* prefix_getgrent(void)
  {
@@ -795,7 +1037,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/l
  }
  extern void prefix_endgrent(void)
  {
-@@ -330,6 +526,12 @@
+@@ -330,6 +564,12 @@
  	if (fp_grent)
  		fclose(fp_grent);
  	fp_grent = NULL;
@@ -832,16 +1074,23 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/pwio.c shadow-4.20.2/lib/pwio
  
  
  static /*@null@*/ /*@only@*/void *passwd_dup (const void *ent)
-@@ -119,9 +124,109 @@
+@@ -96,7 +101,8 @@
+ 	false,			/* isopen */
+ 	false,			/* locked */
+ 	false,			/* readonly */
+-	false			/* setname */
++	false,			/* setname */
++	false			/* prefix_db */
+ };
+ 
+ int pw_setdbname (const char *filename)
+@@ -119,9 +125,111 @@
  	return commonio_open (&passwd_db, mode);
  }
  
-+#ifndef VENDOR_PASSWD_FILES
-+#define VENDOR_PASSWD_FILES "/sw/*/etc/passwd"
-+#endif
-+
 +static struct passwd *vendor_pw = NULL;
 +
++#ifdef VENDOR_PASSWD_FILES
 +static bool seen_name_list (char **names, size_t count, const char *name)
 +{
 +	for (size_t i = 0; i < count; i++) {
@@ -851,14 +1100,20 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/pwio.c shadow-4.20.2/lib/pwio
 +	}
 +	return false;
 +}
++#endif
 +
 +static const struct passwd *vendor_pw_locate_common (const char *name,
 +                                                     uid_t uid,
 +                                                     bool by_uid)
 +{
++#ifndef VENDOR_PASSWD_FILES
++	(void) name;
++	(void) uid;
++	(void) by_uid;
++	return NULL;
++#else
 +	size_t flen = strlen (passwd_db.filename);
 +	size_t slen = strlen (PASSWD_FILE);
-+	size_t plen;
 +	char *pat;
 +	glob_t gl;
 +	char **seen = NULL;
@@ -868,15 +1123,13 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/pwio.c shadow-4.20.2/lib/pwio
 +	if (flen < slen || !streq (passwd_db.filename + flen - slen, PASSWD_FILE)) {
 +		return NULL;
 +	}
-+	plen = flen - slen;
-+	while (plen > 0 && passwd_db.filename[plen - 1] == '/') {
-+		plen--;
-+	}
-+	pat = aprintf ("%.*s%s", (int) plen, passwd_db.filename, VENDOR_PASSWD_FILES);
++	pat = shadow_vendor_glob_pattern (passwd_db.filename, flen - slen, VENDOR_PASSWD_FILES);
 +	if (NULL == pat) {
 +		return NULL;
 +	}
-+	if (glob (pat, 0, NULL, &gl) != 0) {
++	memset (&gl, 0, sizeof (gl));
++	if (glob (pat, GLOB_NOESCAPE, NULL, &gl) != 0) {
++		globfree (&gl);
 +		free (pat);
 +		return NULL;
 +	}
@@ -929,6 +1182,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/pwio.c shadow-4.20.2/lib/pwio
 +	free (seen);
 +	globfree (&gl);
 +	return found;
++#endif
 +}
 +
  /*@observer@*/ /*@null@*/const struct passwd *pw_locate (const char *name)
@@ -943,7 +1197,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/pwio.c shadow-4.20.2/lib/pwio
  }
  
  /*@observer@*/ /*@null@*/const struct passwd *pw_locate_uid (uid_t uid)
-@@ -132,8 +237,11 @@
+@@ -132,8 +240,11 @@
  	while (   ((pwd = pw_next ()) != NULL)
  	       && (pwd->pw_uid != uid)) {
  	}
@@ -959,12 +1213,20 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/pwio.c shadow-4.20.2/lib/pwio
 diff --no-dereference -Naur shadow-4.20.2.orig/lib/setupenv.c shadow-4.20.2/lib/setupenv.c
 --- shadow-4.20.2.orig/lib/setupenv.c	2026-08-04 18:02:13.000285869 +0000
 +++ shadow-4.20.2/lib/setupenv.c	2026-08-04 18:02:13.000285869 +0000
-@@ -157,7 +157,7 @@
+@@ -14,6 +14,7 @@
+ #include "config.h"
+ 
+ #include <ctype.h>
++#include <paths.h>
+ #include <pwd.h>
+ #include <stddef.h>
+ #include <sys/types.h>
+@@ -157,7 +158,7 @@
  
  	if (NULL == cp) {
  		/* not specified, use a minimal default */
 -		addenv ((info->pw_uid == 0) ? "PATH=/sbin:/bin:/usr/sbin:/usr/bin" : "PATH=/bin:/usr/bin", NULL);
-+		addenv ("PATH=/sw/*/bin", NULL);
++		addenv ("PATH", _PATH_DEFPATH);
  	} else if (strchr(cp, '=')) {
  		/* specified as name=value (PATH=...) */
  		addenv (cp, NULL);
@@ -980,6 +1242,16 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/sgroupio.c shadow-4.20.2/lib/
  	0,                      /* st_uid */
  	0,                      /* st_gid */
  	NULL,			/* head */
+@@ -223,7 +223,8 @@
+ 	false,			/* isopen */
+ 	false,			/* locked */
+ 	false,			/* readonly */
+-	false			/* setname */
++	false,			/* setname */
++	false			/* prefix_db */
+ };
+ 
+ int sgr_setdbname (const char *filename)
 diff --no-dereference -Naur shadow-4.20.2.orig/lib/shadowio.c shadow-4.20.2/lib/shadowio.c
 --- shadow-4.20.2.orig/lib/shadowio.c	2026-07-20 14:56:15.710087658 +0000
 +++ shadow-4.20.2/lib/shadowio.c	2026-07-20 14:56:15.710087658 +0000
@@ -992,7 +1264,17 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/shadowio.c shadow-4.20.2/lib/
  	0,                      /* st_uid */
  	0,                      /* st_gid */
  	NULL,			/* head */
-@@ -112,9 +112,7 @@
+@@ -97,7 +97,8 @@
+ 	false,			/* isopen */
+ 	false,			/* locked */
+ 	false,			/* readonly */
+-	false			/* setname */
++	false,			/* setname */
++	false			/* prefix_db */
+ };
+ 
+ int spw_setdbname (const char *filename)
+@@ -112,9 +113,7 @@
  
  bool spw_file_present (void)
  {
@@ -1003,18 +1285,29 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/shadowio.c shadow-4.20.2/lib/
  }
  
  int spw_lock (void)
-diff --no-dereference -Naur shadow-4.20.2.orig/src/Makefile.in shadow-4.20.2/src/Makefile.in
---- shadow-4.20.2.orig/src/Makefile.in	2026-08-08 12:18:12.489441684 +0000
-+++ shadow-4.20.2/src/Makefile.in	2026-08-08 12:18:12.489441684 +0000
-@@ -606,7 +606,7 @@
- 	.indent.pro
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/subordinateio.c shadow-4.20.2/lib/subordinateio.c
+--- shadow-4.20.2.orig/lib/subordinateio.c	2026-08-08 12:07:10.932739516 +0000
++++ shadow-4.20.2/lib/subordinateio.c	2026-08-08 12:07:10.932739516 +0000
+@@ -540,7 +540,8 @@
+ 	false,			/* isopen */
+ 	false,			/* locked */
+ 	false,			/* readonly */
+-	false			/* setname */
++	false,			/* setname */
++	false			/* prefix_db */
+ };
  
- ubindir = ${prefix}/bin
--usbindir = ${prefix}/sbin
-+usbindir = ${prefix}/bin
- suidperms = 4755
- sgidperms = 2755
- AM_CPPFLAGS = \
+ /*
+@@ -748,7 +749,8 @@
+ 	false,			/* isopen */
+ 	false,			/* locked */
+ 	false,			/* readonly */
+-	false			/* setname */
++	false,			/* setname */
++	false			/* prefix_db */
+ };
+ 
+ int sub_gid_setdbname (const char *filename)
 diff --no-dereference -Naur shadow-4.20.2.orig/src/chage.c shadow-4.20.2/src/chage.c
 --- shadow-4.20.2.orig/src/chage.c	2026-08-04 18:02:13.030855328 +0000
 +++ shadow-4.20.2/src/chage.c	2026-08-04 18:02:13.030855328 +0000
@@ -1038,6 +1331,17 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/chage.c shadow-4.20.2/src/cha
 diff --no-dereference -Naur shadow-4.20.2.orig/src/chpasswd.c shadow-4.20.2/src/chpasswd.c
 --- shadow-4.20.2.orig/src/chpasswd.c	2026-08-04 18:02:13.030855328 +0000
 +++ shadow-4.20.2/src/chpasswd.c	2026-08-04 18:02:13.030855328 +0000
+@@ -380,9 +380,9 @@
+ 	process_flags (argc, argv, &flags);
+ 	process_selinux = !flags.chroot && !flags.prefix;
+ 
+-	salt = get_salt();
+ 	process_root_flag ("-R", argc, argv);
+ 	prefix = process_prefix_flag ("-P", argc, argv);
++	salt = get_salt();
+ 
+ #ifdef USE_PAM
+ 	if (eflg || cflg || prefix[0]) {
 @@ -506,8 +506,7 @@
  			 */
  			sp = spw_locate (name);
@@ -1057,6 +1361,18 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/chpasswd.c shadow-4.20.2/src/
  		}
  
  		/*
+diff --no-dereference -Naur shadow-4.20.2.orig/src/Makefile.in shadow-4.20.2/src/Makefile.in
+--- shadow-4.20.2.orig/src/Makefile.in	2026-08-08 12:18:12.489441684 +0000
++++ shadow-4.20.2/src/Makefile.in	2026-08-08 12:18:12.489441684 +0000
+@@ -606,7 +606,7 @@
+ 	.indent.pro
+ 
+ ubindir = ${prefix}/bin
+-usbindir = ${prefix}/sbin
++usbindir = ${prefix}/bin
+ suidperms = 4755
+ sgidperms = 2755
+ AM_CPPFLAGS = \
 diff --no-dereference -Naur shadow-4.20.2.orig/src/passwd.c shadow-4.20.2/src/passwd.c
 --- shadow-4.20.2.orig/src/passwd.c	2026-08-04 18:02:13.034855375 +0000
 +++ shadow-4.20.2/src/passwd.c	2026-08-04 18:02:13.034855375 +0000
@@ -1108,16 +1424,24 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/passwd.c shadow-4.20.2/src/pa
 diff --no-dereference -Naur shadow-4.20.2.orig/src/useradd.c shadow-4.20.2/src/useradd.c
 --- shadow-4.20.2.orig/src/useradd.c	2026-08-08 12:07:10.932739516 +0000
 +++ shadow-4.20.2/src/useradd.c	2026-08-08 12:07:10.932739516 +0000
-@@ -110,7 +110,7 @@
+@@ -77,6 +77,7 @@
+ 
+ #undef NDEBUG
+ #include <assert.h>
++#include <paths.h>
+ 
+ 
+ #ifndef SKEL_DIR
+@@ -110,7 +111,7 @@
  static const char *def_groups = "";
  static const char *def_gname = "other";
  static const char *def_home = "/home";
 -static const char *def_shell = "/bin/bash";
-+static const char *def_shell = "/sw/bash/bin/bash";
++static const char *def_shell = _PATH_BSHELL;
  static const char *def_template = SKEL_DIR;
  static const char *def_usrtemplate = USRSKELDIR;
  static const char *def_create_mail_spool = "yes";
-@@ -1023,13 +1023,9 @@
+@@ -1023,13 +1024,9 @@
  	 * FIXME: we currently do not check that all groups of user_groups
  	 *        were completed with the new user.
  	 */
@@ -1134,21 +1458,65 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/useradd.c shadow-4.20.2/src/u
  			continue;
  		}
  
-@@ -1378,6 +1374,7 @@
+@@ -1378,6 +1375,9 @@
  				     && '*'  != optarg[0]
  				     && !streq(optarg, "/sbin/nologin")
  				     && !streq(optarg, "/usr/sbin/nologin")
-+				     && !streq(optarg, "/sw/shadow/bin/nologin")
++#ifdef NOLOGIN_PROGRAM
++				     && !streq(optarg, NOLOGIN_PROGRAM)
++#endif
  				     && (   stat(optarg, &st) != 0
  				         || S_ISDIR(st.st_mode)
  				         || access(optarg, X_OK) != 0)) {
-diff --no-dereference -Naur shadow-4.20.2.orig/src/usermod.c shadow-4.20.2/src/usermod.c
---- shadow-4.20.2.orig/src/usermod.c	2026-08-08 12:07:10.932739516 +0000
-+++ shadow-4.20.2/src/usermod.c	2026-08-08 12:07:10.932739516 +0000
-@@ -726,8 +726,20 @@
+diff --no-dereference -Naur shadow-4.20.2.orig/src/userdel.c shadow-4.20.2/src/userdel.c
+--- shadow-4.20.2.orig/src/userdel.c	2026-08-04 18:02:13.034855375 +0000
++++ shadow-4.20.2/src/userdel.c	2026-08-04 18:02:13.034855375 +0000
+@@ -21,6 +21,7 @@
+ #include <unistd.h>
+ 
+ #include "btrfs.h"
++#include "commonio.h"
+ #include "defines.h"
+ #include "getdef.h"
+ #include "groupio.h"
+@@ -181,6 +182,11 @@
  	 * Scan through the entire group file looking for the groups that
  	 * the user is a member of.
  	 */
++	if (gr_materialize_member (user_name) == 0) {
++		eprintf(_("%s: failed to prepare vendor entries in %s\n"),
++		         Prog, gr_dbname ());
++		fail_exit (E_GRP_UPDATE, process_selinux);
++	}
+ 	for (gr_rewind (), grp = gr_next (); NULL != grp; grp = gr_next ()) {
+ 
+ 		/*
+@@ -297,9 +303,9 @@
+ 	const struct group *grp;
+ 	const struct passwd *pwd = NULL;
+ 
+-	grp = gr_locate (user_name);
++	grp = commonio_locate ((struct commonio_db *) __gr_get_db (), user_name);
+ 	if (NULL == grp) {
+-		/* This user has no usergroup. */
++		/* This user has no writable local usergroup. */
+ 		return;
+ 	}
+ 
+diff --no-dereference -Naur shadow-4.20.2.orig/src/usermod.c shadow-4.20.2/src/usermod.c
+--- shadow-4.20.2.orig/src/usermod.c	2026-08-08 12:07:10.932739516 +0000
++++ shadow-4.20.2/src/usermod.c	2026-08-08 12:07:10.932739516 +0000
+@@ -726,8 +726,27 @@
+ 	 * Scan through the entire group file looking for the groups that
+ 	 * the user is a member of.
+ 	 */
++	if (lflg || (Gflg && !aflg && !rflg)) {
++		if (gr_materialize_member (user_name) == 0) {
++			eprintf (_("%s: failed to prepare vendor entries in %s\n"),
++			         Prog, gr_dbname ());
++			fail_exit (E_GRP_UPDATE, process_selinux);
++		}
++	}
 +	gr_rewind();
  	while (NULL != (grp = gr_next()))
  		update_group(grp, process_selinux);
@@ -1166,15 +1534,17 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/usermod.c shadow-4.20.2/src/u
  }
  
  
-@@ -1191,6 +1203,7 @@
+@@ -1191,6 +1210,9 @@
  				     && '*'  != optarg[0]
  				     && !streq(optarg, "/sbin/nologin")
  				     && !streq(optarg, "/usr/sbin/nologin")
-+				     && !streq(optarg, "/sw/shadow/bin/nologin")
++#ifdef NOLOGIN_PROGRAM
++				     && !streq(optarg, NOLOGIN_PROGRAM)
++#endif
  				     && (   stat(optarg, &st) != 0
  				         || S_ISDIR(st.st_mode)
  				         || access(optarg, X_OK) != 0)) {
-@@ -1691,9 +1704,7 @@
+@@ -1691,9 +1713,7 @@
  			/* Update the shadow entry if it exists */
  			spent = *spwd;
  			new_spent (&spent, process_selinux);
@@ -1185,7 +1555,7 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/usermod.c shadow-4.20.2/src/u
  			/* In some cases, we force the creation of a
  			 * shadow entry:
  			 *  + new password requested and passwd indicates
-@@ -1726,8 +1737,8 @@
+@@ -1726,8 +1746,8 @@
  		}
  	}
  

@@ -1,15 +1,3 @@
-diff --no-dereference -Naur e2fsprogs-1.47.4.orig/MCONFIG.in e2fsprogs-1.47.4/MCONFIG.in
---- e2fsprogs-1.47.4.orig/MCONFIG.in	2026-03-06 17:17:36.000000000 +0000
-+++ e2fsprogs-1.47.4/MCONFIG.in	2026-03-06 17:17:36.000000000 +0000
-@@ -206,7 +206,7 @@
- $(top_builddir)/util/symlinks:
- 	cd $(top_builddir)/util ; $(MAKE) symlinks
- 
--INSTALL_SYMLINK = /bin/sh $(top_builddir)/util/install-symlink \
-+INSTALL_SYMLINK = $(SHELL) $(top_builddir)/util/install-symlink \
- 			@SYMLINK_RELATIVE@ \
- 			--symlinks=$(top_builddir)/util/symlinks
- DEP_INSTALL_SYMLINK = $(top_builddir)/util/install-symlink \
 diff --no-dereference -Naur e2fsprogs-1.47.4.orig/config/parse-types.sh e2fsprogs-1.47.4/config/parse-types.sh
 --- e2fsprogs-1.47.4.orig/config/parse-types.sh	2026-03-06 17:17:36.000000000 +0000
 +++ e2fsprogs-1.47.4/config/parse-types.sh	2026-03-06 17:17:36.000000000 +0000
@@ -112,16 +100,23 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/configure e2fsprogs-1.47.4/con
 diff --no-dereference -Naur e2fsprogs-1.47.4.orig/e2fsck/unix.c e2fsprogs-1.47.4/e2fsck/unix.c
 --- e2fsprogs-1.47.4.orig/e2fsck/unix.c	2026-03-06 17:17:36.000000000 +0000
 +++ e2fsprogs-1.47.4/e2fsck/unix.c	2026-03-06 17:17:36.000000000 +0000
-@@ -811,7 +811,7 @@
+@@ -811,7 +811,14 @@
  	exit(FSCK_ERROR);
  }
  
 -static const char *config_fn[] = { ROOT_SYSCONFDIR "/e2fsck.conf", 0 };
-+static const char *config_fn[] = { "/etc/e2fsck.conf", "/sw/*/etc/e2fsck.conf", ROOT_SYSCONFDIR "/e2fsck.conf", 0 };
++static const char *config_fn[] = {
++	"/etc/e2fsck.conf",
++#ifdef VENDOR_E2FSCK_CONF
++	VENDOR_E2FSCK_CONF,
++#endif
++	ROOT_SYSCONFDIR "/e2fsck.conf",
++	0
++};
  
  static errcode_t PRS(int argc, char *argv[], e2fsck_t *ret_ctx)
  {
-@@ -1052,8 +1052,10 @@
+@@ -1052,8 +1059,10 @@
  		fatal_error(ctx, 0);
  	}
  
@@ -154,18 +149,15 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/ss/mk_cmds.sh.in e2fsprogs
 diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/support/profile.c e2fsprogs-1.47.4/lib/support/profile.c
 --- e2fsprogs-1.47.4.orig/lib/support/profile.c	2026-03-06 17:17:36.000000000 +0000
 +++ e2fsprogs-1.47.4/lib/support/profile.c	2026-03-06 17:17:36.000000000 +0000
-@@ -66,6 +66,10 @@
+@@ -66,6 +66,7 @@
  #include <sys/types.h>
  #include <sys/stat.h>
  #include <dirent.h>
 +#include <glob.h>
-+#ifndef GLOB_PATHS
-+#define GLOB_PATHS (1 << 29)
-+#endif
  #ifdef HAVE_PWD_H
  #include <pwd.h>
  #endif
-@@ -300,14 +304,62 @@
+@@ -300,14 +301,62 @@
  	return retval;
  }
  
@@ -230,7 +222,7 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/support/profile.c e2fsprog
  
  	profile = malloc(sizeof(struct _profile_t));
  	if (!profile)
-@@ -319,35 +371,34 @@
+@@ -319,35 +368,35 @@
          /* if the filenames list is not specified return an empty profile */
          if ( files ) {
  	    for (fs = files; !PROFILE_LAST_FILESPEC(*fs); fs++) {
@@ -256,7 +248,7 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/support/profile.c e2fsprog
 +			size_t gi;
 +
 +			memset(&g, 0, sizeof(g));
-+			gr = glob(*fs, GLOB_PATHS, NULL, &g);
++			gr = glob(*fs, GLOB_NOESCAPE, NULL, &g);
 +			if (gr == 0) {
 +				for (gi = 0; gi < g.gl_pathc; gi++) {
 +					retval = profile_add_filespec(profile,
@@ -267,8 +259,8 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/support/profile.c e2fsprog
 +						goto errout;
 +					}
 +				}
-+				globfree(&g);
 +			} else if (gr == GLOB_NOSPACE) {
++				globfree(&g);
 +				retval = ENOMEM;
 +				goto errout;
  			}
@@ -279,6 +271,7 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/support/profile.c e2fsprog
 -		retval = profile_open_file(*fs, &new_file);
 -		/* if this file is missing, skip to the next */
 -		if (retval == ENOENT || retval == EACCES) {
++			globfree(&g);
  			continue;
  		}
 +		retval = profile_add_filespec(profile, &last, *fs);
@@ -289,7 +282,7 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/support/profile.c e2fsprog
  	    }
  	    /*
  	     * If all the files were not found, return the appropriate error.
-@@ -358,11 +409,9 @@
+@@ -358,11 +407,9 @@
  	    }
  	}
  
@@ -301,19 +294,140 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/support/profile.c e2fsprog
  	profile_release(profile);
  	return retval;
  }
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/lib/support/profile_helpers.c e2fsprogs-1.47.4/lib/support/profile_helpers.c
+--- e2fsprogs-1.47.4.orig/lib/support/profile_helpers.c	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/lib/support/profile_helpers.c	2026-03-06 17:17:36.000000000 +0000
+@@ -265,21 +265,65 @@
+ 	free(str);
+ }
+ 
++static const char *
++profile_scan_bracket_end(const char *p)
++{
++	p++;
++	if (*p == '!' || *p == '^')
++		p++;
++	if (*p == ']')
++		p++;
++	while (*p != '\0' && *p != '/') {
++		if (*p == ']')
++			return p;
++		if (*p == '[' && (p[1] == ':' || p[1] == '.' || p[1] == '=')) {
++			char ctype = p[1];
++			const char *q = p + 2;
++			while (*q != '\0' && *q != '/' && (ctype == '.' || *q != ']')) {
++				if (*q == ctype && q[1] == ']') {
++					p = q + 2;
++					goto next_ch;
++				}
++				q++;
++			}
++		}
++		p++;
++	next_ch:;
++	}
++	return NULL;
++}
++
++static const char *
++profile_next_colon(const char *s)
++{
++	while (*s != '\0') {
++		if (*s == ':')
++			return s;
++		if (*s == '[') {
++			const char *end = profile_scan_bracket_end(s);
++			if (end != NULL) {
++				s = end + 1;
++				continue;
++			}
++		}
++		s++;
++	}
++	return NULL;
++}
++
+ errcode_t
+ profile_init_path(const char * filepath,
+ 		  profile_t *ret_profile)
+ {
+ 	int n_entries, i;
+-	unsigned int ent_len;
++	size_t ent_len;
+ 	const char *s, *t;
+ 	char **filenames;
+ 	errcode_t retval;
+ 
+ 	/* count the distinct filename components */
+-	for(s = filepath, n_entries = 1; *s; s++) {
+-		if (*s == ':')
+-			n_entries++;
+-	}
++	for (s = filepath, n_entries = 1; (t = profile_next_colon(s)) != NULL; s = t + 1)
++		n_entries++;
+ 
+ 	/* the array is NULL terminated */
+ 	filenames = (char **) malloc((n_entries+1) * sizeof(char*));
+@@ -287,8 +331,13 @@
+ 		return ENOMEM;
+ 
+ 	/* measure, copy, and skip each one */
+-	for(s = filepath, i=0; (t = strchr(s, ':')) || (t=s+strlen(s)); s=t+1, i++) {
++	for(s = filepath, i=0; (t = profile_next_colon(s)) || (t=s+strlen(s)); s=t+1) {
+ 		ent_len = t-s;
++		if (ent_len == 0) {
++			if (*t == 0)
++				break;
++			continue;
++		}
+ 		filenames[i] = (char*) malloc(ent_len + 1);
+ 		if (filenames[i] == 0) {
+ 			/* if malloc fails, free the ones that worked */
+@@ -298,10 +347,9 @@
+ 		}
+ 		strncpy(filenames[i], s, ent_len);
+ 		filenames[i][ent_len] = 0;
+-		if (*t == 0) {
+-			i++;
++		i++;
++		if (*t == 0)
+ 			break;
+-		}
+ 	}
+ 	/* cap the array */
+ 	filenames[i] = 0;
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/MCONFIG.in e2fsprogs-1.47.4/MCONFIG.in
+--- e2fsprogs-1.47.4.orig/MCONFIG.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/MCONFIG.in	2026-03-06 17:17:36.000000000 +0000
+@@ -206,7 +206,7 @@
+ $(top_builddir)/util/symlinks:
+ 	cd $(top_builddir)/util ; $(MAKE) symlinks
+ 
+-INSTALL_SYMLINK = /bin/sh $(top_builddir)/util/install-symlink \
++INSTALL_SYMLINK = $(SHELL) $(top_builddir)/util/install-symlink \
+ 			@SYMLINK_RELATIVE@ \
+ 			--symlinks=$(top_builddir)/util/symlinks
+ DEP_INSTALL_SYMLINK = $(top_builddir)/util/install-symlink \
 diff --no-dereference -Naur e2fsprogs-1.47.4.orig/misc/mke2fs.c e2fsprogs-1.47.4/misc/mke2fs.c
 --- e2fsprogs-1.47.4.orig/misc/mke2fs.c	2026-03-06 17:17:36.000000000 +0000
 +++ e2fsprogs-1.47.4/misc/mke2fs.c	2026-03-06 17:17:36.000000000 +0000
-@@ -1308,7 +1308,7 @@
+@@ -1308,7 +1308,14 @@
  	exit(1);
  }
  
 -static const char *config_fn[] = { ROOT_SYSCONFDIR "/mke2fs.conf", 0 };
-+static const char *config_fn[] = { "/etc/mke2fs.conf", "/sw/*/etc/mke2fs.conf", ROOT_SYSCONFDIR "/mke2fs.conf", 0 };
++static const char *config_fn[] = {
++	"/etc/mke2fs.conf",
++#ifdef VENDOR_MKE2FS_CONF
++	VENDOR_MKE2FS_CONF,
++#endif
++	ROOT_SYSCONFDIR "/mke2fs.conf",
++	0
++};
  
  static void edit_feature(const char *str, __u32 *compat_array)
  {
-@@ -1769,8 +1769,10 @@
+@@ -1769,8 +1776,10 @@
  #endif /* _SC_PAGESIZE */
  #endif /* HAVE_SYSCONF */
  
@@ -325,50 +439,6 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/misc/mke2fs.c e2fsprogs-1.47.4
  	profile_set_syntax_err_cb(syntax_err_report);
  	retval = profile_init(config_fn, &profile);
  	if (retval == ENOENT) {
-diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub.in e2fsprogs-1.47.4/scrub/e2scrub.in
---- e2fsprogs-1.47.4.orig/scrub/e2scrub.in	2026-03-06 17:17:36.000000000 +0000
-+++ e2fsprogs-1.47.4/scrub/e2scrub.in	2026-03-06 17:17:36.000000000 +0000
-@@ -1,4 +1,4 @@
--#!/bin/bash
-+#!/sw/bash/bin/bash
- 
- #  Copyright (C) 2018 Oracle.  All Rights Reserved.
- #
-@@ -34,9 +34,9 @@
- fstrim=0
- reap=0
- e2fsck_opts=""
--conffile="@root_sysconfdir@/e2scrub.conf"
--
--test -f "${conffile}" && . "${conffile}"
-+for conffile in /sw/*/etc/e2scrub.conf "@root_sysconfdir@/e2scrub.conf" /etc/e2scrub.conf; do
-+	test -f "${conffile}" && . "${conffile}"
-+done
- 
- print_help() {
- 	echo "Usage: $0 [OPTIONS] mountpoint | device"
-diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub_all.in e2fsprogs-1.47.4/scrub/e2scrub_all.in
---- e2fsprogs-1.47.4.orig/scrub/e2scrub_all.in	2026-03-06 17:17:36.000000000 +0000
-+++ e2fsprogs-1.47.4/scrub/e2scrub_all.in	2026-03-06 17:17:36.000000000 +0000
-@@ -1,4 +1,4 @@
--#!/bin/bash
-+#!/sw/bash/bin/bash
- 
- #  Copyright (C) 2018 Oracle.  All Rights Reserved.
- #
-@@ -29,9 +29,9 @@
- scrub_all=0
- snap_size_mb=256
- reap=0
--conffile="@root_sysconfdir@/e2scrub.conf"
--
--test -f "${conffile}" && . "${conffile}"
-+for conffile in /sw/*/etc/e2scrub.conf "@root_sysconfdir@/e2scrub.conf" /etc/e2scrub.conf; do
-+	test -f "${conffile}" && . "${conffile}"
-+done
- 
- scrub_args=""
- 
 diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub_all_cron.in e2fsprogs-1.47.4/scrub/e2scrub_all_cron.in
 --- e2fsprogs-1.47.4.orig/scrub/e2scrub_all_cron.in	2026-03-06 17:17:36.000000000 +0000
 +++ e2fsprogs-1.47.4/scrub/e2scrub_all_cron.in	2026-03-06 17:17:36.000000000 +0000
@@ -378,28 +448,98 @@ diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub_all_cron.in e2fs
  
  #  Copyright (C) 2018 Oracle.  All Rights Reserved.
  #
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub_all.in e2fsprogs-1.47.4/scrub/e2scrub_all.in
+--- e2fsprogs-1.47.4.orig/scrub/e2scrub_all.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/scrub/e2scrub_all.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ #  Copyright (C) 2018 Oracle.  All Rights Reserved.
+ #
+@@ -18,7 +18,7 @@
+ #  along with this program; if not, write the Free Software Foundation,
+ #  Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
+ 
+-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
++PATH=/sw/*/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+ if (( $EUID != 0 )); then
+     echo "e2scrub_all must be run as root"
+@@ -29,9 +29,10 @@
+ scrub_all=0
+ snap_size_mb=256
+ reap=0
+-conffile="@root_sysconfdir@/e2scrub.conf"
+-
+-test -f "${conffile}" && . "${conffile}"
++test -f "@root_sysconfdir@/e2scrub.conf" && . "@root_sysconfdir@/e2scrub.conf"
++for conffile in /sw/*/etc/e2scrub.conf /etc/e2scrub.conf; do
++	test "${conffile}" != "@root_sysconfdir@/e2scrub.conf" && test -f "${conffile}" && . "${conffile}"
++done
+ 
+ scrub_args=""
+ 
 diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub_fail.in e2fsprogs-1.47.4/scrub/e2scrub_fail.in
 --- e2fsprogs-1.47.4.orig/scrub/e2scrub_fail.in	2026-03-06 17:17:36.000000000 +0000
 +++ e2fsprogs-1.47.4/scrub/e2scrub_fail.in	2026-03-06 17:17:36.000000000 +0000
-@@ -1,4 +1,4 @@
+@@ -1,7 +1,9 @@
 -#!/bin/bash
 +#!/sw/bash/bin/bash
  
  # Email logs of failed e2scrub unit runs when the systemd service fails.
  
-@@ -10,9 +10,9 @@
++PATH=/sw/*/bin${PATH:+:${PATH}}
++
+ mntpoint="$1"
+ test -z "${mntpoint}" && exit 0
+ 
+@@ -10,9 +12,10 @@
  	exit 1
  fi
  
 -if test -f /etc/e2scrub.conf ; then
 -   . /etc/e2scrub.conf
 -fi
-+for conffile in /sw/*/etc/e2scrub.conf "@root_sysconfdir@/e2scrub.conf" /etc/e2scrub.conf; do
-+	test -f "${conffile}" && . "${conffile}"
++test -f "@root_sysconfdir@/e2scrub.conf" && . "@root_sysconfdir@/e2scrub.conf"
++for conffile in /sw/*/etc/e2scrub.conf /etc/e2scrub.conf; do
++	test "${conffile}" != "@root_sysconfdir@/e2scrub.conf" && test -f "${conffile}" && . "${conffile}"
 +done
  
  hostname="$(hostname -f 2>/dev/null)"
  test -z "${hostname}" && hostname="${HOSTNAME}"
+diff --no-dereference -Naur e2fsprogs-1.47.4.orig/scrub/e2scrub.in e2fsprogs-1.47.4/scrub/e2scrub.in
+--- e2fsprogs-1.47.4.orig/scrub/e2scrub.in	2026-03-06 17:17:36.000000000 +0000
++++ e2fsprogs-1.47.4/scrub/e2scrub.in	2026-03-06 17:17:36.000000000 +0000
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/sw/bash/bin/bash
+ 
+ #  Copyright (C) 2018 Oracle.  All Rights Reserved.
+ #
+@@ -23,7 +23,7 @@
+ # check filesystems in VGs that have at least 256MB (or so) of
+ # free space.
+ 
+-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
++PATH=/sw/*/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+ if (( $EUID != 0 )); then
+     echo "e2scrub must be run as root"
+@@ -34,9 +34,10 @@
+ fstrim=0
+ reap=0
+ e2fsck_opts=""
+-conffile="@root_sysconfdir@/e2scrub.conf"
+-
+-test -f "${conffile}" && . "${conffile}"
++test -f "@root_sysconfdir@/e2scrub.conf" && . "@root_sysconfdir@/e2scrub.conf"
++for conffile in /sw/*/etc/e2scrub.conf /etc/e2scrub.conf; do
++	test "${conffile}" != "@root_sysconfdir@/e2scrub.conf" && test -f "${conffile}" && . "${conffile}"
++done
+ 
+ print_help() {
+ 	echo "Usage: $0 [OPTIONS] mountpoint | device"
 diff --no-dereference -Naur e2fsprogs-1.47.4.orig/util/install-symlink.in e2fsprogs-1.47.4/util/install-symlink.in
 --- e2fsprogs-1.47.4.orig/util/install-symlink.in	2026-03-06 17:17:36.000000000 +0000
 +++ e2fsprogs-1.47.4/util/install-symlink.in	2026-03-06 17:17:36.000000000 +0000

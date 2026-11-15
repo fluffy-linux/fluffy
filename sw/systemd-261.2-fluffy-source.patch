@@ -1,7 +1,22 @@
 diff --no-dereference -Naur systemd-261.2.orig/meson.build systemd-261.2/meson.build
 --- systemd-261.2.orig/meson.build	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/meson.build	2026-07-23 17:07:04.000000000 +0000
-@@ -1282,7 +1282,7 @@
+@@ -1003,6 +1003,14 @@
+ if default_user_path != ''
+         conf.set_quoted('DEFAULT_USER_PATH', default_user_path)
+ endif
++vendor_pkg_prefix = get_option('vendor-pkg-prefix')
++if vendor_pkg_prefix != ''
++        conf.set_quoted('VENDOR_PKG_PREFIX', vendor_pkg_prefix)
++endif
++kernel_modules_dir = get_option('kernel-modules-dir')
++if kernel_modules_dir != ''
++        conf.set_quoted('KERNEL_MODULES_DIR', kernel_modules_dir)
++endif
+ 
+ #####################################################################
+ 
+@@ -1282,7 +1290,7 @@
  conf.set10('HAVE_BZIP2', libbzip2.found())
  libbzip2_cflags = libbzip2.partial_dependency(includes: true, compile_args: true)
  
@@ -10,6 +25,20 @@ diff --no-dereference -Naur systemd-261.2.orig/meson.build systemd-261.2/meson.b
                     required : get_option('xz'))
  conf.set10('HAVE_XZ', libxz.found())
  libxz_cflags = libxz.partial_dependency(includes: true, compile_args: true)
+diff --no-dereference -Naur systemd-261.2.orig/meson_options.txt systemd-261.2/meson_options.txt
+--- systemd-261.2.orig/meson_options.txt	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/meson_options.txt	2026-07-23 17:07:04.000000000 +0000
+@@ -85,6 +85,10 @@
+        description : 'enable low level debug logging')
+ option('user-path', type : 'string',
+        description : '$PATH to use for user sessions')
++option('vendor-pkg-prefix', type : 'string', value : '',
++       description : 'wildcard package prefix (e.g. /sw) for late-bound vendor discovery')
++option('kernel-modules-dir', type : 'string', value : '',
++       description : 'additional kernel modules directory for ProtectKernelModules=')
+ 
+ option('utmp', type : 'boolean',
+        description : 'support for utmp/wtmp log handling')
 diff --no-dereference -Naur systemd-261.2.orig/rules.d/50-udev-default.rules.in systemd-261.2/rules.d/50-udev-default.rules.in
 --- systemd-261.2.orig/rules.d/50-udev-default.rules.in	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/rules.d/50-udev-default.rules.in	2026-07-23 17:07:04.000000000 +0000
@@ -42,7 +71,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/conf-files.c systemd-26
  #include "glyph-util.h"
  #include "hashmap.h"
  #include "log.h"
-@@ -633,6 +634,48 @@
+@@ -633,6 +634,61 @@
                          return r;
          }
  
@@ -54,23 +83,36 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/conf-files.c systemd-26
 +                        break;
 +                }
 +        if (has_glob) {
-+                _cleanup_free_ char *rfd_path = NULL;
-+                if (rfd >= 0)
++                expanded_dirs = strv_new(NULL);
++                if (!expanded_dirs)
++                        return log_oom_full(conf_files_log_level(flags));
++
++                _cleanup_free_ char *rfd_path = NULL, *rfd_escaped = NULL;
++                if (rfd >= 0) {
 +                        (void) fd_get_path(rfd, &rfd_path);
++                        if (rfd_path && !empty_or_root(rfd_path)) {
++                                rfd_escaped = glob_escape(rfd_path);
++                                if (!rfd_escaped)
++                                        return log_oom_full(conf_files_log_level(flags));
++                        }
++                }
 +                STRV_FOREACH(p, dirs) {
 +                        if (string_is_glob(*p)) {
 +                                _cleanup_free_ char *prefixed = NULL;
 +                                const char *target = *p;
-+                                if (rfd_path && !empty_or_root(rfd_path)) {
-+                                        prefixed = path_join(rfd_path, *p);
++                                if (rfd_escaped) {
++                                        prefixed = path_join(rfd_escaped, *p);
 +                                        if (!prefixed)
 +                                                return log_oom_full(conf_files_log_level(flags));
 +                                        target = prefixed;
 +                                }
 +                                _cleanup_strv_free_ char **matches = NULL;
-+                                if (safe_glob(target, 0, &matches) >= 0)
++                                r = safe_glob(target, 0, &matches);
++                                if (r < 0 && r != -ENOENT)
++                                        return log_full_errno(conf_files_log_level(flags), r, "Failed to glob '%s': %m", target);
++                                if (r >= 0)
 +                                        STRV_FOREACH(m, matches) {
-+                                                const char *rel = (rfd_path && !empty_or_root(rfd_path)) ? path_startswith(*m, rfd_path) : *m;
++                                                const char *rel = rfd_escaped ? path_startswith(*m, rfd_path) : *m;
 +                                                if (!rel)
 +                                                        continue;
 +                                                if (startswith(*p, "/") && !startswith(rel, "/")) {
@@ -94,20 +136,33 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/conf-files.c systemd-26
 diff --no-dereference -Naur systemd-261.2.orig/src/basic/constants.h systemd-261.2/src/basic/constants.h
 --- systemd-261.2.orig/src/basic/constants.h	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/basic/constants.h	2026-07-23 17:07:04.000000000 +0000
-@@ -39,12 +39,16 @@
+@@ -36,15 +36,29 @@
+ 
+ /* Return a nulstr for a standard cascade of configuration paths, suitable to pass to
+  * conf_files_list_nulstr() to implement drop-in directories for extending configuration files. */
++#ifdef VENDOR_PKG_PREFIX
++#  define CONF_PATHS_VENDOR_NULSTR(n)           \
++        VENDOR_PKG_PREFIX "/*/etc/" n "\0"      \
++        VENDOR_PKG_PREFIX "/*/lib/" n "\0"
++#  define CONF_PATHS_VENDOR(n)                  \
++        VENDOR_PKG_PREFIX "/*/etc/" n,          \
++        VENDOR_PKG_PREFIX "/*/lib/" n,
++#else
++#  define CONF_PATHS_VENDOR_NULSTR(n)
++#  define CONF_PATHS_VENDOR(n)
++#endif
++
  #define CONF_PATHS_NULSTR(n)                    \
          "/etc/" n "\0"                          \
          "/run/" n "\0"                          \
-+        "/sw/*/etc/" n "\0"                     \
-+        "/sw/*/lib/" n "\0"                     \
++        CONF_PATHS_VENDOR_NULSTR(n)             \
          "/usr/local/lib/" n "\0"                \
          "/usr/lib/" n "\0"
  
  #define CONF_PATHS(n)                           \
          "/etc/" n,                              \
          "/run/" n,                              \
-+        "/sw/*/etc/" n,                         \
-+        "/sw/*/lib/" n,                         \
++        CONF_PATHS_VENDOR(n)                    \
          "/usr/local/lib/" n,                    \
          "/usr/lib/" n
  
@@ -122,27 +177,49 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/fileio.c systemd-261.2/
  #include "hexdecoct.h"
  #include "io-util.h"
  #include "iovec-util.h"
-@@ -1207,10 +1208,32 @@
+@@ -1207,10 +1208,53 @@
                  return 0;
          }
  
 -        if (!path_strv_resolve_uniq(search, root))
-+        _cleanup_strv_free_ char **expanded_search = NULL;
++        _cleanup_strv_free_ char **expanded_search = strv_new(NULL);
++        if (!expanded_search)
+                 return -ENOMEM;
+ 
+-        STRV_FOREACH(i, search) {
++        _cleanup_free_ char *root_escaped = NULL;
++        if (root && !empty_or_root(root)) {
++                root_escaped = glob_escape(root);
++                if (!root_escaped)
++                        return -ENOMEM;
++        }
++
 +        STRV_FOREACH(d, search) {
-+                _cleanup_free_ char *prefixed = NULL;
-+                const char *target = *d;
-+                if (root && string_is_glob(*d)) {
-+                        prefixed = path_join(root, *d);
-+                        if (!prefixed)
-+                                return -ENOMEM;
-+                        target = prefixed;
-+                }
-+                if (string_is_glob(target)) {
++                if (string_is_glob(*d)) {
++                        _cleanup_free_ char *prefixed = NULL;
++                        const char *target = *d;
++                        if (root_escaped) {
++                                prefixed = path_join(root_escaped, *d);
++                                if (!prefixed)
++                                        return -ENOMEM;
++                                target = prefixed;
++                        }
 +                        _cleanup_strv_free_ char **matches = NULL;
-+                        if (safe_glob(target, 0, &matches) >= 0)
++                        r = safe_glob(target, 0, &matches);
++                        if (r < 0 && r != -ENOENT)
++                                return r;
++                        if (r >= 0)
 +                                STRV_FOREACH(m, matches) {
-+                                        const char *rel = root ? path_startswith(*m, root) : *m;
-+                                        if (rel && strv_extend(&expanded_search, rel) < 0)
++                                        const char *rel = root_escaped ? path_startswith(*m, root) : *m;
++                                        if (!rel)
++                                                continue;
++                                        if (startswith(*d, "/") && !startswith(rel, "/")) {
++                                                char *s = strjoin("/", rel);
++                                                if (!s)
++                                                        return -ENOMEM;
++                                                if (strv_consume(&expanded_search, s) < 0)
++                                                        return -ENOMEM;
++                                        } else if (strv_extend(&expanded_search, rel) < 0)
 +                                                return -ENOMEM;
 +                                }
 +                } else if (strv_extend(&expanded_search, *d) < 0)
@@ -150,13 +227,83 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/fileio.c systemd-261.2/
 +        }
 +
 +        if (!path_strv_resolve_uniq(expanded_search, root))
-                 return -ENOMEM;
- 
--        STRV_FOREACH(i, search) {
++                return -ENOMEM;
++
 +        STRV_FOREACH(i, expanded_search) {
                  _cleanup_close_ int fd = -EBADF;
                  _cleanup_free_ char *p = NULL;
  
+diff --no-dereference -Naur systemd-261.2.orig/src/basic/glob-util.c systemd-261.2/src/basic/glob-util.c
+--- systemd-261.2.orig/src/basic/glob-util.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/basic/glob-util.c	2026-07-23 17:07:04.000000000 +0000
+@@ -87,19 +87,25 @@
+ DEFINE_TRIVIAL_DESTRUCTOR(closedir_wrapper, void, closedir);
+ 
+ int safe_glob_full(const char *path, int flags, opendir_t opendir_func, char ***ret) {
+-        _cleanup_(globfree) glob_t g = {
+-                .gl_closedir = closedir_wrapper,
+-                .gl_readdir = (struct dirent* (*)(void *)) readdir_no_dot,
+-                .gl_opendir = (void* (*)(const char *)) (opendir_func ?: opendir),
+-                .gl_lstat = lstat,
+-                .gl_stat = stat,
+-        };
++        _cleanup_(globfree) glob_t g = {};
+         int r;
+ 
+         assert(path);
+ 
+         errno = 0;
+-        r = glob(path, flags | GLOB_ALTDIRFUNC, NULL, &g);
++#ifdef GLOB_SKIPDOTS
++        if (!opendir_func)
++                r = glob(path, flags | GLOB_SKIPDOTS, NULL, &g);
++        else
++#endif
++        {
++                g.gl_closedir = closedir_wrapper;
++                g.gl_readdir = (struct dirent* (*)(void *)) readdir_no_dot;
++                g.gl_opendir = (void* (*)(const char *)) (opendir_func ?: opendir);
++                g.gl_lstat = lstat;
++                g.gl_stat = stat;
++                r = glob(path, flags | GLOB_ALTDIRFUNC, NULL, &g);
++        }
+         if (r == GLOB_NOMATCH)
+                 return -ENOENT;
+         if (r == GLOB_NOSPACE)
+@@ -190,3 +196,25 @@
+         /* Check if a string contains any glob patterns. */
+         return !!strpbrk(p, GLOB_CHARS);
+ }
++
++char* glob_escape(const char *s) {
++        assert(s);
++
++        size_t extra = 0;
++        for (const char *p = s; *p != '\0'; p++)
++                if (strchr("\\*?[]{}~", *p))
++                        extra++;
++
++        char *escaped = new(char, strlen(s) + extra + 1);
++        if (!escaped)
++                return NULL;
++
++        char *d = escaped;
++        for (const char *p = s; *p != '\0'; p++) {
++                if (strchr("\\*?[]{}~", *p))
++                        *d++ = '\\';
++                *d++ = *p;
++        }
++        *d = '\0';
++        return escaped;
++}
+diff --no-dereference -Naur systemd-261.2.orig/src/basic/glob-util.h systemd-261.2/src/basic/glob-util.h
+--- systemd-261.2.orig/src/basic/glob-util.h	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/basic/glob-util.h	2026-07-23 17:07:04.000000000 +0000
+@@ -20,3 +20,4 @@
+ int glob_non_glob_prefix(const char *path, char **ret);
+ 
+ bool string_is_glob(const char *p) _pure_;
++char* glob_escape(const char *s);
 diff --no-dereference -Naur systemd-261.2.orig/src/basic/os-util.c systemd-261.2/src/basic/os-util.c
 --- systemd-261.2.orig/src/basic/os-util.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/basic/os-util.c	2026-07-23 17:07:04.000000000 +0000
@@ -168,35 +315,44 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/os-util.c systemd-261.2
  #include "glyph-util.h"
  #include "log.h"
  #include "os-util.h"
-@@ -176,13 +177,36 @@
+@@ -176,13 +177,47 @@
          if (e)
                  return chaseat(rfd, rfd, e, /* flags= */ 0, ret_path, ret_fd);
  
 -        FOREACH_STRING(path, "/etc/os-release", "/usr/lib/os-release") {
 -                r = chaseat(rfd, rfd, path, /* flags= */ 0, ret_path, ret_fd);
 -                if (r != -ENOENT)
--                        return r;
 +        r = chaseat(rfd, rfd, "/etc/os-release", /* flags= */ 0, ret_path, ret_fd);
 +        if (r != -ENOENT)
 +                return r;
 +
-+        _cleanup_free_ char *rfd_path = NULL;
-+        if (rfd >= 0)
++#ifdef VENDOR_PKG_PREFIX
++        _cleanup_free_ char *rfd_path = NULL, *rfd_escaped = NULL;
++        if (rfd >= 0) {
 +                (void) fd_get_path(rfd, &rfd_path);
++                if (rfd_path && !empty_or_root(rfd_path)) {
++                        rfd_escaped = glob_escape(rfd_path);
++                        if (!rfd_escaped)
++                                return -ENOMEM;
++                }
++        }
 +
-+        FOREACH_STRING(pat, "/sw/*/etc/os-release", "/sw/*/lib/os-release") {
++        FOREACH_STRING(pat, VENDOR_PKG_PREFIX "/*/etc/os-release", VENDOR_PKG_PREFIX "/*/lib/os-release") {
 +                _cleanup_free_ char *prefixed = NULL;
 +                const char *target = pat;
-+                if (rfd_path && !empty_or_root(rfd_path)) {
-+                        prefixed = path_join(rfd_path, pat);
++                if (rfd_escaped) {
++                        prefixed = path_join(rfd_escaped, pat);
 +                        if (!prefixed)
 +                                return -ENOMEM;
 +                        target = prefixed;
 +                }
 +                _cleanup_strv_free_ char **matches = NULL;
-+                if (safe_glob(target, 0, &matches) >= 0)
++                r = safe_glob(target, 0, &matches);
++                if (r < 0 && r != -ENOENT)
+                         return r;
++                if (r >= 0)
 +                        STRV_FOREACH(m, matches) {
-+                                const char *rel = (rfd_path && !empty_or_root(rfd_path)) ? path_startswith(*m, rfd_path) : *m;
++                                const char *rel = rfd_escaped ? path_startswith(*m, rfd_path) : *m;
 +                                if (!rel)
 +                                        continue;
 +                                r = chaseat(rfd, rfd, rel, /* flags= */ 0, ret_path, ret_fd);
@@ -204,6 +360,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/os-util.c systemd-261.2
 +                                        return r;
 +                        }
          }
++#endif
  
 -        return -ENOENT;
 +        return chaseat(rfd, rfd, "/usr/lib/os-release", /* flags= */ 0, ret_path, ret_fd);
@@ -213,32 +370,149 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/os-util.c systemd-261.2
 diff --no-dereference -Naur systemd-261.2.orig/src/basic/path-util.c systemd-261.2/src/basic/path-util.c
 --- systemd-261.2.orig/src/basic/path-util.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/basic/path-util.c	2026-07-23 17:07:04.000000000 +0000
-@@ -772,6 +772,24 @@
-                         continue;
-                 }
+@@ -711,6 +711,76 @@
+         return 0;
+ }
  
-+                if (string_is_glob(element)) {
-+                        _cleanup_strv_free_ char **matches = NULL;
-+                        if (safe_glob(element, 0, &matches) >= 0) {
-+                                STRV_FOREACH(dir, matches) {
-+                                        _cleanup_free_ char *full_path = path_join(*dir, name);
-+                                        if (!full_path)
-+                                                return -ENOMEM;
++static int find_executable_in_element(
++                const char *element,
++                const char *name,
++                const char *root,
++                const char *root_abs,
++                const char *root_escaped,
++                char **ret_filename,
++                int *ret_fd,
++                int *last_error) {
 +
-+                                        r = open_and_check_executable(full_path, root, ret_filename, ret_fd);
-+                                        if (r >= 0)
-+                                                return 0;
-+                                        if (r != -EACCES)
-+                                                last_error = r;
-+                                }
-+                        }
-+                        continue;
++        int r;
++
++        assert(element);
++        assert(name);
++        assert(last_error);
++
++        if (!path_is_absolute(element)) {
++                log_debug("Exec search path '%s' isn't absolute, ignoring.", element);
++                return 0;
++        }
++
++        if (string_is_glob(element)) {
++                _cleanup_free_ char *prefixed = NULL;
++                const char *target = element;
++                if (root_escaped) {
++                        prefixed = path_join(root_escaped, element);
++                        if (!prefixed)
++                                return -ENOMEM;
++                        target = prefixed;
 +                }
 +
-                 if (!path_extend(&element, name))
-                         return -ENOMEM;
++                _cleanup_strv_free_ char **matches = NULL;
++                r = safe_glob(target, GLOB_ONLYDIR, &matches);
++                if (r < 0 && r != -ENOENT)
++                        return r;
++                if (r >= 0) {
++                        STRV_FOREACH(dir, matches) {
++                                const char *rel = root_escaped ? path_startswith(*dir, root_abs) : *dir;
++                                if (!rel)
++                                        continue;
++
++                                _cleanup_free_ char *full_path = root_escaped
++                                        ? path_join("/", rel, name)
++                                        : path_join(rel, name);
++                                if (!full_path)
++                                        return -ENOMEM;
++
++                                r = open_and_check_executable(full_path, root, ret_filename, ret_fd);
++                                if (r >= 0)
++                                        return 1;
++                                if (r != -EACCES)
++                                        *last_error = r;
++                        }
++                }
++                return 0;
++        }
++
++        _cleanup_free_ char *full_path = path_join(element, name);
++        if (!full_path)
++                return -ENOMEM;
++
++        r = open_and_check_executable(full_path, root, ret_filename, ret_fd);
++        if (r >= 0) /* Found it! */
++                return 1;
++        /* PATH entries which we don't have access to are ignored, as per tradition. */
++        if (r != -EACCES)
++                *last_error = r;
++        return 0;
++}
++
+ int find_executable_full(
+                 const char *name,
+                 const char *root,
+@@ -726,24 +796,24 @@
+         if (is_path(name))
+                 return open_and_check_executable(name, root, ret_filename, ret_fd);
  
-@@ -1492,26 +1510,5 @@
++        _cleanup_free_ char *root_abs = NULL, *root_escaped = NULL;
++        if (root && !empty_or_root(root)) {
++                r = path_make_absolute_cwd(root, &root_abs);
++                if (r < 0)
++                        return r;
++                path_simplify(root_abs);
++                root_escaped = glob_escape(root_abs);
++                if (!root_escaped)
++                        return -ENOMEM;
++        }
++
+         if (exec_search_path) {
+                 STRV_FOREACH(element, exec_search_path) {
+-                        _cleanup_free_ char *full_path = NULL;
+-
+-                        if (!path_is_absolute(*element)) {
+-                                log_debug("Exec search path '%s' isn't absolute, ignoring.", *element);
+-                                continue;
+-                        }
+-
+-                        full_path = path_join(*element, name);
+-                        if (!full_path)
+-                                return -ENOMEM;
+-
+-                        r = open_and_check_executable(full_path, root, ret_filename, ret_fd);
+-                        if (r >= 0)
++                        r = find_executable_in_element(*element, name, root, root_abs, root_escaped, ret_filename, ret_fd, &last_error);
++                        if (r < 0)
++                                return r;
++                        if (r > 0)
+                                 return 0;
+-                        if (r != -EACCES)
+-                                last_error = r;
+                 }
+                 return last_error;
+         }
+@@ -767,20 +837,11 @@
+                 if (r == 0)
+                         break;
+ 
+-                if (!path_is_absolute(element)) {
+-                        log_debug("Exec search path '%s' isn't absolute, ignoring.", element);
+-                        continue;
+-                }
+-
+-                if (!path_extend(&element, name))
+-                        return -ENOMEM;
+-
+-                r = open_and_check_executable(element, root, ret_filename, ret_fd);
+-                if (r >= 0) /* Found it! */
++                r = find_executable_in_element(element, name, root, root_abs, root_escaped, ret_filename, ret_fd, &last_error);
++                if (r < 0)
++                        return r;
++                if (r > 0)
+                         return 0;
+-                /* PATH entries which we don't have access to are ignored, as per tradition. */
+-                if (r != -EACCES)
+-                        last_error = r;
+         }
+ 
+         return last_error;
+@@ -1492,26 +1553,5 @@
  #endif
  
  const char* default_PATH(void) {
@@ -268,19 +542,26 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/path-util.c systemd-261
 diff --no-dereference -Naur systemd-261.2.orig/src/basic/path-util.h systemd-261.2/src/basic/path-util.h
 --- systemd-261.2.orig/src/basic/path-util.h	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/basic/path-util.h	2026-07-23 17:07:04.000000000 +0000
-@@ -9,11 +9,11 @@
+@@ -9,11 +9,17 @@
  #define PATH_MERGED_BIN(x) x "bin"
  #define PATH_MERGED_BIN_NULSTR(x) x "bin\0"
  
 -#define DEFAULT_PATH_WITH_FULL_SBIN PATH_SPLIT_BIN("/usr/local/") ":" PATH_SPLIT_BIN("/usr/")
 -#define DEFAULT_PATH_WITH_LOCAL_SBIN PATH_SPLIT_BIN("/usr/local/") ":" PATH_MERGED_BIN("/usr/")
 -#define DEFAULT_PATH_WITHOUT_SBIN PATH_MERGED_BIN("/usr/local/") ":" PATH_MERGED_BIN("/usr/")
-+#define DEFAULT_PATH_WITH_FULL_SBIN "/sw/*/bin"
-+#define DEFAULT_PATH_WITH_LOCAL_SBIN "/sw/*/bin"
-+#define DEFAULT_PATH_WITHOUT_SBIN "/sw/*/bin"
- 
+-
 -#define DEFAULT_PATH_COMPAT DEFAULT_PATH_WITH_FULL_SBIN ":" PATH_SPLIT_BIN("/")
-+#define DEFAULT_PATH_COMPAT "/sw/*/bin"
++#ifdef VENDOR_PKG_PREFIX
++#  define DEFAULT_PATH_WITH_FULL_SBIN VENDOR_PKG_PREFIX "/*/bin"
++#  define DEFAULT_PATH_WITH_LOCAL_SBIN VENDOR_PKG_PREFIX "/*/bin"
++#  define DEFAULT_PATH_WITHOUT_SBIN VENDOR_PKG_PREFIX "/*/bin"
++#  define DEFAULT_PATH_COMPAT VENDOR_PKG_PREFIX "/*/bin"
++#else
++#  define DEFAULT_PATH_WITH_FULL_SBIN PATH_SPLIT_BIN("/usr/local/") ":" PATH_SPLIT_BIN("/usr/")
++#  define DEFAULT_PATH_WITH_LOCAL_SBIN PATH_SPLIT_BIN("/usr/local/") ":" PATH_MERGED_BIN("/usr/")
++#  define DEFAULT_PATH_WITHOUT_SBIN PATH_MERGED_BIN("/usr/local/") ":" PATH_MERGED_BIN("/usr/")
++#  define DEFAULT_PATH_COMPAT DEFAULT_PATH_WITH_FULL_SBIN ":" PATH_SPLIT_BIN("/")
++#endif
  
  const char* default_PATH(void);
  
@@ -323,134 +604,237 @@ diff --no-dereference -Naur systemd-261.2.orig/src/core/load-fragment.c systemd-
 diff --no-dereference -Naur systemd-261.2.orig/src/core/namespace.c systemd-261.2/src/core/namespace.c
 --- systemd-261.2.orig/src/core/namespace.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/core/namespace.c	2026-07-23 17:07:04.000000000 +0000
-@@ -180,7 +180,8 @@
+@@ -180,6 +180,9 @@
  
  /* ProtectKernelModules= option */
  static const MountEntry protect_kernel_modules_table[] = {
--        { "/usr/lib/modules",    MOUNT_INACCESSIBLE, true  },
-+        { "/sw/linux/lib/modules", MOUNT_INACCESSIBLE, true  },
-+        { "/usr/lib/modules",      MOUNT_INACCESSIBLE, true  },
++#ifdef KERNEL_MODULES_DIR
++        { KERNEL_MODULES_DIR,    MOUNT_INACCESSIBLE, true  },
++#endif
+         { "/usr/lib/modules",    MOUNT_INACCESSIBLE, true  },
  };
  
- /* ProtectKernelLogs= option */
-@@ -234,14 +235,14 @@
+@@ -234,14 +237,22 @@
  
  /* ProtectSystem=yes */
  static const MountEntry protect_system_yes_table[] = {
--        { "/usr",                MOUNT_READ_ONLY,     false },
-+        { "/sw",                 MOUNT_READ_ONLY,     false },
++#ifdef VENDOR_PKG_PREFIX
++        { VENDOR_PKG_PREFIX,     MOUNT_READ_ONLY,     false },
++#else
+         { "/usr",                MOUNT_READ_ONLY,     false },
++#endif
          { "/boot",               MOUNT_READ_ONLY,     true  },
          { "/efi",                MOUNT_READ_ONLY,     true  },
  };
  
  /* ProtectSystem=full includes ProtectSystem=yes */
  static const MountEntry protect_system_full_table[] = {
--        { "/usr",                MOUNT_READ_ONLY,     false },
-+        { "/sw",                 MOUNT_READ_ONLY,     false },
++#ifdef VENDOR_PKG_PREFIX
++        { VENDOR_PKG_PREFIX,     MOUNT_READ_ONLY,     false },
++#else
+         { "/usr",                MOUNT_READ_ONLY,     false },
++#endif
          { "/boot",               MOUNT_READ_ONLY,     true  },
          { "/efi",                MOUNT_READ_ONLY,     true  },
          { "/etc",                MOUNT_READ_ONLY,     false },
 diff --no-dereference -Naur systemd-261.2.orig/src/libsystemd/sd-path/path-lookup.c systemd-261.2/src/libsystemd/sd-path/path-lookup.c
 --- systemd-261.2.orig/src/libsystemd/sd-path/path-lookup.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/libsystemd/sd-path/path-lookup.c	2026-07-23 17:07:04.000000000 +0000
-@@ -4,6 +4,7 @@
+@@ -2,8 +2,11 @@
  
+ #include <stdlib.h>
+ 
++#include <fnmatch.h>
++
  #include "alloc-util.h"
  #include "fs-util.h"
 +#include "glob-util.h"
  #include "log.h"
  #include "mkdir.h"
  #include "path-lookup.h"
-@@ -180,6 +181,8 @@
+@@ -176,10 +179,22 @@
+         }
+ }
+ 
++#ifdef VENDOR_PKG_PREFIX
++#  define VENDOR_SYSTEM_UNIT_DIRS VENDOR_PKG_PREFIX "/*/etc/systemd/system", VENDOR_PKG_PREFIX "/*/lib/systemd/system"
++#  define VENDOR_USER_UNIT_DIRS   VENDOR_PKG_PREFIX "/*/etc/systemd/user",   VENDOR_PKG_PREFIX "/*/lib/systemd/user"
++#else
++#  define VENDOR_SYSTEM_UNIT_DIRS STRV_IGNORE
++#  define VENDOR_USER_UNIT_DIRS   STRV_IGNORE
++#endif
++
+ static const char* const user_data_unit_paths[] = {
          "/usr/local/lib/systemd/user",
          "/usr/local/share/systemd/user",
          USER_DATA_UNIT_DIR,
-+        "/sw/*/etc/systemd/user",
-+        "/sw/*/lib/systemd/user",
++#ifdef VENDOR_PKG_PREFIX
++        VENDOR_PKG_PREFIX "/*/etc/systemd/user",
++        VENDOR_PKG_PREFIX "/*/lib/systemd/user",
++#endif
          "/usr/lib/systemd/user",
          "/usr/share/systemd/user",
          NULL
-@@ -601,6 +604,8 @@
+@@ -194,7 +209,10 @@
+ bool path_is_user_data_dir(const char *path) {
+         assert(path);
+ 
+-        return path_strv_contains((char* const*) user_data_unit_paths, path);
++        STRV_FOREACH(i, user_data_unit_paths)
++                if (string_is_glob(*i) ? fnmatch(*i, path, FNM_PATHNAME) == 0 : path_equal(*i, path))
++                        return true;
++        return false;
+ }
+ 
+ bool path_is_user_config_dir(const char *path) {
+@@ -382,18 +400,52 @@
+         return 0;
+ }
+ 
+-static int patch_root_prefix_strv(char **l, const char *root_dir) {
++static int patch_root_prefix_strv(char ***paths, const char *root_dir) {
+         int r;
+ 
+-        if (!root_dir)
+-                return 0;
++        assert(paths);
+ 
+-        STRV_FOREACH(i, l) {
+-                r = patch_root_prefix(i, root_dir);
+-                if (r < 0)
+-                        return r;
++        _cleanup_strv_free_ char **expanded_paths = strv_new(NULL);
++        if (!expanded_paths)
++                return -ENOMEM;
++
++        _cleanup_free_ char *root_escaped = NULL;
++        if (root_dir) {
++                root_escaped = glob_escape(root_dir);
++                if (!root_escaped)
++                        return -ENOMEM;
++        }
++
++        STRV_FOREACH(p, *paths) {
++                if (string_is_glob(*p)) {
++                        _cleanup_free_ char *prefixed = NULL;
++                        const char *target = *p;
++                        if (root_escaped) {
++                                prefixed = path_join(root_escaped, *p);
++                                if (!prefixed)
++                                        return -ENOMEM;
++                                target = prefixed;
++                        }
++                        _cleanup_strv_free_ char **v = NULL;
++                        r = safe_glob(target, GLOB_BRACE, &v);
++                        if (r < 0 && r != -ENOENT)
++                                return r;
++                        if (r >= 0) {
++                                r = strv_extend_strv_consume(&expanded_paths, TAKE_PTR(v), /* filter_duplicates= */ false);
++                                if (r < 0)
++                                        return r;
++                        }
++                } else {
++                        r = patch_root_prefix(p, root_dir);
++                        if (r < 0)
++                                return r;
++                        r = strv_extend(&expanded_paths, *p);
++                        if (r < 0)
++                                return r;
++                }
+         }
+ 
++        free_and_replace(*paths, expanded_paths);
+         return 0;
+ }
+ 
+@@ -601,6 +653,7 @@
                                         STRV_IFNOTNULL(generator),
                                         "/usr/local/lib/systemd/system",
                                         SYSTEM_DATA_UNIT_DIR,
-+                                       "/sw/*/etc/systemd/system",
-+                                       "/sw/*/lib/systemd/system",
++                                       VENDOR_SYSTEM_UNIT_DIRS,
                                         "/usr/lib/systemd/system",
                                         /* To be used ONLY for images which might be legacy split-usr */
                                         FLAGS_SET(flags, LOOKUP_PATHS_SPLIT_USR) ? "/lib/systemd/system" : STRV_IGNORE,
-@@ -627,6 +632,8 @@
+@@ -627,6 +680,7 @@
                                         "/usr/share/systemd/user",
                                         "/usr/local/lib/systemd/user",
                                         USER_DATA_UNIT_DIR,
-+                                       "/sw/*/etc/systemd/user",
-+                                       "/sw/*/lib/systemd/user",
++                                       VENDOR_USER_UNIT_DIRS,
                                         "/usr/lib/systemd/user");
                          break;
  
-@@ -691,6 +698,16 @@
+@@ -687,9 +741,9 @@
          if (r < 0)
-                 return -ENOMEM;
+                 return r;
  
-+        _cleanup_strv_free_ char **expanded_paths = NULL;
-+        STRV_FOREACH(p, paths) {
-+                if (string_is_glob(*p))
-+                        (void) glob_extend(&expanded_paths, *p, 0);
-+                else
-+                        (void) strv_extend(&expanded_paths, *p);
-+        }
-+        if (expanded_paths)
-+                free_and_replace(paths, expanded_paths);
-+
+-        r = patch_root_prefix_strv(paths, root);
++        r = patch_root_prefix_strv(&paths, root);
+         if (r < 0)
+-                return -ENOMEM;
++                return r;
+ 
          *lp = (LookupPaths) {
                  .search_path = strv_uniq(TAKE_PTR(paths)),
- 
-@@ -769,6 +786,7 @@
+@@ -769,6 +823,9 @@
          "/etc/systemd/system-generators",
          "/usr/local/lib/systemd/system-generators",
          SYSTEM_GENERATOR_DIR,
-+        "/sw/*/lib/systemd/system-generators",
++#ifdef VENDOR_PKG_PREFIX
++        VENDOR_PKG_PREFIX "/*/lib/systemd/system-generators",
++#endif
          NULL,
  };
  
-@@ -777,6 +795,7 @@
+@@ -777,6 +834,9 @@
          "/etc/systemd/user-generators",
          "/usr/local/lib/systemd/user-generators",
          USER_GENERATOR_DIR,
-+        "/sw/*/lib/systemd/user-generators",
++#ifdef VENDOR_PKG_PREFIX
++        VENDOR_PKG_PREFIX "/*/lib/systemd/user-generators",
++#endif
          NULL,
  };
  
-@@ -785,6 +804,7 @@
+@@ -785,6 +845,9 @@
          "/etc/systemd/system-environment-generators",
          "/usr/local/lib/systemd/system-environment-generators",
          SYSTEM_ENV_GENERATOR_DIR,
-+        "/sw/*/lib/systemd/system-environment-generators",
++#ifdef VENDOR_PKG_PREFIX
++        VENDOR_PKG_PREFIX "/*/lib/systemd/system-environment-generators",
++#endif
          NULL,
  };
  
-@@ -793,6 +813,7 @@
+@@ -793,6 +856,9 @@
          "/etc/systemd/user-environment-generators",
          "/usr/local/lib/systemd/user-environment-generators",
          USER_ENV_GENERATOR_DIR,
-+        "/sw/*/lib/systemd/user-environment-generators",
++#ifdef VENDOR_PKG_PREFIX
++        VENDOR_PKG_PREFIX "/*/lib/systemd/user-environment-generators",
++#endif
          NULL,
  };
  
-@@ -833,5 +854,15 @@
+@@ -833,5 +899,21 @@
                          return NULL;
          }
  
 -        return TAKE_PTR(paths);
-+        _cleanup_strv_free_ char **expanded = NULL;
++        _cleanup_strv_free_ char **expanded = strv_new(NULL);
++        if (!expanded)
++                return NULL;
 +        STRV_FOREACH(p, paths) {
-+                if (string_is_glob(*p))
-+                        (void) glob_extend(&expanded, *p, 0);
-+                else if (strv_extend(&expanded, *p) < 0)
++                if (string_is_glob(*p)) {
++                        _cleanup_strv_free_ char **v = NULL;
++                        r = safe_glob(*p, GLOB_BRACE, &v);
++                        if (r < 0 && r != -ENOENT)
++                                return NULL;
++                        if (r >= 0 && strv_extend_strv_consume(&expanded, TAKE_PTR(v), /* filter_duplicates= */ false) < 0)
++                                return NULL;
++                } else if (strv_extend(&expanded, *p) < 0)
 +                        return NULL;
 +        }
-+        if (expanded)
-+                free_and_replace(paths, expanded);
++        free_and_replace(paths, expanded);
 +
 +        return strv_uniq(TAKE_PTR(paths));
  }
@@ -574,66 +958,131 @@ diff --no-dereference -Naur systemd-261.2.orig/src/shared/conf-parser.c systemd-
  #include "hash-funcs.h"
  #include "hostname-util.h"
  #include "id128-util.h"
-@@ -541,8 +542,45 @@
+@@ -541,37 +542,114 @@
                          return log_oom_full(level);
          }
  
 -        /* First process the first found main config file. */
 -        STRV_FOREACH(fn, conf_files) {
-+        /* Expand globs and process main config files in vendor-first, user-last order. */
-+        _cleanup_strv_free_ char **expanded_conf_files = NULL;
+-                _cleanup_fclose_ FILE *f = NULL;
+-                r = chase_and_fopenat_unlocked(root_fd, root_fd, *fn, CHASE_MUST_BE_REGULAR, "re", /* ret_path= */ NULL, &f);
++        /* Expand globs in high-to-low priority order so a higher-priority /dev/null mask suppresses
++         * lower-priority vendor main configs, then parse surviving files in vendor-first, user-last order. */
++        _cleanup_strv_free_ char **high_to_low = NULL, **to_parse = NULL;
 +        size_t n_conf_files = strv_length((char**) conf_files);
 +        if (n_conf_files > 0) {
-+                _cleanup_free_ char *rfd_path = NULL;
-+                if (root_fd >= 0)
++                _cleanup_free_ char *rfd_path = NULL, *rfd_escaped = NULL;
++                if (root_fd >= 0) {
 +                        (void) fd_get_path(root_fd, &rfd_path);
-+                for (size_t idx = n_conf_files; idx > 0; idx--) {
-+                        const char *pat = conf_files[idx - 1];
++                        if (rfd_path && !empty_or_root(rfd_path)) {
++                                rfd_escaped = glob_escape(rfd_path);
++                                if (!rfd_escaped)
++                                        return log_oom_full(level);
++                        }
++                }
++                for (size_t idx = 0; idx < n_conf_files; idx++) {
++                        const char *pat = conf_files[idx];
 +                        if (string_is_glob(pat)) {
 +                                _cleanup_free_ char *prefixed = NULL;
 +                                const char *target = pat;
-+                                if (rfd_path && !empty_or_root(rfd_path)) {
-+                                        prefixed = path_join(rfd_path, pat);
++                                if (rfd_escaped) {
++                                        prefixed = path_join(rfd_escaped, pat);
 +                                        if (!prefixed)
 +                                                return log_oom_full(level);
 +                                        target = prefixed;
 +                                }
 +                                _cleanup_strv_free_ char **matches = NULL;
-+                                if (safe_glob(target, 0, &matches) >= 0)
-+                                        STRV_FOREACH(m, matches) {
-+                                                const char *rel = (rfd_path && !empty_or_root(rfd_path)) ? path_startswith(*m, rfd_path) : *m;
++                                r = safe_glob(target, 0, &matches);
++                                if (r < 0 && r != -ENOENT)
++                                        return log_full_errno(level, r, "Failed to glob %s: %m", target);
++                                if (r >= 0)
++                                        for (size_t m_idx = strv_length(matches); m_idx > 0; m_idx--) {
++                                                const char *m = matches[m_idx - 1];
++                                                const char *rel = rfd_escaped ? path_startswith(m, rfd_path) : m;
 +                                                if (!rel)
 +                                                        continue;
 +                                                if (startswith(pat, "/") && !startswith(rel, "/")) {
 +                                                        char *s = strjoin("/", rel);
 +                                                        if (!s)
 +                                                                return log_oom_full(level);
-+                                                        if (strv_consume(&expanded_conf_files, s) < 0)
++                                                        if (strv_consume(&high_to_low, s) < 0)
 +                                                                return log_oom_full(level);
-+                                                } else if (strv_extend(&expanded_conf_files, rel) < 0)
++                                                } else if (strv_extend(&high_to_low, rel) < 0)
 +                                                        return log_oom_full(level);
 +                                        }
-+                        } else if (strv_extend(&expanded_conf_files, pat) < 0)
++                        } else if (strv_extend(&high_to_low, pat) < 0)
 +                                return log_oom_full(level);
 +                }
 +        }
 +
-+        STRV_FOREACH(fn, expanded_conf_files) {
-                 _cleanup_fclose_ FILE *f = NULL;
-                 r = chase_and_fopenat_unlocked(root_fd, root_fd, *fn, CHASE_MUST_BE_REGULAR, "re", /* ret_path= */ NULL, &f);
++        STRV_FOREACH(fn, high_to_low) {
++                _cleanup_free_ char *resolved_path = NULL;
++                _cleanup_close_ int cfd = -EBADF;
++                struct stat cst = {};
++
++                r = chaseat(root_fd, root_fd, *fn, CHASE_NONEXISTENT, &resolved_path, &cfd);
                  if (r == -ENOENT)
-@@ -556,7 +594,7 @@
- 
-                         if (set_contains(inodes, &st)) {
-                                 log_debug("%s: symlink to/symlinked as drop-in, will be read later.", *fn);
--                                break;
-+                                continue;
+                         continue;
+                 if (r < 0)
+                         return log_full_errno(level, r, "Failed to open %s: %m", *fn);
+-
+-                if (inodes) {
+-                        if (fstat(fileno(f), &st) < 0)
+-                                return log_full_errno(level, errno, "Failed to stat %s: %m", *fn);
+-
+-                        if (set_contains(inodes, &st)) {
+-                                log_debug("%s: symlink to/symlinked as drop-in, will be read later.", *fn);
++                if (r == 0) {
++                        if (path_equal(skip_leading_slash(resolved_path), "dev/null")) {
++                                log_debug("%s is a mask (symlink to /dev/null), ignoring lower-priority main config files.", *fn);
+                                 break;
                          }
++                        continue;
++                }
++
++                if (fstat(cfd, &cst) < 0)
++                        return log_full_errno(level, errno, "Failed to stat %s: %m", *fn);
++
++                if (stat_may_be_dev_null(&cst)) {
++                        log_debug("%s is a mask (/dev/null), ignoring lower-priority main config files.", *fn);
++                        break;
                  }
  
-@@ -570,8 +608,6 @@
+-                r = config_parse(/* unit= */ NULL, *fn, f, sections, lookup, table, flags, userdata, &st);
++                r = stat_verify_regular(&cst);
++                if (r < 0)
++                        return log_full_errno(level, r, "Failed to open %s: %m", *fn);
++
++                if (inodes && set_contains(inodes, &cst)) {
++                        log_debug("%s: symlink to/symlinked as drop-in, will be read later.", *fn);
++                        continue;
++                }
++
++                if (strv_extend(&to_parse, *fn) < 0)
++                        return log_oom_full(level);
++        }
++
++        for (size_t idx = strv_length(to_parse); idx > 0; idx--) {
++                const char *fn = to_parse[idx - 1];
++                _cleanup_fclose_ FILE *f = NULL;
++
++                r = chase_and_fopenat_unlocked(root_fd, root_fd, fn, CHASE_MUST_BE_REGULAR, "re", /* ret_path= */ NULL, &f);
++                if (r == -ENOENT)
++                        continue;
++                if (r < 0)
++                        return log_full_errno(level, r, "Failed to open %s: %m", fn);
++
++                r = config_parse(/* unit= */ NULL, fn, f, sections, lookup, table, flags, userdata, &st);
+                 if (r < 0)
+                         return r; /* config_parse() logs internally. */
+                 assert(r > 0);
+ 
+                 if (ret_stats_by_path) {
+-                        r = hashmap_put_stats_by_path(&stats_by_path, *fn, &st);
++                        r = hashmap_put_stats_by_path(&stats_by_path, fn, &st);
                          if (r < 0)
-                                 return log_full_errno(level, r, "Failed to save stats of %s: %m", *fn);
+-                                return log_full_errno(level, r, "Failed to save stats of %s: %m", *fn);
++                                return log_full_errno(level, r, "Failed to save stats of %s: %m", fn);
                  }
 -
 -                break;
@@ -655,24 +1104,30 @@ diff --no-dereference -Naur systemd-261.2.orig/src/shared/exec-util.c systemd-26
 diff --no-dereference -Naur systemd-261.2.orig/src/shared/hwdb-util.c systemd-261.2/src/shared/hwdb-util.c
 --- systemd-261.2.orig/src/shared/hwdb-util.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/shared/hwdb-util.c	2026-07-23 17:07:04.000000000 +0000
-@@ -28,6 +28,8 @@
+@@ -28,6 +28,10 @@
  
  static const char* const conf_file_dirs[] = {
          "/etc/udev/hwdb.d",
-+        "/sw/*/etc/udev/hwdb.d",
-+        "/sw/*/lib/udev/hwdb.d",
++#ifdef VENDOR_PKG_PREFIX
++        VENDOR_PKG_PREFIX "/*/etc/udev/hwdb.d",
++        VENDOR_PKG_PREFIX "/*/lib/udev/hwdb.d",
++#endif
          UDEVLIBEXECDIR "/hwdb.d",
          NULL
  };
 diff --no-dereference -Naur systemd-261.2.orig/src/storage/storagectl.c systemd-261.2/src/storage/storagectl.c
 --- systemd-261.2.orig/src/storage/storagectl.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/storage/storagectl.c	2026-07-23 17:07:04.000000000 +0000
-@@ -723,7 +723,7 @@
+@@ -723,7 +723,11 @@
  
          /* NB: we do not honour $PATH here, since as plugin to /bin/mount we might be called in a setuid()
           * context, and hence don't want to chain to programs potentially under user control. */
 -        execv("/bin/mount", cmdline);
-+        execvp("mount", cmdline);
++        _cleanup_free_ char *mount_bin = NULL;
++        r = find_executable_full("mount", /* root= */ NULL, /* exec_search_path= */ NULL, /* use_path_envvar= */ false, &mount_bin, /* ret_fd= */ NULL);
++        if (r < 0)
++                return log_error_errno(r, "Failed to find mount tool: %m");
++        execv(mount_bin, cmdline);
          return log_error_errno(errno, "Failed to execute mount tool: %m");
  }
  
@@ -836,18 +1291,18 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-files.c system
 +
 +        tfd = ASSERT_OK(mkdtemp_open("/tmp/test-conf-files-fluffy-XXXXXX", O_PATH, &t));
 +        assert_se(mkdir_p_root(t, "/etc/foo.d", UID_INVALID, GID_INVALID, 0755) >= 0);
-+        assert_se(mkdir_p_root(t, "/sw/pkg1/etc/foo.d", UID_INVALID, GID_INVALID, 0755) >= 0);
-+        assert_se(mkdir_p_root(t, "/sw/pkg2/lib/foo.d", UID_INVALID, GID_INVALID, 0755) >= 0);
++        assert_se(mkdir_p_root(t, "/pkgs/pkg1/etc/foo.d", UID_INVALID, GID_INVALID, 0755) >= 0);
++        assert_se(mkdir_p_root(t, "/pkgs/pkg2/lib/foo.d", UID_INVALID, GID_INVALID, 0755) >= 0);
 +
-+        ASSERT_OK(write_string_file_at(tfd, "sw/pkg1/etc/foo.d/10-a.conf", "a=pkg1\n", WRITE_STRING_FILE_CREATE));
-+        ASSERT_OK(write_string_file_at(tfd, "sw/pkg2/lib/foo.d/20-b.conf", "b=pkg2\n", WRITE_STRING_FILE_CREATE));
-+        ASSERT_OK(write_string_file_at(tfd, "sw/pkg1/etc/foo.d/30-override.conf", "x=vendor\n", WRITE_STRING_FILE_CREATE));
++        ASSERT_OK(write_string_file_at(tfd, "pkgs/pkg1/etc/foo.d/10-a.conf", "a=pkg1\n", WRITE_STRING_FILE_CREATE));
++        ASSERT_OK(write_string_file_at(tfd, "pkgs/pkg2/lib/foo.d/20-b.conf", "b=pkg2\n", WRITE_STRING_FILE_CREATE));
++        ASSERT_OK(write_string_file_at(tfd, "pkgs/pkg1/etc/foo.d/30-override.conf", "x=vendor\n", WRITE_STRING_FILE_CREATE));
 +        ASSERT_OK(write_string_file_at(tfd, "etc/foo.d/30-override.conf", "x=user\n", WRITE_STRING_FILE_CREATE));
 +
-+        const char * const dirs[] = { "/etc/foo.d", "/sw/*/etc/foo.d", "/sw/*/lib/foo.d", NULL };
++        const char * const dirs[] = { "/etc/foo.d", "/pkgs/*/etc/foo.d", "/pkgs/*/lib/foo.d", NULL };
 +        ASSERT_OK(conf_files_list_strv_at(&result, ".conf", tfd, CONF_FILES_REGULAR | CONF_FILES_FILTER_MASKED, dirs));
-+        ASSERT_TRUE(strv_equal(result, STRV_MAKE("sw/pkg1/etc/foo.d/10-a.conf",
-+                                                 "sw/pkg2/lib/foo.d/20-b.conf",
++        ASSERT_TRUE(strv_equal(result, STRV_MAKE("pkgs/pkg1/etc/foo.d/10-a.conf",
++                                                 "pkgs/pkg2/lib/foo.d/20-b.conf",
 +                                                 "etc/foo.d/30-override.conf")));
 +}
 +
@@ -855,22 +1310,28 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-files.c system
 diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-parser.c systemd-261.2/src/test/test-conf-parser.c
 --- systemd-261.2.orig/src/test/test-conf-parser.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/test/test-conf-parser.c	2026-07-23 17:07:04.000000000 +0000
-@@ -503,4 +503,44 @@
+@@ -503,4 +503,73 @@
          ASSERT_STREQ(F, NULL);
  }
  
++#ifdef VENDOR_PKG_PREFIX
 +TEST(fluffy_vendor_first_user_last) {
 +        _cleanup_(rm_rf_physical_and_freep) char *root = NULL;
 +        _cleanup_close_ int rfd = -EBADF;
 +
-+        ASSERT_OK(rfd = mkdtemp_open("/tmp/test-config-fluffy-XXXXXX", 0, &root));
-+        assert_se(mkdir_p_root(root, "/sw/pkg1/etc/systemd", UID_INVALID, GID_INVALID, 0755) >= 0);
-+        assert_se(mkdir_p_root(root, "/sw/pkg2/etc/systemd", UID_INVALID, GID_INVALID, 0755) >= 0);
++        ASSERT_OK(rfd = mkdtemp_open("/tmp/test-config-fluffy-[1]-XXXXXX", 0, &root));
++        assert_se(mkdir_p_root(root, VENDOR_PKG_PREFIX "/pkg1/etc/systemd", UID_INVALID, GID_INVALID, 0755) >= 0);
++        assert_se(mkdir_p_root(root, VENDOR_PKG_PREFIX "/pkg2/etc/systemd", UID_INVALID, GID_INVALID, 0755) >= 0);
 +        assert_se(mkdir_p_root(root, "/etc/systemd", UID_INVALID, GID_INVALID, 0755) >= 0);
 +
-+        ASSERT_OK(write_string_file_at(rfd, "sw/pkg1/etc/systemd/test.conf",
++        _cleanup_free_ char *c1 = path_join(skip_leading_chars(VENDOR_PKG_PREFIX, "/"), "pkg1/etc/systemd/test.conf");
++        _cleanup_free_ char *c2 = path_join(skip_leading_chars(VENDOR_PKG_PREFIX, "/"), "pkg2/etc/systemd/test.conf");
++        ASSERT_NOT_NULL(c1);
++        ASSERT_NOT_NULL(c2);
++
++        ASSERT_OK(write_string_file_at(rfd, c1,
 +                                       "A=pkg1\nB=pkg1\nC=pkg1\n", WRITE_STRING_FILE_CREATE));
-+        ASSERT_OK(write_string_file_at(rfd, "sw/pkg2/etc/systemd/test.conf",
++        ASSERT_OK(write_string_file_at(rfd, c2,
 +                                       "B=pkg2\nC=pkg2\n", WRITE_STRING_FILE_CREATE));
 +        ASSERT_OK(write_string_file_at(rfd, "etc/systemd/test.conf",
 +                                       "C=user\n", WRITE_STRING_FILE_CREATE));
@@ -897,38 +1358,80 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-parser.c syste
 +        ASSERT_STREQ(A, "pkg1");
 +        ASSERT_STREQ(B, "pkg2");
 +        ASSERT_STREQ(C, "user");
++
++        /* Masking /etc/systemd/test.conf -> /dev/null must suppress all lower-priority vendor main configs. */
++        A = mfree(A);
++        B = mfree(B);
++        C = mfree(C);
++        assert_se(unlinkat(rfd, "etc/systemd/test.conf", 0) == 0);
++        assert_se(symlinkat("/dev/null", rfd, "etc/systemd/test.conf") == 0);
++
++        ASSERT_OK(config_parse_standard_file_with_dropins_full(
++                        root,
++                        /* root_fd= */ -EBADF,
++                        "systemd/test.conf",
++                        /* sections= */ NULL,
++                        config_item_table_lookup, items,
++                        CONFIG_PARSE_WARN,
++                        /* userdata= */ NULL,
++                        /* ret_stats_by_path= */ NULL,
++                        /* ret_dropin_files= */ NULL));
++
++        ASSERT_NULL(A);
++        ASSERT_NULL(B);
++        ASSERT_NULL(C);
 +}
++#endif
 +
  DEFINE_TEST_MAIN(LOG_INFO);
 diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-lookup.c systemd-261.2/src/test/test-path-lookup.c
 --- systemd-261.2.orig/src/test/test-path-lookup.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/test/test-path-lookup.c	2026-07-23 17:07:04.000000000 +0000
-@@ -1,3 +1,5 @@
-+#include "mkdir.h"
-+#include "path-util.h"
- /* SPDX-License-Identifier: LGPL-2.1-or-later */
+@@ -2,8 +2,11 @@
  
  #include <stdlib.h>
-@@ -122,4 +124,36 @@
+ 
++#include "glob-util.h"
+ #include "log.h"
++#include "mkdir.h"
+ #include "path-lookup.h"
++#include "path-util.h"
+ #include "rm-rf.h"
+ #include "string-util.h"
+ #include "strv.h"
+@@ -122,4 +125,54 @@
          test_generator_binary_paths_one(RUNTIME_SCOPE_USER);
  }
  
-+
 +TEST(fluffy_sw_unit_discovery) {
 +        _cleanup_(rm_rf_physical_and_freep) char *tmp = NULL;
-+        assert_se(mkdtemp_malloc("/tmp/test-fluffy-units.XXXXXXX", &tmp) >= 0);
++        assert_se(mkdtemp_malloc("/tmp/test-fluffy-units-[1].XXXXXXX", &tmp) >= 0);
 +        _cleanup_free_ char *p1 = path_join(tmp, "sw/pkg1/lib/systemd/system");
 +        _cleanup_free_ char *p2 = path_join(tmp, "sw/pkg2/lib/systemd/system");
 +        assert_se(mkdir_p(p1, 0755) >= 0);
 +        assert_se(mkdir_p(p2, 0755) >= 0);
 +
-+        _cleanup_free_ char *unit_pattern = path_join(tmp, "sw/*/lib/systemd/system");
++        _cleanup_free_ char *escaped_tmp = glob_escape(tmp);
++        assert_se(escaped_tmp);
++        _cleanup_free_ char *unit_pattern = path_join(escaped_tmp, "sw/*/lib/systemd/system");
 +        assert_se(setenv("SYSTEMD_UNIT_PATH", unit_pattern, 1) == 0);
 +        _cleanup_(lookup_paths_done) LookupPaths lp = {};
 +        assert_se(lookup_paths_init(&lp, RUNTIME_SCOPE_SYSTEM, 0, NULL) == 0);
 +        assert_se(strv_contains(lp.search_path, p1));
 +        assert_se(strv_contains(lp.search_path, p2));
++
++        _cleanup_free_ char *missing_pattern = path_join(escaped_tmp, "sw/nonexistent_*/lib/systemd/system");
++        assert_se(setenv("SYSTEMD_UNIT_PATH", missing_pattern, 1) == 0);
++        _cleanup_(lookup_paths_done) LookupPaths lp_empty = {};
++        assert_se(lookup_paths_init(&lp_empty, RUNTIME_SCOPE_SYSTEM, 0, NULL) == 0);
++        assert_se(strv_isempty(lp_empty.search_path));
 +        assert_se(unsetenv("SYSTEMD_UNIT_PATH") == 0);
++
++        /* Non-existent literal /etc/systemd/system under a [1]-bracketed root_dir must survive verbatim. */
++        _cleanup_(lookup_paths_done) LookupPaths lp_root = {};
++        assert_se(lookup_paths_init(&lp_root, RUNTIME_SCOPE_SYSTEM, LOOKUP_PATHS_EXCLUDE_GENERATED, tmp) == 0);
++        _cleanup_free_ char *expected_etc = path_join(tmp, "etc/systemd/system");
++        assert_se(strv_contains(lp_root.search_path, expected_etc));
 +}
 +
 +TEST(fluffy_sw_generator_discovery) {
@@ -941,6 +1444,11 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-lookup.c syste
 +        assert_se(setenv("SYSTEMD_GENERATOR_PATH", gen_pattern, 1) == 0);
 +        _cleanup_strv_free_ char **gp = generator_binary_paths(RUNTIME_SCOPE_SYSTEM);
 +        assert_se(strv_contains(gp, g1));
++
++        _cleanup_free_ char *missing_gen = path_join(tmp, "sw/nonexistent_*/lib/systemd/system-generators");
++        assert_se(setenv("SYSTEMD_GENERATOR_PATH", missing_gen, 1) == 0);
++        _cleanup_strv_free_ char **gp_empty = generator_binary_paths(RUNTIME_SCOPE_SYSTEM);
++        assert_se(strv_isempty(gp_empty));
 +        assert_se(unsetenv("SYSTEMD_GENERATOR_PATH") == 0);
 +}
 +
@@ -949,14 +1457,15 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-lookup.c syste
 diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-util.c systemd-261.2/src/test/test-path-util.c
 --- systemd-261.2.orig/src/test/test-path-util.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/test/test-path-util.c	2026-07-23 17:07:04.000000000 +0000
-@@ -1,3 +1,6 @@
+@@ -9,6 +9,7 @@
+ #include "errno-util.h"
+ #include "exec-util.h"
+ #include "fd-util.h"
 +#include "mkdir.h"
-+#include "rm-rf.h"
-+#include "tmpfile-util.h"
- /* SPDX-License-Identifier: LGPL-2.1-or-later */
- 
- #include <stdio.h>
-@@ -448,10 +451,13 @@
+ #include "path-util.h"
+ #include "process-util.h"
+ #include "rm-rf.h"
+@@ -448,10 +449,13 @@
          char *p;
          _cleanup_free_ char *bp = NULL;
  
@@ -974,7 +1483,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-util.c systemd
  
          assert_se(find_executable(saved_argv[0], &p) == 0);
          puts(p);
-@@ -465,9 +471,12 @@
+@@ -465,9 +469,12 @@
          assert_se(path_is_absolute(p));
          free(p);
  
@@ -990,14 +1499,13 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-util.c systemd
  
          assert_se(find_executable("touch", &p) == 0);
          assert_se(path_is_absolute(p));
-@@ -480,6 +489,25 @@
+@@ -480,6 +487,44 @@
          assert_se(find_executable("/proc/filesystems", &p) == -EACCES);
  }
  
-+
 +TEST(fluffy_wildcard_path) {
 +        _cleanup_(rm_rf_physical_and_freep) char *tmp = NULL;
-+        assert_se(mkdtemp_malloc("/tmp/test-fluffy-bin.XXXXXXX", &tmp) >= 0);
++        assert_se(mkdtemp_malloc("/tmp/test-fluffy-bin-[1].XXXXXXX", &tmp) >= 0);
 +        _cleanup_free_ char *b1 = path_join(tmp, "sw/tool1/bin");
 +        assert_se(mkdir_p(b1, 0755) >= 0);
 +        _cleanup_free_ char *exe = path_join(b1, "mytool");
@@ -1005,18 +1513,38 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-util.c systemd
 +        assert_se(fd >= 0);
 +        safe_close(fd);
 +
-+        _cleanup_free_ char *wildcard_path = path_join(tmp, "sw/*/bin");
++        _cleanup_free_ char *found_root = NULL;
++        assert_se(find_executable_full("mytool", tmp, STRV_MAKE("/sw/*/bin"), false, &found_root, NULL) == 0);
++        ASSERT_STREQ(found_root, exe);
++
++        _cleanup_free_ char *sq = path_join(tmp, "sw/bogus.squashfs");
++        fd = open(sq, O_CREAT|O_WRONLY|O_CLOEXEC, 0644);
++        assert_se(fd >= 0);
++        safe_close(fd);
++        _cleanup_free_ char *not_found = NULL;
++        assert_se(find_executable_full("missing_tool", tmp, STRV_MAKE("/sw/*"), false, &not_found, NULL) == -ENOENT);
++
++        _cleanup_(rm_rf_physical_and_freep) char *tmp2 = NULL;
++        assert_se(mkdtemp_malloc("/tmp/test-fluffy-bin2.XXXXXXX", &tmp2) >= 0);
++        _cleanup_free_ char *b2 = path_join(tmp2, "sw/tool1/bin");
++        assert_se(mkdir_p(b2, 0755) >= 0);
++        _cleanup_free_ char *exe2 = path_join(b2, "mytool");
++        fd = open(exe2, O_CREAT|O_WRONLY|O_CLOEXEC, 0755);
++        assert_se(fd >= 0);
++        safe_close(fd);
++
++        _cleanup_free_ char *wildcard_path = path_join(tmp2, "sw/*/bin");
 +        _cleanup_free_ char *found = NULL;
 +        assert_se(setenv("PATH", wildcard_path, 1) == 0);
 +        assert_se(find_executable_full("mytool", NULL, NULL, true, &found, NULL) == 0);
-+        ASSERT_STREQ(found, exe);
++        ASSERT_STREQ(found, exe2);
 +        assert_se(unsetenv("PATH") == 0);
 +}
 +
  static void test_find_executable_exec_one(const char *path) {
          _cleanup_free_ char *t = NULL;
          _cleanup_close_ int fd = -EBADF;
-@@ -508,7 +536,10 @@
+@@ -508,7 +553,10 @@
  
  TEST(find_executable_exec) {
          test_find_executable_exec_one("touch");
@@ -1028,7 +1556,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-util.c systemd
  
          _cleanup_free_ char *script = NULL;
          assert_se(get_testdata_dir("test-path-util/script.sh", &script) >= 0);
-@@ -1301,23 +1332,29 @@
+@@ -1301,23 +1349,29 @@
  
          p = "/../../././//";
          ASSERT_OK(empty_or_root_harder_to_null(&p));
@@ -1039,13 +1567,13 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-util.c systemd
 +                ASSERT_NOT_NULL(p);
  
 -        p = "/usr";
-+        p = "/sw";
++        p = "/tmp";
          ASSERT_OK(empty_or_root_harder_to_null(&p));
 -        ASSERT_STREQ(p, "/usr");
-+        ASSERT_STREQ(p, "/sw");
++        ASSERT_STREQ(p, "/tmp");
  
 -        p = "/usr/../../../";
-+        p = "/sw/../../../";
++        p = "/tmp/../../../";
          ASSERT_OK(empty_or_root_harder_to_null(&p));
 -        ASSERT_NULL(p);
 +        if (path_is_root("/..") > 0)
@@ -1054,16 +1582,16 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-util.c systemd
 +                ASSERT_NOT_NULL(p);
  
 -        p = "/usr/";
-+        p = "/sw/";
++        p = "/tmp/";
          ASSERT_OK(empty_or_root_harder_to_null(&p));
 -        ASSERT_STREQ(p, "/usr/");
-+        ASSERT_STREQ(p, "/sw/");
++        ASSERT_STREQ(p, "/tmp/");
  
 -        p = "///././/../../usr////";
-+        p = "///././/../../sw////";
++        p = "///././/../../tmp////";
          ASSERT_OK(empty_or_root_harder_to_null(&p));
 -        ASSERT_STREQ(p, "///././/../../usr////");
-+        ASSERT_STREQ(p, "///././/../../sw////");
++        ASSERT_STREQ(p, "///././/../../tmp////");
  }
  
  TEST(path_startswith_set) {

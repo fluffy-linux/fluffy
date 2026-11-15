@@ -69,7 +69,73 @@ diff --no-dereference -Naur dejagnu-1.6.3.orig/lib/remote.exp dejagnu-1.6.3/lib/
 diff --no-dereference -Naur dejagnu-1.6.3.orig/lib/utils.exp dejagnu-1.6.3/lib/utils.exp
 --- dejagnu-1.6.3.orig/lib/utils.exp	2020-07-01 01:24:33.000000000 +0000
 +++ dejagnu-1.6.3/lib/utils.exp	2020-07-01 01:24:33.000000000 +0000
-@@ -174,15 +174,22 @@
+@@ -169,20 +169,99 @@
+ 
+     # Otherwise the file must exist in the PATH
+     if {[info exists env(PATH)]} {
+-	set path [split $env(PATH) ":"]
++	set pathStr $env(PATH)
++	if {[string first {[} $pathStr] < 0} {
++	    set path [split $pathStr ":"]
++	} else {
++	    set path {}
++	    set pathLen [string length $pathStr]
++	    set segStart 0
++	    set idx 0
++	    while {$idx < $pathLen} {
++		set ch [string index $pathStr $idx]
++		if {$ch eq ":"} {
++		    lappend path [string range $pathStr $segStart [expr {$idx - 1}]]
++		    incr idx
++		    set segStart $idx
++		    continue
++		}
++		if {$ch eq "\["} {
++		    set q [expr {$idx + 1}]
++		    if {$q < $pathLen && [string index $pathStr $q] in {! ^}} {
++			incr q
++		    }
++		    if {$q < $pathLen && [string index $pathStr $q] eq "\]"} {
++			incr q
++		    }
++		    while {$q < $pathLen} {
++			set qc [string index $pathStr $q]
++			if {$qc eq "\]" || $qc eq "/"} {
++			    break
++			}
++			if {$qc eq "\[" && ($q + 1) < $pathLen
++				&& [string index $pathStr [expr {$q + 1}]] in {: . =}} {
++			    set ctype [string index $pathStr [expr {$q + 1}]]
++			    set inner [expr {$q + 2}]
++			    while {$inner < $pathLen} {
++				set ic [string index $pathStr $inner]
++				if {$ic eq "/" || ($ctype ne "." && $ic eq "\]")} {
++				    break
++				}
++				if {$ic eq $ctype && ($inner + 1) < $pathLen
++					&& [string index $pathStr [expr {$inner + 1}]] eq "\]"} {
++				    set q [expr {$inner + 2}]
++				    set inner -1
++				    break
++				}
++				incr inner
++			    }
++			    if {$inner == -1} {
++				continue
++			    }
++			}
++			incr q
++		    }
++		    if {$q < $pathLen && [string index $pathStr $q] eq "\]"} {
++			set idx [expr {$q + 1}]
++			continue
++		    }
++		}
++		incr idx
++	    }
++	    lappend path [string range $pathStr $segStart end]
++	}
+     } else {
  	return 0
      }
  
@@ -80,11 +146,22 @@ diff --no-dereference -Naur dejagnu-1.6.3.orig/lib/utils.exp dejagnu-1.6.3/lib/u
 -	    if {[file executable $filename]} {
 -		verbose "Choosing $filename" 2
 -		return [file normalize $filename]
--	    } else {
--		warning "file $filename exists but is not executable"
 +    foreach raw_dir $path {
-+	if {[string match {*\**} $raw_dir] || [string match {*\?*} $raw_dir] || [string match {*\[*} $raw_dir]} {
-+	    set dirs [lsort [glob -nocomplain -types d $raw_dir]]
++	if {$raw_dir ne "" && [file isdirectory $raw_dir]} {
++	    set dirs [list $raw_dir]
++	} elseif {[string first * $raw_dir] >= 0
++		|| [string first ? $raw_dir] >= 0
++		|| [string first "\[" $raw_dir] >= 0} {
++	    set gpat [string map {\\ \\\\ \{ \\{ \} \\}} $raw_dir]
++	    if {[string index $gpat 0] eq "~"} {
++		set gpat "\\$gpat"
++	    }
++	    if {![catch {glob -nocomplain -types d -- $gpat} expanded] && [llength $expanded] > 0} {
++		set dirs [lsort -ascii $expanded]
+ 	    } else {
+-		warning "file $filename exists but is not executable"
++		set dirs {}
++	    }
 +	} else {
 +	    set dirs [list $raw_dir]
 +	}

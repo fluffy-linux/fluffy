@@ -9,20 +9,10 @@ diff --no-dereference -Naur kmod-34.2.orig/libkmod/libkmod-config.c kmod-34.2/li
  #include <errno.h>
  #include <stdarg.h>
  #include <stddef.h>
-@@ -1013,6 +1014,63 @@
+@@ -1013,6 +1014,53 @@
  	return 0;
  }
  
-+static void glob_closedir(void *dirp)
-+{
-+	closedir(dirp);
-+}
-+
-+static struct dirent *glob_readdir(void *dirp)
-+{
-+	return readdir(dirp);
-+}
-+
 +static bool config_path_exists(const struct kmod_list *path_list, const char *path)
 +{
 +	const struct kmod_list *l;
@@ -73,7 +63,7 @@ diff --no-dereference -Naur kmod-34.2.orig/libkmod/libkmod-config.c kmod-34.2/li
  int kmod_config_new(struct kmod_ctx *ctx, struct kmod_config **p_config,
  		    const char *const *config_paths)
  {
-@@ -1026,28 +1084,31 @@
+@@ -1026,28 +1074,30 @@
  
  	for (i = 0; config_paths[i] != NULL; i++) {
  		const char *path = config_paths[i];
@@ -81,10 +71,10 @@ diff --no-dereference -Naur kmod-34.2.orig/libkmod/libkmod-config.c kmod-34.2/li
 -		size_t pathlen;
 -		struct kmod_list *tmp;
 -		struct kmod_config_path *cf;
- 
+-
 -		if (conf_files_list(ctx, &list, path, &path_stamp) < 0)
 -			continue;
--
+ 
 -		pathlen = strlen(path) + 1;
 -		cf = malloc(sizeof(*cf) + pathlen);
 -		if (cf == NULL)
@@ -98,22 +88,21 @@ diff --no-dereference -Naur kmod-34.2.orig/libkmod/libkmod-config.c kmod-34.2/li
 -			free(cf);
 -			goto oom;
 +		if (strpbrk(path, "*?[") != NULL) {
-+			glob_t gl = {
-+				.gl_closedir = glob_closedir,
-+				.gl_readdir = glob_readdir,
-+				.gl_opendir = (void *(*)(const char *))opendir,
-+				.gl_lstat = stat,
-+				.gl_stat = stat,
-+			};
++			glob_t gl = { 0 };
 +			size_t j;
 +
-+			if (glob(path, GLOB_ALTDIRFUNC, NULL, &gl) == 0) {
++			if (glob(path, GLOB_NOESCAPE, NULL, &gl) == 0) {
 +				for (j = 0; j < gl.gl_pathc; j++) {
 +					if (kmod_config_add_path(ctx, &list, &path_list,
 +								 gl.gl_pathv[j]) < 0) {
 +						globfree(&gl);
 +						goto oom;
 +					}
++				}
++			} else {
++				if (kmod_config_add_path(ctx, &list, &path_list, path) < 0) {
++					globfree(&gl);
++					goto oom;
 +				}
 +			}
 +			globfree(&gl);
@@ -128,22 +117,33 @@ diff --no-dereference -Naur kmod-34.2.orig/libkmod/libkmod-config.c kmod-34.2/li
 diff --no-dereference -Naur kmod-34.2.orig/libkmod/libkmod.c kmod-34.2/libkmod/libkmod.c
 --- kmod-34.2.orig/libkmod/libkmod.c	2025-03-28 04:01:47.000000000 +0000
 +++ kmod-34.2/libkmod/libkmod.c	2025-03-28 04:01:47.000000000 +0000
-@@ -44,9 +44,12 @@
- static const char *const default_config_paths[] = {
+@@ -45,8 +45,14 @@
  	// clang-format off
  	SYSCONFDIR "/modprobe.d",
-+	"/etc/modprobe.d",
-+	"/sw/*/etc/modprobe.d",
  	"/run/modprobe.d",
++#ifdef VENDOR_PKG_PREFIX
++	VENDOR_PKG_PREFIX "/*/etc/modprobe.d",
++#endif
  	"/usr/local/lib/modprobe.d",
  	DISTCONFDIR "/modprobe.d",
-+	"/sw/*/lib/modprobe.d",
++#ifdef VENDOR_PKG_PREFIX
++	VENDOR_PKG_PREFIX "/*/lib/modprobe.d",
++#endif
  	"/lib/modprobe.d",
  	NULL,
  	// clang-format on
 diff --no-dereference -Naur kmod-34.2.orig/meson.build kmod-34.2/meson.build
 --- kmod-34.2.orig/meson.build	2025-03-28 04:01:47.000000000 +0000
 +++ kmod-34.2/meson.build	2025-03-28 04:01:47.000000000 +0000
+@@ -34,7 +34,7 @@
+ ################################################################################
+ 
+ _funcs = [
+-  'open64', 'stat64', 'fopen64', '__stat64_time64',
++  'open64', 'stat64', 'fopen64', '__stat64_time64', 'glob64',
+   'secure_getenv',
+ ]
+ foreach func : _funcs
 @@ -292,9 +292,9 @@
  #-------------------------------------------------------------------------------
  
@@ -299,16 +299,144 @@ diff --no-dereference -Naur kmod-34.2.orig/testsuite/module-playground/include/l
 @@ -0,0 +1,2 @@
 +#pragma once
 +static inline int pr_warn(const char *fmt, ...) { (void)fmt; return 0; }
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/path.c kmod-34.2/testsuite/path.c
+--- kmod-34.2.orig/testsuite/path.c	2025-03-28 04:01:47.000000000 +0000
++++ kmod-34.2/testsuite/path.c	2025-03-28 04:01:47.000000000 +0000
+@@ -13,6 +13,7 @@
+ #include <dlfcn.h>
+ #include <errno.h>
+ #include <fcntl.h>
++#include <glob.h>
+ #include <limits.h>
+ #include <stdarg.h>
+ #include <stdio.h>
+@@ -207,3 +208,81 @@
+ WRAP_VERSTAT(__x, );
+ WRAP_VERSTAT(__x, 64);
+ #endif
++
++#define WRAP_GLOB(suffix, glob_type)                                          \
++	TS_EXPORT int glob##suffix(const char *pattern, int flags,            \
++				   int (*errfunc)(const char *, int),         \
++				   glob_type *pglob)                          \
++	{                                                                     \
++		const char *p = pattern;                                      \
++		char buf[PATH_MAX * 4];                                       \
++		size_t rplen = 0, erplen = 0, offs, start, i;                 \
++		int rc;                                                       \
++		static int (*_fn)(const char *, int,                          \
++				  int (*)(const char *, int), glob_type *);   \
++                                                                              \
++		if (!get_rootpath(__func__))                                  \
++			return GLOB_ABORTED;                                  \
++		_fn = get_libc_func("glob" #suffix);                          \
++		if (need_trap(pattern)) {                                     \
++			size_t plen = strlen(pattern);                        \
++			size_t ri, di = 0;                                    \
++			rplen = rootpathlen;                                  \
++			while (rplen > 0 && rootpath[rplen - 1] == '/')       \
++				rplen--;                                      \
++			for (ri = 0; ri < rplen; ri++) {                      \
++				char c = rootpath[ri];                        \
++				if (di + 4 >= sizeof(buf)) {                  \
++					errno = ENAMETOOLONG;                 \
++					return GLOB_ABORTED;                  \
++				}                                             \
++				if (flags & GLOB_NOESCAPE) {                  \
++					if (c == '*' || c == '?' ||           \
++					    c == '[') {                       \
++						buf[di++] = '[';              \
++						buf[di++] = c;                \
++						buf[di++] = ']';              \
++						continue;                     \
++					}                                     \
++				} else if (c == '\\' || c == '*' ||           \
++					   c == '?' || c == '[' ||            \
++					   c == '{' || c == '}' ||            \
++					   c == '(' || c == ')') {            \
++					buf[di++] = '\\';                     \
++				}                                             \
++				buf[di++] = c;                                \
++			}                                                     \
++			erplen = di;                                          \
++			if (plen + erplen >= sizeof(buf)) {                   \
++				errno = ENAMETOOLONG;                         \
++				return GLOB_ABORTED;                          \
++			}                                                     \
++			memcpy(buf + erplen, pattern, plen + 1);              \
++			p = buf;                                              \
++		}                                                             \
++		offs = (flags & GLOB_DOOFFS) ? pglob->gl_offs : 0;            \
++		start = offs + ((flags & GLOB_APPEND) ? pglob->gl_pathc : 0); \
++		rc = _fn(p, flags, errfunc, pglob);                           \
++		if (p != pattern && (rc == 0 || rc == GLOB_NOMATCH)) {        \
++			for (i = start; i < offs + pglob->gl_pathc; i++) {    \
++				char *s = pglob->gl_pathv[i];                 \
++				if (s == NULL)                                \
++					continue;                             \
++				if (strncmp(s, rootpath, rplen) == 0 &&       \
++				    s[rplen] == '/')                          \
++					memmove(s, s + rplen,                 \
++						strlen(s + rplen) + 1);       \
++				else if (erplen != rplen &&                   \
++					 strncmp(s, buf, erplen) == 0 &&      \
++					 s[erplen] == '/')                    \
++					memmove(s, s + erplen,                \
++						strlen(s + erplen) + 1);      \
++			}                                                     \
++		}                                                             \
++		return rc;                                                    \
++	}
++
++WRAP_GLOB(, glob_t);
++#ifdef HAVE_GLOB64
++WRAP_GLOB(64, glob64_t);
++#endif
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/etc/modprobe-extra/unclosed[1.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/etc/modprobe-extra/unclosed[1.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/etc/modprobe-extra/unclosed[1.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/etc/modprobe-extra/unclosed[1.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++blacklist fluffy_unclosed_bkt
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/etc/modprobe.d/override-etc.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/etc/modprobe.d/override-etc.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/etc/modprobe.d/override-etc.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/etc/modprobe.d/override-etc.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++# /etc masks /run
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/run/modprobe.d/override-etc.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/run/modprobe.d/override-etc.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/run/modprobe.d/override-etc.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/run/modprobe.d/override-etc.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++blacklist fluffy_etc_masked
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/run/modprobe.d/override-run.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/run/modprobe.d/override-run.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/run/modprobe.d/override-run.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/run/modprobe.d/override-run.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++# /run masks /sw/*/etc
 diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/fluffy-etc.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/fluffy-etc.conf
 --- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/fluffy-etc.conf	1970-01-01 00:00:00.000000000 +0000
 +++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/fluffy-etc.conf	2025-03-28 04:01:47.000000000 +0000
 @@ -0,0 +1 @@
 +blacklist fluffy_etc
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/override-run.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/override-run.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/override-run.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/override-run.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++blacklist fluffy_run_masked
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/override-sw.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/override-sw.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/override-sw.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-etc/etc/modprobe.d/override-sw.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++# /sw/*/etc masks /sw/*/lib
 diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/fluffy-lib.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/fluffy-lib.conf
 --- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/fluffy-lib.conf	1970-01-01 00:00:00.000000000 +0000
 +++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/fluffy-lib.conf	2025-03-28 04:01:47.000000000 +0000
 @@ -0,0 +1 @@
 +blacklist fluffy_lib
+diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/override-sw.conf kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/override-sw.conf
+--- kmod-34.2.orig/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/override-sw.conf	1970-01-01 00:00:00.000000000 +0000
++++ kmod-34.2/testsuite/rootfs-pristine/test-blacklist/sw/fluffy-lib/lib/modprobe.d/override-sw.conf	2025-03-28 04:01:47.000000000 +0000
+@@ -0,0 +1 @@
++blacklist fluffy_sw_masked
 diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/lib/modules/4.4.4/correct-modules.dep kmod-34.2/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/lib/modules/4.4.4/correct-modules.dep
 --- kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/lib/modules/4.4.4/correct-modules.dep	1970-01-01 00:00:00.000000000 +0000
 +++ kmod-34.2/testsuite/rootfs-pristine/test-depmod/search-order-fluffy-sw/lib/modules/4.4.4/correct-modules.dep	2025-03-28 04:01:47.000000000 +0000
@@ -327,7 +455,7 @@ diff --no-dereference -Naur kmod-34.2.orig/testsuite/rootfs-pristine/test-depmod
 diff --no-dereference -Naur kmod-34.2.orig/testsuite/test-blacklist.c kmod-34.2/testsuite/test-blacklist.c
 --- kmod-34.2.orig/testsuite/test-blacklist.c	2025-03-28 04:01:47.000000000 +0000
 +++ kmod-34.2/testsuite/test-blacklist.c	2025-03-28 04:01:47.000000000 +0000
-@@ -86,4 +86,69 @@
+@@ -86,4 +86,125 @@
  		    [TC_ROOTFS] = TESTSUITE_ROOTFS "test-blacklist/",
  	    });
  
@@ -340,7 +468,27 @@ diff --no-dereference -Naur kmod-34.2.orig/testsuite/test-blacklist.c kmod-34.2/
 +	int err;
 +	size_t len = 0;
 +
-+	const char *names[] = { "fluffy_etc", "fluffy_lib", "ext4", NULL };
++	const char *names[] = {
++		"fluffy_etc",
++		"fluffy_lib",
++		"fluffy_etc_masked",
++		"fluffy_run_masked",
++		"fluffy_sw_masked",
++		"ext4",
++		NULL,
++	};
++	const char *custom_paths[] = {
++		"/sw/*/etc/modprobe.d/fluffy-*.conf",
++		"/etc/modprobe-extra/unclosed[1.conf",
++		NULL,
++	};
++	const char *custom_names[] = {
++		"fluffy_etc",
++		"fluffy_unclosed_bkt",
++		"fluffy_lib",
++		"ext4",
++		NULL,
++	};
 +	const char **name;
 +
 +	ctx = kmod_new(NULL, NULL);
@@ -374,7 +522,43 @@ diff --no-dereference -Naur kmod-34.2.orig/testsuite/test-blacklist.c kmod-34.2/
 +		kmod_module_unref(mod);
 +	}
 +
-+	if (len != 1)
++	if (len != 4)
++		goto fail;
++
++	kmod_module_unref_list(filtered);
++	kmod_module_unref_list(list);
++	kmod_unref(ctx);
++
++	/* Verify explicit -C file wildcard and unclosed-'[' literal fallback */
++	list = NULL;
++	filtered = NULL;
++	len = 0;
++	ctx = kmod_new(NULL, custom_paths);
++	if (ctx == NULL)
++		exit(EXIT_FAILURE);
++
++	for (name = custom_names; *name; name++) {
++		err = kmod_module_new_from_name(ctx, *name, &mod);
++		if (err < 0)
++			goto fail_lookup;
++		list = kmod_list_append(list, mod);
++	}
++
++	err = kmod_module_apply_filter(ctx, KMOD_FILTER_BLACKLIST, list, &filtered);
++	if (err < 0 || filtered == NULL)
++		goto fail;
++
++	kmod_list_foreach(l, filtered) {
++		const char *modname;
++		mod = kmod_module_get_module(l);
++		modname = kmod_module_get_name(mod);
++		if (streq("fluffy_etc", modname) || streq("fluffy_unclosed_bkt", modname))
++			goto fail;
++		len++;
++		kmod_module_unref(mod);
++	}
++
++	if (len != 2)
 +		goto fail;
 +
 +	kmod_module_unref_list(filtered);
@@ -391,7 +575,7 @@ diff --no-dereference -Naur kmod-34.2.orig/testsuite/test-blacklist.c kmod-34.2/
 +}
 +
 +DEFINE_TEST(blacklist_fluffy_glob,
-+	    .description = "check if modules in /sw/*/{etc,lib}/modprobe.d are blacklisted",
++	    .description = "check if modules in vendor modprobe.d are blacklisted",
 +	    .config = {
 +		    [TC_ROOTFS] = TESTSUITE_ROOTFS "test-blacklist/",
 +	    });
@@ -413,7 +597,7 @@ diff --no-dereference -Naur kmod-34.2.orig/testsuite/test-depmod.c kmod-34.2/tes
 +	exit(EXIT_FAILURE);
 +}
 +DEFINE_TEST(depmod_search_order_fluffy_sw,
-+	.description = "check if depmod honors /sw/*/{etc,lib}/depmod.d configs",
++	.description = "check if depmod honors vendor depmod.d configs",
 +	.config = {
 +		[TC_UNAME_R] = MODULES_UNAME,
 +		[TC_ROOTFS] = SEARCH_ORDER_FLUFFY_SW_ROOTFS,
@@ -438,37 +622,22 @@ diff --no-dereference -Naur kmod-34.2.orig/tools/depmod.c kmod-34.2/tools/depmod
  #include <errno.h>
  #include <getopt.h>
  #include <limits.h>
-@@ -41,9 +42,12 @@
- static const char *const default_cfg_paths[] = {
+@@ -42,8 +43,14 @@
  	// clang-format off
  	SYSCONFDIR "/depmod.d",
-+	"/etc/depmod.d",
-+	"/sw/*/etc/depmod.d",
  	"/run/depmod.d",
++#ifdef VENDOR_PKG_PREFIX
++	VENDOR_PKG_PREFIX "/*/etc/depmod.d",
++#endif
  	"/usr/local/lib/depmod.d",
  	DISTCONFDIR "/depmod.d",
-+	"/sw/*/lib/depmod.d",
++#ifdef VENDOR_PKG_PREFIX
++	VENDOR_PKG_PREFIX "/*/lib/depmod.d",
++#endif
  	"/lib/depmod.d",
  	NULL,
  	// clang-format on
-@@ -890,6 +894,16 @@
- 	return err;
- }
- 
-+static void glob_closedir(void *dirp)
-+{
-+	closedir(dirp);
-+}
-+
-+static struct dirent *glob_readdir(void *dirp)
-+{
-+	return readdir(dirp);
-+}
-+
- static int cfg_load(struct cfg *cfg, const char *const *cfg_paths)
- {
- 	size_t i, n_files = 0;
-@@ -898,8 +912,28 @@
+@@ -898,8 +905,24 @@
  	if (cfg_paths == NULL)
  		cfg_paths = default_cfg_paths;
  
@@ -478,18 +647,14 @@ diff --no-dereference -Naur kmod-34.2.orig/tools/depmod.c kmod-34.2/tools/depmod
 +		const char *path = cfg_paths[i];
 +
 +		if (strpbrk(path, "*?[") != NULL) {
-+			glob_t gl = {
-+				.gl_closedir = glob_closedir,
-+				.gl_readdir = glob_readdir,
-+				.gl_opendir = (void *(*)(const char *))opendir,
-+				.gl_lstat = stat,
-+				.gl_stat = stat,
-+			};
++			glob_t gl = { 0 };
 +			size_t j;
 +
-+			if (glob(path, GLOB_ALTDIRFUNC, NULL, &gl) == 0) {
++			if (glob(path, GLOB_NOESCAPE, NULL, &gl) == 0) {
 +				for (j = 0; j < gl.gl_pathc; j++)
 +					cfg_files_list(&files, &n_files, gl.gl_pathv[j]);
++			} else {
++				cfg_files_list(&files, &n_files, path);
 +			}
 +			globfree(&gl);
 +		} else {

@@ -7,7 +7,7 @@ HAS_LDFLAGS=-lpython3.14
 
 ARCHIVES=(
     3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/Python-$VERSION.tar.xz
-    6d21c5bcbbd11264782241fb382fda389e5af30d2227530ea61548ba59e2d4cf file://Python-$VERSION-fluffy-source.patch
+    b1b9929b2260e4dd55b5afd8b3b9c291a8e5373738611714b75b3b9f995ead49 file://Python-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -49,6 +49,7 @@ BUILD_NEEDS=(
 
 MAKE() {
     patch -Z -Np1 -i Python-$VERSION-fluffy-source.patch
+    touch Modules/getpath.py
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
