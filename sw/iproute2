@@ -9,7 +9,7 @@ VERSION=7.1.0
 
 ARCHIVES=(
     fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c https://github.com/fluffy-linux/iproute2/releases/download/v$VERSION/iproute2-$VERSION.tar.xz
-    485a89aa410ce30c0c0d77eb4e8a3908e8dc6938314de1b3bf64e3171a12797b file://iproute2-$VERSION-fluffy-source.patch
+    eee787b0f100c0719e935a62b8dc8e183d0e5748319441cdc732867297413264 file://iproute2-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -77,7 +77,8 @@ MAKE() {
     make \
         PREFIX=/sw/iproute2 \
         SBINDIR=/sw/iproute2/bin \
-        CONF_ETC_DIR=/sw/iproute2/etc/iproute2 \
+        CONF_USR_DIR=/sw/iproute2/etc/iproute2 \
+        CONF_ETC_DIR=/etc/iproute2 \
         NETNS_RUN_DIR=/run/netns
 }
 
@@ -89,7 +90,8 @@ INSTALL() {
     make \
         PREFIX=/sw/iproute2 \
         SBINDIR=/sw/iproute2/bin \
-        CONF_ETC_DIR=/sw/iproute2/etc/iproute2 \
+        CONF_USR_DIR=/sw/iproute2/etc/iproute2 \
+        CONF_ETC_DIR=/etc/iproute2 \
         NETNS_RUN_DIR=/run/netns \
         install
 }

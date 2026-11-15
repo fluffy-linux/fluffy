@@ -11,7 +11,7 @@ HAS_LDFLAGS="-lext2fs -lcom_err"
 
 ARCHIVES=(
     da274408bebbfd13a5a2fc3cfc66e3ffff17c48534673aa67f88d49b99123b96 https://github.com/fluffy-linux/e2fsprogs/releases/download/v$VERSION/e2fsprogs-$VERSION.tar.gz
-    044835caedaf093dfb3c48593d0b056eec30db85f24c13f1542e552324497435 file://e2fsprogs-$VERSION-fluffy-source.patch
+    feb5203aa50ab02f744e67c891b7e1d163cbb24b16c0b6c98232edfd147b2110 file://e2fsprogs-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -92,10 +92,31 @@ MAKE() {
     make
 }
 
+CHECK() {
+    make -C build/lib/support test_profile
+    local td
+    td=$(mktemp -d)
+    mkdir -p "$td/sw/pkgA/etc" "$td/sw/pkgB/etc" "$td/etc"
+    printf '[defaults]\n\tkey = from_pkgA\n\tvendor_only = keep_me\n' > "$td/sw/pkgA/etc/mke2fs.conf"
+    printf '[defaults]\n\tother = from_pkgB\n' > "$td/sw/pkgB/etc/mke2fs.conf"
+
+    test "$(./build/lib/support/test_profile "$td/etc/mke2fs.conf:$td/sw/*/etc/mke2fs.conf" query defaults key)" = "from_pkgA"
+    test "$(./build/lib/support/test_profile "$td/etc/mke2fs.conf:$td/sw/*/etc/mke2fs.conf" query defaults other)" = "from_pkgB"
+
+    printf '[defaults]\n\tkey = from_etc\n' > "$td/etc/mke2fs.conf"
+    test "$(./build/lib/support/test_profile "$td/etc/mke2fs.conf:$td/sw/*/etc/mke2fs.conf" query defaults key)" = "from_etc"
+    test "$(./build/lib/support/test_profile "$td/etc/mke2fs.conf:$td/sw/*/etc/mke2fs.conf" query defaults vendor_only)" = "keep_me"
+    rm -rf "$td"
+}
+
 INSTALL() {
     cd build
     make install
     make install-libs
     rm -fv $DESTDIR/sw/e2fsprogs/lib/{libcom_err,libe2p,libext2fs,libss}.a
     chmod -v u+w $DESTDIR/sw/e2fsprogs/lib/{libcom_err,libe2p,libext2fs,libss}.so.* 2>/dev/null || true
+
+    install -dm755 $DESTDIR/sw/e2fsprogs/lib/systemd/system/{multi-user.target.wants,timers.target.wants}
+    ln -sf ../e2scrub_reap.service $DESTDIR/sw/e2fsprogs/lib/systemd/system/multi-user.target.wants/e2scrub_reap.service
+    ln -sf ../e2scrub_all.timer $DESTDIR/sw/e2fsprogs/lib/systemd/system/timers.target.wants/e2scrub_all.timer
 }

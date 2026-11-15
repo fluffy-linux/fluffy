@@ -13,6 +13,15 @@ diff --no-dereference -Naur shadow-4.20.2.orig/configure shadow-4.20.2/configure
 diff --no-dereference -Naur shadow-4.20.2.orig/etc/login.defs shadow-4.20.2/etc/login.defs
 --- shadow-4.20.2.orig/etc/login.defs	2026-08-04 18:02:12.996395611 +0000
 +++ shadow-4.20.2/etc/login.defs	2026-08-04 18:02:12.996395611 +0000
+@@ -38,7 +38,7 @@
+ # No LASTLOG_UID_MAX means that there is no user ID limit for writing
+ # lastlog entries.
+ #
+-#LASTLOG_UID_MAX
++LASTLOG_UID_MAX		60000
+ 
+ #
+ # Enable checking and display of mailbox status upon login.
 @@ -127,7 +127,7 @@
  #   Directory where mailboxes reside, _or_ name of file, relative to the
  #   home directory.  If you _do_ define both, MAIL_DIR takes precedence.
@@ -45,15 +54,20 @@ diff --no-dereference -Naur shadow-4.20.2.orig/etc/login.defs shadow-4.20.2/etc/
 diff --no-dereference -Naur shadow-4.20.2.orig/etc/shadow-maint/groupdel-pre.d/01-kill_group_procs.sh shadow-4.20.2/etc/shadow-maint/groupdel-pre.d/01-kill_group_procs.sh
 --- shadow-4.20.2.orig/etc/shadow-maint/groupdel-pre.d/01-kill_group_procs.sh	2025-03-24 12:05:09.857675713 +0000
 +++ shadow-4.20.2/etc/shadow-maint/groupdel-pre.d/01-kill_group_procs.sh	2025-03-24 12:05:09.857675713 +0000
-@@ -1,6 +1,6 @@
+@@ -1,7 +1,10 @@
 -#!/bin/sh
 +#!/sw/bash/bin/bash
  
 -PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+-GROUPID=`awk -F: '$1 == "'"${SUBJECT}"'" { print $3 }' /etc/group`
 +PATH="/sw/*/bin"
- GROUPID=`awk -F: '$1 == "'"${SUBJECT}"'" { print $3 }' /etc/group`
++GROUPID=""
++if [ -f /etc/group ]; then
++    GROUPID=`awk -F: '$1 == "'"${SUBJECT}"'" { print $3 }' /etc/group`
++fi
  
  if [ "${GROUPID}" = "" ]; then
+     exit 0
 diff --no-dereference -Naur shadow-4.20.2.orig/etc/shadow-maint/userdel-pre.d/01-kill_user_procs.sh shadow-4.20.2/etc/shadow-maint/userdel-pre.d/01-kill_user_procs.sh
 --- shadow-4.20.2.orig/etc/shadow-maint/userdel-pre.d/01-kill_user_procs.sh	2025-03-24 12:05:09.857675713 +0000
 +++ shadow-4.20.2/etc/shadow-maint/userdel-pre.d/01-kill_user_procs.sh	2025-03-24 12:05:09.857675713 +0000
@@ -90,19 +104,858 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/btrfs.c shadow-4.20.2/lib/btr
  
  
  static int run_btrfs_subvolume_cmd(const char *subcmd, const char *arg1, const char *arg2)
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/commonio.c shadow-4.20.2/lib/commonio.c
+--- shadow-4.20.2.orig/lib/commonio.c	2026-08-08 12:07:10.932739516 +0000
++++ shadow-4.20.2/lib/commonio.c	2026-08-08 12:07:10.932739516 +0000
+@@ -592,7 +592,7 @@
+ 	 * created by commonio_close().  We have no entries to read yet.  --marekm
+ 	 */
+ 	if (NULL == db->fp) {
+-		if (((flags & O_CREAT) != 0) && (ENOENT == errno)) {
++		if (ENOENT == errno) {
+ 			db->isopen = true;
+ 			return 1;
+ 		}
+@@ -899,8 +899,8 @@
+ 		 * Default permissions for new [g]shadow files.
+ 		 */
+ 		sb.st_mode = db->st_mode;
+-		sb.st_uid = db->st_uid;
+-		sb.st_gid = db->st_gid;
++		sb.st_uid = (geteuid () == 0) ? db->st_uid : geteuid ();
++		sb.st_gid = (geteuid () == 0) ? db->st_gid : getegid ();
+ 	}
+ 
+ 	if (stprintf_a(tmpf, "%s.cioXXXXXX", db->filename) == -1)
 diff --no-dereference -Naur shadow-4.20.2.orig/lib/getdef.c shadow-4.20.2/lib/getdef.c
 --- shadow-4.20.2.orig/lib/getdef.c	2026-08-08 12:08:13.732326072 +0000
 +++ shadow-4.20.2/lib/getdef.c	2026-08-08 12:08:13.732326072 +0000
-@@ -545,6 +545,9 @@
- 	 * Open the configuration definitions file.
- 	 */
- 	fp = fopen (def_fname, "r");
-+	if (NULL == fp && errno == ENOENT && strcmp (def_fname, LOGINDEFS) == 0) {
-+		fp = fopen ("/sw/shadow/etc/login.defs", "r");
-+	}
+@@ -13,6 +13,7 @@
+ 
+ #include <ctype.h>
+ #include <errno.h>
++#include <glob.h>
+ #include <stddef.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -530,70 +531,83 @@
+ 	econf_free (defs_file);
+ }
+ #else /* USE_ECONF */
+-static void def_load (void)
++#ifndef VENDOR_LOGINDEFS
++#define VENDOR_LOGINDEFS "/sw/*/etc/login.defs"
++#endif
++
++static void def_load_file (const char *fname)
+ {
+ 	FILE *fp;
+ 	char buf[1024], *name, *value, *s;
+ 
+-	/*
+-	 * Set the initialized flag.
+-	 * (do it early to prevent recursion in putdef_str())
+-	 */
+-	def_loaded = true;
+-
+-	/*
+-	 * Open the configuration definitions file.
+-	 */
+-	fp = fopen (def_fname, "r");
++	fp = fopen (fname, "r");
  	if (NULL == fp) {
  		if (errno == ENOENT)
  			return;
+ 
+-		SYSLOGE(LOG_CRIT, "cannot open login definitions %s", def_fname);
++		SYSLOGE(LOG_CRIT, "cannot open login definitions %s", fname);
+ 		exit (EXIT_FAILURE);
+ 	}
+ 
+-	/*
+-	 * Go through all of the lines in the file.
+-	 */
+ 	while (fgets_a(buf, fp) != NULL) {
+-
+-		/*
+-		 * Trim trailing whitespace.
+-		 */
+ 		stpcpy(stprspn(buf, " \t\n"), "");
+ 
+-		/*
+-		 * Break the line into two fields.
+-		 */
+-		name = stpspn(buf, " \t");	/* first nonwhite */
++		name = stpspn(buf, " \t");
+ 		if (streq(name, "") || strprefix(name, "#"))
+-			continue;	/* comment or empty */
++			continue;
+ 
+-		s = stpsep(name, " \t");  /* next field */
++		s = stpsep(name, " \t");
+ 		if (s == NULL)
+-			continue;	/* only 1 field?? */
++			continue;
+ 
+-		value = stpspn(s, " \"\t");	/* next nonwhite */
++		value = stpspn(s, " \"\t");
+ 		stpsep(value, "\"");
+ 
+-		/*
+-		 * Store the value in def_table.
+-		 *
+-		 * Ignore failures to load the login.defs file.
+-		 * The error was already reported to the user and to
+-		 * syslog. The tools will just use their default values.
+-		 */
+-		(void)putdef_str (name, value, def_fname);
++		(void)putdef_str (name, value, fname);
+ 	}
+ 
+ 	if (ferror (fp) != 0) {
+-		SYSLOGE(LOG_CRIT, "cannot read login definitions %s", def_fname);
++		SYSLOGE(LOG_CRIT, "cannot read login definitions %s", fname);
+ 		exit (EXIT_FAILURE);
+ 	}
+ 
+ 	(void) fclose (fp);
+ }
++
++static void def_load (void)
++{
++	size_t flen, slen;
++
++	/*
++	 * Set the initialized flag.
++	 * (do it early to prevent recursion in putdef_str())
++	 */
++	def_loaded = true;
++
++	flen = strlen (def_fname);
++	slen = strlen (LOGINDEFS);
++	if (flen >= slen && streq (def_fname + flen - slen, LOGINDEFS)) {
++		size_t plen = flen - slen;
++		char *pat;
++		glob_t gl;
++
++		while (plen > 0 && def_fname[plen - 1] == '/') {
++			plen--;
++		}
++		pat = aprintf ("%.*s%s", (int) plen, def_fname, VENDOR_LOGINDEFS);
++		if (NULL != pat) {
++			if (glob (pat, 0, NULL, &gl) == 0) {
++				for (size_t i = 0; i < gl.gl_pathc; i++) {
++					def_load_file (gl.gl_pathv[i]);
++				}
++				globfree (&gl);
++			}
++			free (pat);
++		}
++	}
++
++	def_load_file (def_fname);
++}
+ #endif /* USE_ECONF */
+ 
+ 
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/groupio.c shadow-4.20.2/lib/groupio.c
+--- shadow-4.20.2.orig/lib/groupio.c	2026-08-08 12:07:10.932739516 +0000
++++ shadow-4.20.2/lib/groupio.c	2026-08-08 12:07:10.932739516 +0000
+@@ -10,7 +10,10 @@
+ 
+ #include "config.h"
+ 
++#include <glob.h>
+ #include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
+ 
+ #include "alloc/calloc.h"
+ #include "alloc/malloc.h"
+@@ -146,9 +149,109 @@
+ 	return commonio_open (&group_db, mode);
+ }
+ 
++#ifndef VENDOR_GROUP_FILES
++#define VENDOR_GROUP_FILES "/sw/*/etc/group"
++#endif
++
++static struct group *vendor_gr = NULL;
++
++static bool seen_gr_name (char **names, size_t count, const char *name)
++{
++	for (size_t i = 0; i < count; i++) {
++		if (streq (names[i], name)) {
++			return true;
++		}
++	}
++	return false;
++}
++
++static const struct group *vendor_gr_locate_common (const char *name,
++                                                    gid_t gid,
++                                                    bool by_gid)
++{
++	size_t flen = strlen (group_db.filename);
++	size_t slen = strlen (GROUP_FILE);
++	size_t plen;
++	char *pat;
++	glob_t gl;
++	char **seen = NULL;
++	size_t seen_cnt = 0, seen_cap = 0;
++	const struct group *found = NULL;
++
++	if (flen < slen || !streq (group_db.filename + flen - slen, GROUP_FILE)) {
++		return NULL;
++	}
++	plen = flen - slen;
++	while (plen > 0 && group_db.filename[plen - 1] == '/') {
++		plen--;
++	}
++	pat = aprintf ("%.*s%s", (int) plen, group_db.filename, VENDOR_GROUP_FILES);
++	if (NULL == pat) {
++		return NULL;
++	}
++	if (glob (pat, 0, NULL, &gl) != 0) {
++		free (pat);
++		return NULL;
++	}
++	free (pat);
++
++	for (size_t i = 0; i < gl.gl_pathc && NULL == found; i++) {
++		FILE *fp = fopen (gl.gl_pathv[i], "r");
++		struct group *gr;
++
++		if (NULL == fp) {
++			continue;
++		}
++		while (NULL != (gr = fgetgrent (fp))) {
++			if (group_db.isopen
++			    && commonio_locate (&group_db, gr->gr_name) != NULL) {
++				continue;
++			}
++			if (seen_gr_name (seen, seen_cnt, gr->gr_name)) {
++				continue;
++			}
++			if (seen_cnt == seen_cap) {
++				size_t ncap = (0 == seen_cap) ? 16 : seen_cap * 2;
++				char **nseen = realloc (seen, ncap * sizeof (*nseen));
++				if (NULL != nseen) {
++					seen = nseen;
++					seen_cap = ncap;
++				}
++			}
++			if (seen_cnt < seen_cap) {
++				char *dup_name = strdup (gr->gr_name);
++				if (NULL != dup_name) {
++					seen[seen_cnt++] = dup_name;
++				}
++			}
++			if (by_gid ? (gr->gr_gid == gid) : streq (gr->gr_name, name)) {
++				if (NULL != vendor_gr) {
++					group_free (vendor_gr);
++				}
++				vendor_gr = __gr_dup (gr);
++				found = vendor_gr;
++				break;
++			}
++		}
++		(void) fclose (fp);
++	}
++
++	for (size_t i = 0; i < seen_cnt; i++) {
++		free (seen[i]);
++	}
++	free (seen);
++	globfree (&gl);
++	return found;
++}
++
+ /*@observer@*/ /*@null@*/const struct group *gr_locate (const char *name)
+ {
+-	return commonio_locate (&group_db, name);
++	const struct group *grp = commonio_locate (&group_db, name);
++
++	if (NULL != grp) {
++		return grp;
++	}
++	return vendor_gr_locate_common (name, 0, false);
+ }
+ 
+ /*@observer@*/ /*@null@*/const struct group *gr_locate_gid (gid_t gid)
+@@ -159,8 +262,11 @@
+ 	while (   ((grp = gr_next ()) != NULL)
+ 	       && (grp->gr_gid != gid)) {
+ 	}
++	if (NULL != grp) {
++		return grp;
++	}
+ 
+-	return grp;
++	return vendor_gr_locate_common (NULL, gid, true);
+ }
+ 
+ int gr_update (const struct group *gr)
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/prefix_flag.c shadow-4.20.2/lib/prefix_flag.c
+--- shadow-4.20.2.orig/lib/prefix_flag.c	2026-08-04 18:02:13.000285869 +0000
++++ shadow-4.20.2/lib/prefix_flag.c	2026-08-04 18:02:13.000285869 +0000
+@@ -7,8 +7,12 @@
+ 
+ #include "config.h"
+ 
++#include <errno.h>
++#include <glob.h>
+ #include <paths.h>
+ #include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
+ 
+ #include "atoi/getnum.h"
+ #include "defines.h"
+@@ -40,8 +44,22 @@
+ static char *suid_db_file = NULL;
+ static char *sgid_db_file = NULL;
+ MAYBE_UNUSED static char *def_conf_file = NULL;
++static char *vendor_passwd_glob = NULL;
++static char *vendor_group_glob = NULL;
+ static FILE* fp_pwent = NULL;
+ static FILE* fp_grent = NULL;
++static glob_t gl_pwent;
++static bool gl_pwent_active = false;
++static size_t gl_pwent_idx = 0;
++static char **pwent_seen = NULL;
++static size_t pwent_seen_cnt = 0;
++static size_t pwent_seen_cap = 0;
++static glob_t gl_grent;
++static bool gl_grent_active = false;
++static size_t gl_grent_idx = 0;
++static char **grent_seen = NULL;
++static size_t grent_seen_cnt = 0;
++static size_t grent_seen_cap = 0;
+ 
+ /*
+  * process_prefix_flag - prefix all paths if given the --prefix option
+@@ -108,9 +126,11 @@
+ 		}
+ 
+ 		passwd_db_file = xaprintf("%s/%s", prefix, PASSWD_FILE);
++		vendor_passwd_glob = xaprintf("%s/sw/*/etc/passwd", prefix);
+ 		pw_setdbname(passwd_db_file);
+ 
+ 		group_db_file = xaprintf("%s/%s", prefix, GROUP_FILE);
++		vendor_group_glob = xaprintf("%s/sw/*/etc/group", prefix);
+ 		gr_setdbname(group_db_file);
+ 
+ #ifdef  SHADOWGRP
+@@ -143,20 +163,68 @@
+ }
+ 
+ 
++static bool prefix_seen_add(char ***list, size_t *cnt, size_t *cap, const char *name)
++{
++	for (size_t i = 0; i < *cnt; i++) {
++		if (streq((*list)[i], name))
++			return true;
++	}
++	if (*cnt == *cap) {
++		size_t ncap = (*cap == 0) ? 16 : (*cap * 2);
++		char **nlist = realloc(*list, ncap * sizeof(*nlist));
++		if (nlist != NULL) {
++			*list = nlist;
++			*cap = ncap;
++		}
++	}
++	if (*cnt < *cap) {
++		char *dup_name = strdup(name);
++		if (dup_name != NULL)
++			(*list)[(*cnt)++] = dup_name;
++	}
++	return false;
++}
++
++static void prefix_seen_free(char ***list, size_t *cnt, size_t *cap)
++{
++	for (size_t i = 0; i < *cnt; i++)
++		free((*list)[i]);
++	free(*list);
++	*list = NULL;
++	*cnt = 0;
++	*cap = 0;
++}
++
+ extern struct group *prefix_getgrnam(const char *name)
+ {
+ 	if (group_db_file) {
+ 		FILE* fg;
+ 		struct group * grp = NULL;
++		glob_t gl;
+ 
+ 		fg = fopen(group_db_file, "r");
+-		if (!fg)
+-			return NULL;
+-		while (NULL != (grp = fgetgrent(fg))) {
+-			if (streq(name, grp->gr_name))
+-				break;
++		if (fg) {
++			while (NULL != (grp = fgetgrent(fg))) {
++				if (streq(name, grp->gr_name))
++					break;
++			}
++			fclose(fg);
++			if (grp)
++				return grp;
++		}
++		if (vendor_group_glob && glob(vendor_group_glob, 0, NULL, &gl) == 0) {
++			for (size_t i = 0; i < gl.gl_pathc && !grp; i++) {
++				fg = fopen(gl.gl_pathv[i], "r");
++				if (!fg)
++					continue;
++				while (NULL != (grp = fgetgrent(fg))) {
++					if (streq(name, grp->gr_name))
++						break;
++				}
++				fclose(fg);
++			}
++			globfree(&gl);
+ 		}
+-		fclose(fg);
+ 		return grp;
+ 	}
+ 
+@@ -168,15 +236,39 @@
+ 	if (group_db_file) {
+ 		FILE* fg;
+ 		struct group * grp = NULL;
++		char **seen = NULL;
++		size_t seen_cnt = 0, seen_cap = 0;
++		glob_t gl;
+ 
+ 		fg = fopen(group_db_file, "r");
+-		if (!fg)
+-			return NULL;
+-		while (NULL != (grp = fgetgrent(fg))) {
+-			if (gid == grp->gr_gid)
+-				break;
++		if (fg) {
++			while (NULL != (grp = fgetgrent(fg))) {
++				(void)prefix_seen_add(&seen, &seen_cnt, &seen_cap, grp->gr_name);
++				if (gid == grp->gr_gid)
++					break;
++			}
++			fclose(fg);
++			if (grp) {
++				prefix_seen_free(&seen, &seen_cnt, &seen_cap);
++				return grp;
++			}
+ 		}
+-		fclose(fg);
++		if (vendor_group_glob && glob(vendor_group_glob, 0, NULL, &gl) == 0) {
++			for (size_t i = 0; i < gl.gl_pathc && !grp; i++) {
++				fg = fopen(gl.gl_pathv[i], "r");
++				if (!fg)
++					continue;
++				while (NULL != (grp = fgetgrent(fg))) {
++					if (prefix_seen_add(&seen, &seen_cnt, &seen_cap, grp->gr_name))
++						continue;
++					if (gid == grp->gr_gid)
++						break;
++				}
++				fclose(fg);
++			}
++			globfree(&gl);
++		}
++		prefix_seen_free(&seen, &seen_cnt, &seen_cap);
+ 		return grp;
+ 	}
+ 
+@@ -188,15 +280,39 @@
+ 	if (passwd_db_file) {
+ 		FILE* fg;
+ 		struct passwd *pwd = NULL;
++		char **seen = NULL;
++		size_t seen_cnt = 0, seen_cap = 0;
++		glob_t gl;
+ 
+ 		fg = fopen(passwd_db_file, "r");
+-		if (!fg)
+-			return NULL;
+-		while (NULL != (pwd = fgetpwent(fg))) {
+-			if (uid == pwd->pw_uid)
+-				break;
++		if (fg) {
++			while (NULL != (pwd = fgetpwent(fg))) {
++				(void)prefix_seen_add(&seen, &seen_cnt, &seen_cap, pwd->pw_name);
++				if (uid == pwd->pw_uid)
++					break;
++			}
++			fclose(fg);
++			if (pwd) {
++				prefix_seen_free(&seen, &seen_cnt, &seen_cap);
++				return pwd;
++			}
+ 		}
+-		fclose(fg);
++		if (vendor_passwd_glob && glob(vendor_passwd_glob, 0, NULL, &gl) == 0) {
++			for (size_t i = 0; i < gl.gl_pathc && !pwd; i++) {
++				fg = fopen(gl.gl_pathv[i], "r");
++				if (!fg)
++					continue;
++				while (NULL != (pwd = fgetpwent(fg))) {
++					if (prefix_seen_add(&seen, &seen_cnt, &seen_cap, pwd->pw_name))
++						continue;
++					if (uid == pwd->pw_uid)
++						break;
++				}
++				fclose(fg);
++			}
++			globfree(&gl);
++		}
++		prefix_seen_free(&seen, &seen_cnt, &seen_cap);
+ 		return pwd;
+ 	}
+ 	else {
+@@ -208,15 +324,31 @@
+ 	if (passwd_db_file) {
+ 		FILE* fg;
+ 		struct passwd *pwd = NULL;
++		glob_t gl;
+ 
+ 		fg = fopen(passwd_db_file, "r");
+-		if (!fg)
+-			return NULL;
+-		while (NULL != (pwd = fgetpwent(fg))) {
+-			if (streq(name, pwd->pw_name))
+-				break;
++		if (fg) {
++			while (NULL != (pwd = fgetpwent(fg))) {
++				if (streq(name, pwd->pw_name))
++					break;
++			}
++			fclose(fg);
++			if (pwd)
++				return pwd;
++		}
++		if (vendor_passwd_glob && glob(vendor_passwd_glob, 0, NULL, &gl) == 0) {
++			for (size_t i = 0; i < gl.gl_pathc && !pwd; i++) {
++				fg = fopen(gl.gl_pathv[i], "r");
++				if (!fg)
++					continue;
++				while (NULL != (pwd = fgetpwent(fg))) {
++					if (streq(name, pwd->pw_name))
++						break;
++				}
++				fclose(fg);
++			}
++			globfree(&gl);
+ 		}
+-		fclose(fg);
+ 		return pwd;
+ 	}
+ 	else {
+@@ -229,17 +361,38 @@
+ {
+ 	if (passwd_db_file) {
+ 		FILE* fg;
+-		int ret = 0;
++		int ret = ENOENT;
++		glob_t gl;
+ 
++		*result = NULL;
+ 		fg = fopen(passwd_db_file, "r");
+-		if (!fg)
++		if (fg) {
++			while ((ret = fgetpwent_r(fg, pwd, buf, buflen, result)) == 0) {
++				if (streq(name, pwd->pw_name))
++					break;
++			}
++			fclose(fg);
++			if (*result != NULL || ret == ERANGE)
++				return ret;
++		} else if (errno != ENOENT) {
+ 			return errno;
+-		while ((ret = fgetpwent_r(fg, pwd, buf, buflen, result)) == 0) {
+-			if (streq(name, pwd->pw_name))
+-				break;
+ 		}
+-		fclose(fg);
+-		return ret;
++		if (vendor_passwd_glob && glob(vendor_passwd_glob, 0, NULL, &gl) == 0) {
++			for (size_t i = 0; i < gl.gl_pathc; i++) {
++				fg = fopen(gl.gl_pathv[i], "r");
++				if (!fg)
++					continue;
++				while ((ret = fgetpwent_r(fg, pwd, buf, buflen, result)) == 0) {
++					if (streq(name, pwd->pw_name))
++						break;
++				}
++				fclose(fg);
++				if (*result != NULL || ret == ERANGE)
++					break;
++			}
++			globfree(&gl);
++		}
++		return (*result != NULL) ? 0 : ((ret == ERANGE) ? ERANGE : 0);
+ 	}
+ 	else {
+ 		return getpwnam_r(name, pwd, buf, buflen, result);
+@@ -275,20 +428,37 @@
+ 	}
+ 	if (fp_pwent)
+ 		fclose (fp_pwent);
++	fp_pwent = NULL;
++	if (gl_pwent_active) {
++		globfree(&gl_pwent);
++		gl_pwent_active = false;
++	}
++	gl_pwent_idx = 0;
++	prefix_seen_free(&pwent_seen, &pwent_seen_cnt, &pwent_seen_cap);
+ 
+ 	fp_pwent = fopen(passwd_db_file, "r");
+-	if (!fp_pwent)
+-		return;
++	if (vendor_passwd_glob && glob(vendor_passwd_glob, 0, NULL, &gl_pwent) == 0)
++		gl_pwent_active = true;
+ }
+ extern struct passwd* prefix_getpwent(void)
+ {
+ 	if (!passwd_db_file) {
+ 		return getpwent();
+ 	}
+-	if (!fp_pwent) {
+-		return NULL;
++	for (;;) {
++		while (!fp_pwent && gl_pwent_active && gl_pwent_idx < gl_pwent.gl_pathc)
++			fp_pwent = fopen(gl_pwent.gl_pathv[gl_pwent_idx++], "r");
++		if (!fp_pwent)
++			return NULL;
++		struct passwd *pw = fgetpwent(fp_pwent);
++		if (pw) {
++			if (prefix_seen_add(&pwent_seen, &pwent_seen_cnt, &pwent_seen_cap, pw->pw_name))
++				continue;
++			return pw;
++		}
++		fclose(fp_pwent);
++		fp_pwent = NULL;
+ 	}
+-	return fgetpwent(fp_pwent);
+ }
+ extern void prefix_endpwent(void)
+ {
+@@ -299,6 +469,12 @@
+ 	if (fp_pwent)
+ 		fclose(fp_pwent);
+ 	fp_pwent = NULL;
++	if (gl_pwent_active) {
++		globfree(&gl_pwent);
++		gl_pwent_active = false;
++	}
++	gl_pwent_idx = 0;
++	prefix_seen_free(&pwent_seen, &pwent_seen_cnt, &pwent_seen_cap);
+ }
+ 
+ extern void prefix_setgrent(void)
+@@ -309,17 +485,37 @@
+ 	}
+ 	if (fp_grent)
+ 		fclose (fp_grent);
++	fp_grent = NULL;
++	if (gl_grent_active) {
++		globfree(&gl_grent);
++		gl_grent_active = false;
++	}
++	gl_grent_idx = 0;
++	prefix_seen_free(&grent_seen, &grent_seen_cnt, &grent_seen_cap);
+ 
+ 	fp_grent = fopen(group_db_file, "r");
+-	if (!fp_grent)
+-		return;
++	if (vendor_group_glob && glob(vendor_group_glob, 0, NULL, &gl_grent) == 0)
++		gl_grent_active = true;
+ }
+ extern struct group* prefix_getgrent(void)
+ {
+ 	if (!group_db_file) {
+ 		return getgrent();
+ 	}
+-	return fgetgrent(fp_grent);
++	for (;;) {
++		while (!fp_grent && gl_grent_active && gl_grent_idx < gl_grent.gl_pathc)
++			fp_grent = fopen(gl_grent.gl_pathv[gl_grent_idx++], "r");
++		if (!fp_grent)
++			return NULL;
++		struct group *gr = fgetgrent(fp_grent);
++		if (gr) {
++			if (prefix_seen_add(&grent_seen, &grent_seen_cnt, &grent_seen_cap, gr->gr_name))
++				continue;
++			return gr;
++		}
++		fclose(fp_grent);
++		fp_grent = NULL;
++	}
+ }
+ extern void prefix_endgrent(void)
+ {
+@@ -330,6 +526,12 @@
+ 	if (fp_grent)
+ 		fclose(fp_grent);
+ 	fp_grent = NULL;
++	if (gl_grent_active) {
++		globfree(&gl_grent);
++		gl_grent_active = false;
++	}
++	gl_grent_idx = 0;
++	prefix_seen_free(&grent_seen, &grent_seen_cnt, &grent_seen_cap);
+ }
+ 
+ extern struct group *prefix_getgr_nam_gid(const char *grname)
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/pwio.c shadow-4.20.2/lib/pwio.c
+--- shadow-4.20.2.orig/lib/pwio.c	2026-07-20 14:56:15.710087658 +0000
++++ shadow-4.20.2/lib/pwio.c	2026-07-20 14:56:15.710087658 +0000
+@@ -10,8 +10,11 @@
+ 
+ #include "config.h"
+ 
++#include <glob.h>
+ #include <pwd.h>
+ #include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
+ 
+ #include "commonio.h"
+ #include "defines.h"
+@@ -19,6 +22,8 @@
+ #include "prototypes.h"
+ #include "pwio.h"
+ #include "shadow/passwd/sgetpwent.h"
++#include "string/sprintf/aprintf.h"
++#include "string/strcmp/streq.h"
+ 
+ 
+ static /*@null@*/ /*@only@*/void *passwd_dup (const void *ent)
+@@ -119,9 +124,109 @@
+ 	return commonio_open (&passwd_db, mode);
+ }
+ 
++#ifndef VENDOR_PASSWD_FILES
++#define VENDOR_PASSWD_FILES "/sw/*/etc/passwd"
++#endif
++
++static struct passwd *vendor_pw = NULL;
++
++static bool seen_name_list (char **names, size_t count, const char *name)
++{
++	for (size_t i = 0; i < count; i++) {
++		if (streq (names[i], name)) {
++			return true;
++		}
++	}
++	return false;
++}
++
++static const struct passwd *vendor_pw_locate_common (const char *name,
++                                                     uid_t uid,
++                                                     bool by_uid)
++{
++	size_t flen = strlen (passwd_db.filename);
++	size_t slen = strlen (PASSWD_FILE);
++	size_t plen;
++	char *pat;
++	glob_t gl;
++	char **seen = NULL;
++	size_t seen_cnt = 0, seen_cap = 0;
++	const struct passwd *found = NULL;
++
++	if (flen < slen || !streq (passwd_db.filename + flen - slen, PASSWD_FILE)) {
++		return NULL;
++	}
++	plen = flen - slen;
++	while (plen > 0 && passwd_db.filename[plen - 1] == '/') {
++		plen--;
++	}
++	pat = aprintf ("%.*s%s", (int) plen, passwd_db.filename, VENDOR_PASSWD_FILES);
++	if (NULL == pat) {
++		return NULL;
++	}
++	if (glob (pat, 0, NULL, &gl) != 0) {
++		free (pat);
++		return NULL;
++	}
++	free (pat);
++
++	for (size_t i = 0; i < gl.gl_pathc && NULL == found; i++) {
++		FILE *fp = fopen (gl.gl_pathv[i], "r");
++		struct passwd *pw;
++
++		if (NULL == fp) {
++			continue;
++		}
++		while (NULL != (pw = fgetpwent (fp))) {
++			if (passwd_db.isopen
++			    && commonio_locate (&passwd_db, pw->pw_name) != NULL) {
++				continue;
++			}
++			if (seen_name_list (seen, seen_cnt, pw->pw_name)) {
++				continue;
++			}
++			if (seen_cnt == seen_cap) {
++				size_t ncap = (0 == seen_cap) ? 16 : seen_cap * 2;
++				char **nseen = realloc (seen, ncap * sizeof (*nseen));
++				if (NULL != nseen) {
++					seen = nseen;
++					seen_cap = ncap;
++				}
++			}
++			if (seen_cnt < seen_cap) {
++				char *dup_name = strdup (pw->pw_name);
++				if (NULL != dup_name) {
++					seen[seen_cnt++] = dup_name;
++				}
++			}
++			if (by_uid ? (pw->pw_uid == uid) : streq (pw->pw_name, name)) {
++				if (NULL != vendor_pw) {
++					passwd_free (vendor_pw);
++				}
++				vendor_pw = __pw_dup (pw);
++				found = vendor_pw;
++				break;
++			}
++		}
++		(void) fclose (fp);
++	}
++
++	for (size_t i = 0; i < seen_cnt; i++) {
++		free (seen[i]);
++	}
++	free (seen);
++	globfree (&gl);
++	return found;
++}
++
+ /*@observer@*/ /*@null@*/const struct passwd *pw_locate (const char *name)
+ {
+-	return commonio_locate (&passwd_db, name);
++	const struct passwd *pwd = commonio_locate (&passwd_db, name);
++
++	if (NULL != pwd) {
++		return pwd;
++	}
++	return vendor_pw_locate_common (name, 0, false);
+ }
+ 
+ /*@observer@*/ /*@null@*/const struct passwd *pw_locate_uid (uid_t uid)
+@@ -132,8 +237,11 @@
+ 	while (   ((pwd = pw_next ()) != NULL)
+ 	       && (pwd->pw_uid != uid)) {
+ 	}
++	if (NULL != pwd) {
++		return pwd;
++	}
+ 
+-	return pwd;
++	return vendor_pw_locate_common (NULL, uid, true);
+ }
+ 
+ int pw_update (const struct passwd *pw)
 diff --no-dereference -Naur shadow-4.20.2.orig/lib/setupenv.c shadow-4.20.2/lib/setupenv.c
 --- shadow-4.20.2.orig/lib/setupenv.c	2026-08-04 18:02:13.000285869 +0000
 +++ shadow-4.20.2/lib/setupenv.c	2026-08-04 18:02:13.000285869 +0000
@@ -115,6 +968,41 @@ diff --no-dereference -Naur shadow-4.20.2.orig/lib/setupenv.c shadow-4.20.2/lib/
  	} else if (strchr(cp, '=')) {
  		/* specified as name=value (PATH=...) */
  		addenv (cp, NULL);
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/sgroupio.c shadow-4.20.2/lib/sgroupio.c
+--- shadow-4.20.2.orig/lib/sgroupio.c	2026-08-08 12:07:10.932739516 +0000
++++ shadow-4.20.2/lib/sgroupio.c	2026-08-08 12:07:10.932739516 +0000
+@@ -213,7 +213,7 @@
+ #ifdef WITH_SELINUX
+ 	NULL,			/* scontext */
+ #endif
+-	0400,                   /* st_mode */
++	0600,                   /* st_mode */
+ 	0,                      /* st_uid */
+ 	0,                      /* st_gid */
+ 	NULL,			/* head */
+diff --no-dereference -Naur shadow-4.20.2.orig/lib/shadowio.c shadow-4.20.2/lib/shadowio.c
+--- shadow-4.20.2.orig/lib/shadowio.c	2026-07-20 14:56:15.710087658 +0000
++++ shadow-4.20.2/lib/shadowio.c	2026-07-20 14:56:15.710087658 +0000
+@@ -87,7 +87,7 @@
+ #ifdef WITH_SELINUX
+ 	NULL,			/* scontext */
+ #endif				/* WITH_SELINUX */
+-	0400,                   /* st_mode */
++	0600,                   /* st_mode */
+ 	0,                      /* st_uid */
+ 	0,                      /* st_gid */
+ 	NULL,			/* head */
+@@ -112,9 +112,7 @@
+ 
+ bool spw_file_present (void)
+ {
+-	if (getdef_bool ("FORCE_SHADOW"))
+-		return true;
+-	return commonio_present (&shadow_db);
++	return true;
+ }
+ 
+ int spw_lock (void)
 diff --no-dereference -Naur shadow-4.20.2.orig/src/Makefile.in shadow-4.20.2/src/Makefile.in
 --- shadow-4.20.2.orig/src/Makefile.in	2026-08-08 12:18:12.489441684 +0000
 +++ shadow-4.20.2/src/Makefile.in	2026-08-08 12:18:12.489441684 +0000
@@ -127,6 +1015,96 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/Makefile.in shadow-4.20.2/src
  suidperms = 4755
  sgidperms = 2755
  AM_CPPFLAGS = \
+diff --no-dereference -Naur shadow-4.20.2.orig/src/chage.c shadow-4.20.2/src/chage.c
+--- shadow-4.20.2.orig/src/chage.c	2026-08-04 18:02:13.030855328 +0000
++++ shadow-4.20.2/src/chage.c	2026-08-04 18:02:13.030855328 +0000
+@@ -577,10 +577,12 @@
+ 		spwent.sp_pwdp = pwent.pw_passwd;
+ 		spwent.sp_flag = SHADOW_SP_FLAG_UNSET;
+ 
+-		pwent.pw_passwd = SHADOW_PASSWD_STRING;	/* XXX warning: const */
+-		if (pw_update (&pwent) == 0) {
+-			eprintf(_("%s: failed to prepare the new %s entry '%s'\n"), Prog, pw_dbname(), pwent.pw_name);
+-			fail_exit (E_NOPERM, process_selinux);
++		if (!streq (pw->pw_passwd, SHADOW_PASSWD_STRING)) {
++			pwent.pw_passwd = SHADOW_PASSWD_STRING;	/* XXX warning: const */
++			if (pw_update (&pwent) == 0) {
++				eprintf(_("%s: failed to prepare the new %s entry '%s'\n"), Prog, pw_dbname(), pwent.pw_name);
++				fail_exit (E_NOPERM, process_selinux);
++			}
+ 		}
+ 	} else {
+ 		spwent.sp_namp = sp->sp_namp;
+diff --no-dereference -Naur shadow-4.20.2.orig/src/chpasswd.c shadow-4.20.2/src/chpasswd.c
+--- shadow-4.20.2.orig/src/chpasswd.c	2026-08-04 18:02:13.030855328 +0000
++++ shadow-4.20.2/src/chpasswd.c	2026-08-04 18:02:13.030855328 +0000
+@@ -506,8 +506,7 @@
+ 			 */
+ 			sp = spw_locate (name);
+ 
+-			if (   (NULL == sp)
+-			    && streq(pw->pw_passwd, SHADOW_PASSWD_STRING))
++			if (NULL == sp)
+ 			{
+ 				/* If the password is set to 'x' in
+ 				 * passwd, but there are no entries in
+@@ -547,7 +546,7 @@
+ 		if (   (NULL == sp)
+ 		    || !streq(pw->pw_passwd, SHADOW_PASSWD_STRING)) {
+ 			newpw = *pw;
+-			newpw.pw_passwd = cp;
++			newpw.pw_passwd = (NULL != sp) ? SHADOW_PASSWD_STRING : cp;
+ 		}
+ 
+ 		/*
+diff --no-dereference -Naur shadow-4.20.2.orig/src/passwd.c shadow-4.20.2/src/passwd.c
+--- shadow-4.20.2.orig/src/passwd.c	2026-08-04 18:02:13.034855375 +0000
++++ shadow-4.20.2/src/passwd.c	2026-08-04 18:02:13.034855375 +0000
+@@ -614,12 +614,42 @@
+ 		fail_exit (E_NOPERM, process_selinux);
+ 	}
+ 
+-	sp = spw_locked ? spw_locate(name) : NULL;
+-	if (NULL == sp) {
++	if (!spw_locked) {
+ 		/* Try to update the password in /etc/passwd instead. */
+ 		update_noshadow (process_selinux);
+ 		return;
+ 	}
++	sp = spw_locate(name);
++	struct spwd synth_sp;
++	if (NULL == sp) {
++		memzero (&synth_sp, sizeof (synth_sp));
++		synth_sp.sp_namp   = pw->pw_name;
++		synth_sp.sp_pwdp   = pw->pw_passwd;
++		synth_sp.sp_lstchg = gettime () / DAY;
++		if (0 == synth_sp.sp_lstchg) {
++			synth_sp.sp_lstchg = -1;
++		}
++		synth_sp.sp_min    = getdef_num ("PASS_MIN_DAYS", -1);
++		synth_sp.sp_max    = getdef_num ("PASS_MAX_DAYS", -1);
++		synth_sp.sp_warn   = getdef_num ("PASS_WARN_AGE", -1);
++		synth_sp.sp_inact  = -1;
++		synth_sp.sp_expire = -1;
++		synth_sp.sp_flag   = SHADOW_SP_FLAG_UNSET;
++		sp = &synth_sp;
++		if (!streq (pw->pw_passwd, SHADOW_PASSWD_STRING)) {
++			struct passwd *npw = __pw_dup (pw);
++			if (NULL == npw) {
++				oom (process_selinux);
++			}
++			free (npw->pw_passwd);
++			npw->pw_passwd = xstrdup (SHADOW_PASSWD_STRING);
++			if (pw_update (npw) == 0) {
++				(void) eprintf (_("%s: failed to prepare the new %s entry '%s'\n"),
++				                Prog, pw_dbname (), npw->pw_name);
++				fail_exit (E_FAILURE, process_selinux);
++			}
++		}
++	}
+ 	check_password(pw, sp, process_selinux);
+ 	nsp = __spw_dup (sp);
+ 	if (NULL == nsp) {
 diff --no-dereference -Naur shadow-4.20.2.orig/src/useradd.c shadow-4.20.2/src/useradd.c
 --- shadow-4.20.2.orig/src/useradd.c	2026-08-08 12:07:10.932739516 +0000
 +++ shadow-4.20.2/src/useradd.c	2026-08-08 12:07:10.932739516 +0000
@@ -139,7 +1117,24 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/useradd.c shadow-4.20.2/src/u
  static const char *def_template = SKEL_DIR;
  static const char *def_usrtemplate = USRSKELDIR;
  static const char *def_create_mail_spool = "yes";
-@@ -1378,6 +1378,7 @@
+@@ -1023,13 +1023,9 @@
+ 	 * FIXME: we currently do not check that all groups of user_groups
+ 	 *        were completed with the new user.
+ 	 */
+-	for (gr_rewind (), grp = gr_next (); NULL != grp; grp = gr_next ()) {
+-
+-		/*
+-		 * See if the user specified this group as one of their
+-		 * concurrent groups.
+-		 */
+-		if (!is_on_list (user_groups, grp->gr_name)) {
++	for (size_t gi = 0; NULL != user_groups && NULL != user_groups[gi]; gi++) {
++		grp = gr_locate (user_groups[gi]);
++		if (NULL == grp || is_on_list (grp->gr_mem, user_name)) {
+ 			continue;
+ 		}
+ 
+@@ -1378,6 +1374,7 @@
  				     && '*'  != optarg[0]
  				     && !streq(optarg, "/sbin/nologin")
  				     && !streq(optarg, "/usr/sbin/nologin")
@@ -150,7 +1145,28 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/useradd.c shadow-4.20.2/src/u
 diff --no-dereference -Naur shadow-4.20.2.orig/src/usermod.c shadow-4.20.2/src/usermod.c
 --- shadow-4.20.2.orig/src/usermod.c	2026-08-08 12:07:10.932739516 +0000
 +++ shadow-4.20.2/src/usermod.c	2026-08-08 12:07:10.932739516 +0000
-@@ -1191,6 +1191,7 @@
+@@ -726,8 +726,20 @@
+ 	 * Scan through the entire group file looking for the groups that
+ 	 * the user is a member of.
+ 	 */
++	gr_rewind();
+ 	while (NULL != (grp = gr_next()))
+ 		update_group(grp, process_selinux);
++
++	if (Gflg && NULL != user_groups) {
++		const struct commonio_db *gdb = __gr_get_db();
++		for (size_t i = 0; NULL != user_groups[i]; i++) {
++			if (commonio_locate((struct commonio_db *)gdb, user_groups[i]) == NULL) {
++				grp = gr_locate(user_groups[i]);
++				if (NULL != grp)
++					update_group(grp, process_selinux);
++			}
++		}
++	}
+ }
+ 
+ 
+@@ -1191,6 +1203,7 @@
  				     && '*'  != optarg[0]
  				     && !streq(optarg, "/sbin/nologin")
  				     && !streq(optarg, "/usr/sbin/nologin")
@@ -158,3 +1174,25 @@ diff --no-dereference -Naur shadow-4.20.2.orig/src/usermod.c shadow-4.20.2/src/u
  				     && (   stat(optarg, &st) != 0
  				         || S_ISDIR(st.st_mode)
  				         || access(optarg, X_OK) != 0)) {
+@@ -1691,9 +1704,7 @@
+ 			/* Update the shadow entry if it exists */
+ 			spent = *spwd;
+ 			new_spent (&spent, process_selinux);
+-		} else if (   (    pflg
+-		               && streq(pwent.pw_passwd, SHADOW_PASSWD_STRING))
+-		           || eflg || fflg) {
++		} else if (pflg || Lflg || Uflg || eflg || fflg) {
+ 			/* In some cases, we force the creation of a
+ 			 * shadow entry:
+ 			 *  + new password requested and passwd indicates
+@@ -1726,8 +1737,8 @@
+ 		}
+ 	}
+ 
+-	if (lflg || uflg || gflg || cflg || dflg || sflg || pflg
+-	    || Lflg || Uflg || spwd == &spent) {
++	if (lflg || uflg || gflg || cflg || dflg || sflg
++	    || !is_shadow_pwd || !streq(pwd->pw_passwd, SHADOW_PASSWD_STRING)) {
+ 		if (pw_update (&pwent) == 0) {
+ 			eprintf(_("%s: failed to prepare the new %s entry '%s'\n"),
+ 			         Prog, pw_dbname (), pwent.pw_name);

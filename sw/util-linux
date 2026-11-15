@@ -11,7 +11,9 @@ HAS_LDFLAGS="-lblkid -luuid"
 
 ARCHIVES=(
     03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a https://github.com/fluffy-linux/util-linux/releases/download/v$VERSION/util-linux-$VERSION.tar.xz
-    1bdd46acb6c974a9705c22e2247470428bc93384e1a264075fc9c6fd69957d7b file://util-linux-$VERSION-fluffy-source.patch
+    c14f2d5cdb9c003a00421ad2b529b6f437468c698d6263d50bb82036885086f8 file://util-linux-$VERSION-fluffy-source.patch
+    90d7fa2696fdd062ac66280049dabb8b64a8e08985c35356b74b089a73fd88e2 file://util-linux.passwd
+    45385873a244b0a6e8ba7c068ef4707bd4d71c42b313de486020f744375364b4 file://util-linux.group
 )
 
 NEEDS=(
@@ -111,17 +113,192 @@ MAKE() {
 }
 
 CHECK() {
-    make test_pathnames
+    make test_pathnames test_configs
     test "$(./test_pathnames _PATH_LOGIN)" = "login"
     test "$(./test_pathnames _PATH_DEFPATH)" = "/sw/*/bin"
     test "$(./test_pathnames _PATH_DEFPATH_ROOT)" = "/sw/*/bin"
     grep -Fq '#define FS_SEARCH_PATH "/sw/*/bin"' config.h
+    rm -rf /tmp/fluffy-fsck /tmp/fluffy-ulcfg
     mkdir -p /tmp/fluffy-fsck/pkg/bin
     ln -sf /sw/coreutils/bin/true /tmp/fluffy-fsck/pkg/bin/fsck.fluffytest
     FSTAB_FILE=/dev/null PATH="/tmp/fluffy-fsck/*/bin:$PATH" ./fsck -T -N -t fluffytest /dev/null | grep -Fq '[/tmp/fluffy-fsck/pkg/bin/fsck.fluffytest'
+
+    mkdir -p /tmp/fluffy-ulcfg/sw/util-linux/etc /tmp/fluffy-ulcfg/etc
+    printf 'vendor\n' > /tmp/fluffy-ulcfg/sw/util-linux/etc/issue
+    ./test_configs --etc /tmp/fluffy-ulcfg/etc --usr "/tmp/fluffy-ulcfg/sw/*/etc" --name issue | grep -Fq '/tmp/fluffy-ulcfg/sw/util-linux/etc/issue'
+    printf 'user\n' > /tmp/fluffy-ulcfg/etc/issue
+    ./test_configs --etc /tmp/fluffy-ulcfg/etc --usr "/tmp/fluffy-ulcfg/sw/*/etc" --name issue | grep -Fq '/tmp/fluffy-ulcfg/etc/issue'
+    rm -rf /tmp/fluffy-fsck /tmp/fluffy-ulcfg
 }
 
 INSTALL() {
     make usrsbin_execdir=/sw/util-linux/bin install
     find $DESTDIR/sw/util-linux -name '*.la' -delete
+    rm -rf $DESTDIR/sw/util-linux/lib/sysusers.d
+
+    mkdir -pv $DESTDIR/sw/util-linux/etc
+    install -m 644 util-linux.passwd $DESTDIR/sw/util-linux/etc/passwd
+    install -m 644 util-linux.group $DESTDIR/sw/util-linux/etc/group
+    cat > $DESTDIR/sw/util-linux/etc/issue << "EOF"
+\S
+Kernel \r on \m (\l)
+
+EOF
+
+    SYSUNITDIR=$DESTDIR/sw/util-linux/lib/systemd/system
+    mkdir -pv $SYSUNITDIR
+
+    cat > $SYSUNITDIR/getty@.service << "EOF"
+#  SPDX-License-Identifier: LGPL-2.1-or-later
+
+[Unit]
+Description=Getty on %I
+Documentation=man:agetty(8) man:systemd-getty-generator(8)
+Documentation=https://0pointer.de/blog/projects/serial-console.html
+After=systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target
+Before=getty.target
+IgnoreOnIsolate=yes
+Conflicts=rescue.service
+Before=rescue.service
+ConditionPathExists=/dev/tty0
+
+[Service]
+ExecStart=-agetty --noreset --noclear - ${TERM}
+Type=idle
+Restart=always
+RestartSec=0
+UtmpIdentifier=%I
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/%I
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+ImportCredential=tty.virtual.%I.agetty.*:agetty.
+ImportCredential=tty.virtual.%I.login.*:login.
+ImportCredential=agetty.*
+ImportCredential=login.*
+ImportCredential=shell.*
+UnsetEnvironment=LANG LANGUAGE LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT LC_IDENTIFICATION
+
+[Install]
+Alias=autovt@.service
+WantedBy=getty.target
+DefaultInstance=tty1
+EOF
+
+    cat > $SYSUNITDIR/serial-getty@.service << "EOF"
+#  SPDX-License-Identifier: LGPL-2.1-or-later
+
+[Unit]
+Description=Serial Getty on %I
+Documentation=man:agetty(8) man:systemd-getty-generator(8)
+Documentation=https://0pointer.de/blog/projects/serial-console.html
+BindsTo=dev-%i.device
+After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target
+Before=getty.target
+IgnoreOnIsolate=yes
+Conflicts=rescue.service
+Before=rescue.service
+
+[Service]
+ExecStart=-agetty --noreset --noclear --keep-baud 115200,57600,38400,9600 - ${TERM}
+Type=idle
+Restart=always
+UtmpIdentifier=%I
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/%I
+TTYReset=yes
+TTYVHangup=yes
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+ImportCredential=tty.serial.%I.agetty.*:agetty.
+ImportCredential=tty.serial.%I.login.*:login.
+ImportCredential=agetty.*
+ImportCredential=login.*
+ImportCredential=shell.*
+
+[Install]
+WantedBy=getty.target
+EOF
+
+    cat > $SYSUNITDIR/console-getty.service << "EOF"
+#  SPDX-License-Identifier: LGPL-2.1-or-later
+
+[Unit]
+Description=Console Getty
+Documentation=man:agetty(8) man:systemd-getty-generator(8)
+After=systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target
+Before=getty.target
+ConditionPathExists=/dev/console
+
+[Service]
+ExecStart=-agetty --noreset --noclear --keep-baud 115200,57600,38400,9600 - ${TERM}
+Type=idle
+Restart=always
+UtmpIdentifier=cons
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/console
+TTYReset=yes
+TTYVHangup=yes
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+ImportCredential=tty.console.agetty.*:agetty.
+ImportCredential=tty.console.login.*:login.
+ImportCredential=agetty.*
+ImportCredential=login.*
+ImportCredential=shell.*
+
+[Install]
+WantedBy=getty.target
+EOF
+
+    cat > $SYSUNITDIR/container-getty@.service << "EOF"
+#  SPDX-License-Identifier: LGPL-2.1-or-later
+
+[Unit]
+Description=Container Getty on /dev/pts/%I
+Documentation=man:agetty(8) man:systemd-getty-generator(8)
+Documentation=man:machinectl(1)
+After=systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target
+Before=getty.target
+IgnoreOnIsolate=yes
+ConditionPathExists=/dev/pts/%I
+Conflicts=rescue.service
+Before=rescue.service
+
+[Service]
+ExecStart=-agetty --noreset --noclear - ${TERM}
+Type=idle
+Restart=always
+RestartSec=0
+UtmpIdentifier=pts/%I
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/pts/%I
+TTYReset=yes
+TTYVHangup=yes
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+ImportCredential=tty.container.%I.agetty.*:agetty.
+ImportCredential=tty.container.%I.login.*:login.
+ImportCredential=agetty.*
+ImportCredential=login.*
+ImportCredential=shell.*
+EOF
+
+    ln -sfv getty@.service $SYSUNITDIR/autovt@.service
+
+    mkdir -pv $SYSUNITDIR/getty.target.wants
+    ln -sfv ../getty@.service $SYSUNITDIR/getty.target.wants/getty@tty1.service
+
+    mkdir -pv $SYSUNITDIR/sockets.target.wants
+    ln -sfv ../uuidd.socket $SYSUNITDIR/sockets.target.wants/uuidd.socket
+
+    mkdir -pv $SYSUNITDIR/timers.target.wants
+    ln -sfv ../fstrim.timer $SYSUNITDIR/timers.target.wants/fstrim.timer
 }

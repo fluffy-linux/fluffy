@@ -196,31 +196,73 @@ bring_up_lo() {
 }
 
 mount_chroot_resolv_conf() {
-    test -f /etc/resolv.conf || return 0
-    if test ! -L "$FLUFFY/etc/resolv.conf" && test ! -s "$FLUFFY/etc/resolv.conf"
+    local chroot_etc="$FLUFFY/run/.chroot-etc"
+    rm -rf "$chroot_etc"
+    mkdir -p "$chroot_etc"
+    if test -d "$FLUFFY/etc"
     then
-        ln -snf ../run/systemd/resolve/stub-resolv.conf "$FLUFFY/etc/resolv.conf"
+        cp -a "$FLUFFY/etc/." "$chroot_etc/"
     fi
-    if test -L "$FLUFFY/etc/resolv.conf"
+
+    if test -n "${SUDO_UID:-}" && test -n "${SUDO_GID:-}"
     then
-        local resolv_tgt rel_path resolv_dst
-        resolv_tgt="$(readlink "$FLUFFY/etc/resolv.conf")"
-        if [[ "$resolv_tgt" == /* ]]
+        touch "$chroot_etc/passwd" "$chroot_etc/group"
+        grep -q '^root:' "$chroot_etc/passwd" || printf 'root:x:0:0:root:/root:/sw/bash/bin/bash\n' >> "$chroot_etc/passwd"
+        grep -q '^nobody:' "$chroot_etc/passwd" || printf 'nobody:*:65534:65534:Unprivileged User:/dev/null:/sw/coreutils/bin/false\n' >> "$chroot_etc/passwd"
+        if ! awk -F: -v u="$SUDO_UID" '$3 == u { found=1 } END { exit !found }' "$chroot_etc/passwd"
         then
-            rel_path="$resolv_tgt"
+            printf 'builder:*:%s:%s:Builder:/tmp:/sw/bash/bin/bash\n' "$SUDO_UID" "$SUDO_GID" >> "$chroot_etc/passwd"
+        fi
+
+        grep -q '^root:' "$chroot_etc/group" || printf 'root:x:0:\n' >> "$chroot_etc/group"
+        grep -q '^tty:' "$chroot_etc/group" || printf 'tty:x:5:\n' >> "$chroot_etc/group"
+        grep -q '^nogroup:' "$chroot_etc/group" || printf 'nogroup:x:65534:\n' >> "$chroot_etc/group"
+        if ! awk -F: -v g="$SUDO_GID" '$3 == g { found=1 } END { exit !found }' "$chroot_etc/group"
+        then
+            printf 'builder:x:%s:\n' "$SUDO_GID" >> "$chroot_etc/group"
+        fi
+    fi
+
+    if test -f /etc/resolv.conf
+    then
+        mkdir -p "$FLUFFY/run/systemd/resolve"
+        touch "$FLUFFY/run/systemd/resolve/stub-resolv.conf"
+        call mount /etc/resolv.conf "$FLUFFY/run/systemd/resolve/stub-resolv.conf" $NULL $MS_BIND $NULL
+
+        if test ! -L "$chroot_etc/resolv.conf" && test ! -s "$chroot_etc/resolv.conf"
+        then
+            ln -snf ../run/systemd/resolve/stub-resolv.conf "$chroot_etc/resolv.conf"
+        fi
+    fi
+
+    call mount "$chroot_etc" "$FLUFFY/etc" $NULL $(( MS_BIND | MS_REC )) $NULL
+
+    if test -f /etc/resolv.conf
+    then
+        if test -L "$FLUFFY/etc/resolv.conf"
+        then
+            local resolv_tgt rel_path resolv_dst
+            resolv_tgt="$(readlink "$FLUFFY/etc/resolv.conf")"
+            if [[ "$resolv_tgt" == /* ]]
+            then
+                rel_path="$resolv_tgt"
+            else
+                rel_path="/etc/$resolv_tgt"
+            fi
+            resolv_dst="$(resolve_in_chroot "$FLUFFY" "$rel_path")"
+            if test "$resolv_dst" != "$FLUFFY/run/systemd/resolve/stub-resolv.conf"
+            then
+                if test -L "$resolv_dst"
+                then
+                    fatal "refusing to follow nested symlink for resolv.conf target: $resolv_dst"
+                fi
+                mkdir -p "${resolv_dst%/*}"
+                touch "$resolv_dst"
+                call mount /etc/resolv.conf "$resolv_dst" $NULL $MS_BIND $NULL
+            fi
         else
-            rel_path="/etc/$resolv_tgt"
+            call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
         fi
-        resolv_dst="$(resolve_in_chroot "$FLUFFY" "$rel_path")"
-        if test -L "$resolv_dst"
-        then
-            fatal "refusing to follow nested symlink for resolv.conf target: $resolv_dst"
-        fi
-        mkdir -p "${resolv_dst%/*}"
-        touch "$resolv_dst"
-        call mount /etc/resolv.conf "$resolv_dst" $NULL $MS_BIND $NULL
-    else
-        call mount /etc/resolv.conf "$FLUFFY/etc/resolv.conf" $NULL $MS_BIND $NULL
     fi
 }
 

@@ -42,30 +42,63 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/conf-files.c systemd-26
  #include "glyph-util.h"
  #include "hashmap.h"
  #include "log.h"
-@@ -87,6 +88,16 @@
-                 r = path_strv_make_absolute_cwd(dirs_abs);
-                 if (r < 0)
-                         return log_full_errno(log_level, r, "Failed to make directories absolute: %m");
-+
-+                _cleanup_strv_free_ char **expanded = NULL;
-+                STRV_FOREACH(d, dirs_abs) {
-+                        if (string_is_glob(*d))
-+                                (void) glob_extend(&expanded, *d, 0);
-+                        else
-+                                (void) strv_extend(&expanded, *d);
-+                }
-+                if (expanded)
-+                        free_and_replace(dirs_abs, expanded);
+@@ -633,6 +634,48 @@
+                         return r;
          }
  
-         *ret_root = TAKE_PTR(root_abs);
++        _cleanup_strv_free_ char **expanded_dirs = NULL;
++        bool has_glob = false;
++        STRV_FOREACH(p, dirs)
++                if (string_is_glob(*p)) {
++                        has_glob = true;
++                        break;
++                }
++        if (has_glob) {
++                _cleanup_free_ char *rfd_path = NULL;
++                if (rfd >= 0)
++                        (void) fd_get_path(rfd, &rfd_path);
++                STRV_FOREACH(p, dirs) {
++                        if (string_is_glob(*p)) {
++                                _cleanup_free_ char *prefixed = NULL;
++                                const char *target = *p;
++                                if (rfd_path && !empty_or_root(rfd_path)) {
++                                        prefixed = path_join(rfd_path, *p);
++                                        if (!prefixed)
++                                                return log_oom_full(conf_files_log_level(flags));
++                                        target = prefixed;
++                                }
++                                _cleanup_strv_free_ char **matches = NULL;
++                                if (safe_glob(target, 0, &matches) >= 0)
++                                        STRV_FOREACH(m, matches) {
++                                                const char *rel = (rfd_path && !empty_or_root(rfd_path)) ? path_startswith(*m, rfd_path) : *m;
++                                                if (!rel)
++                                                        continue;
++                                                if (startswith(*p, "/") && !startswith(rel, "/")) {
++                                                        char *s = strjoin("/", rel);
++                                                        if (!s)
++                                                                return log_oom_full(conf_files_log_level(flags));
++                                                        if (strv_consume(&expanded_dirs, s) < 0)
++                                                                return log_oom_full(conf_files_log_level(flags));
++                                                } else if (strv_extend(&expanded_dirs, rel) < 0)
++                                                        return log_oom_full(conf_files_log_level(flags));
++                                        }
++                        } else if (strv_extend(&expanded_dirs, *p) < 0)
++                                return log_oom_full(conf_files_log_level(flags));
++                }
++                dirs = (const char * const *) expanded_dirs;
++        }
++
+         STRV_FOREACH(p, dirs) {
+                 _cleanup_closedir_ DIR *dir = NULL;
+                 _cleanup_free_ char *path = NULL;
 diff --no-dereference -Naur systemd-261.2.orig/src/basic/constants.h systemd-261.2/src/basic/constants.h
 --- systemd-261.2.orig/src/basic/constants.h	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/basic/constants.h	2026-07-23 17:07:04.000000000 +0000
-@@ -39,12 +39,14 @@
+@@ -39,12 +39,16 @@
  #define CONF_PATHS_NULSTR(n)                    \
          "/etc/" n "\0"                          \
          "/run/" n "\0"                          \
++        "/sw/*/etc/" n "\0"                     \
 +        "/sw/*/lib/" n "\0"                     \
          "/usr/local/lib/" n "\0"                \
          "/usr/lib/" n "\0"
@@ -73,6 +106,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/constants.h systemd-261
  #define CONF_PATHS(n)                           \
          "/etc/" n,                              \
          "/run/" n,                              \
++        "/sw/*/etc/" n,                         \
 +        "/sw/*/lib/" n,                         \
          "/usr/local/lib/" n,                    \
          "/usr/lib/" n
@@ -123,6 +157,59 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/fileio.c systemd-261.2/
                  _cleanup_close_ int fd = -EBADF;
                  _cleanup_free_ char *p = NULL;
  
+diff --no-dereference -Naur systemd-261.2.orig/src/basic/os-util.c systemd-261.2/src/basic/os-util.c
+--- systemd-261.2.orig/src/basic/os-util.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/basic/os-util.c	2026-07-23 17:07:04.000000000 +0000
+@@ -11,6 +11,7 @@
+ #include "escape.h"
+ #include "fd-util.h"
+ #include "fs-util.h"
++#include "glob-util.h"
+ #include "glyph-util.h"
+ #include "log.h"
+ #include "os-util.h"
+@@ -176,13 +177,36 @@
+         if (e)
+                 return chaseat(rfd, rfd, e, /* flags= */ 0, ret_path, ret_fd);
+ 
+-        FOREACH_STRING(path, "/etc/os-release", "/usr/lib/os-release") {
+-                r = chaseat(rfd, rfd, path, /* flags= */ 0, ret_path, ret_fd);
+-                if (r != -ENOENT)
+-                        return r;
++        r = chaseat(rfd, rfd, "/etc/os-release", /* flags= */ 0, ret_path, ret_fd);
++        if (r != -ENOENT)
++                return r;
++
++        _cleanup_free_ char *rfd_path = NULL;
++        if (rfd >= 0)
++                (void) fd_get_path(rfd, &rfd_path);
++
++        FOREACH_STRING(pat, "/sw/*/etc/os-release", "/sw/*/lib/os-release") {
++                _cleanup_free_ char *prefixed = NULL;
++                const char *target = pat;
++                if (rfd_path && !empty_or_root(rfd_path)) {
++                        prefixed = path_join(rfd_path, pat);
++                        if (!prefixed)
++                                return -ENOMEM;
++                        target = prefixed;
++                }
++                _cleanup_strv_free_ char **matches = NULL;
++                if (safe_glob(target, 0, &matches) >= 0)
++                        STRV_FOREACH(m, matches) {
++                                const char *rel = (rfd_path && !empty_or_root(rfd_path)) ? path_startswith(*m, rfd_path) : *m;
++                                if (!rel)
++                                        continue;
++                                r = chaseat(rfd, rfd, rel, /* flags= */ 0, ret_path, ret_fd);
++                                if (r != -ENOENT)
++                                        return r;
++                        }
+         }
+ 
+-        return -ENOENT;
++        return chaseat(rfd, rfd, "/usr/lib/os-release", /* flags= */ 0, ret_path, ret_fd);
+ }
+ 
+ int open_os_release(const char *root, char **ret_path, int *ret_fd) {
 diff --no-dereference -Naur systemd-261.2.orig/src/basic/path-util.c systemd-261.2/src/basic/path-util.c
 --- systemd-261.2.orig/src/basic/path-util.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/basic/path-util.c	2026-07-23 17:07:04.000000000 +0000
@@ -197,6 +284,26 @@ diff --no-dereference -Naur systemd-261.2.orig/src/basic/path-util.h systemd-261
  
  const char* default_PATH(void);
  
+diff --no-dereference -Naur systemd-261.2.orig/src/basic/uid-classification.c systemd-261.2/src/basic/uid-classification.c
+--- systemd-261.2.orig/src/basic/uid-classification.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/basic/uid-classification.c	2026-07-23 17:07:04.000000000 +0000
+@@ -122,14 +122,14 @@
+         const UGIDAllocationRange *defs;
+         assert_se(defs = acquire_ugid_allocation_range());
+ 
+-        return uid <= defs->system_uid_max;
++        return uid <= defs->system_uid_max || (uid >= UINT32_C(0x40000000) && uid <= UINT32_C(0x7FFFFFFF));
+ }
+ 
+ bool gid_is_system(gid_t gid) {
+         const UGIDAllocationRange *defs;
+         assert_se(defs = acquire_ugid_allocation_range());
+ 
+-        return gid <= defs->system_gid_max;
++        return gid <= defs->system_gid_max || (gid >= UINT32_C(0x40000000) && gid <= UINT32_C(0x7FFFFFFF));
+ }
+ 
+ bool uid_for_system_journal(uid_t uid) {
 diff --no-dereference -Naur systemd-261.2.orig/src/core/load-fragment.c systemd-261.2/src/core/load-fragment.c
 --- systemd-261.2.orig/src/core/load-fragment.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/core/load-fragment.c	2026-07-23 17:07:04.000000000 +0000
@@ -254,31 +361,34 @@ diff --no-dereference -Naur systemd-261.2.orig/src/libsystemd/sd-path/path-looku
  #include "log.h"
  #include "mkdir.h"
  #include "path-lookup.h"
-@@ -180,6 +181,7 @@
+@@ -180,6 +181,8 @@
          "/usr/local/lib/systemd/user",
          "/usr/local/share/systemd/user",
          USER_DATA_UNIT_DIR,
++        "/sw/*/etc/systemd/user",
 +        "/sw/*/lib/systemd/user",
          "/usr/lib/systemd/user",
          "/usr/share/systemd/user",
          NULL
-@@ -601,6 +603,7 @@
+@@ -601,6 +604,8 @@
                                         STRV_IFNOTNULL(generator),
                                         "/usr/local/lib/systemd/system",
                                         SYSTEM_DATA_UNIT_DIR,
++                                       "/sw/*/etc/systemd/system",
 +                                       "/sw/*/lib/systemd/system",
                                         "/usr/lib/systemd/system",
                                         /* To be used ONLY for images which might be legacy split-usr */
                                         FLAGS_SET(flags, LOOKUP_PATHS_SPLIT_USR) ? "/lib/systemd/system" : STRV_IGNORE,
-@@ -627,6 +630,7 @@
+@@ -627,6 +632,8 @@
                                         "/usr/share/systemd/user",
                                         "/usr/local/lib/systemd/user",
                                         USER_DATA_UNIT_DIR,
++                                       "/sw/*/etc/systemd/user",
 +                                       "/sw/*/lib/systemd/user",
                                         "/usr/lib/systemd/user");
                          break;
  
-@@ -691,6 +695,16 @@
+@@ -691,6 +698,16 @@
          if (r < 0)
                  return -ENOMEM;
  
@@ -295,7 +405,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/libsystemd/sd-path/path-looku
          *lp = (LookupPaths) {
                  .search_path = strv_uniq(TAKE_PTR(paths)),
  
-@@ -769,6 +783,7 @@
+@@ -769,6 +786,7 @@
          "/etc/systemd/system-generators",
          "/usr/local/lib/systemd/system-generators",
          SYSTEM_GENERATOR_DIR,
@@ -303,7 +413,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/libsystemd/sd-path/path-looku
          NULL,
  };
  
-@@ -777,6 +792,7 @@
+@@ -777,6 +795,7 @@
          "/etc/systemd/user-generators",
          "/usr/local/lib/systemd/user-generators",
          USER_GENERATOR_DIR,
@@ -311,7 +421,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/libsystemd/sd-path/path-looku
          NULL,
  };
  
-@@ -785,6 +801,7 @@
+@@ -785,6 +804,7 @@
          "/etc/systemd/system-environment-generators",
          "/usr/local/lib/systemd/system-environment-generators",
          SYSTEM_ENV_GENERATOR_DIR,
@@ -319,7 +429,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/libsystemd/sd-path/path-looku
          NULL,
  };
  
-@@ -793,6 +810,7 @@
+@@ -793,6 +813,7 @@
          "/etc/systemd/user-environment-generators",
          "/usr/local/lib/systemd/user-environment-generators",
          USER_ENV_GENERATOR_DIR,
@@ -327,7 +437,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/libsystemd/sd-path/path-looku
          NULL,
  };
  
-@@ -833,5 +851,15 @@
+@@ -833,5 +854,15 @@
                          return NULL;
          }
  
@@ -371,7 +481,33 @@ diff --no-dereference -Naur systemd-261.2.orig/src/remount-fs/remount-fs.c syste
 diff --no-dereference -Naur systemd-261.2.orig/src/shared/condition.c systemd-261.2/src/shared/condition.c
 --- systemd-261.2.orig/src/shared/condition.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/shared/condition.c	2026-07-23 17:07:04.000000000 +0000
-@@ -1032,6 +1032,9 @@
+@@ -910,6 +910,13 @@
+         /* Any other failure means we should allow the condition to be true, so that we rather invoke too
+          * many update tools than too few. */
+ 
++        if (lstat("/usr/", &usr) < 0) {
++                if (errno == ENOENT)
++                        return false;
++                log_debug_errno(errno, "Failed to stat() /usr/, assuming an update is needed: %m");
++                return true;
++        }
++
+         p = strjoina(c->parameter, "/.updated");
+         if (lstat(p, &other) < 0) {
+                 if (errno != ENOENT)
+@@ -917,11 +924,6 @@
+                 return true;
+         }
+ 
+-        if (lstat("/usr/", &usr) < 0) {
+-                log_debug_errno(errno, "Failed to stat() /usr/, assuming an update is needed: %m");
+-                return true;
+-        }
+-
+         /*
+          * First, compare seconds as they are always accurate...
+          */
+@@ -1032,6 +1034,9 @@
          assert(c->parameter);
          assert(c->type == CONDITION_PATH_EXISTS);
  
@@ -381,7 +517,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/shared/condition.c systemd-26
          return access(c->parameter, F_OK) >= 0;
  }
  
-@@ -1116,6 +1119,18 @@
+@@ -1116,6 +1121,18 @@
          assert(c->parameter);
          assert(c->type == CONDITION_DIRECTORY_NOT_EMPTY);
  
@@ -400,7 +536,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/shared/condition.c systemd-26
          r = dir_is_empty(c->parameter, /* ignore_hidden_or_backup= */ true);
          return r <= 0 && !IN_SET(r, -ENOENT, -ENOTDIR);
  }
-@@ -1127,6 +1142,16 @@
+@@ -1127,6 +1144,16 @@
          assert(c->parameter);
          assert(c->type == CONDITION_FILE_NOT_EMPTY);
  
@@ -417,7 +553,7 @@ diff --no-dereference -Naur systemd-261.2.orig/src/shared/condition.c systemd-26
          return (stat(c->parameter, &st) >= 0 &&
                  S_ISREG(st.st_mode) &&
                  st.st_size > 0);
-@@ -1139,6 +1164,9 @@
+@@ -1139,6 +1166,9 @@
          assert(c->parameter);
          assert(c->type == CONDITION_FILE_IS_EXECUTABLE);
  
@@ -427,6 +563,83 @@ diff --no-dereference -Naur systemd-261.2.orig/src/shared/condition.c systemd-26
          return (stat(c->parameter, &st) >= 0 &&
                  S_ISREG(st.st_mode) &&
                  (st.st_mode & 0111));
+diff --no-dereference -Naur systemd-261.2.orig/src/shared/conf-parser.c systemd-261.2/src/shared/conf-parser.c
+--- systemd-261.2.orig/src/shared/conf-parser.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/shared/conf-parser.c	2026-07-23 17:07:04.000000000 +0000
+@@ -18,6 +18,7 @@
+ #include "fd-util.h"
+ #include "fileio.h"
+ #include "fs-util.h"
++#include "glob-util.h"
+ #include "hash-funcs.h"
+ #include "hostname-util.h"
+ #include "id128-util.h"
+@@ -541,8 +542,45 @@
+                         return log_oom_full(level);
+         }
+ 
+-        /* First process the first found main config file. */
+-        STRV_FOREACH(fn, conf_files) {
++        /* Expand globs and process main config files in vendor-first, user-last order. */
++        _cleanup_strv_free_ char **expanded_conf_files = NULL;
++        size_t n_conf_files = strv_length((char**) conf_files);
++        if (n_conf_files > 0) {
++                _cleanup_free_ char *rfd_path = NULL;
++                if (root_fd >= 0)
++                        (void) fd_get_path(root_fd, &rfd_path);
++                for (size_t idx = n_conf_files; idx > 0; idx--) {
++                        const char *pat = conf_files[idx - 1];
++                        if (string_is_glob(pat)) {
++                                _cleanup_free_ char *prefixed = NULL;
++                                const char *target = pat;
++                                if (rfd_path && !empty_or_root(rfd_path)) {
++                                        prefixed = path_join(rfd_path, pat);
++                                        if (!prefixed)
++                                                return log_oom_full(level);
++                                        target = prefixed;
++                                }
++                                _cleanup_strv_free_ char **matches = NULL;
++                                if (safe_glob(target, 0, &matches) >= 0)
++                                        STRV_FOREACH(m, matches) {
++                                                const char *rel = (rfd_path && !empty_or_root(rfd_path)) ? path_startswith(*m, rfd_path) : *m;
++                                                if (!rel)
++                                                        continue;
++                                                if (startswith(pat, "/") && !startswith(rel, "/")) {
++                                                        char *s = strjoin("/", rel);
++                                                        if (!s)
++                                                                return log_oom_full(level);
++                                                        if (strv_consume(&expanded_conf_files, s) < 0)
++                                                                return log_oom_full(level);
++                                                } else if (strv_extend(&expanded_conf_files, rel) < 0)
++                                                        return log_oom_full(level);
++                                        }
++                        } else if (strv_extend(&expanded_conf_files, pat) < 0)
++                                return log_oom_full(level);
++                }
++        }
++
++        STRV_FOREACH(fn, expanded_conf_files) {
+                 _cleanup_fclose_ FILE *f = NULL;
+                 r = chase_and_fopenat_unlocked(root_fd, root_fd, *fn, CHASE_MUST_BE_REGULAR, "re", /* ret_path= */ NULL, &f);
+                 if (r == -ENOENT)
+@@ -556,7 +594,7 @@
+ 
+                         if (set_contains(inodes, &st)) {
+                                 log_debug("%s: symlink to/symlinked as drop-in, will be read later.", *fn);
+-                                break;
++                                continue;
+                         }
+                 }
+ 
+@@ -570,8 +608,6 @@
+                         if (r < 0)
+                                 return log_full_errno(level, r, "Failed to save stats of %s: %m", *fn);
+                 }
+-
+-                break;
+         }
+ 
+         /* Then read all the drop-ins. */
 diff --no-dereference -Naur systemd-261.2.orig/src/shared/exec-util.c systemd-261.2/src/shared/exec-util.c
 --- systemd-261.2.orig/src/shared/exec-util.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/shared/exec-util.c	2026-07-23 17:07:04.000000000 +0000
@@ -439,6 +652,18 @@ diff --no-dereference -Naur systemd-261.2.orig/src/shared/exec-util.c systemd-26
                  log_error_errno(errno, "Failed to execute %s: %m", path);
                  _exit(EXIT_FAILURE);
          }
+diff --no-dereference -Naur systemd-261.2.orig/src/shared/hwdb-util.c systemd-261.2/src/shared/hwdb-util.c
+--- systemd-261.2.orig/src/shared/hwdb-util.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/shared/hwdb-util.c	2026-07-23 17:07:04.000000000 +0000
+@@ -28,6 +28,8 @@
+ 
+ static const char* const conf_file_dirs[] = {
+         "/etc/udev/hwdb.d",
++        "/sw/*/etc/udev/hwdb.d",
++        "/sw/*/lib/udev/hwdb.d",
+         UDEVLIBEXECDIR "/hwdb.d",
+         NULL
+ };
 diff --no-dereference -Naur systemd-261.2.orig/src/storage/storagectl.c systemd-261.2/src/storage/storagectl.c
 --- systemd-261.2.orig/src/storage/storagectl.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/storage/storagectl.c	2026-07-23 17:07:04.000000000 +0000
@@ -597,6 +822,84 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-condition.c systemd
 +}
 +
  DEFINE_TEST_MAIN(LOG_DEBUG);
+diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-files.c systemd-261.2/src/test/test-conf-files.c
+--- systemd-261.2.orig/src/test/test-conf-files.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/test/test-conf-files.c	2026-07-23 17:07:04.000000000 +0000
+@@ -482,4 +482,26 @@
+         inserted = mfree(inserted);
+ }
+ 
++TEST(fluffy_glob_conf_files_at) {
++        _cleanup_(rm_rf_physical_and_freep) char *t = NULL;
++        _cleanup_close_ int tfd = -EBADF;
++        _cleanup_strv_free_ char **result = NULL;
++
++        tfd = ASSERT_OK(mkdtemp_open("/tmp/test-conf-files-fluffy-XXXXXX", O_PATH, &t));
++        assert_se(mkdir_p_root(t, "/etc/foo.d", UID_INVALID, GID_INVALID, 0755) >= 0);
++        assert_se(mkdir_p_root(t, "/sw/pkg1/etc/foo.d", UID_INVALID, GID_INVALID, 0755) >= 0);
++        assert_se(mkdir_p_root(t, "/sw/pkg2/lib/foo.d", UID_INVALID, GID_INVALID, 0755) >= 0);
++
++        ASSERT_OK(write_string_file_at(tfd, "sw/pkg1/etc/foo.d/10-a.conf", "a=pkg1\n", WRITE_STRING_FILE_CREATE));
++        ASSERT_OK(write_string_file_at(tfd, "sw/pkg2/lib/foo.d/20-b.conf", "b=pkg2\n", WRITE_STRING_FILE_CREATE));
++        ASSERT_OK(write_string_file_at(tfd, "sw/pkg1/etc/foo.d/30-override.conf", "x=vendor\n", WRITE_STRING_FILE_CREATE));
++        ASSERT_OK(write_string_file_at(tfd, "etc/foo.d/30-override.conf", "x=user\n", WRITE_STRING_FILE_CREATE));
++
++        const char * const dirs[] = { "/etc/foo.d", "/sw/*/etc/foo.d", "/sw/*/lib/foo.d", NULL };
++        ASSERT_OK(conf_files_list_strv_at(&result, ".conf", tfd, CONF_FILES_REGULAR | CONF_FILES_FILTER_MASKED, dirs));
++        ASSERT_TRUE(strv_equal(result, STRV_MAKE("sw/pkg1/etc/foo.d/10-a.conf",
++                                                 "sw/pkg2/lib/foo.d/20-b.conf",
++                                                 "etc/foo.d/30-override.conf")));
++}
++
+ DEFINE_TEST_MAIN(LOG_DEBUG);
+diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-parser.c systemd-261.2/src/test/test-conf-parser.c
+--- systemd-261.2.orig/src/test/test-conf-parser.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/test/test-conf-parser.c	2026-07-23 17:07:04.000000000 +0000
+@@ -503,4 +503,44 @@
+         ASSERT_STREQ(F, NULL);
+ }
+ 
++TEST(fluffy_vendor_first_user_last) {
++        _cleanup_(rm_rf_physical_and_freep) char *root = NULL;
++        _cleanup_close_ int rfd = -EBADF;
++
++        ASSERT_OK(rfd = mkdtemp_open("/tmp/test-config-fluffy-XXXXXX", 0, &root));
++        assert_se(mkdir_p_root(root, "/sw/pkg1/etc/systemd", UID_INVALID, GID_INVALID, 0755) >= 0);
++        assert_se(mkdir_p_root(root, "/sw/pkg2/etc/systemd", UID_INVALID, GID_INVALID, 0755) >= 0);
++        assert_se(mkdir_p_root(root, "/etc/systemd", UID_INVALID, GID_INVALID, 0755) >= 0);
++
++        ASSERT_OK(write_string_file_at(rfd, "sw/pkg1/etc/systemd/test.conf",
++                                       "A=pkg1\nB=pkg1\nC=pkg1\n", WRITE_STRING_FILE_CREATE));
++        ASSERT_OK(write_string_file_at(rfd, "sw/pkg2/etc/systemd/test.conf",
++                                       "B=pkg2\nC=pkg2\n", WRITE_STRING_FILE_CREATE));
++        ASSERT_OK(write_string_file_at(rfd, "etc/systemd/test.conf",
++                                       "C=user\n", WRITE_STRING_FILE_CREATE));
++
++        _cleanup_free_ char *A = NULL, *B = NULL, *C = NULL;
++        const ConfigTableItem items[] = {
++                { NULL, "A", config_parse_string, 0, &A },
++                { NULL, "B", config_parse_string, 0, &B },
++                { NULL, "C", config_parse_string, 0, &C },
++                {}
++        };
++
++        ASSERT_OK(config_parse_standard_file_with_dropins_full(
++                        root,
++                        /* root_fd= */ -EBADF,
++                        "systemd/test.conf",
++                        /* sections= */ NULL,
++                        config_item_table_lookup, items,
++                        CONFIG_PARSE_WARN,
++                        /* userdata= */ NULL,
++                        /* ret_stats_by_path= */ NULL,
++                        /* ret_dropin_files= */ NULL));
++
++        ASSERT_STREQ(A, "pkg1");
++        ASSERT_STREQ(B, "pkg2");
++        ASSERT_STREQ(C, "user");
++}
++
+ DEFINE_TEST_MAIN(LOG_INFO);
 diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-lookup.c systemd-261.2/src/test/test-path-lookup.c
 --- systemd-261.2.orig/src/test/test-path-lookup.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/test/test-path-lookup.c	2026-07-23 17:07:04.000000000 +0000
@@ -764,6 +1067,31 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-path-util.c systemd
  }
  
  TEST(path_startswith_set) {
+diff --no-dereference -Naur systemd-261.2.orig/src/test/test-uid-classification.c systemd-261.2/src/test/test-uid-classification.c
+--- systemd-261.2.orig/src/test/test-uid-classification.c	2026-07-23 17:07:04.000000000 +0000
++++ systemd-261.2/src/test/test-uid-classification.c	2026-07-23 17:07:04.000000000 +0000
+@@ -75,6 +75,10 @@
+ 
+         uid = getuid();
+         log_info("uid_is_system("UID_FMT") = %s", uid, yes_no(uid_is_system(uid)));
++
++        assert_se(uid_is_system(UINT32_C(1073741824)));
++        assert_se(uid_is_system(UINT32_C(2147483647)));
++        assert_se(!uid_is_system(UINT32_C(1000)));
+ }
+ 
+ TEST(gid_is_system) {
+@@ -86,6 +90,10 @@
+ 
+         gid = getgid();
+         log_info("gid_is_system("GID_FMT") = %s", gid, yes_no(gid_is_system(gid)));
++
++        assert_se(gid_is_system(UINT32_C(1073741824)));
++        assert_se(gid_is_system(UINT32_C(2147483647)));
++        assert_se(!gid_is_system(UINT32_C(1000)));
+ }
+ 
+ DEFINE_TEST_MAIN(LOG_DEBUG);
 diff --no-dereference -Naur systemd-261.2.orig/src/vconsole/vconsole-setup.c systemd-261.2/src/vconsole/vconsole-setup.c
 --- systemd-261.2.orig/src/vconsole/vconsole-setup.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/vconsole/vconsole-setup.c	2026-07-23 17:07:04.000000000 +0000
@@ -812,10 +1140,11 @@ diff --no-dereference -Naur systemd-261.2.orig/units/kmod-static-nodes.service.i
 diff --no-dereference -Naur systemd-261.2.orig/units/systemd-binfmt.service.in systemd-261.2/units/systemd-binfmt.service.in
 --- systemd-261.2.orig/units/systemd-binfmt.service.in	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/units/systemd-binfmt.service.in	2026-07-23 17:07:04.000000000 +0000
-@@ -20,6 +20,7 @@
+@@ -20,6 +20,8 @@
  Before=sysinit.target shutdown.target
  ConditionPathIsMountPoint=/proc/sys/fs/binfmt_misc
  ConditionDirectoryNotEmpty=|/lib/binfmt.d
++ConditionDirectoryNotEmpty=|/sw/*/etc/binfmt.d
 +ConditionDirectoryNotEmpty=|/sw/*/lib/binfmt.d
  ConditionDirectoryNotEmpty=|/usr/lib/binfmt.d
  ConditionDirectoryNotEmpty=|/usr/local/lib/binfmt.d
@@ -823,10 +1152,11 @@ diff --no-dereference -Naur systemd-261.2.orig/units/systemd-binfmt.service.in s
 diff --no-dereference -Naur systemd-261.2.orig/units/systemd-modules-load.service.in systemd-261.2/units/systemd-modules-load.service.in
 --- systemd-261.2.orig/units/systemd-modules-load.service.in	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/units/systemd-modules-load.service.in	2026-07-23 17:07:04.000000000 +0000
-@@ -15,6 +15,7 @@
+@@ -15,6 +15,8 @@
  Before=sysinit.target shutdown.target
  ConditionCapability=CAP_SYS_MODULE
  ConditionDirectoryNotEmpty=|/lib/modules-load.d
++ConditionDirectoryNotEmpty=|/sw/*/etc/modules-load.d
 +ConditionDirectoryNotEmpty=|/sw/*/lib/modules-load.d
  ConditionDirectoryNotEmpty=|/usr/lib/modules-load.d
  ConditionDirectoryNotEmpty=|/usr/local/lib/modules-load.d

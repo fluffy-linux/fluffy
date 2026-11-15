@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lreadline
 
 ARCHIVES=(
     fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc https://github.com/fluffy-linux/readline/releases/download/readline-$VERSION/readline-$VERSION.tar.gz
-    ad168a38184511c918dd3390d208dca6044b24bcbb9fd1cc87a7571d0e873234 file://readline-$VERSION-fluffy-source.patch
+    ba5a33a693465f387dd437e1ad61e4703042bfef610991edc61e7311b47e8d39 file://readline-$VERSION-fluffy-source.patch
 )
 
 if test -v CROSS
@@ -79,7 +79,73 @@ MAKE() {
     make
 }
 
+CHECK() {
+    local td
+    td=$(mktemp -d)
+    ln -snf "$PWD" "$td/readline"
+    mkdir -p "$td/sw/pkgA/etc" "$td/sw/pkgB/etc" "$td/etc"
+    printf 'set bell-style none\nset editing-mode emacs\n' > "$td/sw/pkgA/etc/inputrc"
+    printf 'set completion-ignore-case on\n' > "$td/sw/pkgB/etc/inputrc"
+
+    cat > "$td/test_rl.c" << 'EOF'
+#include <stdio.h>
+#include <string.h>
+#include <readline/readline.h>
+
+int main(int argc, char **argv) {
+    rl_initialize();
+    if (rl_read_init_file(argv[1]) != 0)
+        return 1;
+    printf("%s|%s|%s\n",
+           rl_variable_value("bell-style") ?: "",
+           rl_variable_value("editing-mode") ?: "",
+           rl_variable_value("completion-ignore-case") ?: "");
+    return 0;
+}
+EOF
+    gcc -I"$td" -L./shlib -Wl,-rpath,"$PWD/shlib" "$td/test_rl.c" -lreadline -o "$td/test_rl"
+
+    test "$("$td/test_rl" "$td/sw/*/etc/inputrc:$td/etc/inputrc")" = "none|emacs|on"
+
+    printf 'set bell-style visible\n' > "$td/etc/inputrc"
+    test "$("$td/test_rl" "$td/sw/*/etc/inputrc:$td/etc/inputrc")" = "visible|emacs|on"
+    rm -rf "$td"
+}
+
 INSTALL() {
     make install
     install -v -m644 doc/*.{ps,pdf,html,dvi} $DESTDIR/sw/readline/share/doc/readline-$VERSION
+
+    install -dm755 $DESTDIR/sw/readline/etc
+    cat > $DESTDIR/sw/readline/etc/inputrc << "EOF"
+# Begin /sw/readline/etc/inputrc
+
+set horizontal-scroll-mode Off
+set meta-flag On
+set input-meta On
+set convert-meta Off
+set output-meta On
+set bell-style none
+
+"\eOd": backward-word
+"\eOc": forward-word
+"\e[1;5D": backward-word
+"\e[1;5C": forward-word
+"\e[1;3D": backward-word
+"\e[1;3C": forward-word
+
+"\e[1~": beginning-of-line
+"\e[4~": end-of-line
+"\e[5~": beginning-of-history
+"\e[6~": end-of-history
+"\e[3~": delete-char
+"\e[2~": quoted-insert
+
+"\eOH": beginning-of-line
+"\eOF": end-of-line
+"\e[H": beginning-of-line
+"\e[F": end-of-line
+
+# End /sw/readline/etc/inputrc
+EOF
 }

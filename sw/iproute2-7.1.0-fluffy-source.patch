@@ -1,6 +1,6 @@
-diff --no-dereference -Naur iproute2-7.1.0/configure iproute2-7.1.0/configure
---- iproute2-7.1.0/configure	2026-06-15 18:50:05.000000000 -0400
-+++ iproute2-7.1.0/configure	2026-06-15 18:50:05.000000000 -0400
+diff --no-dereference -Naur iproute2-7.1.0.orig/configure iproute2-7.1.0/configure
+--- iproute2-7.1.0.orig/configure	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/configure	2026-06-15 22:50:05.000000000 +0000
 @@ -16,7 +16,7 @@
  
  check_toolchain()
@@ -68,18 +68,308 @@ diff --no-dereference -Naur iproute2-7.1.0/configure iproute2-7.1.0/configure
  }
  
  check_color()
-diff --no-dereference -Naur iproute2-7.1.0/ip/routel iproute2-7.1.0/ip/routel
---- iproute2-7.1.0/ip/routel	2026-06-15 18:50:05.000000000 -0400
-+++ iproute2-7.1.0/ip/routel	2026-06-15 18:50:05.000000000 -0400
+diff --no-dereference -Naur iproute2-7.1.0.orig/ip/routel iproute2-7.1.0/ip/routel
+--- iproute2-7.1.0.orig/ip/routel	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/ip/routel	2026-06-15 22:50:05.000000000 +0000
 @@ -1,4 +1,4 @@
 -#! /usr/bin/env python3
 +#!/sw/python/bin/python3
  # SPDX-License-Identifier: GPL-2.0
  #
  # This is simple script to process JSON output from ip route
-diff --no-dereference -Naur iproute2-7.1.0/tc/e_bpf.c iproute2-7.1.0/tc/e_bpf.c
---- iproute2-7.1.0/tc/e_bpf.c	2026-06-15 18:50:05.000000000 -0400
-+++ iproute2-7.1.0/tc/e_bpf.c	2026-06-15 18:50:05.000000000 -0400
+diff --no-dereference -Naur iproute2-7.1.0.orig/lib/bpf_legacy.c iproute2-7.1.0/lib/bpf_legacy.c
+--- iproute2-7.1.0.orig/lib/bpf_legacy.c	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/lib/bpf_legacy.c	2026-06-15 22:50:05.000000000 +0000
+@@ -19,6 +19,10 @@
+ #include <limits.h>
+ #include <assert.h>
+ #include <libgen.h>
++#include <glob.h>
++#ifndef GLOB_PATHS
++#define GLOB_PATHS (1 << 29)
++#endif
+ 
+ #ifdef HAVE_ELF
+ #include <libelf.h>
+@@ -2880,9 +2884,27 @@
+ 	}
+ 
+ 	bpf_save_finfo(ctx);
+-	bpf_hash_init(ctx, CONF_ETC_DIR "/bpf_pinning");
+-	if (ret == -ENOENT)
+-		ret = bpf_hash_init(ctx, CONF_USR_DIR "/bpf_pinning");
++	{
++		glob_t gl;
++
++		memset(&gl, 0, sizeof(gl));
++		if (glob("/sw/*/etc/iproute2/bpf_pinning:" CONF_USR_DIR "/bpf_pinning:" CONF_ETC_DIR "/bpf_pinning",
++			 GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++			size_t i, j;
++			for (i = 0; i < gl.gl_pathc; i++) {
++				int dup = 0;
++				for (j = 0; j < i; j++) {
++					if (strcmp(gl.gl_pathv[i], gl.gl_pathv[j]) == 0) {
++						dup = 1;
++						break;
++					}
++				}
++				if (!dup)
++					bpf_hash_init(ctx, gl.gl_pathv[i]);
++			}
++			globfree(&gl);
++		}
++	}
+ 
+ 	return 0;
+ out_free:
+diff --no-dereference -Naur iproute2-7.1.0.orig/lib/rt_names.c iproute2-7.1.0/lib/rt_names.c
+--- iproute2-7.1.0.orig/lib/rt_names.c	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/lib/rt_names.c	2026-06-15 22:50:05.000000000 +0000
+@@ -14,6 +14,10 @@
+ #include <sys/socket.h>
+ #include <sys/stat.h>
+ #include <dirent.h>
++#include <glob.h>
++#ifndef GLOB_PATHS
++#define GLOB_PATHS (1 << 29)
++#endif
+ #include <limits.h>
+ #include <errno.h>
+ 
+@@ -201,18 +205,88 @@
+ }
+ 
+ static void
++rtnl_tab_initialize_multi(const char *rel, char **tab, int size)
++{
++	char pattern[PATH_MAX * 2];
++	glob_t gl;
++
++	snprintf(pattern, sizeof(pattern),
++		 "/sw/*/etc/iproute2/%s:%s/%s:%s/%s",
++		 rel, CONF_USR_DIR, rel, CONF_ETC_DIR, rel);
++	memset(&gl, 0, sizeof(gl));
++	if (glob(pattern, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++		size_t i, j;
++		for (i = 0; i < gl.gl_pathc; i++) {
++			int dup = 0;
++			for (j = 0; j < i; j++) {
++				if (strcmp(gl.gl_pathv[i], gl.gl_pathv[j]) == 0) {
++					dup = 1;
++					break;
++				}
++			}
++			if (!dup)
++				rtnl_tab_initialize(gl.gl_pathv[i], tab, size);
++		}
++		globfree(&gl);
++	}
++}
++
++static void
++rtnl_hash_initialize_multi(const char *rel, struct rtnl_hash_entry **hash,
++			   int size)
++{
++	char pattern[PATH_MAX * 2];
++	glob_t gl;
++
++	snprintf(pattern, sizeof(pattern),
++		 "/sw/*/etc/iproute2/%s:%s/%s:%s/%s",
++		 rel, CONF_USR_DIR, rel, CONF_ETC_DIR, rel);
++	memset(&gl, 0, sizeof(gl));
++	if (glob(pattern, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++		size_t i, j;
++		for (i = 0; i < gl.gl_pathc; i++) {
++			int dup = 0;
++			for (j = 0; j < i; j++) {
++				if (strcmp(gl.gl_pathv[i], gl.gl_pathv[j]) == 0) {
++					dup = 1;
++					break;
++				}
++			}
++			if (!dup)
++				rtnl_hash_initialize(gl.gl_pathv[i], hash, size);
++		}
++		globfree(&gl);
++	}
++}
++
++static void
+ rtnl_tabhash_initialize_dir(const char *ddir, const struct tabhash tabhash, const int size)
+ {
+-	char dirpath_usr[PATH_MAX], dirpath_etc[PATH_MAX];
++	char pattern[PATH_MAX * 2], dirpath_etc[PATH_MAX];
++	glob_t gl;
+ 
+-	snprintf(dirpath_usr, sizeof(dirpath_usr), "%s/%s", CONF_USR_DIR, ddir);
+ 	snprintf(dirpath_etc, sizeof(dirpath_etc), "%s/%s", CONF_ETC_DIR, ddir);
++	snprintf(pattern, sizeof(pattern),
++		 "/sw/*/etc/iproute2/%s:%s/%s", ddir, CONF_USR_DIR, ddir);
+ 
+-	/*
+-	 * load CONF_USR_DIR/iproute2/foo.d/X conf files
+-	 * unless CONF_ETC_DIR/iproute2/foo.d/X exists
+-	 */
+-	rtnl_tabhash_readdir(dirpath_usr, dirpath_etc, tabhash, size);
++	memset(&gl, 0, sizeof(gl));
++	if (glob(pattern, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++		size_t i, j;
++		for (i = 0; i < gl.gl_pathc; i++) {
++			int dup = 0;
++			if (strcmp(gl.gl_pathv[i], dirpath_etc) == 0)
++				continue;
++			for (j = 0; j < i; j++) {
++				if (strcmp(gl.gl_pathv[i], gl.gl_pathv[j]) == 0) {
++					dup = 1;
++					break;
++				}
++			}
++			if (!dup)
++				rtnl_tabhash_readdir(gl.gl_pathv[i], dirpath_etc, tabhash, size);
++		}
++		globfree(&gl);
++	}
+ 
+ 	/* load /etc/iproute2/foo.d/X conf files */
+ 	rtnl_tabhash_readdir(dirpath_etc, NULL, tabhash, size);
+@@ -236,14 +310,8 @@
+ 
+ static void rtnl_rtprot_initialize(void)
+ {
+-	int ret;
+-
+ 	rtnl_rtprot_init = 1;
+-	ret = rtnl_tab_initialize(CONF_ETC_DIR "/rt_protos",
+-				  rtnl_rtprot_tab, 256);
+-	if (ret == -ENOENT)
+-		rtnl_tab_initialize(CONF_USR_DIR "/rt_protos",
+-				    rtnl_rtprot_tab, 256);
++	rtnl_tab_initialize_multi("rt_protos", rtnl_rtprot_tab, 256);
+ 
+ 	rtnl_tab_initialize_dir("rt_protos.d", rtnl_rtprot_tab, 256);
+ }
+@@ -307,17 +375,9 @@
+ 
+ static void rtnl_addrprot_initialize(void)
+ {
+-	int ret;
+-
+ 	rtnl_addrprot_tab_initialized = true;
+-
+-	ret = rtnl_tab_initialize(CONF_ETC_DIR "/rt_addrprotos",
+-				  rtnl_addrprot_tab,
++	rtnl_tab_initialize_multi("rt_addrprotos", rtnl_addrprot_tab,
+ 				  ARRAY_SIZE(rtnl_addrprot_tab));
+-	if (ret == -ENOENT)
+-		ret = rtnl_tab_initialize(CONF_USR_DIR "/rt_addrprotos",
+-					  rtnl_addrprot_tab,
+-					  ARRAY_SIZE(rtnl_addrprot_tab));
+ 
+ 	rtnl_tab_initialize_dir("rt_addrprotos.d", rtnl_addrprot_tab,
+ 				ARRAY_SIZE(rtnl_addrprot_tab));
+@@ -373,14 +433,8 @@
+ 
+ static void rtnl_rtscope_initialize(void)
+ {
+-	int ret;
+-
+ 	rtnl_rtscope_init = 1;
+-	ret = rtnl_tab_initialize(CONF_ETC_DIR "/rt_scopes",
+-				  rtnl_rtscope_tab, 256);
+-	if (ret == -ENOENT)
+-		rtnl_tab_initialize(CONF_USR_DIR "/rt_scopes",
+-				    rtnl_rtscope_tab, 256);
++	rtnl_tab_initialize_multi("rt_scopes", rtnl_rtscope_tab, 256);
+ }
+ 
+ const char *rtnl_rtscope_n2a(int id, char *buf, int len)
+@@ -443,14 +497,8 @@
+ 
+ static void rtnl_rtrealm_initialize(void)
+ {
+-	int ret;
+-
+ 	rtnl_rtrealm_init = 1;
+-	ret = rtnl_tab_initialize(CONF_ETC_DIR "/rt_realms",
+-				  rtnl_rtrealm_tab, 256);
+-	if (ret == -ENOENT)
+-		rtnl_tab_initialize(CONF_USR_DIR "/rt_realms",
+-				    rtnl_rtrealm_tab, 256);
++	rtnl_tab_initialize_multi("rt_realms", rtnl_rtrealm_tab, 256);
+ }
+ 
+ const char *rtnl_rtrealm_n2a(int id, char *buf, int len)
+@@ -518,18 +566,13 @@
+ static void rtnl_rttable_initialize(void)
+ {
+ 	int i;
+-	int ret;
+ 
+ 	rtnl_rttable_init = 1;
+ 	for (i = 0; i < 256; i++) {
+ 		if (rtnl_rttable_hash[i])
+ 			rtnl_rttable_hash[i]->id = i;
+ 	}
+-	ret = rtnl_hash_initialize(CONF_ETC_DIR "/rt_tables",
+-				   rtnl_rttable_hash, 256);
+-	if (ret == -ENOENT)
+-		rtnl_hash_initialize(CONF_USR_DIR "/rt_tables",
+-				     rtnl_rttable_hash, 256);
++	rtnl_hash_initialize_multi("rt_tables", rtnl_rttable_hash, 256);
+ 
+ 	rtnl_hash_initialize_dir("rt_tables.d", rtnl_rttable_hash, 256);
+ }
+@@ -593,14 +636,8 @@
+ 
+ static void rtnl_rtdsfield_initialize(void)
+ {
+-	int ret;
+-
+ 	rtnl_rtdsfield_init = 1;
+-	ret = rtnl_tab_initialize(CONF_ETC_DIR "/rt_dsfield",
+-				  rtnl_rtdsfield_tab, 256);
+-	if (ret == -ENOENT)
+-		rtnl_tab_initialize(CONF_USR_DIR "/rt_dsfield",
+-				    rtnl_rtdsfield_tab, 256);
++	rtnl_tab_initialize_multi("rt_dsfield", rtnl_rtdsfield_tab, 256);
+ }
+ 
+ const char *rtnl_dsfield_n2a(int id, char *buf, int len)
+@@ -700,14 +737,8 @@
+ 
+ static void rtnl_group_initialize(void)
+ {
+-	int ret;
+-
+ 	rtnl_group_init = 1;
+-	ret = rtnl_hash_initialize(CONF_ETC_DIR "/group",
+-				   rtnl_group_hash, 256);
+-	if (ret == -ENOENT)
+-		rtnl_hash_initialize(CONF_USR_DIR "/group",
+-				     rtnl_group_hash, 256);
++	rtnl_hash_initialize_multi("group", rtnl_group_hash, 256);
+ }
+ 
+ int rtnl_group_a2n(int *id, const char *arg)
+@@ -795,14 +826,8 @@
+ 
+ static void nl_proto_initialize(void)
+ {
+-	int ret;
+-
+ 	nl_proto_init = 1;
+-	ret = rtnl_tab_initialize(CONF_ETC_DIR "/nl_protos",
+-				  nl_proto_tab, 256);
+-	if (ret == -ENOENT)
+-		rtnl_tab_initialize(CONF_USR_DIR "/nl_protos",
+-				    nl_proto_tab, 256);
++	rtnl_tab_initialize_multi("nl_protos", nl_proto_tab, 256);
+ }
+ 
+ const char *nl_proto_n2a(int id, char *buf, int len)
+diff --no-dereference -Naur iproute2-7.1.0.orig/tc/e_bpf.c iproute2-7.1.0/tc/e_bpf.c
+--- iproute2-7.1.0.orig/tc/e_bpf.c	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/tc/e_bpf.c	2026-06-15 22:50:05.000000000 +0000
 @@ -16,7 +16,7 @@
  #include "bpf_elf.h"
  #include "bpf_scm.h"
@@ -89,3 +379,110 @@ diff --no-dereference -Naur iproute2-7.1.0/tc/e_bpf.c iproute2-7.1.0/tc/e_bpf.c
  
  static char *argv_default[] = { BPF_DEFAULT_CMD, NULL };
  
+diff --no-dereference -Naur iproute2-7.1.0.orig/tc/m_ematch.c iproute2-7.1.0/tc/m_ematch.c
+--- iproute2-7.1.0.orig/tc/m_ematch.c	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/tc/m_ematch.c	2026-06-15 22:50:05.000000000 +0000
+@@ -17,6 +17,10 @@
+ #include <stdarg.h>
+ #include <errno.h>
+ 
++#include <glob.h>
++#ifndef GLOB_PATHS
++#define GLOB_PATHS (1 << 29)
++#endif
+ #include "utils.h"
+ #include "tc_util.h"
+ #include "m_ematch.h"
+@@ -164,8 +168,20 @@
+ 	int ret;
+ 
+ 	ret = lookup_map(kind, name, sizeof(name), EMATCH_MAP_ETC);
+-	if (ret == -ENOENT)
+-		ret = lookup_map(kind, name, sizeof(name), EMATCH_MAP_USR);
++	if (ret == -ENOENT) {
++		glob_t gl;
++		memset(&gl, 0, sizeof(gl));
++		if (glob("/sw/*/etc/iproute2/ematch_map:" EMATCH_MAP_USR,
++			 GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++			size_t gi;
++			for (gi = gl.gl_pathc; gi > 0; gi--) {
++				ret = lookup_map(kind, name, sizeof(name), gl.gl_pathv[gi - 1]);
++				if (ret == 0)
++					break;
++			}
++			globfree(&gl);
++		}
++	}
+ 	if (ret < 0)
+ 		return NULL;
+ 
+@@ -233,8 +249,20 @@
+ 			}
+ 
+ 			err = lookup_map_id(buf, &num, EMATCH_MAP_ETC);
+-			if (err == -ENOENT)
+-				err = lookup_map_id(buf, &num, EMATCH_MAP_USR);
++			if (err == -ENOENT) {
++				glob_t gl;
++				memset(&gl, 0, sizeof(gl));
++				if (glob("/sw/*/etc/iproute2/ematch_map:" EMATCH_MAP_USR,
++					 GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++					size_t gi;
++					for (gi = gl.gl_pathc; gi > 0; gi--) {
++						err = lookup_map_id(buf, &num, gl.gl_pathv[gi - 1]);
++						if (err == 0)
++							break;
++					}
++					globfree(&gl);
++				}
++			}
+ 			if (err < 0) {
+ 				if (err == -ENOENT)
+ 					map_warning(e->kind_num, buf);
+diff --no-dereference -Naur iproute2-7.1.0.orig/tc/tc_util.c iproute2-7.1.0/tc/tc_util.c
+--- iproute2-7.1.0.orig/tc/tc_util.c	2026-06-15 22:50:05.000000000 +0000
++++ iproute2-7.1.0/tc/tc_util.c	2026-06-15 22:50:05.000000000 +0000
+@@ -17,6 +17,10 @@
+ #include <math.h>
+ #include <errno.h>
+ 
++#include <glob.h>
++#ifndef GLOB_PATHS
++#define GLOB_PATHS (1 << 29)
++#endif
+ #include "utils.h"
+ #include "names.h"
+ #include "tc_util.h"
+@@ -47,9 +51,29 @@
+ 		}
+ 	}
+ 
+-	ret = db_names_load(cls_names, NAMES_DB_ETC);
+-	if (ret == -ENOENT)
+-		ret = db_names_load(cls_names, NAMES_DB_USR);
++	{
++		glob_t gl;
++		int any_loaded = (path != NULL);
++
++		memset(&gl, 0, sizeof(gl));
++		if (glob("/sw/*/etc/iproute2/tc_cls:" NAMES_DB_USR ":" NAMES_DB_ETC,
++			 GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++			size_t i, j;
++			for (i = 0; i < gl.gl_pathc; i++) {
++				int dup = 0;
++				for (j = 0; j < i; j++) {
++					if (strcmp(gl.gl_pathv[i], gl.gl_pathv[j]) == 0) {
++						dup = 1;
++						break;
++					}
++				}
++				if (!dup && db_names_load(cls_names, gl.gl_pathv[i]) == 0)
++					any_loaded = 1;
++			}
++			globfree(&gl);
++		}
++		ret = any_loaded ? 0 : -ENOENT;
++	}
+ 
+ 	if (ret) {
+ 		db_names_free(cls_names);
