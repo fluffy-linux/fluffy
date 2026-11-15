@@ -1,6 +1,6 @@
-diff -ruN glibc-2.44.orig/elf/Makefile glibc-2.44/elf/Makefile
---- glibc-2.44.orig/elf/Makefile	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/elf/Makefile	2026-11-08 21:31:00.949666154 -0500
+diff --no-dereference -Naur glibc-2.44.orig/elf/Makefile glibc-2.44/elf/Makefile
+--- glibc-2.44.orig/elf/Makefile	2026-11-14 23:57:53.696068687 +0000
++++ glibc-2.44/elf/Makefile	2026-11-14 23:57:54.543296807 +0000
 @@ -210,7 +210,8 @@
  others-static   = sln
  install-rootsbin = sln
@@ -44,9 +44,9 @@ diff -ruN glibc-2.44.orig/elf/Makefile glibc-2.44/elf/Makefile
    $(objpfx)tst-rtld-help.out \
    # tests-special
  ifeq (yes,$(build-shared))
-diff -ruN glibc-2.44.orig/elf/dl-load.c glibc-2.44/elf/dl-load.c
---- glibc-2.44.orig/elf/dl-load.c	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/elf/dl-load.c	2026-11-10 20:57:32.141967725 -0500
+diff --no-dereference -Naur glibc-2.44.orig/elf/dl-load.c glibc-2.44/elf/dl-load.c
+--- glibc-2.44.orig/elf/dl-load.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/elf/dl-load.c	2026-11-11 01:57:32.141967725 +0000
 @@ -19,6 +19,7 @@
  
  #include <elf.h>
@@ -480,9 +480,9 @@ diff -ruN glibc-2.44.orig/elf/dl-load.c glibc-2.44/elf/dl-load.c
        size_t buflen = 0;
        size_t cnt;
        char *edp;
-diff -ruN glibc-2.44.orig/elf/dl-usage.c glibc-2.44/elf/dl-usage.c
---- glibc-2.44.orig/elf/dl-usage.c	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/elf/dl-usage.c	2026-11-08 21:31:00.949391199 -0500
+diff --no-dereference -Naur glibc-2.44.orig/elf/dl-usage.c glibc-2.44/elf/dl-usage.c
+--- glibc-2.44.orig/elf/dl-usage.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/elf/dl-usage.c	2026-11-09 02:31:00.949391199 +0000
 @@ -98,8 +98,10 @@
    if (map != NULL)
      print_search_path_for_help_1 (map->l_runpath_dirs.dirs);
@@ -494,9 +494,989 @@ diff -ruN glibc-2.44.orig/elf/dl-usage.c glibc-2.44/elf/dl-usage.c
  
    print_search_path_for_help_1 (__rtld_search_dirs.dirs);
  }
-diff -ruN glibc-2.44.orig/posix/execvpe.c glibc-2.44/posix/execvpe.c
---- glibc-2.44.orig/posix/execvpe.c	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/posix/execvpe.c	2026-11-10 20:57:32.141529417 -0500
+diff --no-dereference -Naur glibc-2.44.orig/include/fnmatch.h glibc-2.44/include/fnmatch.h
+--- glibc-2.44.orig/include/fnmatch.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/include/fnmatch.h	2026-07-24 13:16:45.000000000 +0000
+@@ -4,6 +4,8 @@
+ 
+ #ifndef _ISOMAC
+ libc_hidden_proto (fnmatch)
++extern int __fnmatch (const char *__pattern, const char *__name, int __flags);
++libc_hidden_proto (__fnmatch)
+ #endif
+ 
+ #endif
+diff --no-dereference -Naur glibc-2.44.orig/include/glob.h glibc-2.44/include/glob.h
+--- glibc-2.44.orig/include/glob.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/include/glob.h	2026-07-24 13:16:45.000000000 +0000
+@@ -37,11 +37,29 @@
+ # endif
+ 
+ /* Now define the internal interfaces.  */
++typedef int (*__glob_homedir_fn_t) (const char *__user, char **__out_dir);
+ extern int __glob_pattern_p (const char *__pattern, int __quote);
+ extern int __glob64 (const char *__pattern, int __flags,
+ 		     int (*__errfunc) (const char *, int),
+ 		     glob64_t *__pglob);
+ libc_hidden_proto (__glob64)
++extern void __globfree (glob_t *__pglob) __THROW;
++libc_hidden_proto (__globfree)
++extern void __globfree64 (glob64_t *__pglob) __THROW;
++libc_hidden_proto (__globfree64)
++extern int __glob_internal (const char *__pattern, int __flags,
++			    int (*__errfunc) (const char *, int),
++			    glob_t *__pglob,
++			    __glob_homedir_fn_t __homedir_fn) __THROWNL;
++libc_hidden_proto (__glob_internal)
++extern int __glob_notilde (const char *__pattern, int __flags,
++			   int (*__errfunc) (const char *, int),
++			   glob_t *__pglob) __THROWNL;
++libc_hidden_proto (__glob_notilde)
++extern int __glob64_notilde (const char *__pattern, int __flags,
++			     int (*__errfunc) (const char *, int),
++			     glob64_t *__pglob) __THROWNL;
++libc_hidden_proto (__glob64_notilde)
+ #endif
+ 
+ #endif
+diff --no-dereference -Naur glibc-2.44.orig/include/nss_files.h glibc-2.44/include/nss_files.h
+--- glibc-2.44.orig/include/nss_files.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/include/nss_files.h	2026-07-24 13:16:45.000000000 +0000
+@@ -29,6 +29,10 @@
+ FILE *__nss_files_fopen (const char *path);
+ libc_hidden_proto (__nss_files_fopen)
+ 
++/* Return the 0-based component file index for OFFSET in a multi-file
++   stream opened by __nss_files_fopen, or -1 for single-file streams.  */
++int __nss_files_file_index (FILE *fp, off64_t offset) attribute_hidden;
++
+ /* Read a line from FP, storing it BUF.  Strip leading blanks and skip
+    comments.  Sets errno and returns error code on failure.  Special
+    failure: ERANGE means the buffer is too small.  The function writes
+@@ -53,9 +57,19 @@
+ 
+ /* Per-file data.  Used by the *ent functions that need to preserve
+    state across calls.  */
++struct nss_files_seen_slot
++{
++  char *name;
++  uint32_t hash;
++  int file_idx;
++};
++
+ struct nss_files_per_file_data
+ {
+   FILE *stream;
++  struct nss_files_seen_slot *seen_slots;
++  size_t seen_count;
++  size_t seen_cap;
+ #if IS_IN (libc)
+   /* The size of locks changes between libc and nss_files, so this
+      member must be last and is only available in libc.  */
+@@ -108,6 +122,13 @@
+ enum nss_status __nss_files_data_endent (enum nss_files_file file);
+ libc_hidden_proto (__nss_files_data_endent)
+ 
++/* Record NAME at FILE_IDX during multi-file *ent enumeration.
++   Returns 0 if NAME should be yielded, 1 if shadowed by an earlier file,
++   or -1 on allocation failure.  */
++int __nss_files_data_check_seen (struct nss_files_per_file_data *data,
++                                 const char *name, int file_idx)
++  attribute_hidden;
++
+ struct parser_data;
+ 
+ /* Instances of the parse_line function from
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_database.c glibc-2.44/nss/nss_database.c
+--- glibc-2.44.orig/nss/nss_database.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_database.c	2026-07-24 13:16:45.000000000 +0000
+@@ -24,6 +24,8 @@
+ #include <atomic.h>
+ #include <ctype.h>
+ #include <file_change_detection.h>
++#include <glob.h>
++#include <paths.h>
+ #include <libc-lock.h>
+ #include <netdb.h>
+ #include <stdio_ext.h>
+@@ -293,9 +295,60 @@
+ }
+ 
+ static bool
++nss_database_load_vendor (struct nss_database_data *staging)
++{
++  glob64_t gl;
++  int gr = __glob64_notilde (_PATH_VENDOR_NSSWITCH_CONF, GLOB_PATHS, NULL, &gl);
++  if (gr == GLOB_NOSPACE)
++    {
++      __set_errno (ENOMEM);
++      return false;
++    }
++  if (gr != 0)
++    return true;
++
++  bool ok = true;
++  for (size_t i = 0; i < gl.gl_pathc; ++i)
++    {
++      FILE *vfp = fopen (gl.gl_pathv[i], "rce");
++      if (vfp == NULL)
++        {
++          switch (errno)
++            {
++            case EACCES:
++            case EISDIR:
++            case ELOOP:
++            case ENOENT:
++            case ENOTDIR:
++            case EPERM:
++              continue;
++            default:
++              ok = false;
++              break;
++            }
++          if (!ok)
++            break;
++        }
++      __fsetlocking (vfp, FSETLOCKING_BYCALLER);
++      ok = nss_database_reload_1 (staging, vfp);
++      fclose (vfp);
++      if (!ok)
++        break;
++    }
++
++  __globfree64 (&gl);
++  return ok;
++}
++
++static bool
+ nss_database_reload (struct nss_database_data *staging,
+                      struct file_change_detection *initial)
+ {
++  int orig_errno = errno;
++  if (!nss_database_load_vendor (staging))
++    return false;
++  __set_errno (orig_errno);
++
+   FILE *fp = fopen (_PATH_NSSWITCH_CONF, "rce");
+   if (fp == NULL)
+     switch (errno)
+@@ -376,6 +429,8 @@
+     /* Reload is required because the file changed while reading.  */
+     staging->nsswitch_conf.size = -1;
+ 
++  if (ok)
++    __set_errno (orig_errno);
+   return ok;
+ }
+ 
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_files/files-XXX.c glibc-2.44/nss/nss_files/files-XXX.c
+--- glibc-2.44.orig/nss/nss_files/files-XXX.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_files/files-XXX.c	2026-07-24 13:16:45.000000000 +0000
+@@ -103,9 +103,9 @@
+ 
+ /* Parsing the database file into `struct STRUCTURE' data structures.  */
+ static enum nss_status
+-internal_getent (FILE *stream, struct STRUCTURE *result,
+-		 char *buffer, size_t buflen, int *errnop H_ERRNO_PROTO
+-		 EXTRA_ARGS_DECL)
++internal_getent_off (FILE *stream, struct STRUCTURE *result,
++		     char *buffer, size_t buflen, off64_t *poffset,
++		     int *errnop H_ERRNO_PROTO EXTRA_ARGS_DECL)
+ {
+   struct parser_data *data = (void *) buffer;
+   size_t linebuflen = buffer + buflen - data->linebuffer;
+@@ -139,6 +139,8 @@
+ 	  if (ret == 0)
+ 	    {
+ 	      /* Line has been parsed successfully.  */
++	      if (poffset != NULL)
++		*poffset = original_offset;
+ 	      __set_errno (saved_errno);
+ 	      return NSS_STATUS_SUCCESS;
+ 	    }
+@@ -160,6 +162,16 @@
+ }
+ 
+ 
++
++static inline enum nss_status
++internal_getent (FILE *stream, struct STRUCTURE *result,
++		 char *buffer, size_t buflen, int *errnop H_ERRNO_PROTO
++		 EXTRA_ARGS_DECL)
++{
++  return internal_getent_off (stream, result, buffer, buflen, NULL, errnop
++			      H_ERRNO_ARG EXTRA_ARGS_VALUE);
++}
++
+ /* Return the next entry from the database file, doing locking.  */
+ enum nss_status
+ CONCAT(_nss_files_get,ENTNAME_r) (struct STRUCTURE *result, char *buffer,
+@@ -175,8 +187,37 @@
+   if (status != NSS_STATUS_SUCCESS)
+     return status;
+ 
++#ifdef DEDUP_KEY
++  while (true)
++    {
++      off64_t line_off = -1;
++      status = internal_getent_off (data->stream, result, buffer, buflen,
++				    &line_off, errnop
++				    H_ERRNO_ARG EXTRA_ARGS_VALUE);
++      if (status != NSS_STATUS_SUCCESS)
++	break;
++      int fidx = __nss_files_file_index (data->stream, line_off);
++      const char *dkey = DEDUP_KEY (result);
++      if (fidx >= 0 && dkey != NULL && dkey[0] != '\0'
++	  && dkey[0] != '+' && dkey[0] != '-')
++	{
++	  int seen = __nss_files_data_check_seen (data, dkey, fidx);
++	  if (seen < 0)
++	    {
++	      *errnop = ENOMEM;
++	      H_ERRNO_SET (NETDB_INTERNAL);
++	      status = NSS_STATUS_TRYAGAIN;
++	      break;
++	    }
++	  if (seen > 0)
++	    continue;
++	}
++      break;
++    }
++#else
+   status = internal_getent (data->stream, result, buffer, buflen, errnop
+ 			    H_ERRNO_ARG EXTRA_ARGS_VALUE);
++#endif
+ 
+   __nss_files_data_put (data);
+   return status;
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_files/files-grp.c glibc-2.44/nss/nss_files/files-grp.c
+--- glibc-2.44.orig/nss/nss_files/files-grp.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_files/files-grp.c	2026-07-24 13:16:45.000000000 +0000
+@@ -28,6 +28,7 @@
+    to parse lines from the database file.  */
+ #define EXTERN_PARSER
+ #include "files-parse.c"
++#define DEDUP_KEY(r)	((r)->gr_name)
+ #include GENERIC
+ 
+ DB_LOOKUP (grnam, '.', 0, ("%s", name),
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_files/files-initgroups.c glibc-2.44/nss/nss_files/files-initgroups.c
+--- glibc-2.44.orig/nss/nss_files/files-initgroups.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_files/files-initgroups.c	2026-07-24 13:16:45.000000000 +0000
+@@ -23,11 +23,81 @@
+ #include <string.h>
+ #include <sys/param.h>
+ #include <stdbool.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <scratch_buffer.h>
+-#include <nss.h>
+ #include <nss_files.h>
+ 
++static uint32_t
++initgroups_hash_name (const char *s)
++{
++  uint32_t h = 2166136261u;
++  for (const unsigned char *p = (const unsigned char *) s; *p != '\0'; ++p)
++    h = (h ^ *p) * 16777619u;
++  return h == 0 ? 1u : h;
++}
++
++static int
++initgroups_check_seen (struct nss_files_seen_slot **slots_p,
++                       size_t *count_p, size_t *cap_p,
++                       const char *name, int file_idx)
++{
++  if (file_idx < 0 || name == NULL || name[0] == '\0'
++      || name[0] == '+' || name[0] == '-')
++    return 0;
++
++  uint32_t h = initgroups_hash_name (name);
++  struct nss_files_seen_slot *slots = *slots_p;
++  size_t cap = *cap_p;
++
++  if (cap > 0)
++    {
++      size_t mask = cap - 1;
++      size_t idx = h & mask;
++      while (slots[idx].name != NULL)
++        {
++          if (slots[idx].hash == h && strcmp (slots[idx].name, name) == 0)
++            return slots[idx].file_idx < file_idx ? 1 : 0;
++          idx = (idx + 1) & mask;
++        }
++    }
++
++  if ((*count_p + 1) * 2 >= cap)
++    {
++      size_t new_cap = cap == 0 ? 32 : cap * 2;
++      struct nss_files_seen_slot *new_slots
++        = calloc (new_cap, sizeof (*new_slots));
++      if (new_slots == NULL)
++        return -1;
++      size_t new_mask = new_cap - 1;
++      for (size_t i = 0; i < cap; ++i)
++        if (slots[i].name != NULL)
++          {
++            size_t nidx = slots[i].hash & new_mask;
++            while (new_slots[nidx].name != NULL)
++              nidx = (nidx + 1) & new_mask;
++            new_slots[nidx] = slots[i];
++          }
++      free (slots);
++      *slots_p = slots = new_slots;
++      *cap_p = cap = new_cap;
++    }
++
++  char *dup = __strdup (name);
++  if (dup == NULL)
++    return -1;
++
++  size_t mask = cap - 1;
++  size_t idx = h & mask;
++  while (slots[idx].name != NULL)
++    idx = (idx + 1) & mask;
++  slots[idx].name = dup;
++  slots[idx].hash = h;
++  slots[idx].file_idx = file_idx;
++  ++(*count_p);
++  return 0;
++}
++
+ enum nss_status
+ _nss_files_initgroups_dyn (const char *user, gid_t group, long int *start,
+ 			   long int *size, gid_t **groupsp, long int limit,
+@@ -44,6 +114,10 @@
+   size_t linelen = 0;
+   enum nss_status status = NSS_STATUS_SUCCESS;
+   bool any = false;
++  bool multifile = __nss_files_file_index (stream, 0) >= 0;
++  struct nss_files_seen_slot *seen_slots = NULL;
++  size_t seen_count = 0;
++  size_t seen_cap = 0;
+ 
+   struct scratch_buffer tmpbuf;
+   scratch_buffer_init (&tmpbuf);
+@@ -53,8 +127,7 @@
+   /* We have to iterate over the entire file.  */
+   while (1)
+     {
+-      fpos_t pos;
+-      fgetpos (stream, &pos);
++      off64_t line_off = __ftello64 (stream);
+       ssize_t n = __getline (&line, &linelen, stream);
+       if (n < 0)
+ 	{
+@@ -76,14 +149,42 @@
+ 	      goto out;
+ 	    }
+ 	  /* Reread current line, the parser has clobbered it.  */
+-	  fsetpos (stream, &pos);
++	  __fseeko64 (stream, line_off, SEEK_SET);
+ 	  continue;
+ 	}
+ 
++      if (res > 0 && multifile)
++	{
++	  int fidx = __nss_files_file_index (stream, line_off);
++	  int sres = initgroups_check_seen (&seen_slots, &seen_count,
++					    &seen_cap, grp.gr_name, fidx);
++	  if (sres < 0)
++	    {
++	      *errnop = ENOMEM;
++	      status = NSS_STATUS_TRYAGAIN;
++	      goto out;
++	    }
++	  if (sres > 0)
++	    continue;
++	}
++
+       if (res > 0 && grp.gr_gid != group)
+ 	for (char **m = grp.gr_mem; *m != NULL; ++m)
+ 	  if (strcmp (*m, user) == 0)
+ 	    {
++	      bool dup_gid = false;
++	      for (long int gi = 0; gi < *start; ++gi)
++		if (groups[gi] == grp.gr_gid)
++		  {
++		    dup_gid = true;
++		    break;
++		  }
++	      if (dup_gid)
++		{
++		  any = true;
++		  break;
++		}
++
+ 	      /* Matches user.  Insert this group.  */
+ 	      if (*start == *size)
+ 		{
+@@ -120,6 +221,12 @@
+ 
+  out:
+   /* Free memory.  */
++  if (seen_slots != NULL)
++    {
++      for (size_t i = 0; i < seen_cap; ++i)
++        free (seen_slots[i].name);
++      free (seen_slots);
++    }
+   scratch_buffer_free (&tmpbuf);
+   free (line);
+ 
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_files/files-pwd.c glibc-2.44/nss/nss_files/files-pwd.c
+--- glibc-2.44.orig/nss/nss_files/files-pwd.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_files/files-pwd.c	2026-07-24 13:16:45.000000000 +0000
+@@ -28,6 +28,7 @@
+    to parse lines from the database file.  */
+ #define EXTERN_PARSER
+ #include "files-parse.c"
++#define DEDUP_KEY(r)	((r)->pw_name)
+ #include GENERIC
+ 
+ DB_LOOKUP (pwnam, '.', 0, ("%s", name),
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_files/files-sgrp.c glibc-2.44/nss/nss_files/files-sgrp.c
+--- glibc-2.44.orig/nss/nss_files/files-sgrp.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_files/files-sgrp.c	2026-07-24 13:16:45.000000000 +0000
+@@ -28,6 +28,7 @@
+    to parse lines from the database file.  */
+ #define EXTERN_PARSER
+ #include "files-parse.c"
++#define DEDUP_KEY(r)	((r)->sg_namp)
+ #include GENERIC
+ 
+ DB_LOOKUP (sgnam, '.', 0, ("%s", name),
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_files/files-spwd.c glibc-2.44/nss/nss_files/files-spwd.c
+--- glibc-2.44.orig/nss/nss_files/files-spwd.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_files/files-spwd.c	2026-07-24 13:16:45.000000000 +0000
+@@ -28,6 +28,7 @@
+    to parse lines from the database file.  */
+ #define EXTERN_PARSER
+ #include "files-parse.c"
++#define DEDUP_KEY(r)	((r)->sp_namp)
+ #include GENERIC
+ 
+ DB_LOOKUP (spnam, '.', 0, ("%s", name),
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_files_data.c glibc-2.44/nss/nss_files_data.c
+--- glibc-2.44.orig/nss/nss_files_data.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_files_data.c	2026-07-24 13:16:45.000000000 +0000
+@@ -22,7 +22,9 @@
+ #include <errno.h>
+ #include <netdb.h>
+ #include <nss.h>
++#include <stdint.h>
+ #include <stdlib.h>
++#include <string.h>
+ 
+ /* This collects all per file-data.   */
+ struct nss_files_data
+@@ -41,11 +43,95 @@
+       for (int i = 0; i < nss_file_count; ++i)
+         {
+           result->files[i].stream = NULL;
++          result->files[i].seen_slots = NULL;
++          result->files[i].seen_count = 0;
++          result->files[i].seen_cap = 0;
+           __libc_lock_init (result->files[i].lock);
+         }
+     }
+   return result;
+ }
++
++static uint32_t
++nss_seen_hash (const char *s)
++{
++  uint32_t h = 2166136261u;
++  for (const unsigned char *p = (const unsigned char *) s; *p != '\0'; ++p)
++    h = (h ^ *p) * 16777619u;
++  return h == 0 ? 1u : h;
++}
++
++static void
++nss_seen_clear (struct nss_files_per_file_data *data)
++{
++  if (data->seen_slots != NULL)
++    {
++      for (size_t i = 0; i < data->seen_cap; ++i)
++        free (data->seen_slots[i].name);
++      free (data->seen_slots);
++      data->seen_slots = NULL;
++    }
++  data->seen_count = 0;
++  data->seen_cap = 0;
++}
++
++int
++__nss_files_data_check_seen (struct nss_files_per_file_data *data,
++                             const char *name, int file_idx)
++{
++  if (file_idx < 0 || name == NULL || name[0] == '\0')
++    return 0;
++
++  uint32_t h = nss_seen_hash (name);
++  if (data->seen_cap > 0)
++    {
++      size_t mask = data->seen_cap - 1;
++      size_t idx = h & mask;
++      while (data->seen_slots[idx].name != NULL)
++        {
++          if (data->seen_slots[idx].hash == h
++              && strcmp (data->seen_slots[idx].name, name) == 0)
++            return data->seen_slots[idx].file_idx < file_idx ? 1 : 0;
++          idx = (idx + 1) & mask;
++        }
++    }
++
++  if ((data->seen_count + 1) * 2 >= data->seen_cap)
++    {
++      size_t new_cap = data->seen_cap == 0 ? 32 : data->seen_cap * 2;
++      struct nss_files_seen_slot *new_slots
++        = calloc (new_cap, sizeof (*new_slots));
++      if (new_slots == NULL)
++        return -1;
++      size_t new_mask = new_cap - 1;
++      for (size_t i = 0; i < data->seen_cap; ++i)
++        if (data->seen_slots[i].name != NULL)
++          {
++            size_t nidx = data->seen_slots[i].hash & new_mask;
++            while (new_slots[nidx].name != NULL)
++              nidx = (nidx + 1) & new_mask;
++            new_slots[nidx] = data->seen_slots[i];
++          }
++      free (data->seen_slots);
++      data->seen_slots = new_slots;
++      data->seen_cap = new_cap;
++    }
++
++  char *dup = __strdup (name);
++  if (dup == NULL)
++    return -1;
++
++  size_t mask = data->seen_cap - 1;
++  size_t idx = h & mask;
++  while (data->seen_slots[idx].name != NULL)
++    idx = (idx + 1) & mask;
++  data->seen_slots[idx].name = dup;
++  data->seen_slots[idx].hash = h;
++  data->seen_slots[idx].file_idx = file_idx;
++  ++data->seen_count;
++  return 0;
++}
++
+ /* Like __nss_files_data_open, but does not perform the open call.  */
+ static enum nss_status
+ __nss_files_data_get (struct nss_files_per_file_data **pdata,
+@@ -129,6 +215,7 @@
+   if (status != NSS_STATUS_SUCCESS)
+     return status;
+ 
++  nss_seen_clear (data);
+   if (data->stream == NULL)
+     status = __nss_files_data_internal_open (data, path);
+   else
+@@ -149,6 +236,7 @@
+ 
+   struct nss_files_per_file_data *fdata = &data->files[file];
+   __libc_lock_lock (fdata->lock);
++  nss_seen_clear (fdata);
+   if (fdata->stream != NULL)
+     {
+       fclose (fdata->stream);
+diff --no-dereference -Naur glibc-2.44.orig/nss/nss_files_fopen.c glibc-2.44/nss/nss_files_fopen.c
+--- glibc-2.44.orig/nss/nss_files_fopen.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/nss/nss_files_fopen.c	2026-07-24 13:16:45.000000000 +0000
+@@ -19,12 +19,176 @@
+ #include <nss_files.h>
+ 
+ #include <errno.h>
++#include <fcntl.h>
++#include <glob.h>
++#include <libio/libioP.h>
++#include <not-cancel.h>
++#include <paths.h>
++#include <stdint.h>
+ #include <stdio_ext.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/stat.h>
+ 
+-FILE *
+-__nss_files_fopen (const char *path)
++#define NSS_MULTIFILE_MAGIC UINT64_C (0x464c55464e53534d)
++
++struct nss_multifile_seg
++{
++  int fd;
++  off64_t start;
++  off64_t size;
++};
++
++struct nss_multifile_cookie
++{
++  uint64_t magic;
++  size_t nfiles;
++  off64_t total_size;
++  off64_t pos;
++  struct nss_multifile_seg segs[];
++};
++
++static size_t
++nss_multifile_locate (const struct nss_multifile_cookie *c, off64_t off)
++{
++  size_t lo = 0;
++  size_t hi = c->nfiles;
++  while (lo < hi)
++    {
++      size_t mid = lo + (hi - lo) / 2;
++      off64_t seg_end = c->segs[mid].start + c->segs[mid].size + 1;
++      if (off < seg_end)
++        hi = mid;
++      else
++        lo = mid + 1;
++    }
++  return lo;
++}
++
++static ssize_t
++nss_multifile_read (void *vc, char *buf, size_t size)
++{
++  struct nss_multifile_cookie *c = vc;
++  if (size == 0 || c->pos >= c->total_size)
++    return 0;
++
++  size_t total = 0;
++  size_t idx = nss_multifile_locate (c, c->pos);
++
++  while (total < size && idx < c->nfiles)
++    {
++      const struct nss_multifile_seg *seg = &c->segs[idx];
++      off64_t rel = c->pos - seg->start;
++      if (rel < seg->size)
++        {
++          off64_t avail = seg->size - rel;
++          size_t want = size - total;
++          if ((off64_t) want > avail)
++            want = (size_t) avail;
++          ssize_t nr = __pread64_nocancel (seg->fd, buf + total, want, rel);
++          if (nr < 0)
++            return total > 0 ? (ssize_t) total : -1;
++          if (nr == 0)
++            {
++              /* Keep virtual offsets stable if a mutable file shrank.  */
++              memset (buf + total, '\n', want);
++              nr = (ssize_t) want;
++            }
++          total += (size_t) nr;
++          c->pos += nr;
++        }
++      else
++        {
++          /* Virtual newline separator guaranteeing line termination.  */
++          buf[total++] = '\n';
++          c->pos += 1;
++          ++idx;
++        }
++    }
++
++  return (ssize_t) total;
++}
++
++static int
++nss_multifile_seek (void *vc, off64_t *offset, int whence)
++{
++  struct nss_multifile_cookie *c = vc;
++  off64_t target;
++
++  switch (whence)
++    {
++    case SEEK_SET:
++      target = *offset;
++      break;
++    case SEEK_CUR:
++      if (__builtin_add_overflow (c->pos, *offset, &target))
++        {
++          __set_errno (EINVAL);
++          return -1;
++        }
++      break;
++    case SEEK_END:
++      if (__builtin_add_overflow (c->total_size, *offset, &target))
++        {
++          __set_errno (EINVAL);
++          return -1;
++        }
++      break;
++    default:
++      __set_errno (EINVAL);
++      return -1;
++    }
++
++  if (target < 0)
++    {
++      __set_errno (EINVAL);
++      return -1;
++    }
++
++  c->pos = target;
++  *offset = target;
++  return 0;
++}
++
++static int
++nss_multifile_close (void *vc)
++{
++  struct nss_multifile_cookie *c = vc;
++  for (size_t i = 0; i < c->nfiles; ++i)
++    if (c->segs[i].fd >= 0)
++      __close_nocancel_nostatus (c->segs[i].fd);
++  free (c);
++  return 0;
++}
++
++static const cookie_io_functions_t nss_multifile_io_funcs =
++  {
++    .read = nss_multifile_read,
++    .write = NULL,
++    .seek = nss_multifile_seek,
++    .close = nss_multifile_close
++  };
++
++int
++__nss_files_file_index (FILE *fp, off64_t offset)
++{
++  if (fp == NULL || fp->_fileno != -2 || offset < 0)
++    return -1;
++  if (_IO_JUMPS ((struct _IO_FILE_plus *) fp) != &_IO_cookie_jumps)
++    return -1;
++
++  const struct _IO_cookie_file *cf = (const struct _IO_cookie_file *) fp;
++  const struct nss_multifile_cookie *c = cf->__cookie;
++  if (c == NULL || c->magic != NSS_MULTIFILE_MAGIC || offset >= c->total_size)
++    return -1;
++
++  size_t idx = nss_multifile_locate (c, offset);
++  return idx < c->nfiles ? (int) idx : -1;
++}
++
++static FILE *
++nss_finalize_fp (FILE *fp)
+ {
+-  FILE *fp = fopen (path, "rce");
+   if (fp == NULL)
+     return NULL;
+ 
+@@ -44,4 +208,189 @@
+ 
+   return fp;
+ }
++
++static char *
++nss_build_glob_pattern (const char *dirs, const char *rel)
++{
++  size_t rel_len = strlen (rel);
++  size_t dirs_len = strlen (dirs);
++  size_t nsegs = 1;
++  for (size_t i = 0; i < dirs_len; ++i)
++    if (dirs[i] == ':')
++      ++nsegs;
++
++  size_t cap = dirs_len + nsegs * (rel_len + 2) + 1;
++  char *pat = malloc (cap);
++  if (pat == NULL)
++    return NULL;
++
++  char *out = pat;
++  const char *p = dirs;
++  while (1)
++    {
++      const char *colon = strchr (p, ':');
++      size_t dlen = colon != NULL ? (size_t) (colon - p) : strlen (p);
++      while (dlen > 1 && p[dlen - 1] == '/')
++        --dlen;
++      if (dlen > 0)
++        {
++          if (out != pat)
++            *out++ = ':';
++          memcpy (out, p, dlen);
++          out += dlen;
++          if (p[dlen - 1] != '/')
++            *out++ = '/';
++          memcpy (out, rel, rel_len);
++          out += rel_len;
++        }
++      if (colon == NULL)
++        break;
++      p = colon + 1;
++    }
++  *out = '\0';
++  return pat;
++}
++
++FILE *
++__nss_files_fopen (const char *path)
++{
++  if (path == NULL || strncmp (path, "/etc/", 5) != 0 || path[5] == '\0'
++      || strpbrk (path + 5, "*?[\\:") != NULL)
++    return nss_finalize_fp (fopen (path, "rce"));
++
++  int saved_errno = errno;
++  char *pat = nss_build_glob_pattern (_PATH_NSS_FILES_DIRS, path + 5);
++  if (pat == NULL)
++    return NULL;
++
++  glob64_t gl;
++  int gr = __glob64_notilde (pat, GLOB_PATHS, NULL, &gl);
++  free (pat);
++
++  if (gr == GLOB_NOSPACE)
++    {
++      __set_errno (ENOMEM);
++      return NULL;
++    }
++  if (gr != 0 || gl.gl_pathc == 0)
++    {
++      if (gr == 0)
++        __globfree64 (&gl);
++      __set_errno (saved_errno);
++      return nss_finalize_fp (fopen (path, "rce"));
++    }
++
++  if (gl.gl_pathc == 1)
++    {
++      __set_errno (saved_errno);
++      FILE *fp = nss_finalize_fp (fopen (gl.gl_pathv[0], "rce"));
++      int open_err = errno;
++      __globfree64 (&gl);
++      if (fp == NULL)
++        __set_errno (open_err);
++      return fp;
++    }
++
++  size_t max_files = gl.gl_pathc;
++  struct nss_multifile_cookie *c
++    = malloc (sizeof (*c) + max_files * sizeof (c->segs[0]));
++  if (c == NULL)
++    {
++      __globfree64 (&gl);
++      return NULL;
++    }
++
++  c->magic = NSS_MULTIFILE_MAGIC;
++  c->nfiles = 0;
++  c->total_size = 0;
++  c->pos = 0;
++  int first_err = ENOENT;
++
++  for (size_t i = 0; i < max_files; ++i)
++    {
++      int fd = __open64_nocancel (gl.gl_pathv[i], O_RDONLY | O_CLOEXEC);
++      if (fd < 0)
++        {
++          if (first_err == ENOENT)
++            first_err = errno;
++          if (errno == ENOMEM || errno == EMFILE || errno == ENFILE)
++            {
++              first_err = errno;
++              nss_multifile_close (c);
++              __globfree64 (&gl);
++              __set_errno (first_err);
++              return NULL;
++            }
++          continue;
++        }
++
++      struct __stat64_t64 st;
++      if (__fstat64_time64 (fd, &st) != 0 || S_ISDIR (st.st_mode)
++          || st.st_size < 0)
++        {
++          if (S_ISDIR (st.st_mode) && first_err == ENOENT)
++            first_err = EISDIR;
++          __close_nocancel_nostatus (fd);
++          continue;
++        }
++
++      off64_t next_total;
++      if (__builtin_add_overflow (c->total_size, st.st_size, &next_total)
++          || __builtin_add_overflow (next_total, (off64_t) 1, &next_total))
++        {
++          __close_nocancel_nostatus (fd);
++          nss_multifile_close (c);
++          __globfree64 (&gl);
++          __set_errno (EOVERFLOW);
++          return NULL;
++        }
++
++      c->segs[c->nfiles].fd = fd;
++      c->segs[c->nfiles].start = c->total_size;
++      c->segs[c->nfiles].size = st.st_size;
++      c->total_size = next_total;
++      ++c->nfiles;
++    }
++
++  __globfree64 (&gl);
++
++  if (c->nfiles == 0)
++    {
++      free (c);
++      __set_errno (saved_errno);
++      FILE *fp = nss_finalize_fp (fopen (path, "rce"));
++      if (fp == NULL && errno == ENOENT && first_err != ENOENT)
++        __set_errno (first_err);
++      return fp;
++    }
++
++  if (c->nfiles == 1)
++    {
++      int fd = c->segs[0].fd;
++      free (c);
++      __set_errno (saved_errno);
++      FILE *fp = fdopen (fd, "rce");
++      if (fp == NULL)
++        {
++          int err = errno;
++          __close_nocancel_nostatus (fd);
++          __set_errno (err);
++          return NULL;
++        }
++      return nss_finalize_fp (fp);
++    }
++
++  FILE *fp = _IO_fopencookie (c, "r", nss_multifile_io_funcs);
++  if (fp == NULL)
++    {
++      int err = errno;
++      nss_multifile_close (c);
++      __set_errno (err);
++      return NULL;
++    }
++
++  __fsetlocking (fp, FSETLOCKING_BYCALLER);
++  __set_errno (saved_errno);
++  return fp;
++}
+ libc_hidden_def (__nss_files_fopen)
+diff --no-dereference -Naur glibc-2.44.orig/posix/Makefile glibc-2.44/posix/Makefile
+--- glibc-2.44.orig/posix/Makefile	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/Makefile	2026-07-24 13:16:45.000000000 +0000
+@@ -107,6 +107,7 @@
+   glob64 \
+   glob64-lstat-compat \
+   glob64-time64 \
++  glob_notilde \
+   glob_pattern_p \
+   globfree \
+   globfree64 \
+@@ -602,6 +603,7 @@
+ CFLAGS-spawni.os = -fomit-frame-pointer
+ CFLAGS-glob.c += $(uses-callbacks) -fexceptions
+ CFLAGS-glob64.c += $(uses-callbacks) -fexceptions
++CFLAGS-glob_notilde.c += $(uses-callbacks) -fexceptions
+ CFLAGS-getconf.c += -DGETCONF_DIR='"$(libexecdir)/getconf"'
+ CFLAGS-execve.os = -fomit-frame-pointer
+ CFLAGS-fexecve.os = -fomit-frame-pointer
+diff --no-dereference -Naur glibc-2.44.orig/posix/execvpe.c glibc-2.44/posix/execvpe.c
+--- glibc-2.44.orig/posix/execvpe.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/execvpe.c	2026-11-11 01:57:32.141529417 +0000
 @@ -20,10 +20,15 @@
  #include <stdbool.h>
  #include <stdlib.h>
@@ -945,9 +1925,20 @@ diff -ruN glibc-2.44.orig/posix/execvpe.c glibc-2.44/posix/execvpe.c
        if (*subp++ == '\0')
  	break;
      }
-diff -ruN glibc-2.44.orig/posix/fnmatch.h glibc-2.44/posix/fnmatch.h
---- glibc-2.44.orig/posix/fnmatch.h	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/posix/fnmatch.h	2026-11-08 21:31:00.950691461 -0500
+diff --no-dereference -Naur glibc-2.44.orig/posix/fnmatch.c glibc-2.44/posix/fnmatch.c
+--- glibc-2.44.orig/posix/fnmatch.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/fnmatch.c	2026-07-24 13:16:45.000000000 +0000
+@@ -285,6 +285,7 @@
+ }
+ 
+ #undef fnmatch
++libc_hidden_def (__fnmatch)
+ versioned_symbol (libc, __fnmatch, fnmatch, GLIBC_2_2_3);
+ #if SHLIB_COMPAT(libc, GLIBC_2_0, GLIBC_2_2_3)
+ strong_alias (__fnmatch, __fnmatch_old)
+diff --no-dereference -Naur glibc-2.44.orig/posix/fnmatch.h glibc-2.44/posix/fnmatch.h
+--- glibc-2.44.orig/posix/fnmatch.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/fnmatch.h	2026-11-09 02:31:00.950691461 +0000
 @@ -38,6 +38,7 @@
  # define FNM_LEADING_DIR (1 << 3)	/* Ignore `/...' after a match.  */
  # define FNM_CASEFOLD	 (1 << 4)	/* Compare without regard to case.  */
@@ -956,9 +1947,9 @@ diff -ruN glibc-2.44.orig/posix/fnmatch.h glibc-2.44/posix/fnmatch.h
  #endif
  
  /* Value returned by `fnmatch' if STRING does not match PATTERN.  */
-diff -ruN glibc-2.44.orig/posix/fnmatch_loop.c glibc-2.44/posix/fnmatch_loop.c
---- glibc-2.44.orig/posix/fnmatch_loop.c	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/posix/fnmatch_loop.c	2026-11-08 21:31:00.950886198 -0500
+diff --no-dereference -Naur glibc-2.44.orig/posix/fnmatch_loop.c glibc-2.44/posix/fnmatch_loop.c
+--- glibc-2.44.orig/posix/fnmatch_loop.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/fnmatch_loop.c	2026-11-09 02:31:00.950886198 +0000
 @@ -19,6 +19,17 @@
  # include <stdint.h>
  #endif
@@ -1118,22 +2109,151 @@ diff -ruN glibc-2.44.orig/posix/fnmatch_loop.c glibc-2.44/posix/fnmatch_loop.c
  #undef FINDIDX
 +#undef SDOT_OR_DOTDOT
 +#undef PDOT_OR_DOTDOT
-diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
---- glibc-2.44.orig/posix/glob.c	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/posix/glob.c	2026-11-10 22:39:55.144081031 -0500
-@@ -95,6 +95,8 @@
+diff --no-dereference -Naur glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
+--- glibc-2.44.orig/posix/glob.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/glob.c	2026-07-24 13:16:45.000000000 +0000
+@@ -41,7 +41,7 @@
+ # define WINDOWS32
+ #endif
+ 
+-#ifndef WINDOWS32
++#if !defined WINDOWS32 && !defined GLOB_COMPILE_NOTILDE
+ # include <pwd.h>
+ #endif
+ 
+@@ -50,6 +50,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <alloca.h>
++#include <fnmatch.h>
+ 
+ #ifdef _LIBC
+ # undef strdup
+@@ -60,6 +61,10 @@
+ # undef dirfd
+ # define dirfd(str) __dirfd (str)
+ # define readdir(str) __readdir64 (str)
++# define fnmatch(pat, str, flg) __fnmatch (pat, str, flg)
++# ifndef globfree
++#  define globfree(pglob) __globfree (pglob)
++# endif
+ # define getpwnam_r(name, bufp, buf, len, res) \
+     __getpwnam_r (name, bufp, buf, len, res)
+ # define FLEXIBLE_ARRAY_MEMBER
+@@ -77,6 +82,7 @@
+ # endif
+ # include <shlib-compat.h>
+ #else /* !_LIBC */
++typedef int (*__glob_homedir_fn_t) (const char *, char **);
+ # define __glob                 glob
+ # define __getlogin_r(buf, len) getlogin_r (buf, len)
+ # define __fxstatat64(_, d, f, st, flag) fstatat (d, f, st, flag)
+@@ -91,11 +97,97 @@
+ # define GLOB_FSTATAT64         fstatat
+ #endif /* _LIBC */
+ 
+-#include <fnmatch.h>
++#include <scratch_buffer.h>
++
++#ifndef GLOB_ATTRIBUTE
++# define GLOB_ATTRIBUTE
++#endif
++
++#if !defined WINDOWS32 && !defined GLOB_COMPILE_NOTILDE
++static int
++glob_lookup_homedir (const char *user, char **out_dir)
++{
++  *out_dir = NULL;
++  struct passwd *p = NULL;
++  struct scratch_buffer s;
++  scratch_buffer_init (&s);
++
++  if (user == NULL)
++    {
++      int err;
++# if defined HAVE_GETPWNAM_R || defined _LIBC
++      struct passwd pwbuf;
++# endif
++      while (true)
++        {
++          p = NULL;
++          err = __getlogin_r (s.data, s.length);
++          if (err == 0)
++            {
++# if defined HAVE_GETPWNAM_R || defined _LIBC
++              size_t ssize = strlen (s.data) + 1;
++              char *sdata = s.data;
++              err = getpwnam_r (sdata, &pwbuf, sdata + ssize,
++                                s.length - ssize, &p);
++# else
++              p = getpwnam (s.data);
++              if (p == NULL)
++                err = errno;
++# endif
++            }
++          if (err != ERANGE)
++            break;
++          if (!scratch_buffer_grow (&s))
++            return GLOB_NOSPACE;
++        }
++      if (err != 0)
++        p = NULL;
++    }
++  else
++    {
++# if defined HAVE_GETPWNAM_R || defined _LIBC
++      struct passwd pwbuf;
++      while (getpwnam_r (user, &pwbuf, s.data, s.length, &p) == ERANGE)
++        {
++          if (!scratch_buffer_grow (&s))
++            return GLOB_NOSPACE;
++        }
++# else
++      p = getpwnam (user);
++# endif
++    }
++
++  int ret = 0;
++  if (p != NULL)
++    {
++      *out_dir = strdup (p->pw_dir);
++      if (*out_dir == NULL)
++        ret = GLOB_NOSPACE;
++    }
++  scratch_buffer_free (&s);
++  return ret;
++}
++#endif
++
++#ifdef GLOB_COMPILE_TILDE_WRAPPER
++int
++GLOB_ATTRIBUTE
++__glob (const char *pattern, int flags, int (*errfunc) (const char *, int),
++        glob_t *pglob)
++{
++  return __glob_internal (pattern, flags, errfunc, pglob,
++                          glob_lookup_homedir);
++}
++# if defined _LIBC && !defined __glob
++versioned_symbol (libc, __glob, glob, GLIBC_2_27);
++libc_hidden_ver (__glob, glob)
++# endif
++#else /* !GLOB_COMPILE_TILDE_WRAPPER */
  
  #include <flexmember.h>
  #include <glob_internal.h>
+-#include <scratch_buffer.h>
 +#define FC_WITH_GLOB_HELPERS 1
 +#include "glob_fluffy_cache.h"
- #include <scratch_buffer.h>
  
  static const char *next_brace_sub (const char *begin, int flags) __THROWNL;
-@@ -285,6 +287,885 @@
+ 
+@@ -285,9 +377,884 @@
    return *cp != '\0' ? cp : NULL;
  }
  
+-#ifndef GLOB_ATTRIBUTE
+-# define GLOB_ATTRIBUTE
 +static const char *
 +glob_patscan (const char *string, const char *end, int delim, bool quote)
 +{
@@ -1466,7 +2586,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
 +          d = convert_dirent (__readdir (stream));
 +#else
 +          d = convert_dirent64 (__readdir64 (stream));
-+#endif
+ #endif
 +        }
 +      if (d.name == NULL)
 +        break;
@@ -2012,11 +3132,34 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
 +  closedir (stream);
 +  return 1;
 +}
-+
- #ifndef GLOB_ATTRIBUTE
- # define GLOB_ATTRIBUTE
- #endif
-@@ -320,11 +1201,6 @@
+ 
+ /* Do glob searching for PATTERN, placing results in PGLOB.
+    The bits defined above may be set in FLAGS.
+@@ -297,10 +1264,21 @@
+    'glob' returns GLOB_ABORTED; if it returns zero, the error is ignored.
+    If memory cannot be allocated for PGLOB, GLOB_NOSPACE is returned.
+    Otherwise, 'glob' returns zero.  */
++#ifdef GLOB_COMPILE_NOTILDE
++# define GLOB_BODY_NAME __glob_internal
+ int
+ GLOB_ATTRIBUTE
+-__glob (const char *pattern, int flags, int (*errfunc) (const char *, int),
+-        glob_t *pglob)
++__glob_internal (const char *pattern, int flags,
++                 int (*errfunc) (const char *, int),
++                 glob_t *pglob, __glob_homedir_fn_t homedir_fn)
++#else
++# define GLOB_BODY_NAME glob_body
++static int
++GLOB_ATTRIBUTE
++glob_body (const char *pattern, int flags,
++           int (*errfunc) (const char *, int),
++           glob_t *pglob, __glob_homedir_fn_t homedir_fn)
++#endif
+ {
+   const char *filename;
+   char *dirname = NULL;
+@@ -320,11 +1298,6 @@
        return -1;
      }
  
@@ -2028,7 +3171,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
    if (!(flags & GLOB_DOOFFS))
      /* Have to do this so 'globfree' knows where to start freeing.  It
         also makes all the code that uses gl_offs simpler. */
-@@ -352,6 +1228,89 @@
+@@ -352,6 +1325,90 @@
          }
      }
  
@@ -2071,11 +3214,12 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
 +                    *((char *) mempcpy (onealt, seg_start,
 +                                        seg_end - seg_start)) = '\0';
 +
-+                  int result = __glob (onealt,
-+                                       ((flags & ~(GLOB_NOCHECK | GLOB_NOMAGIC
-+                                                   | GLOB_PATHS))
-+                                        | GLOB_APPEND),
-+                                       errfunc, pglob);
++                  int result = GLOB_BODY_NAME (onealt,
++                                               ((flags & ~(GLOB_NOCHECK
++                                                           | GLOB_NOMAGIC
++                                                           | GLOB_PATHS))
++                                                | GLOB_APPEND),
++                                               errfunc, pglob, homedir_fn);
 +                  if (result && result != GLOB_NOMATCH)
 +                    {
 +                      if (__glibc_unlikely (!alloca_onealt))
@@ -2118,7 +3262,22 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
    if (flags & GLOB_BRACE)
      {
        const char *begin;
-@@ -486,7 +1445,9 @@
+@@ -444,10 +1501,10 @@
+               /* Construct the new glob expression.  */
+               mempcpy (mempcpy (alt_start, p, next - p), rest, rest_len);
+ 
+-              result = __glob (onealt,
+-                               ((flags & ~(GLOB_NOCHECK | GLOB_NOMAGIC))
+-                                | GLOB_APPEND),
+-                               errfunc, pglob);
++              result = GLOB_BODY_NAME (onealt,
++                                       ((flags & ~(GLOB_NOCHECK | GLOB_NOMAGIC))
++                                        | GLOB_APPEND),
++                                       errfunc, pglob, homedir_fn);
+ 
+               /* If we got an error, return it.  */
+               if (result && result != GLOB_NOMATCH)
+@@ -486,7 +1543,9 @@
    oldcount = pglob->gl_pathc + pglob->gl_offs;
  
    /* Find the filename.  */
@@ -2129,7 +3288,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
  
  #if defined __MSDOS__ || defined WINDOWS32
    /* The case of "d:pattern".  Since ':' is not allowed in
-@@ -597,13 +1558,40 @@
+@@ -597,13 +1656,41 @@
                  }
              }
            /* Prevent stack overflows with many trailing '/' characters.  */
@@ -2137,12 +3296,14 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
            for (char *p = &dirname[dirlen - 1];
 -               p > dirname && p[0] == '/' && p[-1] == '/'; --p)
 -            p[0] = '\0';
+-          int val = __glob (dirname, flags | GLOB_MARK, errfunc, pglob);
 +               p > dirname && p[0] == '/'; --p)
 +            {
 +              ++extra_slashes;
 +              p[0] = '\0';
 +            }
-           int val = __glob (dirname, flags | GLOB_MARK, errfunc, pglob);
++          int val = GLOB_BODY_NAME (dirname, flags | GLOB_MARK, errfunc, pglob,
++                                    homedir_fn);
            if (val == 0)
 -            pglob->gl_flags = ((pglob->gl_flags & ~GLOB_MARK)
 -                               | (flags & GLOB_MARK));
@@ -2174,7 +3335,151 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
            else if (val == GLOB_NOMATCH && flags != orig_flags)
              {
                /* Make sure globfree (&dirs); is a nop.  */
-@@ -965,7 +1953,12 @@
+@@ -647,46 +1734,17 @@
+               else
+                 home_dir = "c:/users/default"; /* poor default */
+ #else
+-              int err;
+-              struct passwd *p;
+-              struct passwd pwbuf;
+-              struct scratch_buffer s;
+-              scratch_buffer_init (&s);
+-              while (true)
+-                {
+-                  p = NULL;
+-                  err = __getlogin_r (s.data, s.length);
+-                  if (err == 0)
+-                    {
+-# if defined HAVE_GETPWNAM_R || defined _LIBC
+-                      size_t ssize = strlen (s.data) + 1;
+-                      char *sdata = s.data;
+-                      err = getpwnam_r (sdata, &pwbuf, sdata + ssize,
+-                                        s.length - ssize, &p);
+-# else
+-                      p = getpwnam (s.data);
+-                      if (p == NULL)
+-                        err = errno;
+-# endif
+-                    }
+-                  if (err != ERANGE)
+-                    break;
+-                  if (!scratch_buffer_grow (&s))
++              home_dir = NULL;
++              if (homedir_fn != NULL)
++                {
++                  int lookup_res = homedir_fn (NULL, &home_dir);
++                  if (__glibc_unlikely (lookup_res != 0))
+                     {
+-                      retval = GLOB_NOSPACE;
++                      retval = lookup_res;
+                       goto out;
+                     }
+-                }
+-              if (err == 0)
+-                {
+-                  home_dir = strdup (p->pw_dir);
+-                  malloc_home_dir = 1;
+-                }
+-              scratch_buffer_free (&s);
+-              if (err == 0 && home_dir == NULL)
+-                {
+-                  retval = GLOB_NOSPACE;
+-                  goto out;
++                  if (home_dir != NULL)
++                    malloc_home_dir = 1;
+                 }
+ #endif /* WINDOWS32 */
+             }
+@@ -819,34 +1877,23 @@
+ 
+           /* Look up specific user's home directory.  */
+           {
+-            struct passwd *p;
+-            struct scratch_buffer pwtmpbuf;
+-            scratch_buffer_init (&pwtmpbuf);
+-
+-#  if defined HAVE_GETPWNAM_R || defined _LIBC
+-            struct passwd pwbuf;
+-
+-            while (getpwnam_r (user_name, &pwbuf,
+-                               pwtmpbuf.data, pwtmpbuf.length, &p)
+-                   == ERANGE)
+-              {
+-                if (!scratch_buffer_grow (&pwtmpbuf))
+-                  {
+-                    retval = GLOB_NOSPACE;
+-                    goto out;
+-                  }
+-              }
+-#  else
+-            p = getpwnam (user_name);
+-#  endif
++            char *user_home = NULL;
++            int lookup_res = (homedir_fn != NULL
++                              ? homedir_fn (user_name, &user_home) : 0);
+ 
+             if (__glibc_unlikely (malloc_user_name))
+               free (user_name);
+ 
++            if (__glibc_unlikely (lookup_res != 0))
++              {
++                retval = lookup_res;
++                goto out;
++              }
++
+             /* If we found a home directory use this.  */
+-            if (p != NULL)
++            if (user_home != NULL)
+               {
+-                size_t home_len = strlen (p->pw_dir);
++                size_t home_len = strlen (user_home);
+                 size_t rest_len = end_name == NULL ? 0 : strlen (end_name);
+                 /* dirname contains end_name; we can't free it now.  */
+                 char *prev_dirname =
+@@ -864,34 +1911,30 @@
+                     if (dirname == NULL)
+                       {
+                         free (prev_dirname);
+-                        scratch_buffer_free (&pwtmpbuf);
++                        free (user_home);
+                         retval = GLOB_NOSPACE;
+                         goto out;
+                       }
+                     malloc_dirname = 1;
+                   }
+-                d = mempcpy (dirname, p->pw_dir, home_len);
++                d = mempcpy (dirname, user_home, home_len);
+                 if (end_name != NULL)
+                   d = mempcpy (d, end_name, rest_len);
+                 *d = '\0';
+ 
+                 free (prev_dirname);
++                free (user_home);
+ 
+                 dirlen = home_len + rest_len;
+                 dirname_modified = 1;
+               }
+-            else
++            else if (flags & GLOB_TILDE_CHECK)
+               {
+-                if (flags & GLOB_TILDE_CHECK)
+-                  {
+-                    /* We have to regard it as an error if we cannot find the
+-                       home directory.  */
+-                    scratch_buffer_free (&pwtmpbuf);
+-                    retval = GLOB_NOMATCH;
+-                    goto out;
+-                  }
++                /* We have to regard it as an error if we cannot find the
++                   home directory.  */
++                retval = GLOB_NOMATCH;
++                goto out;
+               }
+-            scratch_buffer_free (&pwtmpbuf);
+           }
+ #else /* WINDOWS32 */
+           /* On native Windows, access to a user's home directory
+@@ -965,7 +2008,12 @@
        return 0;
      }
  
@@ -2188,7 +3493,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
    /* meta is 1 if correct glob pattern containing metacharacters.
       If meta has bit (1 << 2) set, it means there was an unterminated
       [ which we handle the same, using fnmatch.  Broken unterminated
-@@ -977,8 +1970,12 @@
+@@ -977,8 +2025,12 @@
           have to glob for the directory, and then glob for
           the pattern in each directory found.  */
        size_t i;
@@ -2202,7 +3507,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
          {
            /* "foo\\/bar".  Remove the final backslash from dirname
               if it has not been quoted.  */
-@@ -989,6 +1986,114 @@
+@@ -989,6 +2041,114 @@
              *(char *) &dirname[--dirlen] = '\0';
          }
  
@@ -2317,7 +3622,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
        if (__glibc_unlikely ((flags & GLOB_ALTDIRFUNC) != 0))
          {
            /* Use the alternative access functions also in the recursive
-@@ -1000,10 +2105,30 @@
+@@ -1000,10 +2160,31 @@
            dirs.gl_lstat = pglob->gl_lstat;
          }
  
@@ -2338,21 +3643,22 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
 +        }
 +      else
 +        {
-+          status = __glob (d,
-+                           ((flags & (GLOB_ERR | GLOB_NOESCAPE | GLOB_ALTDIRFUNC
-+                                      | GLOB_EXTMATCH | GLOB_CASEFOLD
-+                                      | GLOB_SKIPDOTS | GLOB_GLOBSTAR
-+                                      | GLOB_DOTDOT | GLOB_TILDE
-+                                      | GLOB_TILDE_CHECK
-+                                      | ((flags & GLOB_DOTDOT)
-+                                         ? GLOB_PERIOD : 0)))
-+                            | GLOB_NOSORT | GLOB_ONLYDIR),
-+                           errfunc, &dirs);
++          status = GLOB_BODY_NAME (d,
++                                   ((flags & (GLOB_ERR | GLOB_NOESCAPE
++                                              | GLOB_ALTDIRFUNC
++                                              | GLOB_EXTMATCH | GLOB_CASEFOLD
++                                              | GLOB_SKIPDOTS | GLOB_GLOBSTAR
++                                              | GLOB_DOTDOT | GLOB_TILDE
++                                              | GLOB_TILDE_CHECK
++                                              | ((flags & GLOB_DOTDOT)
++                                                 ? GLOB_PERIOD : 0)))
++                                    | GLOB_NOSORT | GLOB_ONLYDIR),
++                                   errfunc, &dirs, homedir_fn);
 +        }
        if (status != 0)
          {
            if ((flags & GLOB_NOCHECK) == 0 || status != GLOB_NOMATCH)
-@@ -1019,10 +2144,45 @@
+@@ -1019,10 +2200,45 @@
           appending the results to PGLOB.  */
        for (i = 0; i < dirs.gl_pathc; ++i)
          {
@@ -2362,9 +3668,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
 +          bool nulldir = (dname[0] == '\0');
 +          if (nulldir)
 +            dname = ".";
- 
--          old_pathc = pglob->gl_pathc;
--          status = glob_in_dir (filename, dirs.gl_pathv[i],
++
 +          if (all_starstar && !nulldir)
 +            {
 +              /* Do not descend into symlinked directories for ** /...  */
@@ -2376,7 +3680,9 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
 +              if (glob_testdir (dname, flags, pglob, false) < 0)
 +                continue;
 +            }
-+
+ 
+-          old_pathc = pglob->gl_pathc;
+-          status = glob_in_dir (filename, dirs.gl_pathv[i],
 +          if ((flags & GLOB_GLOBSTAR)
 +              && filename[0] == '*' && filename[1] == '*'
 +              && filename[2] == '\0')
@@ -2401,7 +3707,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
                                  ((flags | GLOB_APPEND)
                                   & ~(GLOB_NOCHECK | GLOB_NOMAGIC)),
                                  errfunc, pglob, alloca_used);
-@@ -1039,16 +2199,19 @@
+@@ -1039,16 +2255,19 @@
                goto out;
              }
  
@@ -2430,7 +3736,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
              }
          }
  
-@@ -1108,15 +2271,14 @@
+@@ -1108,15 +2327,14 @@
      }
    else
      {
@@ -2448,7 +3754,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
            q = p;
            do
              {
-@@ -1134,34 +2296,86 @@
+@@ -1134,34 +2352,86 @@
          }
        if (dirname_modified)
          flags &= ~(GLOB_NOCHECK | GLOB_NOMAGIC);
@@ -2556,7 +3862,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
          }
      }
  
-@@ -1171,9 +2385,13 @@
+@@ -1171,9 +2441,13 @@
        size_t i;
  
        for (i = oldcount; i < pglob->gl_pathc + pglob->gl_offs; ++i)
@@ -2573,7 +3879,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
              char *new = realloc (pglob->gl_pathv[i], len);
              if (new == NULL)
                {
-@@ -1184,10 +2402,12 @@
+@@ -1184,10 +2458,12 @@
                }
              strcpy (&new[len - 2], "/");
              pglob->gl_pathv[i] = new;
@@ -2588,7 +3894,43 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
      {
        /* Sort the vector.  */
        qsort (&pglob->gl_pathv[oldcount],
-@@ -1220,7 +2440,8 @@
+@@ -1201,9 +2477,34 @@
+ 
+   return retval;
+ }
+-#if defined _LIBC && !defined __glob
++#undef GLOB_BODY_NAME
++
++#ifdef GLOB_COMPILE_NOTILDE
++int
++__glob_notilde (const char *pattern, int flags,
++                int (*errfunc) (const char *, int), glob_t *pglob)
++{
++  return __glob_internal (pattern, flags & ~(GLOB_TILDE | GLOB_TILDE_CHECK),
++                          errfunc, pglob, NULL);
++}
++#else
++# ifdef WINDOWS32
++#  define GLOB_DEFAULT_HOMEDIR_FN NULL
++# else
++#  define GLOB_DEFAULT_HOMEDIR_FN glob_lookup_homedir
++# endif
++int
++GLOB_ATTRIBUTE
++__glob (const char *pattern, int flags, int (*errfunc) (const char *, int),
++        glob_t *pglob)
++{
++  return glob_body (pattern, flags, errfunc, pglob, GLOB_DEFAULT_HOMEDIR_FN);
++}
++# undef GLOB_DEFAULT_HOMEDIR_FN
++# if defined _LIBC && !defined __glob
+ versioned_symbol (libc, __glob, glob, GLIBC_2_27);
+ libc_hidden_ver (__glob, glob)
++# endif
+ #endif
+ 
+ 
+@@ -1220,7 +2521,8 @@
      return 1;
    if (s2 == NULL)
      return -1;
@@ -2598,7 +3940,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
  }
  
  
-@@ -1311,7 +2532,12 @@
+@@ -1311,7 +2613,12 @@
                          - offsetof (struct globnames, name))
                         / sizeof init_names->name[0]);
  
@@ -2612,7 +3954,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
    if (meta == GLOBPAT_NONE && (flags & (GLOB_NOCHECK|GLOB_NOMAGIC)))
      {
        /* We need not do any tests.  The PATTERN contains no meta
-@@ -1319,9 +2545,34 @@
+@@ -1319,9 +2626,34 @@
           result will always contain exactly one name.  */
        flags |= GLOB_NOCHECK;
      }
@@ -2648,7 +3990,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
        size_t fullsize;
        bool alloca_fullname
          = (! size_add_wrapv (dirlen + 1, patlen + 1, &fullsize)
-@@ -1333,20 +2584,40 @@
+@@ -1333,20 +2665,40 @@
          {
            fullname = malloc (fullsize);
            if (fullname == NULL)
@@ -2696,7 +4038,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
      }
    else
      {
-@@ -1363,8 +2634,13 @@
+@@ -1363,8 +2715,13 @@
        else
          {
            int dfd = dirfd (stream);
@@ -2712,7 +4054,7 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
            flags |= GLOB_MAGCHAR;
  
            while (1)
-@@ -1385,6 +2661,9 @@
+@@ -1385,6 +2742,9 @@
                if (d.name == NULL)
                  break;
  
@@ -2722,9 +4064,14 @@ diff -ruN glibc-2.44.orig/posix/glob.c glibc-2.44/posix/glob.c
                /* If we shall match only directories use the information
                   provided by the dirent call if possible.  */
                if (flags & GLOB_ONLYDIR)
-diff -ruN glibc-2.44.orig/posix/glob.h glibc-2.44/posix/glob.h
---- glibc-2.44.orig/posix/glob.h	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/posix/glob.h	2026-11-08 21:31:00.952557740 -0500
+@@ -1550,3 +2910,4 @@
+   scratch_buffer_free (&s);
+   return result;
+ }
++#endif /* !GLOB_COMPILE_TILDE_WRAPPER */
+diff --no-dereference -Naur glibc-2.44.orig/posix/glob.h glibc-2.44/posix/glob.h
+--- glibc-2.44.orig/posix/glob.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/glob.h	2026-11-09 02:31:00.952557740 +0000
 @@ -54,10 +54,20 @@
  # define GLOB_ONLYDIR	 (1 << 13)/* Match only directories.  */
  # define GLOB_TILDE_CHECK (1 << 14)/* Like GLOB_TILDE but return an error
@@ -2747,9 +4094,9 @@ diff -ruN glibc-2.44.orig/posix/glob.h glibc-2.44/posix/glob.h
  #else
  # define __GLOB_FLAGS	(GLOB_ERR|GLOB_MARK|GLOB_NOSORT|GLOB_DOOFFS  \
  			 |GLOB_NOESCAPE|GLOB_NOCHECK|GLOB_APPEND     \
-diff -ruN glibc-2.44.orig/posix/glob_fluffy_cache.h glibc-2.44/posix/glob_fluffy_cache.h
---- glibc-2.44.orig/posix/glob_fluffy_cache.h	1969-12-31 19:00:00.000000000 -0500
-+++ glibc-2.44/posix/glob_fluffy_cache.h	2026-11-10 23:31:25.173306550 -0500
+diff --no-dereference -Naur glibc-2.44.orig/posix/glob_fluffy_cache.h glibc-2.44/posix/glob_fluffy_cache.h
+--- glibc-2.44.orig/posix/glob_fluffy_cache.h	1970-01-01 00:00:00.000000000 +0000
++++ glibc-2.44/posix/glob_fluffy_cache.h	2026-11-11 04:31:25.173306550 +0000
 @@ -0,0 +1,3281 @@
 +/* Limit-free SquashFS-aware shared directory cache for Fluffy Linux.
 +   Copyright (C) 2026 Free Software Foundation, Inc.
@@ -6032,9 +7379,9 @@ diff -ruN glibc-2.44.orig/posix/glob_fluffy_cache.h glibc-2.44/posix/glob_fluffy
 +#endif /* FC_WITH_PATH_HELPERS */
 +
 +#endif /* _GLOB_FLUFFY_CACHE_H */
-diff -ruN glibc-2.44.orig/posix/glob_internal.h glibc-2.44/posix/glob_internal.h
---- glibc-2.44.orig/posix/glob_internal.h	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/posix/glob_internal.h	2026-11-08 21:31:00.952710025 -0500
+diff --no-dereference -Naur glibc-2.44.orig/posix/glob_internal.h glibc-2.44/posix/glob_internal.h
+--- glibc-2.44.orig/posix/glob_internal.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/glob_internal.h	2026-11-09 02:31:00.952710025 +0000
 @@ -28,7 +28,7 @@
  };
  
@@ -6069,9 +7416,228 @@ diff -ruN glibc-2.44.orig/posix/glob_internal.h glibc-2.44/posix/glob_internal.h
 +}
 +
  #endif /* GLOB_INTERNAL_H  */
-diff -ruN glibc-2.44.orig/sysdeps/generic/ldsodefs.h glibc-2.44/sysdeps/generic/ldsodefs.h
---- glibc-2.44.orig/sysdeps/generic/ldsodefs.h	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/sysdeps/generic/ldsodefs.h	2026-11-10 20:57:32.140842445 -0500
+diff --no-dereference -Naur glibc-2.44.orig/posix/glob_notilde.c glibc-2.44/posix/glob_notilde.c
+--- glibc-2.44.orig/posix/glob_notilde.c	1970-01-01 00:00:00.000000000 +0000
++++ glibc-2.44/posix/glob_notilde.c	2026-07-24 13:16:45.000000000 +0000
+@@ -0,0 +1,23 @@
++/* Find pathnames matching a pattern without tilde NSS lookup.
++   Copyright (C) 2026 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <https://www.gnu.org/licenses/>.  */
++
++#define GLOB_COMPILE_NOTILDE 1
++#include <posix/glob.c>
++
++libc_hidden_def (__glob_internal)
++libc_hidden_def (__glob_notilde)
+diff --no-dereference -Naur glibc-2.44.orig/posix/globfree.c glibc-2.44/posix/globfree.c
+--- glibc-2.44.orig/posix/globfree.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/posix/globfree.c	2026-07-24 13:16:45.000000000 +0000
+@@ -25,7 +25,11 @@
+ 
+ /* Free storage allocated in PGLOB by a previous `glob' call.  */
+ void
++#if defined _LIBC && !defined globfree
++__globfree (glob_t *pglob)
++#else
+ globfree (glob_t *pglob)
++#endif
+ {
+   if (pglob->gl_pathv != NULL)
+     {
+@@ -36,6 +40,8 @@
+       pglob->gl_pathv = NULL;
+     }
+ }
+-#ifndef globfree
+-libc_hidden_def (globfree)
++#if defined _LIBC && !defined globfree
++libc_hidden_def (__globfree)
++weak_alias (__globfree, globfree)
++libc_hidden_weak (globfree)
+ #endif
+diff --no-dereference -Naur glibc-2.44.orig/resolv/res_hconf.c glibc-2.44/resolv/res_hconf.c
+--- glibc-2.44.orig/resolv/res_hconf.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/resolv/res_hconf.c	2026-07-24 13:16:45.000000000 +0000
+@@ -39,6 +39,8 @@
+ #include <netinet/in.h>
+ #include <libc-lock.h>
+ #include "ifreq.h"
++#include <glob.h>
++#include <paths.h>
+ #include "res_hconf.h"
+ #include <wchar.h>
+ #include <atomic.h>
+@@ -275,9 +277,33 @@
+ 
+   memset (&_res_hconf, '\0', sizeof (_res_hconf));
+ 
++  int saved_errno = errno;
+   hconf_name = getenv (ENV_HOSTCONF);
+   if (hconf_name == NULL)
+-    hconf_name = _PATH_HOSTCONF;
++    {
++      glob64_t gl;
++      if (__glob64_notilde (_PATH_VENDOR_HOSTCONF, GLOB_PATHS, NULL, &gl) == 0)
++	{
++	  for (size_t i = 0; i < gl.gl_pathc; ++i)
++	    {
++	      FILE *vfp = fopen (gl.gl_pathv[i], "rce");
++	      if (vfp != NULL)
++		{
++		  int vline = 0;
++		  __fsetlocking (vfp, FSETLOCKING_BYCALLER);
++		  while (fgets_unlocked (buf, sizeof (buf), vfp))
++		    {
++		      ++vline;
++		      *__strchrnul (buf, '\n') = '\0';
++		      parse_line (gl.gl_pathv[i], vline, buf);
++		    }
++		  fclose (vfp);
++		}
++	    }
++	  __globfree64 (&gl);
++	}
++      hconf_name = _PATH_HOSTCONF;
++    }
+ 
+   fp = fopen (hconf_name, "rce");
+   if (fp)
+@@ -293,6 +319,7 @@
+ 	}
+       fclose (fp);
+     }
++  __set_errno (saved_errno);
+ 
+   envval = getenv (ENV_MULTI);
+   if (envval)
+diff --no-dereference -Naur glibc-2.44.orig/resolv/res_init.c glibc-2.44/resolv/res_init.c
+--- glibc-2.44.orig/resolv/res_init.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/resolv/res_init.c	2026-07-24 13:16:45.000000000 +0000
+@@ -556,7 +556,18 @@
+   /* Ensure that /etc/host.conf has been loaded (once).  */
+   _res_hconf_init ();
+ 
+-  FILE *fp = fopen (_PATH_RESCONF, "rce");
++  char *alloc_path = NULL;
++  const char *res_path = _PATH_RESCONF;
++  if (!__resolv_conf_select_path (&alloc_path, &res_path))
++    return NULL;
++  int saved_open_errno = errno;
++  FILE *fp = fopen (res_path, "rce");
++  int fp_errno = errno;
++  free (alloc_path);
++  if (fp == NULL)
++    __set_errno (fp_errno);
++  else
++    __set_errno (saved_open_errno);
+   if (fp == NULL)
+     switch (errno)
+       {
+diff --no-dereference -Naur glibc-2.44.orig/resolv/resolv_conf.c glibc-2.44/resolv/resolv_conf.c
+--- glibc-2.44.orig/resolv/resolv_conf.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/resolv/resolv_conf.c	2026-07-24 13:16:45.000000000 +0000
+@@ -24,7 +24,11 @@
+ #include <resolv-internal.h>
+ #include <sys/stat.h>
+ #include <libc-symbols.h>
++#include <errno.h>
+ #include <file_change_detection.h>
++#include <glob.h>
++#include <paths.h>
++#include <sys/stat.h>
+ 
+ /* _res._u._ext.__glibc_extension_index is used as an index into a
+    struct resolv_conf_array object.  The intent of this construction
+@@ -120,11 +124,58 @@
+     free (conf);
+ }
+ 
++bool
++__resolv_conf_select_path (char **alloc_out, const char **path_out)
++{
++  *alloc_out = NULL;
++  *path_out = _PATH_RESCONF;
++
++  int saved_errno = errno;
++  struct __stat64_t64 lst;
++  if (__lstat64_time64 (_PATH_RESCONF, &lst) == 0 || errno != ENOENT)
++    {
++      __set_errno (saved_errno);
++      return true;
++    }
++
++  glob64_t gl;
++  int gr = __glob64_notilde (_PATH_VENDOR_RESCONF, GLOB_PATHS, NULL, &gl);
++  if (gr == GLOB_NOSPACE)
++    {
++      __set_errno (ENOMEM);
++      return false;
++    }
++  if (gr == 0)
++    {
++      if (gl.gl_pathc > 0)
++        {
++          *alloc_out = __strdup (gl.gl_pathv[0]);
++          if (*alloc_out == NULL)
++            {
++              __globfree64 (&gl);
++              return false;
++            }
++          *path_out = *alloc_out;
++        }
++      __globfree64 (&gl);
++    }
++
++  __set_errno (saved_errno);
++  return true;
++}
++
+ struct resolv_conf *
+ __resolv_conf_get_current (void)
+ {
++  char *alloc_path = NULL;
++  const char *res_path = _PATH_RESCONF;
++  if (!__resolv_conf_select_path (&alloc_path, &res_path))
++    return NULL;
++
+   struct file_change_detection initial;
+-  if (!__file_change_detection_for_path (&initial, _PATH_RESCONF))
++  bool det_ok = __file_change_detection_for_path (&initial, res_path);
++  free (alloc_path);
++  if (!det_ok)
+     return NULL;
+ 
+   struct resolv_conf_global *global_copy = get_locked_global ();
+diff --no-dereference -Naur glibc-2.44.orig/resolv/resolv_conf.h glibc-2.44/resolv/resolv_conf.h
+--- glibc-2.44.orig/resolv/resolv_conf.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/resolv/resolv_conf.h	2026-07-24 13:16:45.000000000 +0000
+@@ -71,6 +71,9 @@
+    the struct __res_state object.  If CHANGE is not null, file change
+    detection data is written to *CHANGE, based on the state of the
+    file after reading it.  */
++bool __resolv_conf_select_path (char **alloc_out, const char **path_out)
++  attribute_hidden;
++
+ struct resolv_conf *__resolv_conf_load (struct __res_state *preinit,
+                                         struct file_change_detection *change)
+   attribute_hidden __attribute__ ((warn_unused_result));
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/generic/ldsodefs.h glibc-2.44/sysdeps/generic/ldsodefs.h
+--- glibc-2.44.orig/sysdeps/generic/ldsodefs.h	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/generic/ldsodefs.h	2026-11-11 01:57:32.140842445 +0000
 @@ -685,6 +685,10 @@
    /* List of auditing interfaces.  */
    struct audit_ifaces *_dl_audit;
@@ -6083,9 +7649,9 @@ diff -ruN glibc-2.44.orig/sysdeps/generic/ldsodefs.h glibc-2.44/sysdeps/generic/
  };
  # define __rtld_global_attribute__
  # if IS_IN (rtld)
-diff -ruN glibc-2.44.orig/sysdeps/posix/system.c glibc-2.44/sysdeps/posix/system.c
---- glibc-2.44.orig/sysdeps/posix/system.c	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/sysdeps/posix/system.c	2026-11-08 21:31:00.952844295 -0500
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/posix/system.c glibc-2.44/sysdeps/posix/system.c
+--- glibc-2.44.orig/sysdeps/posix/system.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/posix/system.c	2026-11-09 02:31:00.952844295 +0000
 @@ -25,14 +25,15 @@
  #include <sys/types.h>
  #include <sys/wait.h>
@@ -6104,9 +7670,9 @@ diff -ruN glibc-2.44.orig/sysdeps/posix/system.c glibc-2.44/sysdeps/posix/system
  
  
  /* This system implementation aims to be thread-safe, which requires to
-diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/configure glibc-2.44/sysdeps/unix/sysv/linux/configure
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/configure	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/sysdeps/unix/sysv/linux/configure	2026-11-08 21:31:00.953008993 -0500
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/configure glibc-2.44/sysdeps/unix/sysv/linux/configure
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/configure	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/configure	2026-11-09 02:31:00.953008993 +0000
 @@ -134,7 +134,7 @@
  
  
@@ -6116,9 +7682,9 @@ diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/configure glibc-2.44/sysdeps/u
  
  if test $host = $build; then
    # If $prefix/include/{net,scsi} are symlinks, make install will
-diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac glibc-2.44/sysdeps/unix/sysv/linux/configure.ac
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/sysdeps/unix/sysv/linux/configure.ac	2026-11-08 21:31:00.953151701 -0500
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac glibc-2.44/sysdeps/unix/sysv/linux/configure.ac
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/configure.ac	2026-11-09 02:31:00.953151701 +0000
 @@ -89,7 +89,7 @@
  
  
@@ -6128,10 +7694,120 @@ diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/configure.ac glibc-2.44/sysdep
  
  if test $host = $build; then
    # If $prefix/include/{net,scsi} are symlinks, make install will
-diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h glibc-2.44/sysdeps/unix/sysv/linux/paths.h
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/sysdeps/unix/sysv/linux/paths.h	2026-11-08 21:31:00.953281055 -0500
-@@ -33,12 +33,11 @@
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/glob.c glibc-2.44/sysdeps/unix/sysv/linux/glob.c
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/glob.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/glob.c	2026-07-24 13:16:45.000000000 +0000
+@@ -19,6 +19,10 @@
+ #include <sys/stat.h>
+ #include <kernel_stat.h>
+ 
++#if XSTAT_IS_XSTAT64
++# define GLOB_COMPILE_TILDE_WRAPPER 1
++#endif
++
+ #define struct_stat    struct stat
+ #define struct_stat64  struct stat64
+ #define GLOB_LSTAT     gl_lstat
+@@ -33,5 +37,9 @@
+ 
+ #if XSTAT_IS_XSTAT64
+ strong_alias (__glob, __glob64)
++libc_hidden_ver (__glob, __glob64)
+ versioned_symbol (libc, __glob64, glob64, GLIBC_2_27);
++# if IS_IN (libc)
++hidden_def_alias (__glob, __GI_glob64)
++# endif
+ #endif
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/glob_notilde.c glibc-2.44/sysdeps/unix/sysv/linux/glob_notilde.c
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/glob_notilde.c	1970-01-01 00:00:00.000000000 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/glob_notilde.c	2026-07-24 13:16:45.000000000 +0000
+@@ -0,0 +1,42 @@
++/* Find pathnames matching a pattern without tilde NSS lookup.  Linux version.
++   Copyright (C) 2026 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <https://www.gnu.org/licenses/>.  */
++
++#include <sys/stat.h>
++#include <kernel_stat.h>
++
++#define struct_stat    struct stat
++#define struct_stat64  struct stat64
++#define GLOB_LSTAT     gl_lstat
++#define GLOB_STAT64    __stat64
++#define GLOB_LSTAT64   __lstat64
++
++#define GLOB_COMPILE_NOTILDE 1
++#define glob64 __no_glob64_decl
++#define __glob64 __no___glob64_decl
++#define __glob64_notilde __no___glob64_notilde_decl
++#include <posix/glob.c>
++#undef glob64
++#undef __glob64
++#undef __glob64_notilde
++
++libc_hidden_def (__glob_internal)
++libc_hidden_def (__glob_notilde)
++#if XSTAT_IS_XSTAT64
++strong_alias (__glob_notilde, __glob64_notilde)
++libc_hidden_ver (__glob_notilde, __glob64_notilde)
++#endif
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/globfree.c glibc-2.44/sysdeps/unix/sysv/linux/globfree.c
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/globfree.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/globfree.c	2026-07-24 13:16:45.000000000 +0000
+@@ -21,10 +21,14 @@
+ #include <kernel_stat.h>
+ 
+ #define globfree64 __no_globfree64_decl
++#define __globfree64 __no___globfree64_decl
+ #include <posix/globfree.c>
+ #undef globfree64
++#undef __globfree64
+ 
+ #if XSTAT_IS_XSTAT64
+-weak_alias (globfree, globfree64)
+-libc_hidden_ver (globfree, globfree64)
++strong_alias (__globfree, __globfree64)
++libc_hidden_ver (__globfree, __globfree64)
++weak_alias (__globfree, globfree64)
++libc_hidden_ver (__globfree, globfree64)
+ #endif
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/globfree64.c glibc-2.44/sysdeps/unix/sysv/linux/globfree64.c
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/globfree64.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/globfree64.c	2026-07-24 13:16:45.000000000 +0000
+@@ -25,12 +25,14 @@
+ # include <glob.h>
+ 
+ # define glob_t glob64_t
+-# define globfree(pglob) globfree64 (pglob)
++# define globfree(pglob) __globfree64 (pglob)
+ 
+ # undef stat
+ # define stat stat64
+ 
+ # include <posix/globfree.c>
+ 
+-libc_hidden_def (globfree64)
++libc_hidden_def (__globfree64)
++weak_alias (__globfree64, globfree64)
++libc_hidden_ver (__globfree64, globfree64)
+ #endif
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h glibc-2.44/sysdeps/unix/sysv/linux/paths.h
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h	2026-11-14 23:57:53.691675905 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/paths.h	2026-11-14 23:57:54.548307037 +0000
+@@ -33,18 +33,21 @@
  #define	_PATHS_H_
  
  /* Default search path. */
@@ -6147,9 +7823,19 @@ diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/paths.h glibc-2.44/sysdeps/uni
  #define	_PATH_CONSOLE	"/dev/console"
  #define	_PATH_CSHELL	"/bin/csh"
  #define	_PATH_DEVDB	"/var/run/dev.db"
-diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist glibc-2.44/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-11-08 21:31:00.953465509 -0500
+ #define	_PATH_DEVNULL	"/dev/null"
+ #define	_PATH_DRUM	"/dev/drum"
+ #define	_PATH_GSHADOW	"/etc/gshadow"
++#define	_PATH_NSS_FILES_DIRS	"/etc:/sw/*/etc"
++#define	_PATH_VENDOR_HOSTCONF	"/sw/*/etc/host.conf"
++#define	_PATH_VENDOR_NSSWITCH_CONF	"/sw/*/etc/nsswitch.conf"
++#define	_PATH_VENDOR_RESCONF	"/sw/*/etc/resolv.conf"
+ #define	_PATH_KLOG	"/proc/kmsg"
+ #define	_PATH_KMEM	"/dev/kmem"
+ #define	_PATH_LASTLOG	"/var/log/lastlog"
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist glibc-2.44/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist	2026-11-09 02:31:00.953465509 +0000
 @@ -540,7 +540,7 @@
  GLIBC_2.2.5 _longjmp F
  GLIBC_2.2.5 _mcleanup F
@@ -6159,9 +7845,9 @@ diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/64/libc.abilist glibc-2
  GLIBC_2.2.5 _nl_domain_bindings D 0x8
  GLIBC_2.2.5 _nl_msg_cat_cntr D 0x4
  GLIBC_2.2.5 _null_auth D 0x18
-diff -ruN glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed
---- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-07-24 09:16:45.000000000 -0400
-+++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-11-08 21:31:00.953759878 -0500
+diff --no-dereference -Naur glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed
+--- glibc-2.44.orig/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44/sysdeps/unix/sysv/linux/x86_64/ldd-rewrite.sed	2026-11-09 02:31:00.953759878 +0000
 @@ -1 +1 @@
 -s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\264\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_
 +s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\2\4-x86-64\6 \2\4\6 \2x32\4-x32\6"_

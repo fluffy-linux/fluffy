@@ -13,7 +13,9 @@ ARCHIVES=(
     ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec https://github.com/fluffy-linux/systemd/releases/download/v$VERSION/systemd-$VERSION.tar.gz
     9be13865c9c7f9fecba7b86fc5185aecef00164c87ed68b4f6884283aefebe50 https://github.com/fluffy-linux/systemd/releases/download/v$VERSION/systemd-man-pages-$VERSION.tar.xz
     7b62b8271aa5532fcf9011d8d6d0fd5c01070dab862c482741d3f600f8f51962 file://systemd-$VERSION-fluffy-shell.patch
-    b65c6fee8234f79e1eb17ebd333516f3536016f6136533cea1362002a37fa4bc file://systemd-$VERSION-fluffy-source.patch
+    cf3ef5bb494ef8703ced83ee74d7cb8b0638184fd1e8c261607a2c12b41403da file://systemd-$VERSION-fluffy-source.patch
+    1b46ffd4c8c02f909646ace178ca78f980928279185835216b0bdc1ff9f106f7 file://systemd.passwd
+    23d078bd659027ca416d7c6c12a396ffa3fa4a489c89bced6d6765fe0e326f78 file://systemd.group
 )
 
 NEEDS=(
@@ -131,6 +133,8 @@ MAKE() {
         -Dzstd=enabled \
         -Dcreate-log-dirs=false \
         -Ddefault-dnssec=no \
+        -Dfallback-hostname=fluffy \
+        -Dcontainer-uid-base-max=0x3FFF0000 \
         -Dfirstboot=false \
         -Dinstall-sysconfdir=false \
         -Dinstall-tests=false \
@@ -170,13 +174,114 @@ MAKE() {
 }
 
 CHECK() {
-    meson test -C build test-path-util test-path-lookup test-condition test-conf-files test-mount-util test-dlopen-so --print-errorlogs
+    meson test -C build \
+        test-path-util \
+        test-path-lookup \
+        test-condition \
+        test-conf-files \
+        test-conf-parser \
+        test-uid-classification \
+        test-mount-util \
+        test-dlopen-so \
+        --print-errorlogs
 }
 
 INSTALL() {
     DESTDIR=$DESTDIR ninja -C build install
 
+    build/systemd-hwdb --usr --root=$DESTDIR update
+
     ln -sfv ../lib/systemd/systemd $DESTDIR/sw/systemd/bin/init
+
+    # Keep /etc stateless: prevent systemd-tmpfiles --boot from populating /etc
+    # with factory copies, /etc/resolv.conf, /etc/mtab, or empty /etc/credstore*.
+    rm -fv $DESTDIR/sw/systemd/lib/tmpfiles.d/{etc.conf,systemd-resolve.conf,credstore.conf}
+    rm -rfv $DESTDIR/sw/systemd/share/factory/etc
+
+    mkdir -pv $DESTDIR/sw/systemd/etc
+    install -m 644 systemd.passwd $DESTDIR/sw/systemd/etc/passwd
+    install -m 644 systemd.group $DESTDIR/sw/systemd/etc/group
+    ln -sfv /run/systemd/resolve/stub-resolv.conf $DESTDIR/sw/systemd/etc/resolv.conf
+
+    cat > $DESTDIR/sw/systemd/lib/os-release << "EOF"
+NAME="Fluffy Linux"
+ID=fluffy
+PRETTY_NAME="Fluffy Linux"
+EOF
+
+    mkdir -pv $DESTDIR/sw/systemd/lib/systemd/system-preset
+    mkdir -pv $DESTDIR/sw/systemd/lib/systemd/user-preset
+    rm -fv $DESTDIR/sw/systemd/lib/systemd/system-preset/*.preset
+    rm -fv $DESTDIR/sw/systemd/lib/systemd/user-preset/*.preset
+    printf 'disable *\n' > $DESTDIR/sw/systemd/lib/systemd/system-preset/99-default.preset
+    printf 'disable *\n' > $DESTDIR/sw/systemd/lib/systemd/user-preset/99-default.preset
+
+    # agetty lives in util-linux, so util-linux owns the getty service units.
+    SYSUNITDIR=$DESTDIR/sw/systemd/lib/systemd/system
+    rm -fv \
+        $SYSUNITDIR/getty@.service \
+        $SYSUNITDIR/serial-getty@.service \
+        $SYSUNITDIR/console-getty.service \
+        $SYSUNITDIR/container-getty@.service \
+        $SYSUNITDIR/autovt@.service
+    rm -rfv $SYSUNITDIR/getty.target.wants
+
+    ln -sfv reboot.target $SYSUNITDIR/ctrl-alt-del.target
+    ln -sfv systemd-networkd.service $SYSUNITDIR/dbus-org.freedesktop.network1.service
+    ln -sfv systemd-oomd.service $SYSUNITDIR/dbus-org.freedesktop.oom1.service
+    ln -sfv systemd-resolved.service $SYSUNITDIR/dbus-org.freedesktop.resolve1.service
+    ln -sfv systemd-timesyncd.service $SYSUNITDIR/dbus-org.freedesktop.timesync1.service
+
+    mkdir -pv $SYSUNITDIR/multi-user.target.wants
+    for u in machines.target remote-fs.target systemd-networkd.service systemd-oomd.service
+    do
+        ln -sfv ../$u $SYSUNITDIR/multi-user.target.wants/$u
+    done
+
+    mkdir -pv $SYSUNITDIR/network-online.target.wants
+    ln -sfv ../systemd-networkd-wait-online.service \
+        $SYSUNITDIR/network-online.target.wants/systemd-networkd-wait-online.service
+
+    mkdir -pv $SYSUNITDIR/sockets.target.wants
+    for u in \
+        systemd-factory-reset.socket \
+        systemd-journald-audit.socket \
+        systemd-mountfsd.socket \
+        systemd-networkd-resolve-hook.socket \
+        systemd-networkd.socket \
+        systemd-networkd-varlink-metrics.socket \
+        systemd-networkd-varlink.socket \
+        systemd-nsresourced.socket \
+        systemd-oomd.socket \
+        systemd-report-basic.socket \
+        systemd-report-cgroup.socket \
+        systemd-resolved-monitor.socket \
+        systemd-resolved-varlink.socket \
+        systemd-storage-block.socket \
+        systemd-storage-fs.socket \
+        systemd-sysext.socket \
+        systemd-userdbd.socket
+    do
+        ln -sfv ../$u $SYSUNITDIR/sockets.target.wants/$u
+    done
+
+    mkdir -pv $SYSUNITDIR/sysinit.target.wants
+    for u in \
+        systemd-confext.service \
+        systemd-network-generator.service \
+        systemd-pstore.service \
+        systemd-resolved.service \
+        systemd-sysext.service \
+        systemd-timesyncd.service \
+        systemd-udev-load-credentials.service \
+        systemd-userdb-load-credentials.service
+    do
+        ln -sfv ../$u $SYSUNITDIR/sysinit.target.wants/$u
+    done
+
+    mkdir -pv $SYSUNITDIR/systemd-journald.service.wants
+    ln -sfv ../systemd-journald-audit.socket \
+        $SYSUNITDIR/systemd-journald.service.wants/systemd-journald-audit.socket
 
     mkdir -pv $DESTDIR/sw/systemd/share/man
     if test -d systemd-man-pages-$VERSION

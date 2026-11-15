@@ -67,7 +67,7 @@ fi
 MAKE() {
     patch -Z -Np1 -i vim-$VERSION-fluffy-source.patch
 
-    echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
+    echo '#define SYS_VIMRC_FILE "/sw/vim/etc/vimrc"' >> src/feature.h
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
@@ -102,6 +102,10 @@ set mouse=
 syntax on
 if (&term == "xterm") || (&term == "vt100")
   set background=dark
+endif
+
+if filereadable('/etc/vimrc')
+  source /etc/vimrc
 endif
 
 " End /sw/vim/etc/vimrc

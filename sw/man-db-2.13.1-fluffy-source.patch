@@ -173,3 +173,157 @@ diff --no-dereference -Naur man-db-2.13.1.orig/src/man_db.conf.in man-db-2.13.1/
  MANDB_MAP	/usr/man		/var/cache/man/fsstnd
  MANDB_MAP	/usr/share/man		/var/cache/man
  MANDB_MAP	/usr/local/man		/var/cache/man/oldlocal
+diff --no-dereference -Naur man-db-2.13.1.orig/src/manp.c man-db-2.13.1/src/manp.c
+--- man-db-2.13.1.orig/src/manp.c	2025-05-02 12:49:29.000000000 +0000
++++ man-db-2.13.1/src/manp.c	2025-05-02 12:49:29.000000000 +0000
+@@ -50,6 +50,10 @@
+ #include <assert.h>
+ #include <ctype.h>
+ #include <dirent.h>
++#include <glob.h>
++#ifndef GLOB_PATHS
++#  define GLOB_PATHS (1 << 29)
++#endif
+ #include <errno.h>
+ #include <stdbool.h>
+ #include <stdio.h>
+@@ -129,6 +133,21 @@
+ static void add_config (const char *key, const char *cont,
+                         enum config_flag flag)
+ {
++	if (flag == DEFINE || flag == DEFINE_USER ||
++	    flag == MANDB_MAP || flag == MANDB_MAP_USER) {
++		size_t n = gl_list_size (config);
++		for (size_t i = 0; i < n; ++i) {
++			struct config_item *existing =
++			        (struct config_item *) gl_list_get_at (config, i);
++			if (existing->flag == flag &&
++			    STREQ (existing->key, key)) {
++				free (existing->cont);
++				existing->cont = xstrdup (cont);
++				return;
++			}
++		}
++	}
++
+ 	struct config_item *item = XMALLOC (struct config_item);
+ 	item->key = xstrdup (key);
+ 	item->cont = xstrdup (cont);
+@@ -136,6 +155,19 @@
+ 	gl_list_add_last (config, item);
+ }
+ 
++static void clear_sections (bool user)
++{
++	enum config_flag target = user ? SECTION_USER : SECTION;
++	size_t i = gl_list_size (config);
++	while (i > 0) {
++		--i;
++		const struct config_item *existing =
++		        (const struct config_item *) gl_list_get_at (config, i);
++		if (existing->flag == target)
++			gl_list_remove_at (config, i);
++	}
++}
++
+ static const char *ATTRIBUTE_PURE get_config (const char *key,
+                                               enum config_flag flag)
+ {
+@@ -756,6 +788,7 @@
+ 	char key[512], cont[512];
+ 	int val;
+ 	int c;
++	bool seen_section = false;
+ 
+ 	while (getline (&buf, &n, config_file) >= 0) {
+ 		bp = buf;
+@@ -786,11 +819,14 @@
+ 		else if ((c = sscanf (bp, "DEFINE %511s %511[^\n]", key,
+ 		                      cont)) > 0)
+ 			add_def (key, c == 2 ? cont : "", user);
+-		else if (sscanf (bp, "SECTION %511[^\n]", cont) == 1)
+-			add_sections (cont, user);
+-		else if (sscanf (bp, "SECTIONS %511[^\n]", cont) == 1)
+-			/* Since I keep getting it wrong ... */
++		else if (sscanf (bp, "SECTION %511[^\n]", cont) == 1 ||
++		         sscanf (bp, "SECTIONS %511[^\n]", cont) == 1) {
++			if (!seen_section) {
++				clear_sections (user);
++				seen_section = true;
++			}
+ 			add_sections (cont, user);
++		}
+ 		else if (sscanf (bp, "MINCATWIDTH %d", &val) == 1)
+ 			min_cat_width = val;
+ 		else if (sscanf (bp, "MAXCATWIDTH %d", &val) == 1)
+@@ -847,8 +883,56 @@
+ 	}
+ 
+ 	if (getenv ("MAN_TEST_DISABLE_SYSTEM_CONFIG") == NULL) {
+-		config_file = fopen (CONFIG_FILE, "r");
+-		if (config_file == NULL) {
++		const char *sys_path = getenv ("MAN_SYSTEM_CONFIG_PATH");
++		bool custom_sys_path = (sys_path != NULL && *sys_path != '\0');
++		const char *pattern = custom_sys_path
++		        ? sys_path
++		        : "/sw/*/etc/man_db.conf:/etc/man_db.conf";
++		glob_t gl;
++		bool loaded_any = false;
++		bool loaded_default = false;
++
++		memset (&gl, 0, sizeof (gl));
++		if (glob (pattern, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0) {
++			for (size_t i = 0; i < gl.gl_pathc; ++i) {
++				const char *p = gl.gl_pathv[i];
++				if (!custom_sys_path && STREQ (p, "/etc/man_db.conf"))
++					continue;
++				if (STREQ (p, CONFIG_FILE))
++					loaded_default = true;
++				config_file = fopen (p, "r");
++				if (config_file != NULL) {
++					debug ("From the config file %s:\n", p);
++					add_to_dirlist (config_file, false);
++					fclose (config_file);
++					loaded_any = true;
++				}
++			}
++			globfree (&gl);
++		}
++
++		if (!custom_sys_path && !loaded_default &&
++		    !STREQ (CONFIG_FILE, "/etc/man_db.conf")) {
++			config_file = fopen (CONFIG_FILE, "r");
++			if (config_file != NULL) {
++				debug ("From the config file %s:\n", CONFIG_FILE);
++				add_to_dirlist (config_file, false);
++				fclose (config_file);
++				loaded_any = true;
++			}
++		}
++
++		if (!custom_sys_path) {
++			config_file = fopen ("/etc/man_db.conf", "r");
++			if (config_file != NULL) {
++				debug ("From the config file /etc/man_db.conf:\n");
++				add_to_dirlist (config_file, false);
++				fclose (config_file);
++				loaded_any = true;
++			}
++		}
++
++		if (!loaded_any) {
+ 			if (optional)
+ 				debug ("can't open %s; continuing anyway\n",
+ 				       CONFIG_FILE);
+@@ -857,11 +941,6 @@
+ 				       _ ("can't open the manpath "
+ 				          "configuration file %s"),
+ 				       CONFIG_FILE);
+-		} else {
+-			debug ("From the config file %s:\n", CONFIG_FILE);
+-
+-			add_to_dirlist (config_file, false);
+-			fclose (config_file);
+ 		}
+ 	}
+ 

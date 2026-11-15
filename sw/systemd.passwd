@@ -1,0 +1,8 @@
+systemd-journal-gateway:*:1169276972:1169276972:systemd Journal Gateway:/:/sw/coreutils/bin/false
+systemd-journal-remote:*:1842105573:1842105573:systemd Journal Remote:/:/sw/coreutils/bin/false
+systemd-journal-upload:*:1955252652:1955252652:systemd Journal Upload:/:/sw/coreutils/bin/false
+systemd-network:*:2069919925:2069919925:systemd Network Management:/:/sw/coreutils/bin/false
+systemd-resolve:*:1451425105:1451425105:systemd Resolver:/:/sw/coreutils/bin/false
+systemd-timesync:*:1910100127:1910100127:systemd Time Synchronization:/:/sw/coreutils/bin/false
+systemd-coredump:*:1685437742:1685437742:systemd Core Dumper:/:/sw/coreutils/bin/false
+systemd-oom:*:1780436307:1780436307:systemd Out Of Memory Daemon:/:/sw/coreutils/bin/false

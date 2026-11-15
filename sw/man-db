@@ -9,7 +9,7 @@ VERSION=2.13.1
 
 ARCHIVES=(
     8afebb6f7eb6bb8542929458841f5c7e6f240e30c86358c1fbcefbea076c87d9 https://github.com/fluffy-linux/man-db/releases/download/$VERSION/man-db-$VERSION.tar.xz
-    85e507321ae90dd1ba77cc8b2d5fcb94ea7b7dada2f37486c9dc0a0f5a82ddaf file://man-db-$VERSION-fluffy-source.patch
+    a2646b06af65f438e42a9af2095ab602e146268bb2bfd122bc14f43b8726f65e file://man-db-$VERSION-fluffy-source.patch
     9c835417d019c59191806abc806b87bdaf998808f5826c84533b5f71c94d1c7f file://man-db-$VERSION-fluffy-test.patch
 )
 
@@ -103,9 +103,22 @@ MAKE() {
 
 CHECK() {
     make check
+
+    local td
+    td=$(mktemp -d)
+    mkdir -p "$td/sw/pkgA/etc" "$td/etc" "$td/man1" "$td/man2"
+    printf 'MANDATORY_MANPATH\t%s/man1\nSECTION\t1 8\n' "$td" > "$td/sw/pkgA/etc/man_db.conf"
+    test "$(HOME="$td" MANPATH= MAN_SYSTEM_CONFIG_PATH="$td/sw/*/etc/man_db.conf:$td/etc/man_db.conf" ./src/manpath -g)" = "$td/man1"
+
+    printf 'MANDATORY_MANPATH\t%s/man2\nSECTION\t8 1\n' "$td" > "$td/etc/man_db.conf"
+    test "$(HOME="$td" MANPATH= MAN_SYSTEM_CONFIG_PATH="$td/sw/*/etc/man_db.conf:$td/etc/man_db.conf" ./src/manpath -g)" = "$td/man1:$td/man2"
+    rm -rf "$td"
 }
 
 INSTALL() {
     make install
     find $DESTDIR/sw/man-db -name '*.la' -delete
+
+    install -dm755 $DESTDIR/sw/man-db/lib/systemd/system/timers.target.wants
+    ln -sf ../man-db.timer $DESTDIR/sw/man-db/lib/systemd/system/timers.target.wants/man-db.timer
 }

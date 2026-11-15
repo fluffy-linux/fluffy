@@ -1,0 +1,4 @@
+root:x:0:0:root:/root:/sw/bash/bin/bash
+bin:*:1967184862:1967184862:bin:/dev/null:/sw/coreutils/bin/false
+daemon:*:1931809929:1931809929:Daemon User:/dev/null:/sw/coreutils/bin/false
+nobody:*:65534:65534:Unprivileged User:/dev/null:/sw/coreutils/bin/false

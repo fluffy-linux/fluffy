@@ -2299,6 +2299,110 @@ diff --no-dereference -Naur bash-5.3.orig/lib/glob/smatch.c bash-5.3/lib/glob/sm
  #define DEQUOTE_PATHNAME	wcdequote_pathname
  #define STRUCT			wcsmat_struct
  #define STRCHR(S, C)		wcschr((S), (C))
+diff --no-dereference -Naur bash-5.3.orig/lib/readline/bind.c bash-5.3/lib/readline/bind.c
+--- bash-5.3.orig/lib/readline/bind.c	2024-09-13 19:32:23.000000000 +0000
++++ bash-5.3/lib/readline/bind.c	2024-09-13 19:32:23.000000000 +0000
+@@ -53,6 +53,10 @@
+ #endif /* !errno */
+ 
+ #include "posixstat.h"
++#include <glob.h>
++#ifndef GLOB_PATHS
++#  define GLOB_PATHS (1 << 29)
++#endif
+ 
+ /* System-specific feature definitions and include files. */
+ #include "rldefs.h"
+@@ -1064,7 +1068,7 @@
+ }
+ 
+ static int
+-_rl_read_init_file (const char *filename, int include_level)
++_rl_read_init_file_single (const char *filename, int update_last, int include_level)
+ {
+   register int i;
+   char *buffer, *openname, *line, *end;
+@@ -1081,7 +1085,7 @@
+   if (buffer == 0)
+     return (errno);
+   
+-  if (include_level == 0 && filename != last_readline_init_file)
++  if (update_last && include_level == 0 && filename != last_readline_init_file)
+     {
+       FREE (last_readline_init_file);
+       last_readline_init_file = savestring (filename);
+@@ -1129,6 +1133,71 @@
+   return (0);
+ }
+ 
++static int
++_rl_read_init_file (const char *filename, int include_level)
++{
++  static int reading_sys_inputrc = 0;
++  const char *pattern = 0;
++
++  if (filename == 0)
++    return (ENOENT);
++
++  if (strcmp (filename, SYS_INPUTRC) == 0 && reading_sys_inputrc == 0)
++    pattern = "/sw/*/etc/inputrc:" SYS_INPUTRC;
++  else if (strpbrk (filename, "*?[") != 0 || strchr (filename, ':') != 0)
++    pattern = filename;
++
++  if (pattern != 0)
++    {
++      glob_t gl;
++      int any_ok = 0;
++      int last_err = ENOENT;
++      int was_sys = (strcmp (filename, SYS_INPUTRC) == 0);
++
++      if (was_sys)
++	reading_sys_inputrc = 1;
++
++      memset (&gl, 0, sizeof (gl));
++      if (glob (pattern, GLOB_PATHS | GLOB_NOESCAPE, NULL, &gl) == 0)
++	{
++	  size_t gi;
++	  for (gi = 0; gi < gl.gl_pathc; ++gi)
++	    {
++	      const char *old_file = current_readline_init_file;
++	      int old_line = current_readline_init_lineno;
++	      int old_level = current_readline_init_include_level;
++	      int old_reading = currently_reading_init_file;
++	      int r = _rl_read_init_file_single (gl.gl_pathv[gi], 0, include_level);
++	      current_readline_init_file = old_file;
++	      current_readline_init_lineno = old_line;
++	      current_readline_init_include_level = old_level;
++	      currently_reading_init_file = old_reading;
++	      if (r == 0)
++		any_ok = 1;
++	      else
++		last_err = r;
++	    }
++	  globfree (&gl);
++	}
++
++      if (was_sys)
++	reading_sys_inputrc = 0;
++
++      if (any_ok)
++	{
++	  if (include_level == 0 && filename != last_readline_init_file)
++	    {
++	      FREE (last_readline_init_file);
++	      last_readline_init_file = savestring (filename);
++	    }
++	  return (0);
++	}
++      return (last_err);
++    }
++
++  return (_rl_read_init_file_single (filename, 1, include_level));
++}
++
+ static void
+ _rl_init_file_error (const char *format, ...)
+ {
 diff --no-dereference -Naur bash-5.3.orig/pathexp.c bash-5.3/pathexp.c
 --- bash-5.3.orig/pathexp.c	2025-06-26 15:34:29.000000000 +0000
 +++ bash-5.3/pathexp.c	2025-06-26 15:34:29.000000000 +0000
@@ -2748,6 +2852,37 @@ diff --no-dereference -Naur bash-5.3.orig/pathexp.h bash-5.3/pathexp.h
  
  /* Filename completion ignore.  Used to implement the "fignore" facility of
     tcsh, GLOBIGNORE (like ksh-93 FIGNORE), and EXECIGNORE.
+diff --no-dereference -Naur bash-5.3.orig/shell.c bash-5.3/shell.c
+--- bash-5.3.orig/shell.c	2025-03-26 20:40:19.000000000 +0000
++++ bash-5.3/shell.c	2025-03-26 20:40:19.000000000 +0000
+@@ -69,6 +69,7 @@
+ #include "input.h"
+ #include "execute_cmd.h"
+ #include "findcmd.h"
++#include "pathexp.h"
+ 
+ #if defined (USING_BASH_MALLOC) && defined (DEBUG) && !defined (DISABLE_MALLOC_WRAPPERS)
+ #  include <malloc/shmalloc.h>
+@@ -1117,7 +1118,18 @@
+ static void
+ execute_profile_file (void)
+ {
+-  maybe_execute_file (SYS_PROFILE, 1);
++  char **profiles;
++
++  profiles = shell_glob_path ("/sw/*/etc/profile:" SYS_PROFILE);
++  if (profiles)
++    {
++      int i;
++      for (i = 0; profiles[i]; i++)
++	maybe_execute_file (profiles[i], 1);
++      strvec_dispose (profiles);
++    }
++  else
++    maybe_execute_file (SYS_PROFILE, 1);
+ 
+   if (act_like_sh)	/* sh */
+     maybe_execute_file ("~/.profile", 1);
 diff --no-dereference -Naur bash-5.3.orig/stringlib.c bash-5.3/stringlib.c
 --- bash-5.3.orig/stringlib.c	2024-10-25 17:57:23.000000000 +0000
 +++ bash-5.3/stringlib.c	2024-10-25 17:57:23.000000000 +0000
