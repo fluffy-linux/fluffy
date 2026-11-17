@@ -27,7 +27,7 @@ MAKE() {
     cd build
     CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --prefix=/sw/binutils \
-        --with-lib-path='/sw/*/lib' \
+        --with-lib-path='=/sw/*/lib' \
         --build=$(../config.guess) \
         --host=$FLUFFY_TGT \
         --disable-nls \

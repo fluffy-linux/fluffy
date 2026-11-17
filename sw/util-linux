@@ -12,6 +12,7 @@ HAS_LDFLAGS="-lblkid -luuid"
 ARCHIVES=(
     03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a https://github.com/fluffy-linux/util-linux/releases/download/v$VERSION/util-linux-$VERSION.tar.xz
     7479ec8c51e074b1ff7a7648b6f114f365b6fbebd1b3f7e360608e1ebf2fac48 file://util-linux-$VERSION-fluffy-source.patch
+    ed96fb13ef063fdfe0869f73ee081c64e86d4e38e3929809353e7f7f6bbbe323 file://util-linux-$VERSION-fluffy-test.patch
     90d7fa2696fdd062ac66280049dabb8b64a8e08985c35356b74b089a73fd88e2 file://util-linux.passwd
     45385873a244b0a6e8ba7c068ef4707bd4d71c42b313de486020f744375364b4 file://util-linux.group
 )
@@ -77,6 +78,7 @@ fi
 
 MAKE() {
     patch -Z -Np1 -i util-linux-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i util-linux-$VERSION-fluffy-test.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site \
@@ -114,45 +116,8 @@ MAKE() {
 }
 
 CHECK() {
-    make test_pathnames test_configs test_islocal test_logindefs
-    test "$(./test_pathnames _PATH_LOGIN)" = "login"
-    test "$(./test_pathnames _PATH_DEFPATH)" = "/sw/*/bin"
-    test "$(./test_pathnames _PATH_DEFPATH_ROOT)" = "/sw/*/bin"
-    grep -Fq '#define FS_SEARCH_PATH "/sw/*/bin"' config.h
-
-    local td out_empty out_dot out_trailing_dot
-    td="$(mktemp -d)"
-    mkdir -p "$td/fsck/pkg/bin" "$td/cwd"
-    ln -sf /sw/coreutils/bin/true "$td/fsck/pkg/bin/fsck.fluffytest"
-    ln -sf /sw/coreutils/bin/false "$td/cwd/fsck.fluffytest"
-    FSTAB_FILE=/dev/null PATH="$td/fsck/*/bin:$PATH" ./fsck -T -N -t fluffytest /dev/null | grep -Fq "[$td/fsck/pkg/bin/fsck.fluffytest"
-    (cd "$td/cwd" && FSTAB_FILE=/dev/null PATH=":$td/fsck/*/bin:$PATH" "$OLDPWD/fsck" -T -N -t fluffytest /dev/null | grep -Fq "[$td/fsck/pkg/bin/fsck.fluffytest")
-    (cd "$td/cwd" && FSTAB_FILE=/dev/null PATH=":$td/fsck/*/bin:.:$PATH" "$OLDPWD/fsck" -T -N -t fluffytest /dev/null | grep -Fq "[$td/fsck/pkg/bin/fsck.fluffytest")
-    (cd "$td/cwd" && FSTAB_FILE=/dev/null PATH=".:$td/fsck/*/bin:$PATH" "$OLDPWD/fsck" -T -N -t fluffytest /dev/null | grep -Fq "[./fsck.fluffytest")
-
-    mkdir -p "$td/sw/util-linux/etc" "$td/sw/pkgB/etc/issue.d" "$td/etc" "$td/cwd"
-    printf 'vendor\n' > "$td/sw/util-linux/etc/issue"
-    printf 'dropin\n' > "$td/sw/pkgB/etc/issue.d/10-pkgb.conf"
-    printf 'decoy\n' > "$td/cwd/issue"
-    ./test_configs --etc "$td/etc" --usr "$td/sw/*/etc" --name issue --suffix conf | grep -Fq "$td/sw/util-linux/etc//issue"
-    ./test_configs --etc "$td/etc" --usr "$td/sw/*/etc" --name issue --suffix conf | grep -Fq "$td/sw/pkgB/etc//issue.d/10-pkgb.conf"
-
-    out_empty="$(cd "$td/cwd" && "$OLDPWD/test_configs" --etc "$td/etc" --usr ":$td/sw/*/etc" --name issue)"
-    echo "$out_empty" | grep -Fq "$td/sw/util-linux/etc//issue"
-    ! echo "$out_empty" | grep -Eq '(^| )\./+issue$'
-
-    out_trailing_dot="$(cd "$td/cwd" && "$OLDPWD/test_configs" --etc "$td/etc" --usr ":$td/sw/*/etc:." --name issue)"
-    echo "$out_trailing_dot" | grep -Fq "$td/sw/util-linux/etc//issue"
-    ! echo "$out_trailing_dot" | grep -Eq '(^| )\./+issue$'
-
-    out_dot="$(cd "$td/cwd" && "$OLDPWD/test_configs" --etc "$td/etc" --usr ".:$td/sw/*/etc" --name issue)"
-    echo "$out_dot" | grep -Fq ".//issue"
-
-    printf 'user\n' > "$td/etc/issue"
-    ./test_configs --etc "$td/etc" --usr "$td/sw/*/etc" --name issue | grep -Fq "$td/etc//issue"
-    rm -rf "$td"
-
-    bash ./tests/run.sh --nonroot login findmnt
+    make check-programs
+    bash ./tests/run.sh --nonroot login findmnt misc/glob-paths
 }
 
 INSTALL() {

@@ -11,7 +11,7 @@ ARCHIVES=(
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://github.com/fluffy-linux/mpc/releases/download/$MPC_VERSION/mpc-$MPC_VERSION.tar.xz
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://github.com/fluffy-linux/gmp/releases/download/gmp-$GMP_VERSION/gmp-$GMP_VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    41b42588482513eb3195782f4c7c4bc343142f14cf56cfc27b58ddf545fdc999 file://gcc-$VERSION-fluffy-source.patch
+    eb19d8c97b0dbb5a5acb2dc34ae086d3691fda6ee833fa7e0ad9396f38b619e0 file://gcc-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -53,6 +53,13 @@ EOF
 
     mkdir -v build
     cd build
+
+    # Target libstdc++ is linked by the gcc-pass1 driver (CXX_FOR_TARGET),
+    # which is --disable-shared and never links libgcc_s: libstdc++.so would
+    # reference _Unwind_* with no DT_NEEDED on libgcc_s.so.1.  Add it for
+    # -shared links only.
+    printf '*libgcc:\n+ %%{shared:-lgcc_s}\n\n' > libgcc_s.specs
+
     CONFIG_SITE=/sw/glibc/share/config.site ../configure \
         --build=$(../config.guess) \
         --host=$FLUFFY_TGT \
@@ -71,7 +78,7 @@ EOF
         --disable-libssp \
         --disable-libvtv \
         --enable-languages=c,c++ \
-        CXX_FOR_TARGET="$FLUFFY_TGT-gcc -nostdinc++" \
+        CXX_FOR_TARGET="$FLUFFY_TGT-gcc -nostdinc++ -specs=$PWD/libgcc_s.specs" \
         LDFLAGS_FOR_TARGET=-L$PWD/$FLUFFY_TGT/libgcc \
         target_configargs=gcc_cv_target_thread_file=posix
     CONFIG_SITE=/sw/glibc/share/config.site make

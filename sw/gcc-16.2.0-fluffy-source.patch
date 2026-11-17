@@ -925,12 +925,13 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpat
  	      free (sysroot_no_trailing_dir_separator);
  	    }
  	  else if (!p->add_sysroot && relocated
-@@ -211,28 +351,66 @@
+@@ -211,28 +351,64 @@
  					    cpp_PREFIX);
  		  free (dummy);
  		}
--	      ostr = concat (relocated_prefix,
-+	      ostr = concat (relocated_prefix ? relocated_prefix : "",
++	      if (!relocated_prefix)
++		continue;
+ 	      ostr = concat (relocated_prefix,
  			     p->fname + cpp_PREFIX_len,
  			     NULL);
 -	      str = update_path (ostr, p->component);
@@ -938,15 +939,11 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpat
  	      free (ostr);
 +	      if (fname_has_wild)
 +		{
-+		  char *upd_reloc
-+		    = relocated_prefix
-+		      ? update_path (relocated_prefix, p->component)
-+		      : NULL;
-+		  char *esc_reloc
-+		    = upd_reloc ? escape_glob_meta (upd_reloc) : NULL;
++		  char *upd_reloc = update_path (relocated_prefix, p->component);
++		  char *esc_reloc = escape_glob_meta (upd_reloc);
 +		  char *upd_tail
 +		    = update_path (p->fname + cpp_PREFIX_len, p->component);
-+		  esc_pat = concat (esc_reloc ? esc_reloc : "", upd_tail, NULL);
++		  esc_pat = concat (esc_reloc, upd_tail, NULL);
 +		  free (upd_tail);
 +		  free (esc_reloc);
 +		  free (upd_reloc);
@@ -999,7 +996,7 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpat
  	}
      }
  }
-@@ -326,18 +504,83 @@
+@@ -326,18 +502,83 @@
  static void
  add_sysroot_to_chain (const char *sysroot, int chain)
  {
@@ -1088,7 +1085,7 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpat
  }
  
  /* Merge the four include chains together in the order quote, bracket,
-@@ -353,15 +596,13 @@
+@@ -353,15 +594,13 @@
  static void
  merge_include_chains (const char *sysroot, cpp_reader *pfile, int verbose)
  {
@@ -1111,7 +1108,7 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpat
  
    /* Join the SYSTEM and AFTER chains.  Remove duplicates in the
       resulting SYSTEM chain.  */
-@@ -444,10 +685,9 @@
+@@ -444,10 +683,9 @@
    tails[chain] = p;
  }
  
@@ -1125,7 +1122,7 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpat
  {
    cpp_dir *p;
    size_t pathlen = strlen (path);
-@@ -484,6 +724,50 @@
+@@ -484,6 +722,50 @@
    add_cpp_dir_path (p, chain);
  }
  

@@ -46,6 +46,20 @@ diff --no-dereference -Naur vim-9.2.1025.orig/runtime/tools/vimspell.sh vim-9.2.
  #
  # Spell a file & generate the syntax statements necessary to
  # highlight in vim.  Based on a program from Krishna Gadepalli
+diff --no-dereference -Naur vim-9.2.1025.orig/src/Makefile vim-9.2.1025/src/Makefile
+--- vim-9.2.1025.orig/src/Makefile	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/Makefile	2026-08-30 21:19:06.000000000 +0000
+@@ -2864,7 +2864,9 @@
+ 		$(GVIMNAME) $(GVIEWNAME) $(RGVIMNAME) $(RGVIEWNAME) \
+ 		$(GVIMDIFFNAME) $(EVIEWNAME)
+ 
+-installmanlinks:
++# installml.sh only links pages next to an existing vim.1, which installrtbase
++# installs; without this prerequisite "make -j install" can skip them silently.
++installmanlinks: installrtbase
+ 	-$(SHELL) ./installml.sh install "$(GUI_MAN_TARGETS)" \
+ 		$(DEST_MAN) $(INSTALLMLARGS)
+ 
 diff --no-dereference -Naur vim-9.2.1025.orig/src/configure vim-9.2.1025/src/configure
 --- vim-9.2.1025.orig/src/configure	2026-08-30 21:19:06.000000000 +0000
 +++ vim-9.2.1025/src/configure	2026-08-30 21:19:06.000000000 +0000
@@ -68,6 +82,30 @@ diff --no-dereference -Naur vim-9.2.1025.orig/src/gvimtutor vim-9.2.1025/src/gvi
  
  # Start GUI Vim on a copy of the tutor file.
  
+diff --no-dereference -Naur vim-9.2.1025.orig/src/installman.sh vim-9.2.1025/src/installman.sh
+--- vim-9.2.1025.orig/src/installman.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/installman.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -39,7 +39,7 @@
+ if test $what = "install" -o $what = "xxd"; then
+    if test ! -d $destdir; then
+       echo creating $destdir
+-      /bin/sh install-sh -c -d $destdir
++      /sw/bash/bin/bash install-sh -c -d $destdir
+       chmod 755 $destdir
+    fi
+ fi
+diff --no-dereference -Naur vim-9.2.1025.orig/src/installml.sh vim-9.2.1025/src/installml.sh
+--- vim-9.2.1025.orig/src/installml.sh	2026-08-30 21:19:06.000000000 +0000
++++ vim-9.2.1025/src/installml.sh	2026-08-30 21:19:06.000000000 +0000
+@@ -49,7 +49,7 @@
+ if test $what = "install" -a \( -f $destdir/$vimname.1 -o -f $destdir/$vimdiffname.1 -o -f $destdir/$eviewname.1 \); then
+    if test ! -d $destdir; then
+       echo creating $destdir
+-      /bin/sh install-sh -c -d $destdir
++      /sw/bash/bin/bash install-sh -c -d $destdir
+    fi
+ 
+    # ex
 diff --no-dereference -Naur vim-9.2.1025.orig/src/vimtutor vim-9.2.1025/src/vimtutor
 --- vim-9.2.1025.orig/src/vimtutor	2026-08-30 21:19:06.000000000 +0000
 +++ vim-9.2.1025/src/vimtutor	2026-08-30 21:19:06.000000000 +0000

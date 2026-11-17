@@ -12,7 +12,7 @@ HAS_LDFLAGS=-lcurl
 ARCHIVES=(
     8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5 https://github.com/fluffy-linux/curl/releases/download/curl-${VERSION//./_}/curl-$VERSION.tar.xz
     b6b341c45975d84b4c40be1e4a3830a52bcc02f2323169ced5c277c6bdfa6c78 file://curl-$VERSION-fluffy-source.patch
-    a3f92fc9cec3592efcb089bcec37fa5025b8b7f3b67d22ca4a8abac343c4e4b7 file://curl-$VERSION-fluffy-test.patch
+    bd8a02ea946a7c8e8f7e585d381ca252bcee7de0505ad0981ae36320c9ef5963 file://curl-$VERSION-fluffy-test.patch
     039bf88a47db3d62b63eb94922b71f459b9526b51d78bef85f4adb6f26826655 file://curl-$VERSION-fluffy-ch8.patch
 )
 
@@ -97,86 +97,6 @@ MAKE() {
 
 CHECK() {
     make test-nonflaky TFLAGS="-n -j$(nproc)"
-
-    local top=$PWD
-    local td
-    td=$(mktemp -d)
-    mkdir -p "$td/sw/pkgA/etc/ssl/certs" "$td/sw/pkgB/etc/ssl/certs" "$td/empty_capath" "$td/cwd"
-    export OPENSSL_CONF=/sw/openssl/etc/ssl/openssl.cnf
-
-    openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
-        -subj "/CN=Fluffy Trusted Root" \
-        -addext "basicConstraints=critical,CA:TRUE" \
-        -addext "keyUsage=critical,keyCertSign,cRLSign" \
-        -keyout "$td/ca1.key" -out "$td/ca1.pem" 2>/dev/null
-    openssl req -newkey rsa:2048 -nodes \
-        -subj "/CN=127.0.0.1" \
-        -addext "basicConstraints=CA:FALSE" \
-        -addext "subjectAltName=IP:127.0.0.1,DNS:localhost" \
-        -keyout "$td/srv.key" -out "$td/srv.csr" 2>/dev/null
-    openssl x509 -req -days 1 -in "$td/srv.csr" \
-        -CA "$td/ca1.pem" -CAkey "$td/ca1.key" -CAcreateserial \
-        -copy_extensions copyall -out "$td/srv.pem" 2>/dev/null
-    openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
-        -subj "/CN=Fluffy Untrusted Root" \
-        -addext "basicConstraints=critical,CA:TRUE" \
-        -addext "keyUsage=critical,keyCertSign,cRLSign" \
-        -keyout "$td/ca2.key" -out "$td/ca2.pem" 2>/dev/null
-
-    local h1 port srv_pid rc
-    h1=$(openssl x509 -hash -noout -in "$td/ca1.pem")
-    cp "$td/ca1.pem" "$td/sw/pkgB/etc/ssl/certs/ca-certificates.crt"
-    ln -s "$td/ca1.pem" "$td/sw/pkgB/etc/ssl/certs/${h1}.0"
-    : > "$td/sw/pkgA/etc/ssl/certs/ca-certificates.crt"
-    ln -s "$td/ca1.pem" "$td/cwd/${h1}.0"
-
-    mkdir -p "$td/sw/pkgA/etc/ssl/crl" "$td/sw/pkgB/etc/ssl/crl" "$td/ca_db"
-    : > "$td/ca_db/index.txt"
-    echo "01" > "$td/ca_db/crlnumber"
-    cat > "$td/ca.cnf" << EOF
-[ ca ]
-default_ca = CA_default
-[ CA_default ]
-database = $td/ca_db/index.txt
-crlnumber = $td/ca_db/crlnumber
-default_md = sha256
-default_crl_days = 1
-EOF
-    openssl ca -config "$td/ca.cnf" -keyfile "$td/ca1.key" -cert "$td/ca1.pem" -gencrl -out "$td/sw/pkgB/etc/ssl/crl/ca1.pem" 2>/dev/null
-    : > "$td/sw/pkgA/etc/ssl/crl/empty.pem"
-
-    port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')
-    openssl s_server -www -quiet -accept "127.0.0.1:$port" -cert "$td/srv.pem" -key "$td/srv.key" >"$td/srv.log" 2>&1 &
-    srv_pid=$!
-    for _ in $(seq 1 50); do
-        if python3 -c "import socket; s=socket.create_connection(('127.0.0.1', $port), 0.1); s.close()" 2>/dev/null; then
-            break
-        fi
-        sleep 0.05
-    done
-
-    local check_rc=0
-    (
-        set -e
-        cd "$td/cwd"
-        "$top/src/curl" --silent --show-error --fail --cacert "$td/sw/*/etc/ssl/certs/ca-certificates.crt" --capath /nonexistent "https://127.0.0.1:$port/" >/dev/null
-        "$top/src/curl" --silent --show-error --fail --cacert "$td/sw/*/etc/ssl/certs/ca-certificates.crt" --crlfile "$td/sw/*/etc/ssl/crl/*.pem" --capath /nonexistent "https://127.0.0.1:$port/" >/dev/null
-        "$top/src/curl" --silent --show-error --fail --cacert "$td/ca2.pem" --capath ":$td/sw/*/etc/ssl/certs" "https://127.0.0.1:$port/" >/dev/null
-        rc=0
-        "$top/src/curl" --silent --show-error --fail --cacert "$td/ca2.pem" --capath ":$td/empty_capath:" "https://127.0.0.1:$port/" >/dev/null 2>&1 || rc=$?
-        test "$rc" -eq 60
-        rc=0
-        "$top/src/curl" --silent --show-error --fail --cacert '/sw/*/etc/ssl/certs/ca-certificates.crt' --capath /nonexistent "https://127.0.0.1:$port/" >/dev/null 2>&1 || rc=$?
-        test "$rc" -eq 60
-        rc=0
-        "$top/src/curl" --silent --show-error --fail --cacert "$td/sw/*/nonexistent/*.crt" "https://127.0.0.1:$port/" >/dev/null 2>"$td/err.txt" || rc=$?
-        test "$rc" -eq 77
-        grep -Fq "error adding trust anchors from file:" "$td/err.txt"
-    ) || check_rc=$?
-    kill "$srv_pid" 2>/dev/null || true
-    wait "$srv_pid" 2>/dev/null || true
-    rm -rf "$td"
-    test "$check_rc" -eq 0
 }
 
 INSTALL() {

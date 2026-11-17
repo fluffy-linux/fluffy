@@ -41,6 +41,10 @@
           - **Copy-on-Write User/Group Tools (`sw/shadow`)**: Mutating tools (`passwd`, `usermod`, `chsh`, `gpasswd`) create `/etc/{passwd,group,shadow}` on demand if absent and materialize only the single modified NSS record into `/etc/<db>`.
        3. **Collision-Free Package UIDs/GIDs via `mkuid.sh` (`[1073741824, 2147483647]`)**:
           - Aside from kernel/ABI-fixed IDs (`root = 0`, `tty = 5` compiled into `systemd`'s `devpts` mount, and `nobody`/`nogroup = 65534` matching `overflowuid`), package-owned daemon users and groups allocate random static IDs in `[1073741824, 2147483647]` ($2^{30} \dots 2^{31}-1$) via `./mkuid.sh` at recipe authoring time, and `systemd`'s `uid_is_system()` / `gid_is_system()` recognizes `0x40000000..0x7FFFFFFF` as system accounts (routing logs to `system.journal` and avoiding human session creation while keeping `1000..60000` clean for `useradd`).
+          - **Carve-outs systemd needs inside that range (2026-11-17).**
+            - The container UID ranges are capped with `-Dcontainer-uid-base-max=$(( 0x3FFF0000 ))` in `sw/systemd`, so the last 64K container range ends at `0x3FFFFFFF`, below 2^30. Upstream's default runs up to `0x6FFFFFFF`. The value is written as bash arithmetic because Meson rejects hex in `-D` values.
+            - systemd's foreign UID range `0x7FFE0000..0x7FFEFFFF` (`foreign-uid-base`, left at the upstream default) sits inside the package range. `mkuid.sh` never allocates there, and `--check` rejects any ID in it.
+            - When this was added, all 49 allocated IDs were checked and none fell in that range, so nothing was reassigned. If `foreign-uid-base` ever changes, update `FOREIGN_MIN`/`FOREIGN_MAX` in `mkuid.sh` and re-run `./mkuid.sh --check` against every existing allocation.
        4. **System Identity & Resolver Fallbacks (`os-release`, `hostname`, `resolv.conf`)**: `systemd` reads `/sw/*/etc/os-release` (or `/sw/*/lib/os-release`) when `/etc/os-release` is absent and uses `-Dfallback-hostname=fluffy` when `/etc/hostname` is absent; `glibc`'s resolver falls back to `/sw/*/etc/resolv.conf` (e.g. `systemd`'s symlink to `/run/systemd/resolve/stub-resolv.conf`) when `/etc/resolv.conf` is absent.
    - **Systemd Unit & Enablement Ownership (Package Owns Feature -> Package Owns Unit; `/etc` Has Final Word)**:
      - Running `systemctl preset-all` into `/etc` (or leaving upstream `systemd`'s implicit `enable *` first-boot preset active) violates `/etc` ownership by dumping unowned symlinks into `/etc/systemd/system/*.wants/`, leaving dangling symlinks when packages are unmounted and failing to activate newly mounted packages (or clobbering user choices if re-run).
@@ -62,12 +66,11 @@
        - Fluffy does not use `sbin` directories anywhere. All utilities, system binaries, and administrative daemons reside in `/sw/<pkg>/bin` (configured via `--sbindir=/sw/<pkg>/bin` or `rootsbindir=/sw/<pkg>/bin`).
        - `bash`: `findcmd.c` and `bashline.c` dynamically glob and iterate `/sw/*/bin` for command resolution and TAB completion.
        - `glibc`: `posix/execvpe.c` (`__execvpe_common`) parses wildcard PATH entries like `/sw/*/bin`, discovers all `/sw/<pkg>/bin` directories via `__getdents64` without heap allocations (`vfork`/`CLONE_VM` safe), and tests executables in alphabetical order. All POSIX execution APIs (`execvp`, `execvpe`, `execlp`, `posix_spawnp`) work transparently with literal wildcard `PATH`.
-          - **Future Enhancement — Wildcard Executable Paths in `glibc` & `PATH`-Resolving `#!` via `binfmt_misc`**:
-            - **Wildcard Executable Paths in `glibc` (`exec*` / `posix_spawn`)**: Teach `glibc` execution routines (`execve`, `execv`, `execvpe` when `file` contains `/`, `posix_spawn`) to expand glob patterns directly in the executable path itself (e.g. `/sw/*/bin/sh`, `/sw/*/bin/diff`), where the first lexicographical match wins.
-            - **Kernel-Level `#!` Resolution via `binfmt_misc` (`#!bash`, `#!perl`, `#!/sw/*/bin/...`)**:
+          - **Future Enhancement — `PATH`-Resolving `#!` via `binfmt_misc`** (wildcard executable *paths* are out of scope: globs are for lookups, never for what a single path means; see [GLOB.md](GLOB.md) Rule 3):
+            - **Kernel-Level `#!` Resolution via `binfmt_misc` (`#!bash`, `#!perl`)**:
               - In the Linux kernel (`fs/exec.c`), `binfmt_misc` (`register_binfmt`, added at the head of `formats`) runs *before* `binfmt_script` (`insert_binfmt`, added at the tail) and applies to all `execve(2)` callers—including statically linked non-libc binaries like Go.
               - Since Linux 6.7+, `binfmt_misc` is per-user-namespace, so `swctl` (or a booted Fluffy system) can mount an isolated `binfmt_misc` instance and register a handler at `/sw/shebang/bin/shebang` on magic `#!` (with `P` `preserve-argv[0]` and `O` `open-binary` flags, and *without* `F` so the kernel resolves `/sw/shebang/bin/shebang` dynamically inside the caller's active mount/chroot namespace).
-              - Because `binfmt_misc` invokes the handler in the calling process's context with its exact `envp` (including `PATH`), shebangs can honor the caller's `PATH` via `execvp()`—enabling pathless shebangs like `#!bash`, `#!sh`, `#!perl -w`, or `#!python3`, as well as globbed shebangs (`#!/sw/*/bin/bash`) or legacy FHS shebangs (`#!/bin/sh`, `#!/usr/bin/env ...`) without patching script headers.
+              - Because `binfmt_misc` invokes the handler in the calling process's context with its exact `envp` (including `PATH`), shebangs can honor the caller's `PATH` via `execvp()`—enabling pathless shebangs like `#!bash`, `#!sh`, `#!perl -w`, or `#!python3` or legacy FHS shebangs (`#!/bin/sh`, `#!/usr/bin/env ...`) without patching script headers.
               - **Two-Stage Bootstrap (`host /bin/bash` Shim → Native C `shebang` Binary)**:
                 1. **Stage 1 (`host-build` Bootstrap Placeholder)**: On the host (where `swctl` already expands `/sw/*/bin` into explicit `PATH` entries so no `PATH` globbing is needed yet), `swctl` bind-mounts the host's `/bin/bash` ELF binary to `/sw/shebang/bin/shebang` with a tiny `BASH_ENV` hook. Because `/bin/bash` is an ELF binary (`\x7fELF`), `binfmt_misc` does not recurse on `#!`; when invoked on a script, `bash` sources `$BASH_ENV`, inspects line 1 of `$0`, executes plain `#!bash`/`#!sh` scripts directly in-process (treating line 1 as a `#` comment), and uses `BASH_ENV= exec <interp> "$0" "$@"` to dispatch flagged (`#!bash -e`) or non-shell (`#!perl -w`, `#!gawk -f`) scripts via normal `PATH` lookup.
                 2. **Stage 2 (`cross-build` / `fluffy-build` Native C Handler)**: Once the cross-toolchain (`gcc-pass1` + `glibc-pass1`) is built, a tiny, zero-overhead native C `shebang` binary is cross-compiled against Fluffy's glob-aware `glibc` (`execvp`) and packaged at `/sw/shebang/bin/shebang`. Entering the chroot mounts `/sw/shebang` at the exact same `/sw/shebang/bin/shebang` path already registered in `binfmt_misc`, handing off seamlessly from the host bash placeholder to the native C binary.
@@ -89,21 +92,21 @@
                 1. *Runtime `which`/`path` Patches*: Teach each core language runtime's path-resolution primitive (Perl `File::Spec::Unix::path`, Python `shutil.which`, Tcl `TclpFindExecutable` / `split-path`, Gnulib `findprog-in`) to expand wildcard `$PATH` elements via `glob()`.
                 2. *Path-Resolving Shebangs (`binfmt_misc`)*: With kernel-level `binfmt_misc` resolving shebangs via `$PATH` (`execvp`), installed scripts can simply use `#!perl`, `#!bash`, or `#!python3` instead of hardcoding `/sw/<pkg>/bin/<tool>`.
                 3. *Global Autoconf Site Defaults (`CONFIG_SITE`)*: Provide a system-level `config.site` that pre-sets standard tool variables (`PERL=perl`, `AWK=gawk`, `SED=sed`, `PKG_CONFIG=true`) as bare command names rather than absolute filesystem paths, ensuring downstream Makefiles invoke tools through the active `$PATH`.
-       - Shell defaults in `paths.h` and `system.c`: `_PATH_DEFPATH` defaults to `"/sw/*/bin"`, `_PATH_STDPATH` to `"/sw/*/bin:/sw/*/sbin"`, and `_PATH_BSHELL` / `SHELL_PATH` to `"/sw/bash/bin/bash"`, ensuring `system()` and `popen()` run natively without `/bin/sh`.
+       - Shell defaults in `paths.h` and `system.c`: `_PATH_DEFPATH` defaults to `"/sw/*/bin"`, `_PATH_STDPATH` to `"/sw/*/bin"` (no `sbin`), and `_PATH_BSHELL` / `SHELL_PATH` to `"/sw/bash/bin/sh"` (the `sh -> bash` link that `sw/bash` and `sw/bash-pass1` install), so `system()` and `popen()` run bash in POSIX mode without `/bin/sh`.
      - **Dynamic Linker (`ld.so`)**: Iterates `/sw/*/lib` (`_dl_init_paths` in `elf/dl-load.c`) to resolve shared libraries dynamically at runtime.
      - **Final Pass Toolchain Vision (Glibc & GCC Native Wildcard Inclusion)**:
        - **GCC Preprocessor (`cppdefault.cc`)**: In the final native pass, patch GCC's include directory search logic to natively understand `/sw/*/include` (and `/sw/*/include/c++/<ver>`) instead of hardcoding `/usr/include`. GCC's CPP will discover and include headers across all mounted packages without passing a single `-I` flag.
        - **Linker (`binutils` `ld`) & Specs**: Set default library search paths to `/sw/*/lib` instead of `/usr/lib` or `/lib`.
-         - **Dynamic Wildcard `SEARCH_DIR` in Binutils Linker Scripts**: Quoting `LIB_PATH='/sw/*/lib'` embeds literal `SEARCH_DIR("/sw/*/lib")` in the default ldscripts, allowing `ldfile.c` to dynamically expand `/sw/*/lib` via `glob()` at runtime and register all `/sw/<pkg>/lib` with `cmdline=false`. This ensures `ldelf.c` automatically resolves both direct `-l<name>` libraries and indirect `DT_NEEDED` dependencies (e.g. `libncursesw.so.6` needed by `libreadline.so`) without requiring `-rpath-link` or explicit `-L` flags.
-       - **Zero `-I`/`-L` Flags & Deprecation of `pkg-config`**: Because GCC, LD, and LD.SO dynamically iterate all `/sw/*/{include,lib}`, packages built for Fluffy never need `-I` or `-L` directory path flags or `pkg-config` path overrides. Upstream packages link against external libraries simply with `-l<name>`.
+         - **Dynamic Wildcard `SEARCH_DIR` in Binutils Linker Scripts**: `--with-lib-path='=/sw/*/lib'` (single-quoted so the build shell never expands it; `genscripts.sh` copies it verbatim, and the explicit `=` makes it sysroot-relative) embeds literal `SEARCH_DIR("=/sw/*/lib")` in the default ldscripts, allowing `ldfile.c` to dynamically expand `/sw/*/lib` via `glob()` at runtime and register all `/sw/<pkg>/lib` with `cmdline=false`. This ensures `ldelf.c` automatically resolves both direct `-l<name>` libraries and indirect `DT_NEEDED` dependencies (e.g. `libncursesw.so.6` needed by `libreadline.so`) without requiring `-rpath-link` or explicit `-L` flags.
+       - **Zero `-I`/`-L` Flags & Deprecation of `pkg-config`**: Because GCC, LD, and LD.SO dynamically iterate all `/sw/*/{include,lib}`, packages built for Fluffy never need `-I` or `-L` directory path flags or `pkg-config` path overrides. Upstream packages link against external libraries simply with `-l<name>`. (`pkg-config` itself is coming back, taught to search `/sw/*` and to strip `/sw/*/{include,lib}` as system directories, so this stays true. See "Planned: Bring Back `pkgconf`".)
      - **Systemd Unit Files (`/sw/*/lib/systemd/system`)**: `systemd` (`lookup_paths_init` in `sd-path/path-lookup.c`) iterates `/sw/*/lib/systemd/system` (and `/sw/*/lib/systemd/user`) so services install their own `.service` / `.socket` files directly in `/sw/<pkg>/lib/systemd/system/` (via a heredoc or local file in `INSTALL()`), eliminating any need for external meta-packages like `blfs-systemd-units`.
      - **General-Purpose Wildcard Support (Configure `/sw/*`, Never Hardcode `/sw/` in C Source)**:
        - **Architectural Rule**: C source patches to upstream packages must **never** hardcode Fluffy-specific directory names like `"/sw"` or `"/lib"` or custom `scandir("/sw", ...)` loops. Instead, upstream code is patched to support general-purpose glob/wildcard expansion in its standard configuration paths, and `/sw/*/bin`, `/sw/*/lib`, `/sw/*/include` are passed in via configuration (`configparms` `user-defined-trusted-dirs`, `configure` flags, `paths.h`, `STANDARD_STARTFILE_PREFIX`, `NATIVE_SYSTEM_HEADER_DIR`, `PATH`).
        - For example, in `glibc` (`elf/dl-load.c`), `SYSTEM_DIRS` receives `/sw/*/lib/` via `user-defined-trusted-dirs=/sw/*/lib` in `configparms`, and `_dl_init_paths` / `is_trusted_path_normalize` expand wildcard entries in `system_dirs` generically (just like `binutils` `ldfile.c` calls `glob()` on `LIB_PATH=/sw/*/lib` and `bash` calls `shell_glob_filename` on `PATH=/sw/*/bin`).
        - Similarly, `gcc` (`gcc.cc`, `incpath.cc`, `cppdefault.cc`) should expand wildcards in configured `STANDARD_STARTFILE_PREFIX`, `STANDARD_EXEC_PREFIX`, and `NATIVE_SYSTEM_HEADER_DIR` (`--with-native-system-header-dir=/sw/*/include`) via `glob()` rather than hardcoding `scandir("/sw")`.
-     - **Universal `<glob.h>` Primitive, Language Runtime Delegation & `FSWC` v5 SquashFS Cache (`glibc`)**:
+     - **Universal `<glob.h>` Primitive, Language Runtime Delegation & `FSWC` SquashFS Cache (`glibc`)**:
        - `ldconfig` and `USE_LDCONFIG` (`ld.so.cache`) are completely disabled (`use_ldconfig=no`) in `glibc`. Instead of subsystem-specific caches or leaked userland helpers, POSIX `<glob.h>` and `<fnmatch.h>` in `glibc` serve as Fluffy's single universal late-binding primitive across `ld.so`, `execvpe`/`posix_spawnp`, `gcc`/`binutils`, shells (`bash`, `readline`), language runtimes (`python`, `perl`, `tcl`), and stateless-`/etc` consumers (`systemd`, `kmod`, `dbus`, `util-linux`, `man-db`, `openssl`, `curl`, etc.).
-       - Custom `<glob.h>` / `<fnmatch.h>` flags (`GLOB_KEEP_SLASHES`, `GLOB_PATHS`, `GLOB_EXTMATCH`, `GLOB_CASEFOLD`, `GLOB_SKIPDOTS`, `GLOB_GLOBSTAR`, `GLOB_DOTDOT`, `FNM_DOTDOT`), language runtime delegation, the internal `FSWC` v5 Merged Virtual Trie shared-memory cache (`GLIBC_TUNABLES=glibc.fswc.{mode,max_inodes}`), per-package test suite requirements, and the phased implementation roadmap are specified in **[GLOB.md](GLOB.md)**.
+       - Custom `<glob.h>` / `<fnmatch.h>` flags (`GLOB_KEEP_SLASHES`, `GLOB_PATHS`, `GLOB_EXTMATCH`, `GLOB_CASEFOLD`, `GLOB_SKIPDOTS`, `GLOB_GLOBSTAR`, `GLOB_DOTDOT`, `FNM_DOTDOT`), language runtime delegation, the internal `FSWC` cache (v6: a sorted per-user, per-namespace path index read through `glob()`'s `GLOB_ALTDIRFUNC` hooks; `GLIBC_TUNABLES=glibc.fswc.enable`), its design history, per-package test suite requirements, and the phased implementation roadmap are specified in **[GLOB.md](GLOB.md)**.
      - **TODO: Cross-Package File Collision Vetting Tool (`<relpath>\t<pkg>`)**:
        - Because `/sw/*` late binding resolves matches in alphabetical (`alphasort`) package order, two packages accidentally shipping the same relative file path (binary, header, shared library, unit, or config default) would silently shadow the alphabetically later package rather than failing loudly.
        - Provide a standalone vetting script that enumerates all non-directory entries (files and symlinks, ignoring shared directory paths like `bin`, `lib`, `include`, `share/man/man1`) across built `.squashfs` images or mounted `/sw/*` packages as `<relpath>\t<pkg>`, loads them into a Bash associative array keyed by `<relpath>`, and reports collisions across packages so overlaps are caught deterministically in CI/local builds.
@@ -227,7 +230,7 @@
        - `X-fluffy.image-checksum=<sha256>`: package image SHA-256 checksum (preserved across rebuilds when the new `.squashfs` is byte-identical).
        - `X-fluffy.needs="<dep1>,<dep2>"`: comma-separated list of runtime dependency packages.
        - `X-fluffy.recipe-checksum=<sha256>`: sha256 checksum of the multipart MIME envelope (`format_recipe_mime`) containing `sw/<pkg>`, any sourced includes, and the sorted `<dep>:<X-fluffy.image-checksum>` pairs of its direct `$ON` + `BUILD_NEEDS` dependencies, recording both recipe and dependency provenance without mutating recipe files on disk.
-       - `X-fluffy.cflags="..."` / `X-fluffy.ldflags="..."`: Package compile and link metadata declared via `HAS_CFLAGS=` and `HAS_LDFLAGS=` in library recipes (e.g. `HAS_LDFLAGS=-lzstd` in `sw/zstd`, `HAS_LDFLAGS="-lssl -lcrypto"` in `sw/openssl`). During `lockdown_exec`, `swctl` inspects `X-fluffy.cflags` and `X-fluffy.ldflags` for every dependency in `BUILD_NEEDS` and automatically exports `<DEP>_CFLAGS`, `<DEP>_LDFLAGS`, and `<DEP>_LIBS` (defaulting `<DEP>_CFLAGS` to `" "` when only `X-fluffy.ldflags` is set so Autoconf `pkg.m4` accepts the override without `pkg-config`), so consuming a library never requires manually specifying `pkg-config`, `CFLAGS`, `LDFLAGS`, or `LIBS`.
+       - `X-fluffy.cflags="..."` / `X-fluffy.ldflags="..."`: Package compile and link metadata declared via `HAS_CFLAGS=` and `HAS_LDFLAGS=` in library recipes (e.g. `HAS_LDFLAGS=-lzstd` in `sw/zstd`, `HAS_LDFLAGS="-lssl -lcrypto"` in `sw/openssl`). During `lockdown_exec`, `swctl` inspects `X-fluffy.cflags` and `X-fluffy.ldflags` for every dependency in `BUILD_NEEDS` and automatically exports `<DEP>_CFLAGS`, `<DEP>_LDFLAGS`, and `<DEP>_LIBS` (defaulting `<DEP>_CFLAGS` to `" "` when only `X-fluffy.ldflags` is set so Autoconf `pkg.m4` accepts the override without `pkg-config`), so consuming a library never requires manually specifying `pkg-config`, `CFLAGS`, `LDFLAGS`, or `LIBS`. *Slated for removal* in favour of `pkgconf` (see "Planned: Bring Back `pkgconf`").
          - **Multi-Library Package Splitting Rule**: Rather than re-inventing multi-target `pkg-config` sub-packages inside `X-fluffy.{cflags,ldflags}`, upstream projects that ship multiple distinct libraries with separate link/compile contracts (e.g. `glib` vs. `gio` vs. `gobject`) are split along library boundaries into separate `/sw/<subpkg>` recipes so the 1-package-to-1-`<DEP>_{CFLAGS,LIBS}` mapping stays universal.
      - **Compact Ed25519 signatures**: Raw Ed25519 signatures are exactly 64 bytes (88 base64 characters; 100 characters in OpenBSD signify format)—no massive ASCII armor blocks or multi-kilobyte RSA blobs.
      - **Single-file verification**: The signature on line 1 covers lines 2 through EOF. Verifying line 1 against the trusted public key validates the entire repository index in one shot (all package filenames, mountpoints, squashfs image checksums, and dependency closures) without needing separate detached `.sig` files or per-package signatures:
@@ -373,6 +376,91 @@
       - `mkbashpatch` records `os.stat` timestamps and restores exact nanosecond mtimes/atimes using `os.utime()` after rewriting paths to `/sw/bash/bin/bash`.
       - Diffs are generated in UTC (`TZ=UTC0 LC_ALL=C diff -Naur`) and applied with `patch -Z` (`--set-utc`), perfectly preserving original upstream release file ordering and preventing autotools (`aclocal`, `autoheader`, `automake`) or `help2man` from falsely triggering during compilation.
 
+## Decision History & Working Rules
+
+Recovered from earlier assistant sessions, so the reasoning survives. Quotes are the project owner's words. Glob and cache history lives in [GLOB.md](GLOB.md) §2.
+
+### Why the Architecture Is Shaped This Way
+
+- **SquashFS per package, not overlayfs.** "Overlayfs can only go so deep." Worse: "you have zero guarantees it'll be correct—what if the installer skips already present files?" Symlink farms are "verboten; we fix the source package via patching."
+- **Late binding.** "It's okay if that *ends up* as a hardcoded reference but it shouldn't *start* as one… zero extra flags is the goal," so splitting or merging packages later just works. `pkg-config` was "verboten": libraries are found by `/sw/*/{include,lib}`, and extra flags travel as `X-fluffy.cflags`/`X-fluffy.ldflags` in the fstab (`HAS_CFLAGS`/`HAS_LDFLAGS` in recipes). *Being reversed:* see "Planned: Bring Back `pkgconf`" below. The zero-flags goal stays.
+- **Namespaces.** "Software upgrades *never* affect a running program… sidesteps torn-install problems." Later: "support software installs without updates… make it so new namespace only needed on upgrades." That second decision is why no component may assume `/sw` is constant within a running process.
+- **`swctl` runs inside the chroot** "because someday it MUST". It uses `ctypes.sh` (`call mount`, `call unshare`) rather than shelling out, keeping "the full flexibility of bash" while builds lose network access. The `host-build`/`cross-build`/`fluffy-build` pseudopackages are ordinary packages with no build steps, and still produce a squashfs. Every install goes to one `DESTDIR=/sw/.build/destdir`.
+- **Rebuild model.** The recipe checksum covers the recipe, its direct `BUILD_NEEDS`, and the `ON` images, which is "not nix-level correct" and accepted as such. Hence "it is extremely important for our *direct* dependencies to be honest, or we may incorrectly skip rebuilds." `NEEDS` means "something at runtime will blow up if this is not present" and is never mounted during builds. "Final package versions should never NEEDS a -pass1 dependency." There is no `PREPARE_NEEDS` or `SQUASHFS_NEEDS`. `CROSS=1` is explicit with no autodetection, so the default stays non-cross. Reproducible builds give early cutoff by plain `cmp`.
+- **The fstab is the package database.** One file "addresses three things: apt-get-like manifest, file validation, real fstab needs… dependency DAG." The only signature is over the whole fstab (`image-checksum` and `recipe-checksum` are per-entry options), and it is verified with `signify` before anything parses it. `/sw/.build` (keys, fstab) is hidden behind a tmpfs in unprivileged build phases, so no package, `glibc` included, may depend on reading it. A mount with missing dependencies is an error that lists every missing dependency and mounts nothing. There are two fstabs: `/etc/fluffy/fstab` (installed) and `/sw/.build/fstab` (available).
+- **Stateless `/etc` evolved** from versioned `/etc` with btrfs snapshots, through `fluffy-init`/`fluffy-upsert` with per-package `/etc/<pkg>`, to "programs place their static config in /sw/*/etc. user config goes in /etc… user settings 'win'." Packages have "zero pre/post install/uninstall" hooks, "pushed as far as I can". Still open from that discussion: UID overlap (now `mkuid.sh`), and the fact that network config "can't live in a package".
+- **passN packages are host-dependent** and must never be distributed as downloads.
+- **Distribution plan.** One container-registry package per squashfs plus one fstab "manifest" package. Changed images upload *before* the fstab (commit-pointer order), and tags are immutable. CI goal: "on push to main branch, 'swctl build world' the end." No dependency trimming: "trimming was an experiment and a mistake."
+- **Boot.** A static `/init` in the btrfs root, no initramfs.
+- **Hermeticity (open).** "I don't like that things can accidentally depend on my build dependencies." Ideas so far: a separate `/builder/*` path, and an ACCEPTANCE phase that monitors path accesses.
+
+### Planned: Bring Back `pkgconf`, Drop `HAS_CFLAGS`/`HAS_LDFLAGS` (decided 2026-11-17)
+
+This reverses the earlier "`pkg-config` is verboten" decision. The owner's call: resurrect `pkgconf` (LFS 8.19–8.21, skipped so far), retire Fluffy's home-grown replacement, and teach `pkgconf` to find `.pc` files across `/sw/*`. Not started.
+
+- **What goes away:**
+  - `HAS_CFLAGS=`/`HAS_LDFLAGS=` in recipes, the `X-fluffy.cflags`/`X-fluffy.ldflags` fstab options, and `swctl`'s `<DEP>_CFLAGS`/`<DEP>_LDFLAGS`/`<DEP>_LIBS` exports in `lockdown_exec` and the fstab rewrite.
+  - The Meson `SystemLibraryDependency` patch in `sw/meson-1.12.0-fluffy.patch` (`dependencies/base.py`, `detect.py`) and the dependency-name rewrites it forced: kmod's `meson.build` maps `libzstd`→`zstd`, `liblzma`→`xz` and `libcrypto`→`openssl` so the names line up with recipe names.
+  - `PKG_CONFIG=true` in the planned `config.site`.
+  - The multi-library package-splitting rule (one package, one `<DEP>_{CFLAGS,LIBS}`). With `.pc` files, `glib`/`gio`/`gobject` can stay one package again. Whether to undo any splits already made is a separate call.
+- **What `pkgconf` learns, consistent with Rule 3 in [GLOB.md](GLOB.md) (aggregation over path conventions, no `/sw` literals in C):**
+  - The default search path comes from configure: `--with-pkg-config-dir='/sw/*/lib/pkgconfig:/sw/*/share/pkgconfig'`. `pkgconf` expands each entry with `glob()`, using `GLOB_PATHS` where available and guarded with `#ifdef GLOB_PATHS` for the host-built pass. `PKG_CONFIG_PATH` and `PKG_CONFIG_LIBDIR` accept the same patterns.
+  - **"Zero `-I`/`-L`" stays true.** Configure `--with-system-libdir='/sw/*/lib' --with-system-includedir='/sw/*/include'`, and teach `pkgconf`'s system-directory filter to match those entries as patterns. Then `-I/sw/zstd/include` and `-L/sw/zstd/lib` are stripped exactly the way `-I/usr/include` is today, and `.pc` output is just `-lzstd` plus genuinely extra flags. Late binding survives because the compiler and linker still find everything through `/sw/*/{include,lib}`.
+  - Search both `lib/pkgconfig` (arch-dependent: libraries) and `share/pkgconfig` (arch-independent: header-only libraries and metadata such as `systemd.pc`, `bash-completion.pc`, kmod's `kmod.pc`), `lib` first, matching pkgconf's own `$libdir:$datadir` default.
+  - Metadata `.pc` files that name install directories (`systemd.pc`'s `systemdsystemunitdir`, `bash-completion.pc`'s `completionsdir`) must not send consumers into the provider's own `/sw/<pkg>`. Check these when pkgconf lands: a consumer's units belong in its own `/sw/<consumer>/lib/systemd/system`.
+  - Cross builds: check how `PKG_CONFIG_SYSROOT_DIR` interacts with wildcard system dirs before relying on it in `cross-build`.
+  - Tests go in a `pkgconf-<ver>-fluffy-test.patch`: multi-package discovery and ordering, system-dir stripping for wildcard prefixes, a literal `[`-containing path, and the host-pass build without `GLOB_PATHS`.
+- **Ordering:** `pkgconf` (and a `-pass1` if the cross stage needs it) must be built before its first consumer. After that, `BUILD_NEEDS` lists `pkgconf` wherever upstream calls `pkg-config`, which keeps direct dependencies honest for the rebuild model.
+- **Seen on 2026-11-17 while fixing kmod:** reproducing a Meson build outside `swctl` meant re-implementing `swctl`'s flag exports, because Fluffy's Meson can't find any dependency without them.
+
+### Working Rules
+
+- **Shell style.**
+  - No semicolons except `;;` in `case`.
+  - Lean on `set -e` and `trap ERR`, not `$?` checks.
+  - Use subshells, not self-invocation.
+  - Use `call mount`, not the `mount` command; use libmount, not `grep`.
+  - Never change `swctl`'s shebang (it breaks the chroot).
+- **`swctl` scope.** Keep it under ~1k LOC with one reusable DFS. Key generation is not part of `swctl`. Logic that is "too magic" does not belong in it. It never pulls from the packages directory.
+- **Patches.**
+  - Generated, then reviewed by hand ("auto generate, manual review"), and kept for reviewability.
+  - Split into `-shell`, `-source`, and `-test`.
+  - Never change file times (`patch -Z`).
+  - Fix problems at the proper place rather than disabling tests ("we should fix glibc").
+  - Any patched behavior gets a test, and `CHECK()` runs wherever possible.
+  - Custom flags go at the high end of the bit range.
+- **Versionless doc directories (decided 2026-11-17; cleanup pending).**
+  - Docs go in `/sw/<pkg>/share/doc/<pkg>`, never `/sw/<pkg>/share/doc/<pkg>-$VERSION`. Only one version of a package is installed at a time, and `/sw/<pkg>` already namespaces it, so the version suffix (inherited from LFS's shared `/usr/share/doc`) adds nothing. It also breaks links and paths from other packages on every upgrade.
+  - Autoconf's default `docdir` (`${datarootdir}/doc/${PACKAGE_TARNAME}`) is already versionless, so in most recipes the fix is to delete the `--docdir=` line.
+  - Recipes to convert, as of 2026-11-17:
+    - `--docdir=…-$VERSION`: `acl`, `attr`, `automake`, `bash`, `bison`, `bison-pass1`, `flex`, `expat`, `gettext`, `gmp`, `gperf`, `man-db`, `mpc`, `mpdecimal`, `mpdecimal-pass1`, `mpfr`, `pcre2`, `procps-ng`, `readline`, `sed`, `util-linux`, `xz`, `xz-pass1`.
+    - `-Ddocdir=…-$VERSION`: `systemd`.
+    - Hand-made `share/doc/<pkg>-$VERSION` in `INSTALL()`: `curl`, `dejagnu`, `expat`, `gawk`, `ncurses`, `python`, `readline`, `sed`, `tcl`.
+    - `vim`'s `share/doc/vim-$VERSION` symlink.
+    - `openssl`'s `mv share/doc/openssl share/doc/openssl-$VERSION`: drop the `mv` and keep upstream's name.
+  - Find any stragglers with `grep -n 'share/doc[^ ]*\$VERSION' sw/*`.
+- **No backward compatibility while developing**, including migration logic ("that's just backwards compat under a different name"). No `sbin`, and no `/bin/sh` symlink.
+- **Agents never run `sudo`.** Hand the user `sudo --preserve-env=FLUFFY[,CROSS] ./swctl build <pkg>`.
+- **Resources.** The build host is 16 GB / 8 cores, and builds run at low priority.
+
+### Recurring Build Pitfalls
+
+- `/bin/sh: bad interpreter`. Fixed per package with `-shell.patch` files from `mkbashpatch`, then hand-reviewed.
+- Wildcard configure values expanded by the build shell. Always single-quote them (`--with-lib-path='=/sw/*/lib'`).
+- `libgcc_s.so.1`. `mksquashfs` needs it for `pthread_exit`, hence the separate `libgcc` package. Cross-built `libstdc++.so` from the `--disable-shared` `gcc-pass1` driver lacked `DT_NEEDED libgcc_s.so.1` until a `-shared`-only specs file was added to `sw/libstdcpp-pass1` and `sw/gcc-pass2`.
+- `glibc-pass1` builds with `-Werror` and `glibc` does not, so warnings break only pass1.
+- `SOURCE_DATE_EPOCH=0` gives every package root mtime 0. Never use mtime as identity.
+- **Test-harness traps found while moving `CHECK()` tests into test patches (2026-11-16):**
+  - **`set -e` is off inside `( … ) && …`.** Bash disables errexit inside any `&&`/`||` list. A phase runner written that way ignores a failure in the middle of `MAKE()`/`CHECK()`, and only the last command counts. `swctl`'s `run_phase` is not affected.
+  - **util-linux `tests/run.sh --nonroot` run as root** prints "Ignore util-linux test suite" and exits 0, a silent pass.
+  - **GNU `patch` cannot set the exec bit from a `-Naur` diff.** New executable test files need git-style `new file mode 100755` hunks. Patch 2.7.6+ honors them inside an otherwise `-Naur` patch.
+  - **A user namespace that maps one uid/gid** fails gnulib's `test-chown`/`test-fchownat`/`test-lchown`, which is expected outside `swctl`.
+- **Local verification without `swctl`:**
+  - Unsquash the newest final images into a scratch directory and bind them at `/sw` inside `unshare -Urm`.
+  - Then drop to your own uid with a nested `unshare -U --map-user`, and run a recipe's phases with a scrubbed environment.
+  - This needs `kernel.apparmor_restrict_unprivileged_userns=0` on Ubuntu 24.04.
+  - Installed images may predate the current patches, so always rebuild.
+
 ## Bootstrap Milestones
 
 - **Chapter 8 Progress (Installing Basic System Software)**:
@@ -392,9 +480,9 @@
   - 8.16 `tcl` (8.6.18) verified and registered (`tcl-8.6.18.squashfs`): includes dynamic `auto_path` globbing over `/sw/*/lib` in `library/init.tcl`.
   - 8.17 `expect` (5.45.4) verified and registered (`expect-5.45.4.squashfs`): TEA configured with late-bound `/sw/*/lib` and `/sw/*/include` discovery; `exec_prefix` isolated to `/sw/expect`; `STTY_BIN=stty` resolved via `PATH`.
   - 8.18 `dejagnu` (1.6.3) verified and registered (`dejagnu-1.6.3.squashfs`): `proc which` in `lib/utils.exp` updated for wildcard `PATH` expansion and `exec bash -c` in `lib/remote.exp`; all `launcher`, `libdejagnu`, `report-card`, and `runtest` tests passing.
-  - 8.19–8.21 `pkgconf`: skipped by design (late-bound `/sw/*/{include,lib}` discovery eliminates `pkg-config`).
+  - 8.19–8.21 `pkgconf`: skipped by design (late-bound `/sw/*/{include,lib}` discovery eliminates `pkg-config`). *To be resurrected* with `/sw/*` discovery (see "Planned: Bring Back `pkgconf`").
   - 8.20 `ninja` (1.13.2) verified and registered (`ninja-1.13.2.squashfs`, 2.9M): `Subprocess::Start` (`src/subprocess-posix.cc`) patched to invoke `/sw/bash/bin/bash`, `NINJAJOBS` support added, and Python test suites (`ninja_syntax_test.py`, `jobserver_pool_test.py`, `jobserver_test.py` including `test_subprocess_uses_fluffy_bash`) passing.
-  - 8.22 `binutils` (2.47) verified and registered (`binutils-2.47.squashfs`): literal `SEARCH_DIR("/sw/*/lib")` in ldscripts with runtime `glob()` expansion in `ldfile.c`; full DejaGnu testsuite (`binutils`, `gas`, `ld`, `libctf`, `libsframe`) passing 100%.
+  - 8.22 `binutils` (2.47) verified and registered (`binutils-2.47.squashfs`): literal `SEARCH_DIR("=/sw/*/lib")` in ldscripts with runtime `glob()` expansion in `ldfile.c`; full DejaGnu testsuite (`binutils`, `gas`, `ld`, `libctf`, `libsframe`) passing 100%.
   - 8.23 `gmp` (6.3.0) verified and registered (`gmp-6.3.0.squashfs`): C++ bindings (`libgmpxx`), HTML docs, and >=199 tests passing.
   - 8.24 `mpfr` (4.2.2) verified and registered (`mpfr-4.2.2.squashfs`).
   - 8.25 `mpc` (1.4.1) verified and registered (`mpc-1.4.1.squashfs`).

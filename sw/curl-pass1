@@ -7,7 +7,7 @@ HAS_LDFLAGS=-lcurl
 ARCHIVES=(
     8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5 https://github.com/fluffy-linux/curl/releases/download/curl-${VERSION//./_}/curl-$VERSION.tar.xz
     b6b341c45975d84b4c40be1e4a3830a52bcc02f2323169ced5c277c6bdfa6c78 file://curl-$VERSION-fluffy-source.patch
-    a3f92fc9cec3592efcb089bcec37fa5025b8b7f3b67d22ca4a8abac343c4e4b7 file://curl-$VERSION-fluffy-test.patch
+    bd8a02ea946a7c8e8f7e585d381ca252bcee7de0505ad0981ae36320c9ef5963 file://curl-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(

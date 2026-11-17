@@ -228,6 +228,242 @@ diff -Naur binutils-2.47.orig/ld/testsuite/ld-elf/compress.exp binutils-2.47/ld/
  if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
      send_log "$got\n"
      fail "$test_name"
+diff -Naur binutils-2.47.orig/ld/testsuite/ld-fluffy/fluffy.exp binutils-2.47/ld/testsuite/ld-fluffy/fluffy.exp
+--- binutils-2.47.orig/ld/testsuite/ld-fluffy/fluffy.exp	1970-01-01 00:00:00.000000000 +0000
++++ binutils-2.47/ld/testsuite/ld-fluffy/fluffy.exp	2026-07-25 23:00:00.000000000 +0000
+@@ -0,0 +1,232 @@
++# Expect script for Fluffy wildcard library search paths.
++#   Copyright (C) 2026 Free Software Foundation, Inc.
++#
++# This file is part of the GNU Binutils.
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
++# MA 02110-1301, USA.
++#
++# Covers ldfile.c's glob() expansion of library search directories:
++#   - the configured default SEARCH_DIR keeps its wildcard,
++#   - direct -l and secondary DT_NEEDED resolution through the default
++#     wildcard SEARCH_DIR (only where such a prefix is actually populated),
++#   - --sysroot containing glob metacharacters ("[1]") with DT_NEEDED
++#     across separate <sysroot>/sw/<pkg>/lib directories,
++#   - -L wildcard expansion over directories containing "[1]",
++#   - a literal -L directory containing "[1]" winning over "1".
++
++if { ![istarget x86_64-*-linux*] || ![isnative] } {
++    return
++}
++if { ![check_compiler_available] } {
++    unsupported "fluffy wildcard search paths (no compiler)"
++    return
++}
++
++set fluffy_td "[pwd]/tmpdir/fluffy"
++file delete -force $fluffy_td
++file mkdir $fluffy_td
++
++# The dynamic linker the compiler under test uses by default (never assume
++# a host path such as /lib64): link an ordinary program and read its
++# PT_INTERP with the readelf being tested alongside this ld.
++set fluffy_interp ""
++set fd [open $fluffy_td/interp.c w]
++puts $fd "int main (void) { return 0; }"
++close $fd
++if { [ld_compile $CC_FOR_TARGET $fluffy_td/interp.c $fluffy_td/interp.o]
++     && [run_host_cmd_yesno "$CC_FOR_TARGET" "-o $fluffy_td/interp $fluffy_td/interp.o"] } {
++    regexp {Requesting program interpreter: ([^]]+)\]} \
++	[run_host_cmd "$READELF" "-l $fluffy_td/interp"] -> fluffy_interp
++}
++if { $fluffy_interp eq "" } {
++    unsupported "fluffy wildcard search paths (cannot determine dynamic linker)"
++    return
++}
++
++# Write CONTENTS to FILE.
++proc fluffy_write { file contents } {
++    set fd [open $file w]
++    puts -nonewline $fd $contents
++    close $fd
++}
++
++# Run a shell command on the host; return {status output}.
++proc fluffy_sh { cmd } {
++    verbose -log "sh -c $cmd"
++    set r [remote_exec host [concat sh -c [list "$cmd 2>&1"]]]
++    verbose -log [lindex $r 1]
++    return $r
++}
++
++# Single-quote S for sh.
++proc fluffy_q { s } {
++    return "'[string map {' '\\''} $s]'"
++}
++
++# Run $ld with ARGS (already shell-quoted); 1 if it printed nothing.
++proc fluffy_link { args_str } {
++    global ld
++    return [run_host_cmd_yesno "$ld" $args_str]
++}
++
++# A freestanding x86-64 program: exit status 0 iff EXPR is true.
++proc fluffy_start_src { decl expr } {
++    return "$decl
++void _start (void) {
++  long code = ($expr) ? 0 : 1;
++  __asm__ volatile (\"syscall\" :: \"a\"(60L), \"D\"(code) : \"rcx\", \"r11\", \"memory\");
++  __builtin_unreachable ();
++}
++"
++}
++
++# 1. The default linker script keeps the configured wildcard SEARCH_DIR.
++set testname "default SEARCH_DIR keeps its wildcard"
++set verbose_out [run_host_cmd "$ld" "--verbose"]
++set wild_dirs [regexp -all -inline {SEARCH_DIR\("=?[^"]*[*?[][^"]*"\)} $verbose_out]
++if { [llength $wild_dirs] == 0 } {
++    unsupported "$testname (no wildcard lib path configured)"
++} else {
++    pass "$testname: [join $wild_dirs { }]"
++}
++
++# 2. Live default search: direct -l plus libstdc++'s secondary DT_NEEDED
++#    (libgcc_s.so.1, libm.so.6) found through SEARCH_DIR alone, with no -L
++#    and no -rpath-link.  Only meaningful where the configured wildcard
++#    prefix is populated with these libraries.
++set testname "default wildcard SEARCH_DIR resolves direct and secondary DT_NEEDED"
++set live_ok 0
++foreach d $wild_dirs {
++    regexp {SEARCH_DIR\("=?([^"]*)"\)} $d -> pat
++    set crt [glob -nocomplain [file join $pat Scrt1.o]]
++    if { [llength [glob -nocomplain [file join $pat libstdc++.so]]] > 0
++	 && [llength [glob -nocomplain [file join $pat libz.so]]] > 0
++	 && [llength $crt] == 1 } {
++	set live_ok 1
++	set crtdir [file dirname [lindex $crt 0]]
++	break
++    }
++}
++if { !$live_ok } {
++    unsupported "$testname (wildcard prefix not populated on this host)"
++} else {
++    fluffy_write $fluffy_td/live.c {extern const char *zlibVersion (void);
++extern void *__cxa_allocate_exception (unsigned long);
++int main (void) { return !(zlibVersion () != 0 && __cxa_allocate_exception != 0); }
++}
++    set interp [lindex [glob -nocomplain [file join $crtdir ld-linux-x86-64.so.2]] 0]
++    if { ![ld_compile $CC_FOR_TARGET $fluffy_td/live.c $fluffy_td/live.o] } {
++	fail "$testname (compile)"
++    } elseif { ![fluffy_link "-dynamic-linker [fluffy_q $interp] -o [fluffy_q $fluffy_td/live] [fluffy_q $crtdir/Scrt1.o] [fluffy_q $crtdir/crti.o] [fluffy_q $fluffy_td/live.o] -lstdc++ -lz -lc [fluffy_q $crtdir/crtn.o]"] } {
++	fail "$testname (link)"
++    } elseif { [lindex [fluffy_sh [fluffy_q $fluffy_td/live]] 0] != 0 } {
++	fail "$testname (run)"
++    } else {
++	pass $testname
++    }
++}
++
++# Two tiny shared libraries, libtop needing libdep, placed in separate
++# packages under a sysroot whose name contains "[1]".  The package layout is
++# derived from the configured sysroot-relative wildcard SEARCH_DIR (e.g.
++# "=/sw/*/lib" gives <sysroot>/sw/pkg_top/lib and <sysroot>/sw/pkg_dep/lib).
++set sys "$fluffy_td/sys\[1\]"
++set sys_pat ""
++foreach d $wild_dirs {
++    if { [regexp {SEARCH_DIR\("=(/[^"*?[]*)/\*(/[^"*?[]*)?"\)} $d -> head tail] } {
++	set sys_pat "$head/@$tail"
++	break
++    }
++}
++if { $sys_pat eq "" } {
++    set sys_pat "/sw/@/lib"
++}
++set top_dir "$sys[string map {@ pkg_top} $sys_pat]"
++set dep_dir "$sys[string map {@ pkg_dep} $sys_pat]"
++file mkdir $top_dir $dep_dir
++fluffy_write $fluffy_td/dep.c "int fluffy_sysroot_dep_probe (void) { return 7; }\n"
++fluffy_write $fluffy_td/top.c "extern int fluffy_sysroot_dep_probe (void);
++int fluffy_sysroot_top_probe (void) { return fluffy_sysroot_dep_probe () + 35; }\n"
++set dep_so "$dep_dir/libfluffy_sysroot_dep.so.1"
++set top_so "$top_dir/libfluffy_sysroot_top.so"
++
++set libs_ok [expr { [ld_compile "$CC_FOR_TARGET -fPIC" $fluffy_td/dep.c $fluffy_td/dep.o]
++		    && [ld_compile "$CC_FOR_TARGET -fPIC" $fluffy_td/top.c $fluffy_td/top.o]
++		    && [fluffy_link "-shared -soname libfluffy_sysroot_dep.so.1 -o [fluffy_q $dep_so] [fluffy_q $fluffy_td/dep.o]"]
++		    && [fluffy_link "-shared -soname libfluffy_sysroot_top.so -o [fluffy_q $top_so] [fluffy_q $fluffy_td/top.o] -L[fluffy_q $dep_dir] -l:libfluffy_sysroot_dep.so.1"] }]
++
++# 3. --sysroot containing "[1]": the sysroot-relative wildcard SEARCH_DIR is
++#    expanded under the sysroot with its metacharacters escaped, and libtop's
++#    DT_NEEDED on libdep resolves across package directories without
++#    -rpath-link.
++set testname "--sysroot with glob metacharacters resolves DT_NEEDED across packages"
++if { [lsearch -regexp $wild_dirs {SEARCH_DIR\("=}] < 0 } {
++    unsupported "$testname (no sysroot-relative wildcard lib path configured)"
++} elseif { !$libs_ok } {
++    fail "$testname (building fixtures)"
++} else {
++    fluffy_write $fluffy_td/sys_app.c [fluffy_start_src "extern int fluffy_sysroot_top_probe (void);" "fluffy_sysroot_top_probe () == 42"]
++    if { ![ld_compile "$CC_FOR_TARGET -fno-pic" $fluffy_td/sys_app.c $fluffy_td/sys_app.o]
++	 || ![fluffy_link "-dynamic-linker [fluffy_q $fluffy_interp] [fluffy_q --sysroot=$sys] -o [fluffy_q $fluffy_td/sys_app] [fluffy_q $fluffy_td/sys_app.o] -lfluffy_sysroot_top"] } {
++	fail $testname
++    } elseif { [lindex [fluffy_sh "LD_LIBRARY_PATH=[fluffy_q $top_dir:$dep_dir] [fluffy_q $fluffy_td/sys_app]"] 0] != 0 } {
++	fail "$testname (run)"
++    } else {
++	pass $testname
++    }
++}
++
++# 4. -L with a wildcard matching a directory whose name contains "[1]":
++#    each glob match is added literally and never re-globbed.
++set testname "-L wildcard expands over directories containing \[1\]"
++if { !$libs_ok } {
++    fail "$testname (building fixtures)"
++} else {
++    file mkdir "$fluffy_td/wild/pkg\[1\]/lib"
++    fluffy_write $fluffy_td/w_app.c [fluffy_start_src "extern int fluffy_sysroot_dep_probe (void);" "fluffy_sysroot_dep_probe () == 7"]
++    if { ![fluffy_link "-shared -soname libwtest.so -o [fluffy_q $fluffy_td/wild/pkg\[1\]/lib/libwtest.so] [fluffy_q $fluffy_td/dep.o]"]
++	 || ![ld_compile "$CC_FOR_TARGET -fno-pic" $fluffy_td/w_app.c $fluffy_td/w_app.o]
++	 || ![fluffy_link "-dynamic-linker [fluffy_q $fluffy_interp] -L[fluffy_q $fluffy_td/wild/*/lib] -o [fluffy_q $fluffy_td/w_app] [fluffy_q $fluffy_td/w_app.o] -lwtest"] } {
++	fail $testname
++    } elseif { [lindex [fluffy_sh "LD_LIBRARY_PATH=[fluffy_q $fluffy_td/wild/pkg\[1\]/lib] [fluffy_q $fluffy_td/w_app]"] 0] != 0 } {
++	fail "$testname (run)"
++    } else {
++	pass $testname
++    }
++}
++
++# 5. A literal -L directory containing "[1]" is used as-is, so it wins over
++#    the sibling "lit1" that the same string would match as a pattern.
++set testname "literal -L directory containing \[1\] wins over pattern match"
++file mkdir "$fluffy_td/lit\[1\]/lib" "$fluffy_td/lit1/lib"
++fluffy_write $fluffy_td/lit_ok.c "int lit_probe (void) { return 77; }\n"
++fluffy_write $fluffy_td/lit_bad.c "int lit_probe (void) { return 13; }\n"
++fluffy_write $fluffy_td/lit_app.c [fluffy_start_src "extern int lit_probe (void);" "lit_probe () == 77"]
++set ok_so "$fluffy_td/lit\[1\]/lib/liblitprobe.so"
++if { ![ld_compile "$CC_FOR_TARGET -fPIC" $fluffy_td/lit_ok.c $fluffy_td/lit_ok.o]
++     || ![ld_compile "$CC_FOR_TARGET -fPIC" $fluffy_td/lit_bad.c $fluffy_td/lit_bad.o]
++     || ![fluffy_link "-shared -soname liblitprobe.so -o [fluffy_q $ok_so] [fluffy_q $fluffy_td/lit_ok.o]"]
++     || ![fluffy_link "-shared -soname liblitprobe.so -o [fluffy_q $fluffy_td/lit1/lib/liblitprobe.so] [fluffy_q $fluffy_td/lit_bad.o]"]
++     || ![ld_compile "$CC_FOR_TARGET -fno-pic" $fluffy_td/lit_app.c $fluffy_td/lit_app.o]
++     || ![fluffy_link "-dynamic-linker [fluffy_q $fluffy_interp] -L[fluffy_q $fluffy_td/lit\[1\]/lib] -rpath [fluffy_q $fluffy_td/lit\[1\]/lib] -o [fluffy_q $fluffy_td/lit_app] [fluffy_q $fluffy_td/lit_app.o] -llitprobe"] } {
++    fail $testname
++} elseif { [lindex [fluffy_sh [fluffy_q $fluffy_td/lit_app]] 0] != 0 } {
++    fail "$testname (run)"
++} else {
++    pass $testname
++}
++
++file delete -force $fluffy_td
 diff -Naur binutils-2.47.orig/ld/testsuite/ld-mips-elf/mips-elf-flags.exp binutils-2.47/ld/testsuite/ld-mips-elf/mips-elf-flags.exp
 --- binutils-2.47.orig/ld/testsuite/ld-mips-elf/mips-elf-flags.exp	2026-07-25 23:00:00.000000000 +0000
 +++ binutils-2.47/ld/testsuite/ld-mips-elf/mips-elf-flags.exp	2026-07-25 23:00:00.000000000 +0000

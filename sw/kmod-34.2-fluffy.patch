@@ -144,7 +144,18 @@ diff --no-dereference -Naur kmod-34.2.orig/meson.build kmod-34.2/meson.build
    'secure_getenv',
  ]
  foreach func : _funcs
-@@ -292,9 +292,9 @@
+@@ -226,7 +226,9 @@
+   set_variable(dir_option, customdir)
+ endforeach
+
+-foreach confdir : [sysconfdir, distconfdir]
++# Fluffy: /etc is stateless and belongs to the admin; a package never
++# installs into it.  Only the vendor directory is created.
++foreach confdir : [distconfdir]
+   install_emptydir(confdir / 'depmod.d')
+   install_emptydir(confdir / 'modprobe.d')
+ endforeach
+@@ -292,9 +294,9 @@
  #-------------------------------------------------------------------------------
  
  _compression = [
@@ -157,7 +168,7 @@ diff --no-dereference -Naur kmod-34.2.orig/meson.build kmod-34.2/meson.build
  ]
  
  foreach tuple : _compression
-@@ -329,7 +329,7 @@
+@@ -329,7 +331,7 @@
  #-------------------------------------------------------------------------------
  
  opt = 'openssl'

@@ -9,7 +9,7 @@ VERSION=9.2.1025
 
 ARCHIVES=(
     cb0dbf701f8550bb54940304fa4d8b875e078db84967e5b36a0eb7ebe8a6d0cc https://github.com/fluffy-linux/vim/releases/download/v$VERSION/vim-$VERSION.tar.gz
-    17669875ecc13018f4ffdaa825169d5f20f81dbfb0dd07f49e94be9c29d892af file://vim-$VERSION-fluffy-source.patch
+    3dfdc739404f5fb3dacaff6e7fa2f484197059c1f5e3c5ca6835f06114966508 file://vim-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(

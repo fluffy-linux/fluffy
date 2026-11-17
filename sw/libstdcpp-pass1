@@ -8,21 +8,29 @@ ARCHIVES=(
 
 NEEDS=(
     glibc-pass1
+    libgcc-pass1
 )
 
 BUILD_NEEDS=(
     gcc-pass1
     glibc-pass1
+    libgcc-pass1
     linux-headers
 )
 
 MAKE() {
     mkdir -v build
     cd build
+
+    # gcc-pass1 is --disable-shared, so its libgcc spec is plain -lgcc and
+    # never links libgcc_s: libstdc++.so would reference _Unwind_* with no
+    # DT_NEEDED on libgcc_s.so.1.  Add it for -shared links only.
+    printf '*libgcc:\n+ %%{shared:-lgcc_s}\n\n' > libgcc_s.specs
+
     ../libstdc++-v3/configure \
         --host=$FLUFFY_TGT \
         --build=$(../config.guess) \
-        CXX=$FLUFFY_TGT-gcc \
+        CXX="$FLUFFY_TGT-gcc -specs=$PWD/libgcc_s.specs" \
         --prefix=/sw/libstdcpp \
         --disable-multilib \
         --disable-nls \

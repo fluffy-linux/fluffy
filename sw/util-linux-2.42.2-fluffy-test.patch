@@ -1,0 +1,157 @@
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/expected/misc/glob-paths-configs-empty-element util-linux-2.42.2/tests/expected/misc/glob-paths-configs-empty-element
+--- util-linux-2.42.2.orig/tests/expected/misc/glob-paths-configs-empty-element	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-2.42.2/tests/expected/misc/glob-paths-configs-empty-element	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1,4 @@
++@TESTDIR@/sw/util-linux/etc//issue
++@TESTDIR@/sw/pkgB/etc//issue.d/10-pkgb.conf
++@TESTDIR@/sw/util-linux/etc//issue
++@TESTDIR@/sw/pkgB/etc//issue.d/10-pkgb.conf
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/expected/misc/glob-paths-configs-etc-wins util-linux-2.42.2/tests/expected/misc/glob-paths-configs-etc-wins
+--- util-linux-2.42.2.orig/tests/expected/misc/glob-paths-configs-etc-wins	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-2.42.2/tests/expected/misc/glob-paths-configs-etc-wins	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1,2 @@
++@TESTDIR@/etc//issue
++@TESTDIR@/sw/pkgB/etc//issue.d/10-pkgb.conf
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/expected/misc/glob-paths-configs-explicit-dot util-linux-2.42.2/tests/expected/misc/glob-paths-configs-explicit-dot
+--- util-linux-2.42.2.orig/tests/expected/misc/glob-paths-configs-explicit-dot	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-2.42.2/tests/expected/misc/glob-paths-configs-explicit-dot	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1,2 @@
++.//issue
++@TESTDIR@/sw/pkgB/etc//issue.d/10-pkgb.conf
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/expected/misc/glob-paths-configs-wildcard-usr util-linux-2.42.2/tests/expected/misc/glob-paths-configs-wildcard-usr
+--- util-linux-2.42.2.orig/tests/expected/misc/glob-paths-configs-wildcard-usr	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-2.42.2/tests/expected/misc/glob-paths-configs-wildcard-usr	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1,2 @@
++@TESTDIR@/sw/util-linux/etc//issue
++@TESTDIR@/sw/pkgB/etc//issue.d/10-pkgb.conf
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/expected/misc/glob-paths-defpath-wildcard util-linux-2.42.2/tests/expected/misc/glob-paths-defpath-wildcard
+--- util-linux-2.42.2.orig/tests/expected/misc/glob-paths-defpath-wildcard	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-2.42.2/tests/expected/misc/glob-paths-defpath-wildcard	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1 @@
++ok
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/expected/misc/glob-paths-fsck-empty-element util-linux-2.42.2/tests/expected/misc/glob-paths-fsck-empty-element
+--- util-linux-2.42.2.orig/tests/expected/misc/glob-paths-fsck-empty-element	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-2.42.2/tests/expected/misc/glob-paths-fsck-empty-element	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1,2 @@
++ok
++ok
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/expected/misc/glob-paths-fsck-explicit-dot util-linux-2.42.2/tests/expected/misc/glob-paths-fsck-explicit-dot
+--- util-linux-2.42.2.orig/tests/expected/misc/glob-paths-fsck-explicit-dot	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-2.42.2/tests/expected/misc/glob-paths-fsck-explicit-dot	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1 @@
++ok
+diff --no-dereference -Naur util-linux-2.42.2.orig/tests/expected/misc/glob-paths-fsck-wildcard util-linux-2.42.2/tests/expected/misc/glob-paths-fsck-wildcard
+--- util-linux-2.42.2.orig/tests/expected/misc/glob-paths-fsck-wildcard	1970-01-01 00:00:00.000000000 +0000
++++ util-linux-2.42.2/tests/expected/misc/glob-paths-fsck-wildcard	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1 @@
++ok
+diff --git a/tests/ts/misc/glob-paths b/tests/ts/misc/glob-paths
+new file mode 100755
+--- /dev/null
++++ b/tests/ts/misc/glob-paths	2026-06-16 12:06:59.000000000 +0000
+@@ -0,0 +1,105 @@
++#!/bin/bash
++
++# This file is part of util-linux.
++#
++# This file is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# Wildcard and colon-separated search paths: fsck helper lookup through
++# PATH, and ul_configs_file_list() vendor directories (--usr), including
++# empty elements, which must never mean the current directory.
++
++TS_TOPDIR="${0%/*}/../.."
++TS_DESC="glob-paths"
++
++. "$TS_TOPDIR"/functions.sh
++ts_init "$*"
++
++TS_CMD_FSCK=${TS_CMD_FSCK:-"${ts_commandsdir}fsck"}
++ts_check_test_command "$TS_CMD_FSCK"
++ts_check_test_command "$TS_HELPER_CONFIGS"
++ts_check_test_command "$TS_HELPER_PATHS"
++
++TESTDIR="$TS_OUTDIR/${TS_TESTNAME}-root"
++rm -rf "$TESTDIR"
++mkdir -p "$TESTDIR/fsck/pkg/bin" "$TESTDIR/cwd" \
++	"$TESTDIR/sw/util-linux/etc" "$TESTDIR/sw/pkgB/etc/issue.d" "$TESTDIR/etc"
++
++# fsck -N only prints the helper it would run; helpers need not work.
++: > "$TESTDIR/fsck/pkg/bin/fsck.fluffytest"
++: > "$TESTDIR/cwd/fsck.fluffytest"
++chmod 755 "$TESTDIR/fsck/pkg/bin/fsck.fluffytest" "$TESTDIR/cwd/fsck.fluffytest"
++
++# Print "ok" if fsck run from $TESTDIR/cwd with PATH=$1 picks helper $2.
++fsck_picks() {
++	local out
++	out=$(cd "$TESTDIR/cwd" && FSTAB_FILE=/dev/null PATH="$1" \
++		"$TS_CMD_FSCK" -T -N -t fluffytest /dev/null 2>&1)
++	case "$out" in
++	*"[$2"*) echo ok ;;
++	*) echo "PATH=$1: expected [$2, got: $out" ;;
++	esac
++}
++
++ts_init_subtest "defpath-wildcard"
++case "$("$TS_HELPER_PATHS" _PATH_DEFPATH)" in
++*'*'*) echo ok ;;
++*) echo "_PATH_DEFPATH has no wildcard: $("$TS_HELPER_PATHS" _PATH_DEFPATH)" ;;
++esac >> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++ts_finalize_subtest
++
++ts_init_subtest "fsck-wildcard"
++fsck_picks "$TESTDIR/fsck/*/bin" "$TESTDIR/fsck/pkg/bin/fsck.fluffytest" \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++ts_finalize_subtest
++
++ts_init_subtest "fsck-empty-element"
++fsck_picks ":$TESTDIR/fsck/*/bin" "$TESTDIR/fsck/pkg/bin/fsck.fluffytest" \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++fsck_picks ":$TESTDIR/fsck/*/bin:." "$TESTDIR/fsck/pkg/bin/fsck.fluffytest" \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++ts_finalize_subtest
++
++ts_init_subtest "fsck-explicit-dot"
++fsck_picks ".:$TESTDIR/fsck/*/bin" "./fsck.fluffytest" \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++ts_finalize_subtest
++
++echo vendor > "$TESTDIR/sw/util-linux/etc/issue"
++echo dropin > "$TESTDIR/sw/pkgB/etc/issue.d/10-pkgb.conf"
++echo decoy > "$TESTDIR/cwd/issue"
++
++# Run test_configs from $TESTDIR/cwd; print its file list, one per line,
++# with $TESTDIR replaced by @TESTDIR@.
++configs() {
++	(cd "$TESTDIR/cwd" && "$TS_HELPER_CONFIGS" --etc "$TESTDIR/etc" "$@") \
++		| sed -n "s|^  ||p" | sed "s|$TESTDIR|@TESTDIR@|g"
++}
++
++ts_init_subtest "configs-wildcard-usr"
++configs --usr "$TESTDIR/sw/*/etc" --name issue --suffix conf \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++ts_finalize_subtest
++
++ts_init_subtest "configs-empty-element"
++configs --usr ":$TESTDIR/sw/*/etc" --name issue \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++configs --usr ":$TESTDIR/sw/*/etc:." --name issue \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++ts_finalize_subtest
++
++ts_init_subtest "configs-explicit-dot"
++configs --usr ".:$TESTDIR/sw/*/etc" --name issue \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++ts_finalize_subtest
++
++ts_init_subtest "configs-etc-wins"
++echo user > "$TESTDIR/etc/issue"
++configs --usr "$TESTDIR/sw/*/etc" --name issue \
++	>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
++ts_finalize_subtest
++
++rm -rf "$TESTDIR"
++ts_finalize

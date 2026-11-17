@@ -1,6 +1,8 @@
 # Fluffy Linux Globbing & `FSWC` Design and Implementation Plan
 
-This document is the authoritative specification and phased execution plan for universal wildcard path resolution (`<glob.h>`, `<fnmatch.h>`, `GLOB_PATHS`), language runtime glob delegation, and the internal `glibc` Fluffy SquashFS Wildcard Cache (`FSWC` v5). It supersedes the prototype notes previously kept in [NOTES.md](NOTES.md) and defines the path from the current `FSWC` v4 prototype to Fluffy's target architecture, including per-package test suite requirements for every package modified from upstream source.
+This document is the authoritative specification and phased execution plan for universal wildcard path resolution (`<glob.h>`, `<fnmatch.h>`, `GLOB_PATHS`), language runtime glob delegation, and the internal `glibc` Fluffy SquashFS Wildcard Cache (`FSWC`). It supersedes the prototype notes previously kept in [NOTES.md](NOTES.md).
+
+**Revision note (`FSWC` v6).** Earlier revisions of this document specified `FSWC` v5: a cache built inside `ld.so` and `libc` by whichever process needed it, revalidated by hashing the entire mount tree on every call, plus an opt-in mode in which `open`/`stat`/`access` answered `ENOENT` from the cache on the kernel's behalf. v6 reduces `FSWC` to a single existence-lookup primitive over a sorted snapshot of the packages, fed into `glob()` through its existing `GLOB_ALTDIRFUNC` hooks, built only at program startup, and validated with 2–3 syscalls. §2 records every earlier design, why each failed, and the decisions behind v6; §4 is the new design; §4.7 maps v5 code to keep/change/delete; §4.9 lists open questions.
 
 ---
 
@@ -10,27 +12,44 @@ In a traditional FHS distribution, packages pour files into mutable shared direc
 
 Fluffy Linux mounts each package as an independent, read-only SquashFS image at `/sw/<pkg>` with zero symlink farms and zero install hooks. Consequently, **every** subsystem shares the exact same discovery primitive: lexicographically ordered wildcard expansion over `/sw/*/...` (combined with ordered colon-delimited search paths such as `/sw/.build/*/bin:/sw/*/bin` or `/sw/*/etc/foo.conf:/etc/foo.conf`).
 
-Rather than inventing bespoke directory scanners or leaking custom cache libraries across userland, Fluffy elevates POSIX `<glob.h>` and `<fnmatch.h>` in `glibc` into the **single universal lookup primitive**, backed by an invisible, POSIX-transparent shared-memory SquashFS index inside `glibc`.
+Fluffy elevates POSIX `<glob.h>` and `<fnmatch.h>` in `glibc` into the **single universal lookup primitive**. `FSWC` is a private `glibc` accelerator for that primitive: a per-user, per-mount-namespace index of the immutable `/sw/*` trees that lets wildcard lookups skip packages that cannot match, without ever changing an answer.
 
 ### Non-Negotiable Design Rules
 
-1. **Zero Implementation Leakage (`FSWC` Strictly Private to `glibc`)**:
-   - No downstream package (`binutils`, `gcc`, `bash`, `python`, `perl`, `tcl`, `systemd`, `kmod`, etc.) may include `fluffy-cache.h`, parse `/dev/shm` blobs, or know `FSWC` exists.
-   - Downstream packages call standard `<glob.h>` (`glob()`, `globfree()`), `<fnmatch.h>` (`fnmatch()`), `<dlfcn.h>` (`dlopen()`), `<unistd.h>` (`execvp()`, `execvpe()`, `access()`, `open()`, `stat()`), and `<spawn.h>` (`posix_spawnp()`).
-2. **Zero Hardcoded `"/sw"` Literals in C Source**:
-   - Upstream C/C++ patches implement general-purpose wildcard expansion (`glob()`, `GLOB_PATHS`) over configured paths.
+1. **The kernel is the authority; the plain walk is the specification.**
+   - The *plain walk* is: `getdents64(<prefix>)`, drop leading-dot names, sort with the caller's collation, then probe `<prefix>/<name>/<relpath>` in order (first match wins for search paths; all matches for merges). This is exactly what a program that never calls `glibc`—Go (`os.ReadDir` + sort + `os.Stat`), Rust, raw `SYSCALL`s—observes.
+   - Go and other non-`glibc` walkers sort by bytes, so they are an exact oracle only under `C`/`POSIX` collation; under other locales the reference is the plain walk sorted with the caller's collation.
+   - Every `FSWC`-accelerated answer **must** be identical to the plain walk evaluated at some instant during the call (the same linearizability a Go walk racing with concurrent mounts has). Correctness never depends on `glibc` syscall-wrapper hooks, TTL timers, or other processes having called `glibc`.
+2. **The cache is a hint, never an assumption.**
+   - Read-only SquashFS mounts are an *optimization opportunity*, not a precondition. A user creating a directory in `/sw`, unmounting a package, mounting over a package subdirectory, bind-mounting a writable tree, or deleting the index must leave every answer correct; only speed may degrade.
+3. **Globs belong to lookups and to aggregation, never to the meaning of a single path in libc.** Fluffy makes globs efficient, and it makes *path lookups* and configuration *aggregation* understand them. The goal is not globs everywhere.
+   - **The experiment.** Can configuration work purely by aggregation over path conventions? Every package contributes fragments under `/sw/<pkg>/...`, consumers combine them in a defined order, and the administrator's `/etc` always has the final say. `passwd`/`group` are the model: vendor records from `/sw/*/etc/<db>`, with `/etc/<db>` last and winning.
+   - **The administrator can subtract as well as add.**
+     - Example: `systemd` discovers units across `/sw/*/lib/systemd/system`, so a mounted package's units exist with no install step. `/etc/systemd/system/<unit>` → `/dev/null` masks one without touching the read-only package.
+     - Each kind of consumer needs a removal story:
+       - **Keyed records** (`passwd`, `group`, `hosts`): redefine the key in `/etc`, which is read first.
+       - **Basename-keyed fragments** (units, `*.d/*.conf`, modprobe, tmpfiles): the same basename in `/etc` replaces the fragment, and the same basename → `/dev/null` masks it.
+       - **Accumulating files** (`profile`, `sysctl.conf`): `/etc` is applied last and can override values, but cannot remove a vendor fragment. This is the open gap in the experiment. The `/dev/null`-by-basename convention is the candidate fix if it matters.
+   - **libc single-path calls stay literal.** A path passed to `exec*`, `posix_spawn*`, `open`, `stat`, `access`, or `dlopen` means exactly that file; glibc never expands metacharacters in it. A wildcard `execve` fallback that ran "the first match" was removed on 2026-11-16 (§2.5).
+   - **Applications aggregate.** Search lists (`PATH`, library search paths, `TERMINFO_DIRS`, `MANPATH`, `/sw/*/etc/<file>:/etc/<file>`) and file-name *arguments or options that name configuration or data inputs* should accept glob patterns, and ideally `GLOB_PATHS` `:`-lists, combined in order with `/etc` last. Examples: openssl `-CAfile`/`-CRLfile`, curl `--cacert`/`--crlfile`, kmod `-C`, `MKE2FS_CONFIG`, `INPUTRC`. Letting the invoking shell expand a pattern into several arguments is an equally acceptable way to aggregate.
+   - `open`, `openat`, `*_nocancel`, `stat`, `fstatat`, `statx`, `access`, and `faccessat` are **unmodified upstream**. `FSWC` is consulted only by code that is itself expanding a wildcard (`glob()`, `execvpe()` `PATH` search, `ld.so` wildcard search paths, `GLOB_PATHS` stateless-`/etc` merges), and it only ever tells that code which concrete paths are worth trying.
+4. **`ld.so` reads; it never builds.**
+   - The dynamic loader maps, validates, and queries an existing index, or performs the plain walk. Index construction lives only in `libc` (§4.4). Every `FSWC` function linked into `rtld` uses bounded stack (target `< 1 KiB` per frame, verified by `objdump` in `CHECK()`), zero `malloc`, zero locks, and is safe on a `PTHREAD_STACK_MIN` thread and inside a `vfork` child.
+5. **Daemonless, per-user, per-namespace.**
+   - The index for `(euid, mount namespace, prefix)` is built at program startup (`__libc_early_init`) by an ordinary dynamically linked process of that user under a non-blocking lock. Until it exists or whenever it fails validation, lookups use the plain walk. No daemon, no `swctl` involvement, no cross-user trust.
+6. **Zero implementation leakage.**
+   - No downstream package (`binutils`, `gcc`, `bash`, `python`, `perl`, `tcl`, `systemd`, `kmod`, etc.) may include an `FSWC` header, parse index files, or know `FSWC` exists. Downstream packages call standard `<glob.h>` (`glob()`, `globfree()`), `<fnmatch.h>`, `<dlfcn.h>`, `<unistd.h>` (`execvp()`, `execvpe()`), and `<spawn.h>` (`posix_spawnp()`).
+7. **Zero hardcoded `"/sw"` literals in C source.**
    - Fluffy paths (`/sw/*/bin`, `/sw/*/lib`, `/sw/*/include`, `/sw/*/etc/...`) enter strictly through build configuration (`configparms` `user-defined-trusted-dirs`, `./configure` flags, `paths.h`, `STANDARD_STARTFILE_PREFIX`, `NATIVE_SYSTEM_HEADER_DIR`, default environment variables).
-3. **Preserve `glob_t` ABI — No `GLOB_MOUNTS` Flag**:
-   - `sizeof(glob_t)` and `sizeof(glob64_t)` remain 100% upstream ABI-compatible.
-   - The experimental `GLOB_MOUNTS` mount-table union concept is **dropped**: `glibc` deals strictly with OS paths (plus upstream's existing `GLOB_ALTDIRFUNC` callback interface used by tools like `kmod`'s test suite). Language runtimes with in-process virtual filesystems (e.g., Tcl `//zipfs:/` / Starkits) check whether a pattern touches a registered non-OS mount prefix (~15 lines in Tcl) and delegate native OS patterns directly to `glibc` `glob()`.
-4. **Strict POSIX, VFS & Non-Glibc Caller Observational Equivalence**:
-   - Caching must never alter observable return codes, `errno` values (`ENOTDIR` vs. `ENOENT`, `EACCES`, `ELOOP`, `ENAMETOOLONG`), symlink traversal (`stat` vs. `lstat`, `O_NOFOLLOW`, `GLOB_MARK`), `LC_COLLATE` ordering, `errfunc` / `GLOB_ERR` callbacks, or per-UID permission enforcement. Any ambiguous or non-immutable case falls through cleanly to the kernel.
-   - **Go / Rust / Raw `SYSCALL` Safety**: Languages like Go (`CGO_ENABLED=0` external processes and `cgo` binaries whose runtime/stdlib executes raw `SYSCALL` instructions for `mount`, `umount2`, `move_mount`, `chroot`, `pivot_root`, `unshare`, `setns`, `setresuid`, `setgroups`, `setfsuid`, `capset`, etc.) skip `glibc` C syscall wrappers. Correctness in default operation (`glibc.fswc.mode=1`) **never** relies on `glibc` wrapper hooks or TTL timers: `glob()`, `execvpe()`, and `dlopen()` unconditionally revalidate live kernel state (`geteuid`/`getuid` + ancestor `statx`s + paginated `listmount(LSMT_ROOT)` paired with `statmount(STATMOUNT_MNT_BASIC | STATMOUNT_MNT_ROOT | STATMOUNT_MNT_POINT)`) on every call across all `mode >= 1` (`0 ns` stale window, including intra-namespace `move_mount`/`MS_MOVE`), while single-path `open`/`stat`/`access` go directly to the kernel unless the caller explicitly opts into `glibc.fswc.mode=2`.
-5. **High-Bit Custom Flags, Host-Environment Independence & Timestamp-Preserving Patch Hygiene**:
-   - Custom `<glob.h>` and `<fnmatch.h>` flags are allocated downward from `(1 << 30)` so future upstream `glibc` additions at low bit positions never collide.
-   - All patches preserve upstream file modification timestamps (`TZ=UTC0`, applied with `patch -Z -Np1`) so `autoconf`/`automake`/`help2man` rebuild rules are never falsely triggered.
-   - Neither implementation nor tests/benchmarks (`tst-fswc-*`, `tst-glob-fluffy-flags`, `tools/test-fswc`, `tools/bench-fswc`, `sw/*` `CHECK()` blocks) may depend on host-specific paths existing (must work cleanly on Ubuntu without `/sw`, on Fluffy Linux without `/snap`, `/bin/sh`, or `/usr/bin`, and on bare GitHub Actions ephemeral runners with zero SquashFS mounts).
-   - Every behavioral modification to an upstream package must be verified by automated tests executed in that recipe's `CHECK()` phase.
+8. **Preserve `glob_t` ABI — no `GLOB_MOUNTS` flag.**
+   - `sizeof(glob_t)` and `sizeof(glob64_t)` remain upstream ABI-compatible. Language runtimes with in-process virtual filesystems (e.g., Tcl `//zipfs:/`) check whether a pattern touches a registered non-OS prefix and delegate native OS patterns to `glibc` `glob()`.
+9. **Kernel baseline: host kernel and Fluffy's own kernel only.**
+   - Supported kernels are the bootstrap host's (currently 7.0) and Fluffy's `sw/linux` (currently 7.1.8). No compatibility code for older kernels: `statx(STATX_MNT_ID_UNIQUE)`, `listmount`/`statmount` returning **all descendant mounts** (verified on 7.0), and multigrain timestamps are assumed. Fluffy's kernel additionally carries a small patch exposing the mount-namespace change counter (§4.6).
+10. **High-bit custom flags, host-environment independence & timestamp-preserving patch hygiene.**
+    - Custom `<glob.h>` and `<fnmatch.h>` flags are allocated downward from `(1 << 30)`.
+    - All patches preserve upstream file modification timestamps (`TZ=UTC0`, applied with `patch -Z -Np1`).
+    - Neither implementation nor tests/benchmarks may depend on host-specific paths existing (Ubuntu without `/sw`, Fluffy without `/snap`, `/bin/sh`, or `/usr/bin`, bare GitHub Actions runners with zero SquashFS mounts). Wildcard tests construct their own prefix (§4.8).
+    - Every behavioral modification to an upstream package must be verified by automated tests executed in that recipe's `CHECK()` phase.
 
 ### LOC & Duplication Scorecard (Pre-v5 Prototype Baseline → Target State)
 
@@ -38,7 +57,7 @@ Rather than inventing bespoke directory scanners or leaking custom cache librari
 | :--- | :--- | :--- | :--- |
 | `binutils` (`include/fluffy-cache.h` + `ldfile.c`) | 3,379 lines (3,286-line leaked cache header) | ~25-line `glob(GLOB_ONLYDIR)` in `ld/ldfile.c` | **-3,315 LOC** |
 | `gcc` (`include/fluffy-cache.h` + `gcc/*.cc`) | 3,676 lines (3,282-line leaked cache header) | ~180 lines using `glob(GLOB_ONLYDIR)` (`libcpp/files.cc` unmodified) | **-3,350+ LOC** |
-| `glibc` (`posix/glob_fluffy_cache.h` + `glob.c`) | 3,285-line static header compiled into 3 TUs + 450 lines of `Case A/B/C` & `glob_literal_suffix_try` | Single `fswc.c` (~3,700 lines, compiled once per lib, full Tier-1/Tier-2 cache + `mode=1` default / opt-in `mode=2` VFS negative filter) + `include/fswc.h` (~290 lines) + unified `fswc_glob_try` (`posix/glob.c`) | **Eliminates 3× TU triplication & rigid `Case A/B/C`** |
+| `glibc` (`FSWC`) | v4: 3,285-line header compiled into 3 TUs. v5: ~4,400 lines (`fswc.c` + `fswc.h`) compiled into `rtld` + `libc`, a reimplementation of glob semantics, plus hooks in 11 single-path syscall wrappers | v6: one existence-lookup primitive over a sorted path snapshot (`fswc-read.c` + `fswc-build.c`, target < 1,500 lines); `glob()` uses its own `GLOB_ALTDIRFUNC` hooks; **zero** single-path wrapper hooks | **~-3,000 LOC; removes builder from `rtld`** |
 | `bash` (`lib/glob/*` deleted + `<glob.h>` wiring) | Deleted `lib/glob/*` (-1,849 lines); delegates 100% to `glibc` | Keep + per-segment `~` tilde expansion & `-DSYS_INPUTRC` polish | *(Already -1,849 LOC)* |
 | `perl` (`ext/File-Glob/bsd_glob.c` + `File::Spec`) | Unmodified 1,050-line BSD glob + unpatched `File::Spec->path()` | `<glob.h>` leaf delegation in `bsd_glob.c` + `File::Spec::Unix::path()` + `@INC` `S_incpush` `glob()` | **~-750 LOC active** |
 | `python` (`posixmodule.c`, `glob.py`, `os.py`, `site.py`, `getpath.py`, `shutil.py`) | Partial `posix._glob` + 4 separate `:`-splitting glob loops | Full-featured `posix._glob` (`str\|bytes`, all flags, `root_dir`) + shared `posix._glob` path helpers | **Unified C fast-path** |
@@ -47,27 +66,135 @@ Rather than inventing bespoke directory scanners or leaking custom cache librari
 
 ---
 
-## 2. Historical Audit of Pre-v5 Prototype (`FSWC` v4) & Gap Analysis
+## 2. History: How `FSWC` Got to v6
 
-Auditing the pre-v5 `sw/glibc-2.44-fluffy-source.patch`, `sw/binutils-2.47-fluffy-source.patch`, `sw/gcc-16.2.0-fluffy-source.patch`, and language runtime patches revealed six structural issues resolved by this design:
+Six caching designs preceded v6. Each failure is recorded here so it is not proposed again. Quotes are the project owner's own words from earlier assistant sessions; numbers marked *(unverified)* are assistant estimates or one-off measurements that were never reproduced.
 
-1. **Header Triplication & Leaked Implementation**:
-   - `glob_fluffy_cache.h` (3,285 lines) is copy-pasted verbatim into `glibc`, `binutils` (`include/fluffy-cache.h`, 97% of patch), and `gcc` (`include/fluffy-cache.h`, 89% of patch), and compiled separately into `dl-load.os`, `execvpe.os`, and `glob.os` (`glob` + `glob64`) inside `glibc`.
-2. **Hardcoded 5-Subdirectory Whitelist & Depth Cap**:
-   - `FSWC` v4 hardcodes `FSWC_NUM_SUBDIRS = 5` (`bin`, `lib`, `etc`, `include`, `libexec`) and `FSWC_INC_MAX_SLASHES = 4`.
-   - Lookups into `/sw/*/share/terminfo/*/*` (Python PyREPL, `ncurses`), `/sw/*/lib/python3.14/site-packages/*` (every Python startup), `/sw/*/lib/systemd/system/*` (`systemd`), `/sw/*/etc/systemd/system/*`, `/sw/*/etc/modprobe.d/*` (`kmod`), `/sw/*/share/man` (`man-db`), and `/sw/*/etc/ssl/certs/*` (`openssl`/`curl`) miss the v4 index or fall back completely.
-3. **`MAP_PRIVATE` CoW Page Dirtying, 16-Slot Collisions & Dead `/tmp/.fluffy_ns_sealed`**:
-   - `fswc_try_acquire_sealed` maps `/dev/shm/fluffy_sw_v4_<slot>` with `MAP_PRIVATE`, temporarily calls `mprotect(..., PROT_READ | PROT_WRITE)` to patch `mnt_id` and `mnt_hash` into page 0, and `mprotect`s back—dirtying a 4 KiB anonymous CoW page in every process and defeating pure shared clean pages.
-   - `FSWC_SHM_SLOTS = 16` (`mix64(mnt_id) & 15`) suffers birthday collisions across concurrent `swctl build` sandboxes and multi-prefix namespaces.
-   - `swctl` already removed `touch /tmp/.fluffy_ns_sealed`, leaving ~150 lines of dead `FSWC_HDR_SEALED` logic in `glibc`.
-4. **Brittle `Case A/B/C` Pattern Fast-Paths in `posix/glob.c`**:
-   - `fc_glob_try` handles only three rigid shapes (`<prefix>/*`, `<prefix>/*/<sub1>`, `<prefix>/*/<sub1>/<tail>`) and bails out whenever `GLOB_PERIOD`, `GLOB_CASEFOLD`, `GLOB_KEEP_SLASHES`, `GLOB_ERR`, or multi-wildcard components appear; `glob_literal_suffix_try` adds a second overlapping 210-line special case in `posix/glob.c`.
-5. **Naive Per-Package `(parent_id, basename)` Degrades Cross-Package Probes to $O(N_{\text{pkgs}})$**:
-   - If a full-tree index keys nodes on `(pkg_parent_node_id, basename)`, then resolving `/sw/*/lib/libz.so.1` or `/sw/*/bin/gcc` still has to probe `libz.so.1` separately across all 90+ package `lib` node IDs ($O(N_{\text{pkgs}})$ hash lookups).
-   - **Solution (`FSWC` v5 Merged Virtual Trie)**: Assign virtual directory IDs (`vdir_id`) to unique *relative* directory paths across `<prefix>/*` (`vdir_id = 0` is `<prefix>/*`, `vdir_id = 1` is `<prefix>/*/bin`, `vdir_id = 2` is `<prefix>/*/lib`, etc.) with compact sorted `pkg_idx` posting lists (inlined when `count == 1`, which covers ~90% of files). Any `<prefix>/*/<relpath>` lookup becomes strictly $O(\text{depth})$—2 hash probes for `/sw/*/bin/gcc` regardless of whether 10 or 1,000 packages are mounted.
-6. **Why Removing `fluffy-cache.h` from `gcc` & `binutils` Works Cleanly in Default `mode=1` (and Optional `mode=2`)**:
-   - Once `gcc` (`incpath.cc`) and `binutils` (`ldfile.c`) expand `/sw/*/include` (52 dirs) and `/sw/*/lib` (65 dirs) via `glob(GLOB_ONLYDIR)` at startup (`FSWC` `mode=1`), `cc1plus` issues `openat(AT_FDCWD, "/sw/<pkg>/include/<hdr>.h", O_RDONLY | O_NOCTTY)` across each `-I` directory in turn, and `ld` probes `open("/sw/<pkg>/lib/libfoo.so", ...)` across each `SEARCH_DIR`.
-   - Linux's own lockless RCU `dcache` (`__d_lookup_rcu`) serves exact-path misses in kernel RAM (~234.6 ms end-to-end `g++ <iostream> + ld` in `mode=1` vs. ~235.0 ms in `mode=2`) with **zero** user-space TTL window and **zero** reliance on `glibc` syscall wrappers when Go or raw `SYSCALL`s mutate mounts or root, while `mode=2` provides an explicit opt-in ~15 ns user-space negative filter against the **already-mapped** `GL` view (50 ms bounded kernel revalidation) for pure-`glibc` syscall-bound batch workloads—allowing `gcc` and `binutils` to drop 6,572 lines of custom cache code cleanly.
+### 2.0 The Six Recurring Failure Modes
+
+Any new proposal must avoid all six.
+
+| # | Failure mode | Where it occurred |
+| :--- | :--- | :--- |
+| **R1** | Cache code copied into several packages | FGC5 and v2–v4: `fluffy-cache.h` duplicated in `glibc`, `binutils`, and `gcc` (97% of the `binutils` patch, 89% of the `gcc` patch) |
+| **R2** | Tests or benchmarks depending on host specifics | `tst-glob-bz30635` asserting `execvp` against the default `PATH=/sw/*/bin`; the v5 oracle probing `/snap/core24` and the host's `/sw`; benchmarks run against the live `/mnt/fluffy/sw`. "Ubuntu soon won't have /sw and fluffy will never have /snap and a GitHub ephemeral runner won't have either." |
+| **R3** | Work inside `ld.so` or the link step, where there is no `malloc`, stacks may be `PTHREAD_STACK_MIN`, and the caller may be a `vfork` child | v2 (`ld.so` built or mapped the cache at startup through `GLRO`), v4, v5 (27.7 KiB cold-build frame inside `dlopen`) |
+| **R4** | An index maintained by `swctl` | The early "`swctl` bumps `/sw`'s ctime on every mount" idea; v4's `/tmp/.fluffy_ns_sealed` marker; a `swctl`-written `/sw/.index` proposed during the v6 redesign. "I don't like swctl making the hint… glibc should do it or some other daemon." |
+| **R5** | Assuming nobody changes `/sw` outside `swctl`, or within a running process | The original premise that "/sw mounts never change within a launched process" (abandoned once fresh installs no longer needed a new namespace, NOTES.md principle 2); v4's sealed mode skipping validation; v5's 50 ms revalidation window. "Read-only mounts should be an optimization, not an assumption… make a directory in sw or unmount something manually, we need to still be correct." |
+| **R6** | Re-implementing `glob()` pattern matching | FGC5–v4's Case A/B/C fast paths plus the overlapping `glob_literal_suffix_try`; v5's `fswc_glob_try` over a trie |
+
+Standing principles distilled from those failures:
+
+- "The cache must return the same as Go would, even if Go isn't going through glibc." Languages like Go skip glibc, so correctness can never depend on glibc wrappers being called.
+- "Optimizations should not change correctness." When a review finds a correctness hole, fix it or drop the feature. Never cover it with a time window.
+- "I do want to have one impl in one place." The spec should "work and feel general purpose" even though it has a specific purpose in mind: no Fluffy-specific literals, with Fluffy-specific speedups layered on top.
+- "We hardcode a lot of limits; I would prefer dynamic."
+- Get it right, then get it fast. Benchmarks and test suites are part of the design, not afterthoughts.
+
+### 2.1 Origins
+
+- **Why a cache at all.** "99% of the time /sw/*/bin/bash is going to return the same thing." "In memory is insufficient because on Linux we have many short-lived processes" (a `configure` run forks thousands of times, so bash's per-process `hash` table does not help). "It's gotta be cross-process, per-user, per-namespace, because permissions matter."
+- **Why `glob()` is the primitive.** `ldconfig` and `ld.so.cache` were dropped (`use_ldconfig=no`). A cache frozen inside `glibc`'s own image misses every other package, and `ldconfig` is "a specific-purpose hack to a general-purpose problem (bash /sw/*/bin… tcl's plugin lookup)". "If we disable ldconfig and force /sw/*/lib, we can make this eventually as efficient as its cache… my hope is we just use/optimize glob()."
+- **Why one glob dialect.** Hand-written `getdents` + insertion-sort loops in `dl-load.c` and `execvpe.c`, a `strcmp(name, "/sw/*/lib")` in `binutils`, and separate glob code in every shell and runtime were the duplication that started the unification: "everywhere we add glob support should support the same thing: POSIX style", "we should try not to write it ourselves and use stdlib functions", "why isn't everything just going to glibc glob".
+- **Why `GLOB_PATHS`.** "So many people reinvent path splitting"; "a colon is just a fancy glob construct… then a myriad of special functions falls away." Ordering is per segment: "'/x:/y/z:/w' must resolve /x/foo first."
+
+### 2.2 FGC5 → v4 (`glob_fluffy_cache.h` / `fluffy-cache.h`)
+
+1. **FGC5.** A per-euid/egid `/dev/shm` file validated by hashing `statx(STATX_MNT_ID_UNIQUE)` + `listmount`. It used raw `INTERNAL_SYSCALL` (so `errno` was untouched and no `malloc`), fixed tables (`top_ht[512]`, `sub_ht[8192]`, 256-bit package bitmasks), and was wired into `glob.c`, `execvpe.c`, and `ld.so`. To kill the `#include` probe storm it was then copied into `binutils` and `gcc` with a hardcoded subdirectory whitelist (`bin`, `lib`, `etc`, `include`, `libexec`) and an include depth cap of 4 (R1, R6). Verdict: "the current optimizations are quite brittle (max mount count etc)."
+2. **v2.** A relocatable image modeled on `dl-cache`'s `cache_extension`, `gconv_cache` hashing, and `stringtable.c`. All fixed limits were removed, but `ld.so` built or mapped the cache at startup (R3).
+3. **v3.** Correctness tightening: cross-mount and dangling symlinks tagged, permission checks on deep include directories, an `AT_SECURE` bypass, `O_EXCL | O_NOFOLLOW`. It also introduced `MAP_PRIVATE` and 16 hashed shm slots per uid, both later judged defects (copy-on-write page dirtying, slot collisions).
+4. **v4.** "Sealed" namespaces: `swctl` remounted `/sw` read-only and created a root-owned `/tmp/.fluffy_ns_sealed`, after which non-root processes skipped validation entirely (R4, R5). v4 also added `#include_next` chain skipping in `libcpp` and routed allocation through `xmalloc` because `gcc`'s `system.h` poisons `malloc` (deeper R1). The cache had also been silently disabled for every `ON=host-build` package, because the host's `/bin/bash` bind-mounted at `/sw/bash/bin/bash` made `/sw` non-SquashFS. Verdicts: "it can't be a great design to have this in triplicate across a header file"; "kill the marker file… optimizations should not change correctness."
+
+Other v4-era defects: per-package keys degrading cross-package probes to $O(N_{\text{pkgs}})$, and Case A/B/C pattern fast paths in `posix/glob.c` overlapping `glob_literal_suffix_try`.
+
+### 2.3 v5 (one module in `glibc`)
+
+v5 moved everything into one internal `glibc` module, a Merged Virtual Trie with per-UID `0700` `/dev/shm` blobs mapped `MAP_SHARED`. The whitelist was replaced with a uniform full-tree index ("I agree on your points about 5 paths vs a uniform index"), and `d_type` was added to every posting because of `include/ncursesw -> .`. State moved from `GLRO` into a writable `GL` slot table, because `GLRO` is RELRO-frozen and extending it would `SIGSEGV`. v5 reached 6,733/6,736 passing `glibc` tests. Review and the remaining failures then exposed structural problems:
+
+1. **Builder inside `ld.so`.** The cold-build path (`fswc_build_or_load_snap_locked`, 27.7 KiB stack frame) ran inside `dlopen`, overflowing `PTHREAD_STACK_MIN` threads (`elf/tst-dl-path-buf` `SIGSEGV`). Stack frames were since reduced to ~1.1 KiB with `mmap` workspaces, but the loader still carried shared-memory construction, mount-tree hashing, and SquashFS scanning: far more than a loader should.
+2. **Per-call validation cost proportional to the whole mount table.** Default `mode=1` re-hashed `listmount(LSMT_ROOT)` plus one `statmount` per mount on **every** `glob()`, `execvpe()`, and `dlopen()`. Correct, but a `make -j` build spawning hundreds of `gcc` → `cc1` → `as` → `ld` processes pays that on every exec ("can't do once per process because that kills… makefile builds that spawn hundreds of gccs").
+3. **`mode=2` answered on the kernel's behalf.** `__fswc_probe_exact` hooked `open`/`open64`/`openat`/`openat64`/`*_nocancel`/`access`/`faccessat`/`fstatat64`/`statx` to return `ENOENT`/`ENOTDIR` from the cache, with a 50 ms revalidation window and invalidation hooks on `glibc`'s `mount`/`setuid`/… wrappers. A stale cache could therefore produce a *wrong* answer, invisible to Go, `strace`, audit, and fanotify. *Provenance:* an assistant first suggested syscall interception unprompted. It was later approved ("Agree on all") as the way to strip `fluffy-cache.h` from `gcc`/`binutils` without per-`#include` `ENOENT` storms. The TTL and wrapper hooks then came from an assistant review that identified the external-process blind spot and covered it with a staleness window, which violates §2.0's principles. The redesign's verdict: "why are we even modifying open/close?"; "open shouldn't be resolving globs." The probe storm is better eliminated at its source, the wildcard-expanding caller.
+4. **Mount relocations required per-mount `statmount`.** Detecting `move_mount`/`MS_MOVE` (which keeps the mount's unique ID and changes no directory entries) required `STATMOUNT_MNT_POINT` for every mount, the main reason for cost 2.
+5. **A second implementation of `glob()`.** `fswc_glob_try` re-implemented `GLOB_MARK`, `GLOB_ONLYDIR`, `GLOB_PERIOD`, `GLOB_CASEFOLD`, `**`, and collation on top of a hash-table trie, duplicating upstream `glob()` instead of feeding it (R6).
+6. **Three artifact tiers** (`pkg_*`, `blob_*`, `ns_*`) and a 16-slot writable `_rtld_global` table with cross-DSO futexes, fork quiescing, and write-once snapshot publication. This complexity was driven largely by building inside arbitrary processes, including the loader.
+
+v6 keeps v5's per-UID storage hardening and the wildcard parsing and ordering logic in `execvpe.c` and `dl-load.c`, and replaces items 1–6 with a much smaller design (§4).
+
+### 2.4 The v6 Decision Record
+
+In order, each with its reason:
+
+1. **Correctness oracle = Go / raw syscalls** (Rule 1). Get the builder out of the dynamic loader (R3).
+2. **Delete the single-path hooks** (§2.3 item 3).
+3. **Read-only mounts are an optimization, not an assumption.** This led to the sealed/unsealed split and exact change signals (`statx` ctime + unique mount ID, `listmount`). The 50 ms TTL is a correctness hole, not a tuning knob.
+4. **≤ 3 syscalls per call, no `/proc`**, because `make -j` storms exec hundreds of processes.
+5. **Kernel baseline = host kernel + Fluffy's kernel only.** "Not interested with compatibility with old kernels. Host kernel and built kernel are sufficient." `listmount` returning all descendant mounts was verified by the project owner on 7.0.
+6. **No `swctl`-made index** (R4). **Trust is per user, per namespace:** "a user can trust itself." **Daemonless:** "use the old cache until the new one is made, and cache misses are just manual lookups" (an `nscd`-like `fswcd` and a per-user systemd service were rejected).
+7. **`mount --move` is invisible to ID-set checks.** "Small kernel patch is ok" (§4.6). On the host kernel without it, the check is deliberately omitted: "All builds are unprivileged and we control all mount behavior." This is a scoped exception to R5, accepted for unprivileged host-side builds only (§4.3).
+8. **Build only at startup, in `__libc_early_init`**, so the first resolved library is not a cold miss. `glob()` is a reader only ("you don't even have to care about glob except for checking cache invalidation"), so the fork hooks go too. A background build thread was rejected because a thread before `main` breaks `unshare(CLONE_NEWUSER)`.
+9. **One question, one structure.** "Which packages contain relpath P," answered by binary search over a sorted path array. Stale-delta mode and per-package listing caches were dropped or deferred. "Dramatically simplify this, it's far too much machinery… using the existing function hooks you can pass in if they aren't given" led to `glob()`'s own `GLOB_ALTDIRFUNC` hooks, with real `opendir`/`readdir` and index-backed `lstat`/`stat`. Earlier, the same instinct rejected a Tcl `GLOB_MOUNTS` flag as something that "doesn't pay for itself (and could probably be done with the existing callbacks glob provides optionally)" (Rule 8).
+10. "Ok that's fine until we prove it out." v6 is provisional until Phase 0/2 numbers exist.
+
+### 2.5 Other Rejected Alternatives (outside R1–R6)
+
+| Alternative | Why rejected |
+| :--- | :--- |
+| `overlayfs` merged view or symlink farm | "Overlayfs can only go so deep"; an installer that skips already-present files makes it incorrect; symlink farms are "verboten" (NOTES.md). A merged view would also bypass `glob()`, so runtimes would not benefit transparently. |
+| SQLite or an LMDB-style mutable single-writer/multi-reader B+tree index | `malloc` and locks under `vfork` corrupt or deadlock the parent (same constraint as R3); in-place mutation needs `swctl` or in-namespace writers (R4/R5). v6 uses an immutable file per `(euid, mntns, prefix)` replaced by `rename()`. |
+| Package identity from the fstab `sha256`, a squashfs xattr, or the loop device's `backing_file` | The fstab is absent in sandboxes (hidden behind a tmpfs by `swctl`) and stale across live upgrades, and it couples `glibc` to Fluffy formats. "I'd really like to avoid a secondary system if we can"; "we don't even need the sha256… we have its inode/mtime/etc and we can do as git does." `backing_file` holds the pre-chroot host path, so it returns `ENOENT` inside `swctl`'s chroot. `SOURCE_DATE_EPOCH=0` gives every package root mtime 0, and loop minors change per phase, so naive `(dev, ino, mtime)` identity misses every phase. Deferred (§4.4). |
+| Content-addressed shared blobs + per-namespace bindings | Aimed at namespaces rebuilding identical indexes. Dropped for simplicity (see §4.9). |
+| Once-per-process mountinfo snapshot; per-process snapshots in `ld.so`/`gcc` | Never sees packages mounted after startup (R5). |
+| Passing a mountinfo poll fd to children; arm-then-poll for long-lived processes | Shared fds race. The arm-then-poll idea was dropped implicitly in v6, not explicitly (§4.9). |
+| `system()`/`popen()` running the shell as `bash` (`SHELL_NAME "bash"`) | POSIX requires `sh -c` behavior. Bash started as `bash` is not in POSIX mode; started as `sh` it is. The name had been changed only so upstream `tst-system` (which expects the error prefix `basename(_PATH_BSHELL)`) would pass. Fixed 2026-11-16 the upstream way: `SHELL_NAME` is `"sh"` again and `_PATH_BSHELL` is `/sw/bash/bin/sh` (the `sh -> bash` link both bash recipes install), matching upstream's `/bin/sh`. Upstream `tst-system` passes unmodified apart from an added POSIX-mode check. |
+| Wildcard executable paths (`execve`/`execvpe`/`posix_spawn` expanding a path containing `/` and metacharacters, "first lexicographical match wins") | Out of scope (Rule 3): globs are for lookups, not for what a single path means. It also ran arbitrary programs: `Popen(["*"])`, or `execve("/tmp/build[1]/tool")` running `/tmp/build1/tool`. Python's `test_subprocess.test_handles_closed_on_exception` caught it. Removed 2026-11-16; `tst-fswc-vfork`, `tst-fswc-edge` 5b2, and `tst-glob-fluffy-flags` §10 now guard that such paths fail with `ENOENT` and run nothing. |
+| `GLOB_MOUNTS` mount table (`{mountpoint, vfs ops, userdata}`) for Tcl | It blew out the implementation complexity; Tcl's VFS is in practice only used for zip files; Tcl can hook the existing callbacks itself and fall back to callback-free `glob()` (Rule 8, §5 `tcl`). |
+| Old-kernel fallbacks; capability flags in the index; runtime strict/relaxed mode | Kernel baseline decision (§2.4 item 5, item 7). |
+| `/run` as a namespace-private store | Assumed by an assistant and false: tmpfs is not per-namespace unless remounted. v6 puts the mount-namespace ID in the file name (§4.2). |
+| An NSS `fluffy` module reading an index for `passwd` | Never adopted; stateless `/etc` uses `GLOB_PATHS` in `nss_files` instead. |
+
+### 2.6 Measurements to Date
+
+**No v6 numbers exist, and no benchmark in the history was independently reproduced.** All figures below are *(unverified)* and were measured against the live 76–91 package `/mnt/fluffy/sw`, which Rule 10 now forbids for tests.
+
+| Measurement | Figure *(unverified)* |
+| :--- | :--- |
+| Stock `glob("/sw/*/bin/bash")` | 218–258 µs at 76 packages; ~1,004 µs at 350 packages |
+| FGC5 / v2 warm lookup | 4.4–5.3 µs / 3.9–4.4 µs |
+| Same lookup on a literal non-wildcard path | 1.87 µs |
+| `statx` + `listmount` validation ("the physical floor") | ~2.8–4.1 µs |
+| v4 sealed mode, no validation | ~250 ns |
+| `fc_lookup_path` negative probe vs a real failed `open` | 32 ns vs 1,016 ns |
+| `vfork` + `execvpe` over a 59-directory `PATH` | 384 µs (cached) vs 399 µs (plain) |
+| Full tree, 91 packages | 57,417 inodes, 1.05 GiB (from squashfs headers, plausible) |
+| Index size estimates | 105 KB (v2 image) vs 683 KB (FGC5); ~2 MiB full tree |
+
+The only first-hand comment on speed: "yeah this definitely seems to speed up builds" (FGC5), and earlier "the speed seems ok? i haven't benchmarked." Phase 0 exists to replace this table.
+
+### 2.7 Pitfalls Already Hit
+
+- **`errno` on a cache-proven miss.** `execvpe` returned `-1` with `errno == 0` because `__execve` was never called. Perl's `op/exec.t` caught it; upstream `tst-execvp1`/`tst-execvp4` each test only half of the condition. Any path that skips the real syscall must set the `errno` the plain walk would have produced (§4.8).
+- **Link-namespace traps.** `memrchr` in `glob.c` broke `check-localplt` and 14 `conform/*/linknamespace` tests. `__builtin_popcountll` emitted a `__popcountdi2` call into `libgcc`.
+- **`-Werror` asymmetry.** `glibc-pass1` builds with `-Werror` and `glibc` does not, so a static helper unused in one TU breaks only the pass1 build.
+- **Patch regeneration dropping hunks.** A regeneration script silently lost the `execvpe.c` and `paths.h` hunks, and `tar` could no longer exec `xz`. Existing patches use different hunk orders (`gcc` en_US, `glibc` C); see §6 patch regeneration.
+- **Unquoted wildcard configuration.** `binutils`' `genscripts.sh` `LIB_PATH` was expanded by the build shell, so no literal `SEARCH_DIR` reached the ldscripts. Wildcard configure values must be single-quoted (`--with-lib-path='=/sw/*/lib'`).
+- **Non-SquashFS `/sw` entries in `host-build`.** The bind-mounted host `/bin/bash` silently disabled v4's cache. In v6 it must simply be unsealed (§4.2).
+- **`use_ldconfig=no` is under-tested upstream.** `pldd`/`xmalloc.o` fails with `MODULE_NAME` errors, and `_dl_check_ldsocache_needs_loading` leaves `errno == ENOENT` behind.
+- **Tcl and Jim `glob` have no POSIX character classes.** `glob {/sw/[[:alpha:]]*}` returns nothing in both, while `[a-z]*` matches. So Tcl-side `PATH` splitters (sqlite `autosetup` `split-path` under `tclsh` or `jimsh0`, and `dejagnu`'s `proc which`) can keep a `[[:alpha:]]` element intact and still never match it. Only runtimes that delegate to `glibc` `glob()` get POSIX classes. Open bug in `sw/sqlite-3530400-fluffy.patch`; its test records it as an expected failure (2026-11-16).
+- **`getconf PATH` is not wildcard-aware.** Fluffy's `glibc` reports `_CS_PATH` as `/bin:/usr/bin`, which matches neither `_PATH_DEFPATH` nor `_PATH_STDPATH` (`/sw/*/bin`). Anything using `confstr(_CS_PATH)` (for example POSIX `command -p`) gets directories that do not exist on Fluffy. Open; see the `glibc` entry in §5.
+- **Inline `CHECK()` tests that never tested anything.** While moving them into test patches (§5 intro), several turned out to be dead or vacuous:
+  - `man-db` asserted `manpath -g` output, but `-g` prints only `MANDB_MAP` entries.
+  - `iproute2`'s test program never linked (missing `-lcap`).
+  - `binutils` fixtures had mismatched sonames.
+  - `e2fsprogs` fixtures used mke2fs's built-in default values, and an unknown `-T` type only warns.
+  - `coreutils` only exercised `glibc` `execvp`, never its own patched `findprog-in.c`.
+
+  Every moved test is now run once against unpatched code to show it fails.
+- **`nss_files` lookups ignored the requested address family (fixed 2026-11-16).** The stateless-`/etc` patch wrapped `internal_getent` in `files-XXX.c` and forwarded `EXTRA_ARGS_VALUE`. That is an include-time constant (`, AF_INET, 0` in `files-hosts.c`), where the wrapper's own `EXTRA_ARGS` parameters belonged. So every `hosts` scan parsed lines as `AF_INET`:
+  - `gethostbyname2("localhost", AF_INET6)` returned `127.0.0.1` with a 4-byte length;
+  - with `multi on`, `getaddrinfo(AF_INET6)` aborted (`gethostbyname3_multi: h_length == 16`).
+
+  gcc's `g++.dg/modules/bad-mapper-3.C` found it. It only shows when `files` actually answers: in a build sandbox without systemd's `myhostname`/`resolve` modules, `myhostname` had been answering `localhost` first and hiding the bug. `nss/tst-fluffy-stateless-etc` now checks `AF_INET6` via both `getaddrinfo` and `gethostbyname2`, and it fails without the fix.
+- **Cross-toolchain libstdc++ underlinking.** The `--disable-shared` `gcc-pass1` driver never links `libgcc_s`, so cross-built `libstdc++.so` lacked `DT_NEEDED libgcc_s.so.1` until a `-shared`-only specs file was added in `sw/libstdcpp-pass1` and `sw/gcc-pass2`. `binutils` `CHECK()` (a) exists to catch exactly this class of indirect-`DT_NEEDED` failure.
 
 ---
 
@@ -81,7 +208,7 @@ All Fluffy extensions occupy bits `30` downward and preserve strict ISO C and PO
 | :--- | :--- | :--- | :--- |
 | `<fnmatch.h>` | `FNM_DOTDOT` | `(1 << 30)` | Never match `.` or `..` via leading wildcards (`*`, `?`, `[...]`, `!(...)`), even when `FNM_PERIOD` is absent (leading `.` matched on `.foo`, whereas `.` and `..` require a literal leading `.` such as `.`, `..`, or `.*`, which `GLOB_SKIPDOTS` suppresses in `glob`). |
 | `<glob.h>` | `GLOB_KEEP_SLASHES` | `(1 << 30)` | Preserve redundant trailing slashes on completely literal directory patterns (`"dir//"` → `"dir//"`) while normalizing wildcard matches (`"d*//"` → `"dir/"`). Required for Python `glob.glob()` parity. |
-| `<glob.h>` | `GLOB_PATHS` | `(1 << 29)` | Parse unescaped top-level `:` as ordered path-list alternation; normalize empty segments (`""`) to `"."`; sort strictly within each segment `[oldcount, gl_pathc)`. |
+| `<glob.h>` | `GLOB_PATHS` | `(1 << 29)` | Parse unescaped top-level `:` as ordered path-list alternation; a `:`-list inside `{...}` is scoped to that group so it can share a prefix or suffix (`{$PATH}/name`, §3.2); normalize empty segments (`""`) to `"."`; sort strictly within each segment `[oldcount, gl_pathc)`. |
 | `<glob.h>` | `GLOB_EXTMATCH` | `(1 << 28)` | Enable ksh/Bash extended globs (`?(pat-list)`, `*(pat-list)`, `+(pat-list)`, `@(pat-list)`, `!(pat-list)`) in both `__glob_pattern_type` and `fnmatch`. |
 | `<glob.h>` | `GLOB_CASEFOLD` | `(1 << 27)` | Case-insensitive filename matching (`FNM_CASEFOLD`, Bash `nocaseglob`, Tcl `-nocase`, Python `case_sensitive=False`). Scans directories case-insensitively without setting `GLOB_MAGCHAR` on purely literal patterns, preserving `GLOB_KEEP_SLASHES \| GLOB_CASEFOLD` and `GLOB_NOMAGIC \| GLOB_CASEFOLD`. |
 | `<glob.h>` | `GLOB_SKIPDOTS` | `(1 << 26)` | Never emit `.` or `..` directory entries, even when `GLOB_PERIOD` is set or the pattern is `.*` (Bash `globskipdots`, Tcl/Python directory scans). |
@@ -101,11 +228,27 @@ All Fluffy extensions occupy bits `30` downward and preserve strict ISO C and PO
    - **`GLOB_NOCHECK`, `GLOB_NOMAGIC` & `GLOB_DOOFFS` invariants (fixing 3 live prototype bugs in `posix/glob.c`)**:
      1. `GLOB_NOCHECK` and `GLOB_NOMAGIC` **must** be forwarded into each segment's recursive `__glob()` call (never stripped per segment, and never jumping to `goto no_matches` on the unsplit colon-delimited `pattern`, which previously emitted `["/no1:/no2"]` with a literal `:` when zero segments matched or silently dropped missing literal segments when an earlier segment matched).
      2. When `!(flags & GLOB_APPEND)`, `pglob` (`gl_pathc = 0`, `gl_pathv = NULL`, and `gl_offs` leading `NULL` slots under `GLOB_DOOFFS`) **must** be initialized once before segment `0`, and each segment call passes `flags | GLOB_APPEND` (**keeping** `GLOB_DOOFFS` set in `flags` so `if (!(flags & GLOB_DOOFFS)) pglob->gl_offs = 0;` does not zero `pglob->gl_offs`, while `GLOB_APPEND` prevents re-initializing `gl_pathv` or re-reserving offset slots).
+   - **Brace-scoped path lists: `PATH` search in one call** *(decided 2026-11-16, not yet implemented; it is v6 walkthrough input)*.
+     - *Problem.* A top-level `:`-list can't share a suffix, so a `PATH` consumer that wants `<element>/<name>` has to split `PATH` itself. Today `execvpe` and bash's `findcmd.c` each carry their own bracket-aware splitter, and they glob one element at a time. `GLOB_PATHS` was meant to remove exactly that duplication.
+     - *Rule.* Under `GLOB_PATHS`, a top-level `:` **inside a `{...}` group** separates ordered path-list members scoped to that group. Text before and after the group is attached to every member, so `{/opt/bin:/sw/*/bin:}/bash` means `/opt/bin/bash`, then `/sw/*/bin/bash`, then `./bash`.
+       - Ordering follows the existing per-segment rule: members appear in list order, and each member's matches are sorted unless `GLOB_NOSORT`.
+       - An empty member becomes `.` **before** the suffix is attached, so the POSIX "empty `PATH` element is the current directory" rule holds. It must never become `/bash`.
+       - Plain top-level `a:b:c` keeps its current meaning, so the config-list callers (`/sw/*/etc/x:/etc/x`) don't change.
+     - *Caller idiom.*
+       ```
+       glob ("{" + $PATH + "}/" + litname, GLOB_PATHS | GLOB_NOESCAPE, …)
+       ```
+       `$PATH` is spliced in verbatim, without splitting or escaping commas. The command name stays literal under `GLOB_NOESCAPE` by bracket-quoting each metacharacter it contains: `*` → `[*]`, `?` → `[?]`, `[` → `[[]`, `{` → `[{]`, `}` → `[}]`, `:` → `[:]`. All six were verified against host `fnmatch`, and the `:` scanner already skips `[...]`. A quoted name is "magic", so that member costs a directory scan instead of an index lookup. Names like that are rare, so this is accepted. A literal `{` or `}` inside a `PATH` element is the one remaining case the idiom can't express; it is accepted as unsupported.
+     - *Interaction with `GLOB_BRACE`.* The current test `{d1/a.txt:d2/c.txt,root.txt}` (`GLOB_PATHS | GLOB_BRACE`) already reads `:` and `,` as the same kind of ordered alternative inside a group, and that stays. Still to decide in the walkthrough: whether `{…:…}` is recognised under `GLOB_PATHS` *without* `GLOB_BRACE`, which is what the caller idiom above assumes. Today `{d1:d2}/x` under `GLOB_PATHS | GLOB_BRACE` expands to the single alternative `d1:d2/x` and is then split wrongly into `d1` and `d2/x`. The new rule fixes that.
+     - *Consumers this unlocks:* bash command search and completion, `which`, `findprog-in.c` (`make`, `coreutils`), Tcl's `auto_execok`, Python's `shutil.which`. Each one drops its own splitter.
+     - *`execvpe`/`posix_spawnp` caveats, to settle in Phase 2 step 5:*
+       1. **No malloc after `vfork`.** `execvp*` is legal after `vfork()`, and `posix_spawnp`'s child shares the parent's memory (`CLONE_VM | CLONE_VFORK`). That is why upstream `execvpe` uses only the stack, and why v5 had a wait-free peek. Calling `glob()` would malloc there. Options: `posix_spawnp` expands in the parent and the child only walks the candidate list; `execvpe` keeps a stack-only walk that interprets the same grammar.
+       2. **`errno` parity.** Upstream returns `EACCES` if any candidate (or a directory on its path) gave `EACCES`, and `ENOENT` otherwise. `glob()` silently drops a member it can't search. Keeping §4.8's `errno` row needs an `errfunc` that records `EACCES`, or per-member `GLOB_NOCHECK` for literal members. `NOCHECK` costs one `execve` attempt per missing literal element, which is what upstream already pays.
 2. **`GLOB_GLOBSTAR` (`**` Traversal) & `GLOB_PERIOD` Intermediate-Directory Rules**:
    - Consecutive `**` components (`a/**/**/b`) collapse in $O(1)$ before traversal to prevent exponential backtracking.
    - `**/X` matches `X` at depth 0 (in the base directory) as well as `<sub1>/.../<subk>/X`.
-   - **Symlink & slash discipline (Bash 5.3 `shopt -s globstar` parity)**: Non-terminal `**/...` descends strictly into real directories (`DT_DIR`) *during* `**` traversal, **never** recursing through symlinked subdirectories (`DT_LNK`) encountered under `**` (avoiding infinite symlink loops and matching `bash-5.3/tests/globstar3.sub`). However, an explicit prefix directory *before* `/**/...` that is itself a symlink to a directory (e.g., `<prefix>/<sym> -> <pkg>` or `/sw/ncurses/include/ncursesw -> .`) **is** resolved as the root directory of `**` and traversed at both depth 0 and depth 1+ across `mode={0,1,2}`. When expanding non-terminal `<dir>/**/<rest>` where `<dir>` has no trailing `/`, `"d1/**/a.txt"` yields `"d1/a.txt"` (never `"d1//a.txt"`), while terminal `"d1/**"` still emits `"d1/"` first. Terminal `**` (with no trailing `/...`) includes directory symlinks as leaf results (and resolves them when `/**/` requires a directory). *(Note: Python 3.14's `glob.glob(..., recursive=True)` instead follows symlinked directories inside `**` per `test_glob.py:test_recursive_glob`; see §5.6.)*
-   - **Hidden directories (`GLOB_PERIOD`)**: Hidden directories (`.git`, `.build`) are entered by `**` if and only if `GLOB_PERIOD` is set. For non-`**` intermediate directory components, upstream `glibc` (`posix/tst-gnuglob-skeleton.c` `test("*/*/*", GLOB_PERIOD, ...)`) requires `GLOB_PERIOD` *alone* not to apply to intermediate `dirname` components (because `.` and `..` would explode `*/*/*`); when `.` and `..` are suppressed via `(flags & (GLOB_DOTDOT | GLOB_SKIPDOTS)) != 0`, `GLOB_PERIOD` **is** forwarded to non-`**` intermediate directory components uniformly across `mode={0,1,2}`.
+   - **Symlink & slash discipline (Bash 5.3 `shopt -s globstar` parity)**: Non-terminal `**/...` descends strictly into real directories (`DT_DIR`) *during* `**` traversal, **never** recursing through symlinked subdirectories (`DT_LNK`) encountered under `**` (avoiding infinite symlink loops and matching `bash-5.3/tests/globstar3.sub`). However, an explicit prefix directory *before* `/**/...` that is itself a symlink to a directory (e.g., `<prefix>/<sym> -> <pkg>` or `/sw/ncurses/include/ncursesw -> .`) **is** resolved as the root directory of `**` and traversed at both depth 0 and depth 1+ in every `FSWC` state. When expanding non-terminal `<dir>/**/<rest>` where `<dir>` has no trailing `/`, `"d1/**/a.txt"` yields `"d1/a.txt"` (never `"d1//a.txt"`), while terminal `"d1/**"` still emits `"d1/"` first. Terminal `**` (with no trailing `/...`) includes directory symlinks as leaf results (and resolves them when `/**/` requires a directory). *(Note: Python 3.14's `glob.glob(..., recursive=True)` instead follows symlinked directories inside `**` per `test_glob.py:test_recursive_glob`; see §5.6.)*
+   - **Hidden directories (`GLOB_PERIOD`)**: Hidden directories (`.git`, `.build`) are entered by `**` if and only if `GLOB_PERIOD` is set. For non-`**` intermediate directory components, upstream `glibc` (`posix/tst-gnuglob-skeleton.c` `test("*/*/*", GLOB_PERIOD, ...)`) requires `GLOB_PERIOD` *alone* not to apply to intermediate `dirname` components (because `.` and `..` would explode `*/*/*`); when `.` and `..` are suppressed via `(flags & (GLOB_DOTDOT | GLOB_SKIPDOTS)) != 0`, `GLOB_PERIOD` **is** forwarded to non-`**` intermediate directory components uniformly in every `FSWC` state.
 3. **`GLOB_EXTMATCH` Pattern-Type Isolation & Escaped-Opener Directory Scan (`posix/glob_internal.h` & `posix/glob.c` Fixes)**:
    - `__glob_pattern_type_ext(pattern, quote, extmatch)` **must** inspect `+(`, `@(`, `!(` if and only if `extmatch != 0` (`(flags & GLOB_EXTMATCH) != 0` in `__glob` and `glob_in_dir`, and `0` in two-argument `__glob_pattern_type`). Unconditionally passing `extmatch = 1` (a live bug in the current prototype) falsely sets `GLOB_MAGCHAR` and breaks `GLOB_NOMAGIC` (`glob("foo+(bar)", GLOB_NOMAGIC)` / Perl `GLOB_CSH`) when `GLOB_EXTMATCH` is unset.
    - In `posix/glob.c`, `glob_dirscan(pat, dirsep, quote)` (used when `flags & GLOB_EXTMATCH`) **must** skip escaped characters (`if (quote && *p == '\\' && p[1] != '\0' && p[1] != dirsep) { ++p; continue; }`) before testing `is_extglob(p)`, fixing a live prototype bug where escaped `\@(` / `\+(` / `\?(` / `\*(` / `\!(` were misparsed as extglob groups and hid inner `/` directory separators.
@@ -117,193 +260,171 @@ All Fluffy extensions occupy bits `30` downward and preserve strict ISO C and PO
 
 ---
 
-## 4. `FSWC` v5 Internal Engine Architecture in `glibc`
+## 4. `FSWC` v6 Internal Architecture in `glibc`
 
-### 4.1 Single Internal Module & Runtime State
+### 4.1 The Whole Idea
 
-Delete `posix/glob_fluffy_cache.h` completely and replace it with a single internal Linux module:
+`FSWC` answers one question: **what is at `<prefix>/<pkg>/<relpath>`—nothing, a file, a directory, a symlink, or "ask the kernel"?** It answers it from a per-user, per-namespace snapshot of the immutable packages under `<prefix>`, and only when it can prove the snapshot still matches the kernel.
 
-- **`include/fswc.h`**: Internal function prototypes, `struct fswc_slot_snap` / `struct fswc_state` layouts, and `_rtld_global` (`GL`) slot definitions (~290 lines).
-- **`sysdeps/unix/sysv/linux/fswc.c`** (+ 1-line **`sysdeps/unix/sysv/linux/dl-fswc.c`** `#include "fswc.c"` for `sysdep-rtld-routines`, matching upstream `dl-opendir.c`): Shared-memory builder, validator, Tier-1 per-package subtree cache, Merged Virtual Trie reader, and exact/posting-list query primitives (~3,700 lines), compiled once into `rtld` (`dl-fswc.os`), `libc.so` (`fswc.os`), and `libc.a` (`fswc.o`).
-  - **Zero `malloc`/`free` Rule**: Because `fswc.c` runs inside `ld.so` prior to `libc.so` relocation (where `dl-minimal-malloc.c`'s `free()` is a no-op) as well as in `libc.so` and `libc.a`, `fswc.c` **never** calls `malloc`, `realloc`, or `free`. All cold-build scratch buffers allocate via temporary `mmap(..., MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)` arenas and `munmap` immediately upon publishing or aborting.
-- **`elf/dl-tunables.list`**: Add `fswc` namespace (`elf/dl-tunables.c` automatically ignores all `GLIBC_TUNABLES` whenever `__libc_enable_secure` is nonzero):
-  - `glibc.fswc.mode` (`INT_32`, min `0`, max `2`, default `1`):
-    - `0`: Bypass `FSWC` completely (pure kernel syscall baseline for differential testing and A/B benchmarking).
-    - `1` *(default)*: Enable `FSWC` in `ld.so` (`dl-load.c`), `glob()`/`glob64()` (`posix/glob.c`), and `execvpe()` (`posix/execvpe.c`) with **unconditional per-call live kernel revalidation** (`geteuid`/`getuid` + ancestor `statx`s + paginated `listmount(LSMT_ROOT)` paired with `statmount(STATMOUNT_MNT_BASIC | STATMOUNT_MNT_ROOT | STATMOUNT_MNT_POINT)`, amortized once per prefix within a single call)—`0 ns` stale window and **zero** reliance on `glibc` syscall wrapper hooks for Go/Rust/raw-`SYSCALL` safety, while single-path `open`/`stat`/`access` go directly to the kernel.
-    - `2` *(opt-in)*: Enable `mode=1` (retaining unconditional per-call live kernel revalidation on `glob()`, `execvpe()`, and `dlopen()`) **plus** opportunistic lock-free negative lookup (`__fswc_probe_exact`, bounded 50 ms inline kernel revalidation + `glibc` wrapper `inval_gen` fast-invalidation) in `libc.so` read-only path-probing wrappers (`open`/`openat` strictly when `(oflag & (O_ACCMODE | O_CREAT | __O_TMPFILE | O_TRUNC | O_EXCL)) == O_RDONLY`, `(oflag & ~(O_PATH | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC | O_LARGEFILE)) == 0` when `oflag & O_PATH`, and no NPTL thread cancellation is pending, `stat`/`lstat`/`fstatat` when `buf != NULL && (flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH)) == 0`, `statx` when `statxbuf != NULL && !(mask & STATX__RESERVED) && (flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH | AT_STATX_SYNC_TYPE)) == 0 && (flags & AT_STATX_SYNC_TYPE) != AT_STATX_SYNC_TYPE`, and `access`/`faccessat` strictly when `(mode & ~(R_OK | W_OK | X_OK)) == 0 && (flag & ~(AT_EACCESS | AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)) == 0`) against already-mapped views for pure-`glibc` batch workloads.
-  - `glibc.fswc.max_inodes` (`SIZE_T`, default `1048576`, `0` = unlimited): Safety cap per prefix; if exceeded (or if `num_pkgs > 65534` or blob size would exceed `1 GiB`), `fswc` skips indexing that prefix and falls through cleanly to kernel syscalls.
+Everything else is existing code:
 
-#### Unified Writable `_rtld_global` (`GL`) Multi-Prefix Table (No `GLRO` Split)
+| Consumer | How it uses `FSWC` |
+| :--- | :--- |
+| `glob()` (and `GLOB_PATHS`, stateless-`/etc` merges via `__glob64_notilde`) | When the caller did **not** pass `GLOB_ALTDIRFUNC`, `glob()` runs with `GLOB_ALTDIRFUNC` internally, supplying the real `opendir`/`readdir`/`closedir` and `FSWC`-backed `lstat`/`stat`. Upstream `glob()` does all matching, recursion, `**`, `GLOB_PERIOD`/`GLOB_MARK`/`GLOB_ONLYDIR`/`GLOB_CASEFOLD`, sorting, and error callbacks unchanged. |
+| `execvpe()` / `posix_spawnp()` wildcard `PATH` elements | For each package, `fswc_lookup("bin/<file>")` (or `<relpath>/<file>`) decides whether to try `execve` on it. |
+| `ld.so` wildcard search paths | For each package, `fswc_lookup("lib/<soname>")` (per `glibc-hwcaps` subdirectory) decides whether to try `open_verify` on it. |
 
-- **Why All Slots Live in Writable `GL` (`_rtld_global._dl_fswc_state`)**: `_dl_protect_relro` hardware-protects `_rtld_global_ro` (`GLRO`) as `PROT_READ`. Keeping prefix slots in `_rtld_global_ro` would either `SIGSEGV` (`SEGV_ACCERR`) when updating `last_check_ms` / invalidating a view or strand long-running daemons like PID 1 (`systemd`) on a permanently stale boot view after `swctl install` mounts new packages. Storing all 16 slots in writable `_rtld_global` (`GL`, exported under `GLIBC_PRIVATE` so `ld.abilist` is unaffected, and backed by `#ifndef SHARED` static BSS inside `fswc.c` for `libc.a` so `dl-support.o`'s `__progname` is never pulled into `conform/*/linknamespace` closures) allows `ld.so` to seed `/sw` during `_dl_init_paths` *and* allows `libc.so` to revalidate `last_check_ms` or atomically swap `slot->snap` across live mount or credential changes.
-- **Single Cross-DSO Futex Lock, Multi-Threaded `__libc_fork` Quiescing & `_Fork` Child Reset**: Because `fswc.c` is compiled into both `ld.so` (`dlopen`) and `libc.so` (`glob`, `execvpe`), a file-`static` lock or arena pointer in `fswc.c` would instantiate two separate copies racing on the same `GL(_dl_fswc_state)` slots. Instead, both the writer futex word (`uint32_t lock`) and permanent-allocator cursor (`perm_cur`, `perm_rem`) reside **inside `GL(_dl_fswc_state)` itself** (`fswc.c` is strictly a leaf lock using only `INTERNAL_SYSCALL_CALL` with zero `malloc`/`_IO_*`/`dl_load_lock` calls). Multi-threaded `__libc_fork` (`posix/fork.c`) acquires and releases the leaf futex in the parent (`__fswc_fork_lock_parent` / `__fswc_fork_unlock_parent`) so no concurrent thread holds open builder FDs/`flock`s/temporary `mmap`s or mid-update `perm_cur` state across `fork()`, while `_Fork` (`_Fork.c`) resets `lock = 0` deterministically in the child (`__fswc_fork_child`).
-- **Torn-Read-Free `struct fswc_slot_snap` Publication & `vfork` Safety**: Multi-word namespace metadata (`prefix_dev`, `prefix_ino`, `prefix_ctime_ns`, `prefix_mtime_ns`, `mnt_list_hash_lo/hi`, ancestor `(dev, ino)` chain, top-level `ns_*` table, and `blob_*` view pointer) live in a `PROT_READ | PROT_WRITE` anonymous-`mmap`'d `struct fswc_slot_snap` whose tuple/pointer fields are **write-once** prior to `atomic_store_release(&slot->snap, new_snap)`; the only post-publication writes on `snap` are 32-bit lock-free atomic updates to its `uint32_t last_check_ms`, `uint32_t checked_inval_gen`, and `uint32_t stale` fields via `glibc`'s `atomic_*` operations (safe on all 32-bit architectures where `HAVE_64B_ATOMICS == 0`, so invalidating an old `snap` never clobbers a newly published `snap`, and wait-free/signal-handler readers loading `atomic_load_acquire(&slot->snap)` never observe torn tuples). Writers never `munmap` previously published `snap`s or `MAP_SHARED` views while the process runs, and **never** acquire locks or build blobs inside a `vfork()` (`CLONE_VM`) child.
-- **`AT_SECURE` & Credential Guard**: If `__libc_enable_secure` is nonzero (setuid/setgid/file-capability transition), `FSWC` is disabled (`mode = 0`) unless `euid == 0 && ruid == 0` reading `/dev/shm/.fswc-0/`.
+For `/sw/*/bin/bash`, upstream `glob()` reads `/sw` with a real `getdents64`, then checks `bin` and `bin/bash` in each package with `lstat`/`stat`; those checks are answered from memory, so only packages that actually have the file survive. Wildcards deeper in the pattern (`/sw/*/lib/python3.14/site-packages/*`) use the same existence checks to prune packages, then read the surviving directories with real `readdir`. No glob semantics are reimplemented.
 
-### 4.2 Merged Virtual Trie (`vdir_id`) Binary Schema (`FSWC` v5)
+### 4.2 Index File
 
-All blobs are position-independent, 8-byte aligned, little-endian, immutable once published (`chmod 0400`), and mapped `PROT_READ | MAP_SHARED` (`Anonymous == 0 KiB` in `/proc/self/smaps`, and `Private_Dirty == 0 KiB` / `Shared_Dirty == Rss` whenever $\ge 2$ processes map the `tmpfs` blob—noting Linux `fs/proc/task_mmu.c:smaps_account()` classifies `tmpfs` dirty page-cache pages with `folio_mapcount == 1` under `Private_Dirty` and `folio_mapcount >= 2` under `Shared_Dirty`).
+One immutable file per `(euid, mount namespace, prefix)`: `/dev/shm/.fswc-<euid>/idx-<mntns_id>-<prefix_dev>-<prefix_ino>`, mode `0400`, mapped `PROT_READ | MAP_SHARED`.
 
 ```c
-#define FSWC_BLOB_MAGIC   0x43575346u /* "FSWC" */
-#define FSWC_BLOB_VERSION 5u
-#define FSWC_VDIR_ROOT    0u          /* Virtual union root: <prefix>/* */
-#define FSWC_VDIR_PKGS    0xffffffffu /* Sentinel key space for <pkg> names */
-#define FSWC_NONE         0xffffffffu
-#define FSWC_MAX_PKGS     65534u      /* Fits uint16_t counts & 24-bit inline idx */
-
-/* Every posting uint32_t (both inline ref when cnt == 1 AND every element of
- * postings[] when cnt > 1) encodes BOTH pkg_idx and that package's exact d_type:
- * word = pkg_idx | ((uint32_t) d_type << 24) */
-#define FSWC_POSTING_PACK(pkg, dt) (((uint32_t) (pkg) & 0x00ffffffu) | ((uint32_t) (dt) << 24))
-#define FSWC_POSTING_PKG(word)     ((word) & 0x00ffffffu)
-#define FSWC_POSTING_DTYPE(word)   (((word) >> 24) & 0xffu)
-
-/* Per-package flags: */
-#define FSWC_PKG_IMMUTABLE         (1u << 0) /* SQUASHFS_MAGIC & zero child overmounts */
-#define FSWC_PKG_ALL_WORLD_SEARCH  (1u << 1) /* Every dir in pkg has (mode & 0111)==0111 & no ACL */
-#define FSWC_PKG_ALL_WORLD_RX      (1u << 2) /* Every dir in pkg has (mode & 0555)==0555 & no ACL */
-
 struct fswc_header {
-  uint32_t magic;            /* FSWC_BLOB_MAGIC */
-  uint32_t version;          /* FSWC_BLOB_VERSION (5) */
-  uint64_t total_size;       /* Exact byte length of blob */
-  uint64_t pkgset_hash_lo;   /* 128-bit order-sensitive hash of immutable pkg set */
-  uint64_t pkgset_hash_hi;
-  uint32_t num_pkgs;         /* Immutable SquashFS pkgs sorted in strcmp(<pkg>) order */
-  uint32_t num_vdirs;        /* Number of unique relative directory paths */
-  uint32_t ht_mask;          /* Power-of-two minus 1 (>= 15, load factor <= 0.65) */
-  uint32_t num_postings;     /* uint32_t words in postings[] */
-  uint32_t num_vchildren;    /* struct fswc_vchild entries in vchildren[] */
-  uint32_t strtab_size;      /* >= 1; strtab[strtab_size - 1] == '\0' */
-  uint32_t global_flags;     /* FSWC_GF_ALL_WORLD_SEARCH | FSWC_GF_ALL_WORLD_RX */
-  uint32_t pkgs_off;         /* 8B-aligned offset to struct fswc_pkg[num_pkgs] */
-  uint32_t vdirs_off;        /* 8B-aligned offset to struct fswc_vdir[num_vdirs] */
-  uint32_t ht_off;           /* 8B-aligned offset to struct fswc_ht_entry[ht_mask + 1] */
-  uint32_t postings_off;     /* 8B-aligned offset to uint32_t postings[num_postings] */
-  uint32_t vchildren_off;    /* 8B-aligned offset to struct fswc_vchild[num_vchildren] */
-  uint32_t strtab_off;       /* 8B-aligned offset to char strtab[strtab_size] */
-  uint32_t reserved;
+  uint32_t magic, version;      /* "FSWC", 6 */
+  uint64_t total_size;
+  /* What the snapshot describes (checked on every use, §4.3). */
+  uint64_t mntns_id;            /* statmount(STATMOUNT_MNT_NS_ID) */
+  uint64_t ns_event;            /* Mount-namespace change counter (§4.6); 0 if unavailable */
+  uint64_t prefix_mnt_id;       /* statx STATX_MNT_ID_UNIQUE */
+  uint64_t prefix_dev, prefix_ino;
+  int64_t  prefix_ctime_sec;
+  uint32_t prefix_ctime_nsec;
+  uint32_t euid;
+  uint32_t num_mounts, mounts_off;  /* Sorted unique IDs of all mounts beneath <prefix> */
+  /* Contents. */
+  uint32_t num_top, top_off;        /* Every name in <prefix>, strcmp order */
+  uint32_t num_paths, paths_off;    /* Every relpath in every sealed package, byte order */
+  uint32_t postings_off, strtab_off, strtab_size;
 };
 
-struct fswc_pkg {
-  uint32_t name_off;         /* Offset in strtab (e.g. "bash", "glibc") */
+struct fswc_top {                   /* One per name in <prefix> */
+  uint32_t name_off;
   uint16_t name_len;
-  uint16_t flags;            /* FSWC_PKG_* */
+  uint8_t  sealed;                  /* 1 = indexed package; 0 = ask the kernel */
+  uint8_t  d_type;
 };
 
-struct fswc_vdir {
-  uint32_t children_start;   /* Slice in vchildren[] sorted by strcmp(basename) */
-  uint32_t children_count;
-  uint32_t dir_postings_ref; /* Inline FSWC_POSTING_PACK if cnt==1, else index in postings[] */
-  uint16_t dir_postings_cnt; /* Packages possessing this vdir as a real DT_DIR */
-  uint16_t flags;            /* FSWC_VDIR_ALL_WORLD_RX | FSWC_VDIR_ALL_WORLD_SEARCH */
-};
-
-/* 32-byte open-addressed entry: Key = (parent_vdir_id, basename).
- * Hash canonicalization: if raw 64-bit hash == 0, canonicalize to 1 so 0 == empty.
- * Also stores <pkg> names under parent_vdir_id = FSWC_VDIR_PKGS with
- * all_cnt = 1 and all_ref = FSWC_POSTING_PACK(pkg_idx, DT_DIR). */
-struct fswc_ht_entry {
-  uint64_t hash;             /* Canonicalized non-zero 64b hash; 0 = empty slot */
-  uint32_t parent_vdir_id;   /* 0 = <prefix>/*, 1..num_vdirs-1 = subdir, UINT32_MAX = pkg */
-  uint32_t name_off;         /* Component string in strtab */
-  uint16_t name_len;
-  uint16_t flags;            /* FSWC_ENT_HAS_LNK | FSWC_ENT_RESTRICTED_SEARCH | ... */
-  uint32_t child_vdir_id;    /* Valid vdir_id (< num_vdirs) whenever >=1 pkg has DT_DIR
-                              * here (even if empty, children_count==0); else FSWC_NONE */
-  uint32_t all_ref;          /* Inline FSWC_POSTING_PACK if all_cnt==1, else index in postings[] */
-  uint16_t all_cnt;          /* Number of packages containing this (parent_vdir, name) */
-  uint16_t dir_cnt;          /* Subset count with DT_DIR (or DT_LNK for GLOB_ONLYDIR hint) */
-};
-
-struct fswc_vchild {
-  uint32_t ht_slot;          /* Direct index into ht[] (<= ht_mask) for wildcard scan */
+struct fswc_path {                  /* e.g. "bin", "bin/bash", "lib/libz.so.1" */
+  uint32_t name_off, name_len;
+  uint32_t postings, count;         /* -> uint32_t[count]: top_idx << 8 | d_type */
 };
 ```
 
-#### Handling Top-Level Non-SquashFS Siblings in `<prefix>` (`/sw/*.squashfs` & Unmounted Dirs)
+A top-level name is **sealed** only if it is the root of a SquashFS mount with no mounts beneath it, and every directory in it is world-readable and world-searchable with no POSIX ACL. Anything else—plain directories, `*.squashfs` files, writable or bind mounts, overmounted packages, packages with unusual permissions—is unsealed and always asks the kernel. On Fluffy, every package is sealed.
 
-On a real Fluffy system, `/sw` contains 91 `/sw/<pkg>-<ver>.squashfs` regular files (`DT_REG`) alongside `/sw/<pkg>` SquashFS mountpoints, and during `swctl build` sandboxes or after partial unmounts `/sw` may also contain empty/mutable non-SquashFS directories (`DT_DIR`). `FSWC` v5 handles both **without** disabling the cache:
+The reader bounds-checks a mapping once (sizes, offsets, string termination, strictly sorted `top[]`, `paths[]`, and `mounts[]`, postings in range); any failure means "no index".
 
-- The content-addressed `blob_<pkgset_hash>` indexes strictly the `N` immutable `SQUASHFS_MAGIC` child mounts (`pkgs[0..num_pkgs-1]`).
-- The lightweight per-namespace binding `ns_<prefix_mnt_id>_<prefix_ino>` (validated against `statx(prefix)` `ctime_ns`/`mtime_ns`) records `<prefix>`'s own non-SquashFS top-level entries:
-  1. **Top-level non-directories / non-symlinks (`DT_REG` `*.squashfs` files, `DT_FIFO`, `DT_SOCK`, `DT_CHR`, `DT_BLK`)**: Cannot have path children (`*.squashfs/bin/bash` is `ENOTDIR`), so they have **zero** effect on 2+-component queries (`/sw/*/bin/...`, `/sw/*/lib/...`), while 1-component `glob("/sw/*.squashfs")` or `glob("/sw/*")` merges them directly from the `ns_*` top-level table.
-  2. **Mutable / unmounted `DT_DIR` siblings and top-level `DT_LNK` / `DT_UNKNOWN` entries (`mutable_dirs[0..M-1]`)**: Because a top-level symlink (e.g., `current -> 2124`) can resolve to a directory and have path children, top-level `DT_LNK` and `DT_UNKNOWN` entries join mutable `DT_DIR` siblings in `mutable_dirs[]` (while retaining their exact `d_type` for 1-component `glob("<prefix>/*")` `GLOB_MARK`/`GLOB_ONLYDIR` handling). Instead of bailing out on all $N=91$ SquashFS mounts when $M > 0$, `fswc` performs a **hybrid merge**: all $N$ immutable SquashFS mounts resolve in $O(\text{depth})$ from `blob_<pkgset_hash>`, and only the $M$ mutable/symlink entries ($M=0$ on Fluffy's `/sw`) are probed via the kernel and merged in `strcmp` `<pkg>` order ($O(M)$ graceful degradation).
+### 4.3 Lookup and Validation
 
-#### Reader Corruption & Bounds Validation
+**`fswc_lookup(prefix, pkg, relpath)`** returns `ABSENT`, `REG`, `DIR`, `LNK` (or other `DT_*`), or `KERNEL`:
 
-Before `fswc_map_blob()`, `ns_*` loading, or `pkg_*` assembly exposes any SHM data, `fswc.c` verifies with 64-bit overflow-checked arithmetic:
-1. `st.st_size >= sizeof(struct fswc_header)` and `hdr->total_size == (uint64_t) st.st_size && hdr->total_size <= (1u << 30)` (1 GiB cap so 32-bit offsets never wrap), `num_pkgs <= FSWC_MAX_PKGS`, `(ht_mask & (ht_mask + 1)) == 0 && ht_mask >= 15`.
-2. Every section (`pkgs`, `vdirs`, `ht`, `postings`, `vchildren`, `strtab`) is 8-byte aligned and `off + count * elem_sz <= total_size`, `strtab_size >= 1 && strtab[strtab_size - 1] == '\0'`, and every intra-section offset/index across `blob_*`, `ns_*` (`mutable_dirs[]`, `top_files[]`), and `pkg_*` (`dir_to_vdir[]` initialized to `FSWC_NONE`) is validated upfront (`0 < name_len <= NAME_MAX`, `name_off + name_len < strtab_size` with `strtab[name_off + name_len] == '\0'` and no interior NULs, `children_start + children_count <= num_vchildren`, `vchildren[i].ht_slot <= ht_mask` with `ht[ht_slot].hash != 0`, `parent_vdir_id`/`child_vdir_id` in range, and inline/slice `postings` `< num_pkgs` / `<= num_postings`).
-3. Every open-addressed lookup loop bounds iterations to `step <= ht_mask` so a malformed/full table with zero `hash == 0` slots can never infinite-loop `ld.so` or `libc.so`.
+1. If there is no valid index for `prefix` in this call (below), `pkg` is not sealed, or `relpath` is not normalized (contains `.`, `..`, or empty components): `KERNEL`.
+2. Empty `relpath`: `DIR` (the package root).
+3. Binary-search `paths[]` for `relpath`; if found, return this package's `d_type` from the postings (`ABSENT` if the package is not listed).
+4. If not found: if an ancestor of `relpath` is listed as a symlink or non-directory in this package, `KERNEL` (the kernel decides `ENOTDIR` and symlink traversal); otherwise `ABSENT`.
 
-### 4.3 Internal Allocation-Free Query Primitives
+The `FSWC`-backed `lstat`/`stat` hooks given to `glob()` map `ABSENT` to `ENOENT` and `REG`/`DIR` to a `struct stat` carrying only the type bits (`glob()` only tests `S_ISDIR` and success); `stat` on `LNK` and every `KERNEL` result call the real function. The hooks only exist for the duration of that `glob()` call; the caller's `glob_t` fields are restored before returning.
 
-1. **`__fswc_resolve_pkg_wild_relpath(snap, relpath, rel_len, out)`**:
-   - Walks `/` components of `relpath` from `vdir_id = 0` with **zero heap allocation** and **zero locks**.
-   - Requires `(snap->snap_flags & (FSWC_SNAP_ANCESTORS_WORLD_SEARCH | FSWC_SNAP_PREFIX_WORLD_RX)) == (FSWC_SNAP_ANCESTORS_WORLD_SEARCH | FSWC_SNAP_PREFIX_WORLD_RX)` before enumerating `<prefix>/*` (preventing DAC bypass on group-readable `0751` prefixes after `setgroups`/`setfsuid`/`capset`), and skips leading-dot (`'.'`) top-level `<pkg>` and `mutable_dirs[]` entries (such as `/sw/.build`) on wildcard `*` expansion to preserve exact `FNM_PERIOD` parity with `mode=0`.
-   - If any intermediate component has `FSWC_ENT_HAS_LNK` (e.g., `/sw/ncurses/include/ncursesw -> .`), those specific `DT_LNK` packages (plus any `mutable_dirs[0..M-1]`) are flagged for kernel probe in `<pkg>` `strcmp` order rather than silently dropped.
-   - **Used by `elf/dl-load.c` (`_dl_init_paths`, `fillin_rpath`, `open_path` & `_dl_rtld_di_serinfo`)**:
-     - `_dl_init_paths` and `fillin_rpath` retain `<prefix>/*/<subpath>` wildcard templates (`is_pkg_wildcard = true`) in `struct r_search_path_elem` (sizing `max_dirnamelen` for `NAME_MAX`-byte `<pkg>` names so `open_path`'s `dl_scratch_buffer` is always large enough, keeping `__rtld_search_dirs` and `__rtld_env_path_list` `attribute_relro`, and never collapsing temporarily empty wildcard `DT_RPATH`/`DT_RUNPATH` lists to `(void *) -1`).
-     - `open_path` dynamically acquires/revalidates `<prefix>`'s `FSWC` slot via `__fswc_acquire_slot_amortized` (`0 ns` live-mount coherence on `dlopen()` across both `mode=1` and `mode=2`, even after raw `SYS_mount` or new `<pkg>/lib` directory creation), bypasses `FSWC` skipping when `GLRO(dl_debug_mask) & DL_DEBUG_LIBS` or `GLRO(dl_naudit) > 0` (preserving exact `"trying file=..."` diagnostics and `LA_SER_*` audit callbacks), resolves `__fswc_resolve_pkg_wild_relpath` for each `(capstr, soname)` combination (`glibc-hwcaps` preserved), and merges `pkgs[]` + `mutable_dirs[0..M-1]` in `strcmp(<pkg>)` order through `open_verify()` (continuing seamlessly if an earlier package holds a wrong-ELF-class file, and falling back to mmap-backed `__getdents64` + `stat` expansion when `FSWC` is disabled or unavailable). `_dl_rtld_di_serinfo` dynamically expands wildcard elements under `GL(dl_load_lock)` on `RTLD_DI_SERINFOSIZE` and replays that bounded snapshot on `RTLD_DI_SERINFO`, while `AT_SECURE` `is_trusted_path_normalize` and `-z nodeflib` (`DF_1_NODEFLIB`) wildcard prefix matching both reject leading-dot (`'.'`) `<pkg>` components (such as `/sw/.build/...`) to match wildcard `*` expansion.
-   - **Used by `posix/execvpe.c` (`__execvpe_common` / `try_fswc_wildcard_elem` / `__execve_wildcard_path`) & `sysdeps/unix/sysv/linux/execve.c`**:
-     - Splits `PATH` with single-component bracket-aware `:` scanning (skipping `\c` backslash-escaped `[` before bracket scanning, bounding `[.coll.]` on `.]`, and ensuring POSIX character classes like `[[:alpha:]]` and `[:]` inside `PATH` elements are never split mid-bracket while unclosed `[` across `/` never swallows `:`), and detects `*`, `?`, and `[` wildcards in `PATH` elements and `/`-containing `file`/`path` arguments across `execvpe`/`execvp`/`execlp`/`posix_spawnp` and (on literal `ENOENT`) `execve`/`execv`/`execl`/`execle`/`posix_spawn` (`CLONE_VM | CLONE_VFORK` safe): uses `__fswc_resolve_pkg_wild_relpath` on already-mapped `GL` views for `<prefix>/*/<relpath>` of arbitrary depth (amortizing live prefix revalidation via `seen_slot_mask` in `__fswc_peek_slot_waitfree` across multi-element `PATH`, falling back if a literal `"*"` entry exists under `<prefix>`, and using an mmap-backed `__getdents64` + `[[:class:]]`-aware bracket/escape matcher fallback for unmapped views in a `vfork` child, backslash-escaped suffixes, or non-`<prefix>/*` wildcards like `/sw/[b]ash/bin`, trying literal existing `S_ISDIR` `PATH` directories like `/tmp/dir[1]/bin` before uncached globbing, unescaping `\c` on backslash-escaped literal `PATH` directories like `/tmp/dir\[1\]/bin`, and preserving exact sub-pattern length when multi-wildcard `PATH` elements end with `/`), unescapes `\` in literal leaf suffixes, skips immutable non-directory/non-symlink leaf postings on trailing-`/` patterns, iterates matching `<pkg>` postings and any `mutable_dirs` in `strcmp` order, invokes raw `execve`, routes `ENOEXEC` through upstream's `scripts_argv` (`_PATH_BSHELL`) fallback only when `exec_script` is true (`execvp`/`execlp`/`execvpe`), and preserves sticky `got_eacces = true` → `errno = EACCES` (normalizing pure `ENOENT`/`ENOTDIR` misses to `ENOENT`).
-2. **`fswc_glob_try` / `fswc_glob_on_snap` / `fswc_walk_pkg_vdir` (`posix/glob.c`)**:
-   - Replaces both `fc_glob_try` (Cases A/B/C) and `glob_literal_suffix_try` in `posix/glob.c`.
-   - Walks `rel_pattern` component by component across `(vdir_id, comp)` (`O(1)` hash jump on literal components, `vchildren[]` `fnmatch` scan on wildcards, cycle-free `child_vdir_id` recursion on `GLOB_GLOBSTAR` `**`), kernel-probing only `DT_LNK` branches or `mutable_dirs[0..M-1]` when present, and sorting `[oldcount, gl_pathc)` with `collated_compare`.
-   - Matches `glibc-2.44`'s exact `GLOB_ONLYDIR`, `GLOB_MARK`, `GLOB_PERIOD` (intermediate vs leaf vs `**`), and `GLOB_CASEFOLD` (`GLOB_MAGCHAR`) semantics (`DT_REG`/non-dirs pruned immediately; `DT_DIR` leaf matches kept directly with `'/'` appended under `GLOB_MARK`; `DT_LNK` leaf matches kernel-`stat`ted via `fstatat(..., 0)` when `flags & (GLOB_ONLYDIR | GLOB_MARK)` so symlinks to regular files are pruned under `GLOB_ONLYDIR` and symlinks to directories receive `'/'` under `GLOB_MARK`, matching `glob_in_dir` byte-for-byte), and falls back cleanly (rolling back any newly allocated `gl_pathv`) on `GLOB_ALTDIRFUNC` or `!WORLD_READ_SEARCH` directories so `errfunc` / `GLOB_ERR` callbacks fire identically on unreadable directories.
-3. **`__fswc_probe_exact(path)` (`mode=2` Read-Only VFS Negative Filter)**:
-   - Hooked into read-only `open`/`openat` (`(oflag & (O_ACCMODE | O_CREAT | __O_TMPFILE | O_TRUNC | O_EXCL)) == O_RDONLY`, plus `(oflag & ~(O_PATH | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC | O_LARGEFILE)) == 0` when `oflag & O_PATH`), `stat`/`fstatat`/`lstat` (`(flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH)) == 0`), `statx` (`statxbuf != NULL && !(mask & STATX__RESERVED) && (flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH | AT_STATX_SYNC_TYPE)) == 0 && (flags & AT_STATX_SYNC_TYPE) != AT_STATX_SYNC_TYPE`, preserving `io/tst-statx` `-EINVAL` on `AT_STATX_FORCE_SYNC | AT_STATX_DONT_SYNC`), and `access`/`faccessat` (`(mode & ~(R_OK | W_OK | X_OK)) == 0 && (flag & ~(AT_EACCESS | AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)) == 0`) when `path != NULL && path[0] == '/'` (since Linux ignores `dfd` whenever `path` is absolute).
-   - **100% POSIX Async-Signal-Safe (`man 7 signal-safety`)**: Wait-free, lock-free, and allocation-free—never acquires `GL(_dl_fswc_state).lock` and never `mmap`s/builds blobs (safe even if invoked from a signal handler interrupting a `fswc` writer!). Positive leaf hits **always** fall through to the kernel (`open` needs an `fd`, `stat` needs inode metadata, `access` needs mode bits); only negative (`-ENOENT`) and non-directory traversal (`-ENOTDIR`, including trailing `/` on `DT_REG`/`DT_FIFO`/`DT_SOCK`/`DT_CHR`/`DT_BLK`) return directly from user space.
-   - **Per-package `d_type`, granular `WORLD_SEARCH` & bounded `vdir_stack[32]` `..` walk**:
-     1. Loads `snap = atomic_load_acquire(&slot->snap)` and checks `!snap->stale && (snap->snap_flags & FSWC_SNAP_ANCESTORS_WORLD_SEARCH)`. Pre-samples `uint32_t check_ms = fswc_now_coarse_ms()` (`CLOCK_MONOTONIC_COARSE` in 32-bit milliseconds, clamped non-zero); if `(uint32_t)(check_ms - prev_ms) > FSWC_REVALIDATE_MS` (`50u`, wraparound-safe and pre-sampled before syscalls so preemption never extends the 50 ms bound) or `inval_gen` changed, runs **inline lock-free revalidation** (`fswc_revalidate_snap`): unconditionally verifies `geteuid() == snap->snap_euid && getuid() == snap->snap_ruid && !(__libc_enable_secure && !(euid == 0 && ruid == 0))` (catching raw `SYSCALL` credential drops that skip `glibc`'s `setxid` wrapper), runs `statx(AT_FDCWD, prefix, AT_SYMLINK_NOFOLLOW, ...)` (plus `statx(..., AT_SYMLINK_NOFOLLOW, ...)` on `"/"` and each intermediate ancestor, verifying `(mnt_id, dev, ino, ctime_ns)` haven't changed and `(stx.stx_mode & 0555) == 0555` on `<prefix>` when `snap->snap_flags & FSWC_SNAP_PREFIX_WORLD_RX` is set) + `fswc_hash_mount_tree()`, a **paginated** `listmount(LSMT_ROOT)` (`0xffffffffffffffffULL`) loop over `uint64_t mnt_ids[256]` (`req.param = mnt_ids[255]`) paired with `statmount(mnt_id, STATMOUNT_MNT_BASIC | STATMOUNT_MNT_ROOT | STATMOUNT_MNT_POINT)` hashing `(mnt_id, sm->mask, mnt_parent_id, mnt_attr, mnt_root, mnt_point)` across the entire mount tree rooted at `current->fs->root` (catching grandchild overmounts such as `/sw/foo/include` **and** intra-namespace `move_mount`/`MS_MOVE` mount relocations, while tolerating ancestor mounts outside a `chroot` subdirectory root where Linux's `statmount_mnt_point` omits `STATMOUNT_MNT_POINT` via `SEQ_SKIP`). If the `(euid, ruid, prefix_dev, prefix_ino, prefix_ctime_ns, prefix_mtime_ns, ancestors, mnt_list_hash128)` tuple still matches `snap`, atomically stores `last_check_ms = check_ms` via 32-bit `atomic_store_relaxed`; if it mismatches, sets `snap->stale = 1` and falls through to the kernel.
-     2. Resolves `<pkg>` via `(FSWC_VDIR_PKGS, pkg_name)`. If absent (e.g., mutable dir or `*.squashfs` file) or `!(pkg.flags & FSWC_PKG_IMMUTABLE)`, falls through immediately to the kernel (avoiding any stale `-ENOTDIR` vs. `-ENOENT` window if a top-level `/sw/*.squashfs` file is unlinked between 50 ms revalidations).
-     3. Maintains `vdir_stack[32]` (`depth = 0` at `vdir_id = 0`, requiring `(pkg.flags & FSWC_PKG_ALL_WORLD_SEARCH) || (vdir[cur].flags & FSWC_VDIR_ALL_WORLD_SEARCH)` at every directory step so one `0700` dir in `pkg_B` never pessimizes `pkg_A` or sibling trees). At **every** component `c`:
-        - Empty `//` or `.`: valid no-op *only* because current `vdir` is already verified `DT_DIR` on `pkg` with `WORLD_SEARCH`.
-        - `..`: if `depth == 0`, falls through to kernel (escapes `<prefix>/<pkg>`); otherwise pops `vdir_stack[--depth]`—100% POSIX-legal because every pushed `vdir` on the stack was verified to exist on `pkg` as a real non-symlink `DT_DIR` with `WORLD_SEARCH`! (Accelerates GCC's `lib/gcc/.../../../../../include` paths safely.)
-        - Normal component `c`: looks up `pkg` in `(cur_vdir, c)`'s postings (binary search when `all_cnt > 8`, linear scan when `<= 8`). If `pkg` is absent → returns `-ENOENT` (~15 ns)! If `pkg`'s `d_type == DT_LNK` (e.g., `include/ncursesw -> .` or `lstat("link/")`) → **falls through to kernel**! If more slash/components follow and `pkg`'s `d_type != DT_DIR` → returns `-ENOTDIR`! If more components follow and `depth == 32` (deep path `< PATH_MAX`) or child `vdir` lacks `WORLD_SEARCH` → **falls through to kernel**; otherwise pushes `child_vdir_id` (`< num_vdirs`, guaranteed allocated even for empty `DT_DIR`s) onto `vdir_stack`.
-     4. Uses `INTERNAL_SYSCALL_CALL` internally so `fswc` never clobbers thread-local `errno` before a kernel fallback.
+**Validation**, once per `glob()`/`execvpe()`/library search call, before any lookup is trusted:
 
-### 4.4 Content-Addressed `MAP_SHARED` Storage, Tier-1 Subtree Cache & Live Coherence
+1. `statx(<prefix>, AT_SYMLINK_NOFOLLOW, STATX_INO | STATX_CTIME | STATX_MNT_ID_UNIQUE)` equals the header (catches entries added, removed, or renamed in `<prefix>`, and `<prefix>` itself being replaced).
+2. Mount state equals the header: `ns_event` via `NS_MNT_GET_INFO` on Fluffy's kernel (catches every mount operation, including `move_mount`); otherwise one `listmount(<prefix_mnt_id>)` equals `mounts[]` (catches mounts added, removed, replaced, or nested beneath a package). **Known, accepted gap:** a `move_mount`/`MS_MOVE` swap of two packages changes neither the mount-ID set nor `<prefix>`'s ctime, so without the counter it goes undetected and a stale index would answer wrongly. This is a deliberate, scoped exception (§2.4 item 7: "All builds are unprivileged and we control all mount behavior"), valid only for unprivileged host-side builds on the host kernel. It must not be relied on anywhere else, and the §4.8 `move_mount` row runs on Fluffy's kernel.
+3. `geteuid()` equals the header.
 
-All shared-memory artifacts live inside a per-UID isolated directory `/dev/shm/.fswc-<euid>/`:
+That is 2–3 syscalls per call. If any check fails, the call uses the plain walk; the next program start rebuilds the index.
 
-1. **Per-UID `0700` Directory, `SIGBUS`-Free Eviction & Symlink Hardening**:
-   - Created with `mkdir("/dev/shm/.fswc-<euid>", 0700)` and opened with `open(..., O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)`.
-   - Verified via `fstat(dirfd)`: `S_ISDIR(st.st_mode) && st.st_uid == euid && (st.st_mode & 07777) == 0700`. If verification fails, `FSWC` runs uncached without error.
-   - All file operations (`openat`, `unlinkat`, `renameat`) use `dirfd` directly (zero `/proc` dependency). Writers publish immutable `0400` files atomically via `renameat` and **never** `ftruncate` or overwrite an existing published file in place (which would `SIGBUS` concurrent `MAP_SHARED` readers).
-   - **Bounded SHM Footprint across Ephemeral `swctl` Sandboxes**: When `fstatfs(dirfd)` reports `< 32 MiB` free or directory entry count exceeds `512` files, a writer acquiring non-blocking `flock(dirfd, LOCK_EX | LOCK_NB)` evicts the oldest `ns_*` and `blob_*` entries via `unlinkat(dirfd, name, 0)` (safe while mapped on `tmpfs`), preferentially retaining compact `pkg_*` Tier-1 files (~6 MiB total across all 91 packages); if `< 16 MiB` remains after eviction, writes are skipped cleanly.
-2. **Three Artifact Types (Decoupling Namespace Identity from Content)**:
-   - **`pkg_<128b_pkg_id>` (Tier-1 Per-Package Subtree Cache)**:
-     - Keyed by Git-style `statx(STATX_BASIC_STATS)` tuple `(dev_major, dev_minor, ino, size, ctime_sec, ctime_nsec, mtime_sec, mtime_nsec)` of the `.squashfs` backing file from `/sys/dev/block/<maj>:<min>/loop/backing_file` (falling back to `<prefix>/<basename>`—e.g. `/sw/bash-5.3.squashfs`—when `swctl` loop-mounted `$ON` outside `chroot "$FLUFFY"`).
-     - Novel `BUILD_NEEDS` subsets assemble `blob_<pkgset_hash>` in memory from `pkg_*` files in ~1–2 ms with **zero `getdents64` syscalls**, immune to `/dev/loopN` churn. If `/sys` is unmounted or inaccessible, `fswc` skips Tier-1 `pkg_*` persistence and keys `blob_*` directly on `(mnt_id_unique, sb_dev, root_ino, root_mtime_ns)` so Tier-2 `blob_*` sharing still works without `/sys`.
-   - **`blob_<128b_pkgset_hash>` (Merged Virtual Trie)**:
-     - Pure function of the sorted `(pkg_name, pkg_id_128, pkg_flags)` vector. Mapped `PROT_READ | MAP_SHARED` (`0 KiB` CoW dirtying).
-   - **`ns_<prefix_mnt_id>_<prefix_ino>` (Namespace Binding, `FSWC_NS_VERSION = 6`)**:
-     - Keyed by `(prefix_mnt_id, prefix_dev, prefix_ino, prefix_ctime_ns, prefix_mtime_ns, mnt_list_hash128)` (where `mnt_list_hash128` comes from the shared `fswc_hash_mount_tree()` helper hashing `listmount(LSMT_ROOT)` + `statmount(MNT_BASIC | MNT_ROOT | MNT_POINT)`) → `pkgset_hash128` + `<prefix>`'s top-level non-SquashFS `*.squashfs` / `mutable_dirs[]` list (or `NO_SQUASHFS_CHILDREN` bit).
-3. **Mountpoint-Filtered `listmount` + `statmount`, Kernel `< 6.8` Fallback & Live Coherence**:
-   - **Graceful Kernel `< 6.8` Fallback (`--enable-kernel=5.10`)**: If `statx` lacks `STATX_MNT_ID_UNIQUE` or `listmount`/`statmount` returns `-ENOSYS` (e.g., `CROSS=1` host builds on older host kernels), `fswc` disables caching (`mode = 0`) cleanly with zero error.
-   - **Handling shared parent mounts (`/` hosting `/sw`, `/tmp`, `/home`) & `chroot`**: On a booted system, `/sw`, `/tmp`, and `/home` may all reside as plain directories on root Btrfs `/` (sharing `/`s `stx_mnt_id`). On a cold `ns_*` build, `fswc` enumerates all mounts via `fswc_hash_mount_tree()` (paginated `listmount(LSMT_ROOT)` `0xffffffffffffffffULL` + `statmount(STATMOUNT_MNT_BASIC | STATMOUNT_MNT_ROOT | STATMOUNT_MNT_POINT)`, catching direct child mounts, grandchild overmounts like `/sw/foo/include`, and intra-namespace `move_mount`/`MS_MOVE` relocations), then calls `statmount(mnt_id, STATMOUNT_SB_BASIC | STATMOUNT_MNT_BASIC | STATMOUNT_MNT_POINT)` (which Linux resolves relative to `current->fs->root`, matching `chroot` paths automatically) and filters strictly to mounts whose `mnt_point` is `<prefix>/<pkg>` (or descendant `<prefix>/<pkg>/...` for overmount checks). If zero `SQUASHFS_MAGIC` mounts sit under `<prefix>/`, `fswc` records a compact `FSWC_SNAP_NO_SQUASHFS` `ns_<hash>` marker (with zero `blob_*` or `pkg_*` files) keyed on `(prefix_mnt_id, prefix_ino, mnt_list_hash128)` so `glob("/tmp/*")` and `glob("/home/*")` bail out cleanly without building trie blobs.
-   - **`mode=1` (default) & `glob`/`execvpe`/`dlopen` across all `mode >= 1`**: Revalidates `geteuid()`/`getuid()` + `statx(AT_FDCWD, prefix, AT_SYMLINK_NOFOLLOW, ...)` + ancestor `statx`s + `fswc_hash_mount_tree()` (`force_reval = true`) on **every** `glob()`, `execvpe()`, and `dlopen()` call across both `mode=1` and `mode=2` (amortized once per prefix within a single `GLOB_PATHS` / `execvpe` call)—giving `0 ns` staleness and zero reliance on `glibc` syscall wrappers when Go or raw `SYSCALL`s mutate or move mounts, root, or credentials.
-   - **`mode=2` (opt-in single-path VFS negative filter)**:
-     1. Verifies every ancestor directory from `/` through `<prefix>` (up to `FSWC_MAX_ANCESTORS = 16`; deeper prefixes bypass `FSWC`) via `statx(AT_FDCWD, anc_path, AT_SYMLINK_NOFOLLOW, ...)` is a real non-symlink directory **and** has `(stx_mode & 0111) == 0111` with no POSIX access ACL (`lgetxattr(anc_path, "system.posix_acl_access", ...)` / `fgetxattr(..., "system.posix_acl_access", ...)` returning `-ENODATA` or `-EOPNOTSUPP`, noting SquashFS images without an xattr table return `-EOPNOTSUPP`), setting `FSWC_SNAP_ANCESTORS_WORLD_SEARCH` (preventing `ENOENT`-instead-of-`EACCES` DAC leaks when a `0700` parent directory like `mkdtemp("/tmp/fswc.XXXXXX")` is warmed as `root` before `setresuid` privilege drop!).
-     2. Hooks `mount`, `umount2`, `move_mount`, `fsmount`, `mount_setattr`, `chroot`, `pivot_root`, `unshare`, `setns`, `set*uid`/`set*gid`/`setgroups`, `setfsuid`/`setfsgid`, and `capset` in `glibc` to bump an atomic invalidation counter forcing immediate revalidation.
-     3. Pre-samples `check_ms = fswc_now_coarse_ms()` (`uint32_t`) and re-runs lock-free `statx` + `fswc_hash_mount_tree()` inline whenever `(uint32_t)(check_ms - prev_ms) > FSWC_REVALIDATE_MS` (`50u` ms).
+### 4.4 Building (`__libc_early_init`, nowhere else)
 
-### 4.5 Strict POSIX & Security Invariants Checklist
+`ld.so` never builds. `__libc_early_init`—run once `libc` is relocated, single-threaded, before any constructor or `main`—validates the index for each wildcard prefix in the trusted search paths and, if one is missing or stale, builds it synchronously:
 
-| Edge Case | Required `FSWC` v5 Behavior |
+1. Skip under `AT_SECURE`, `glibc.fswc.enable=0`, or if `/dev/shm/.fswc-<euid>/` is not a `0700` directory owned by `euid` (opened `O_NOFOLLOW`).
+2. `flock(LOCK_EX | LOCK_NB)` on `lock-<mntns_id>-<prefix_dev>-<prefix_ino>`; if busy, continue to `main`.
+3. Record `statx(<prefix>)`, `ns_event` if available, and `listmount` IDs.
+4. Read `<prefix>`; classify each name; walk each sealed package with `getdents64`, collecting `(relpath, top_idx, d_type)` into temporary anonymous `mmap` arenas; sort; write the file.
+5. Repeat step 3; if anything changed, discard. On filesystems without multigrain timestamps, first wait until the coarse clock has passed the recorded ctime.
+6. Write to a temporary name (`O_EXCL`, `0400`), then `renameat` into place. Never modify a published file.
+7. **Sweep dead namespaces.** Unlink every `idx-<mntns_id>-*` in the user's directory whose mount namespace no longer exists (`listmount` on that namespace ID returns `ENOENT`), plus leftover temporary files. Every new namespace gets its own index and nothing else ever deletes one, so without this sweep `/dev/shm` (RAM, or swap) grows until reboot.
+
+   The sweep is safe because the index is only a hint. Deleting an index costs at most a rebuild, and processes that already have it mapped keep their mapping after `unlink`.
+
+There is **no size cap**. Size is bounded by what the administrator installed: only sealed SquashFS packages under build-configured prefixes are indexed, and the build arenas are sized dynamically. Any build failure (`ENOSPC`, a race, an interruption) just means no index this time, so lookups use the plain walk.
+
+**Startup ordering.** In a dynamically linked program, `ld.so` resolves and maps every `DT_NEEDED` library *before* `__libc_early_init` runs. A builder in `__libc_early_init` therefore never speeds up its own process's startup, and that startup is exactly the dominant cost (§6 Phase 0: 19 ms for a 15-library exec at 100 packages, 64 ms at 300). The startup win comes entirely from `rtld` finding an index that an *earlier* process built: `rtld` must map and validate an existing index on its first wildcard library search, before loading `DT_NEEDED`. That is still "reads, never builds" (Rule 4): `open` + `fstat` + `mmap` with bounded stack and no `malloc`.
+
+Consequences: after a namespace is created or packages change, one dynamically linked program start per user per namespace pays the build, and every later start is served from the index. The builder never runs in a thread, after `fork`, in a `vfork` child, in a signal handler, or in `rtld`. Programs that do not use `glibc`'s dynamic loader (static binaries, Go) never build and are not harmed; they get the plain walk, which is correct by Rule 1. Rebuild frequency is therefore one per *namespace creation*, not per process. On a booted Fluffy system processes inherit PID 1's namespace (NOTES.md principle 2), so rebuilds follow upgrades. But every `swctl` build phase and any sandbox that calls `unshare(CLONE_NEWNS)` starts cold (~57k inodes over 91 packages today, *unverified* cost). Phase 0 must measure this. Note also that the build lands on whichever program starts first in the namespace. If cold-build cost proves too high, **profile the build first and fix what is actually slow**; do not pre-design a remedy. Only if profiling shows the walk itself is the irreducible cost would per-package listings keyed by SquashFS image identity be worth their complexity. They would then be subject to §2.5's identity findings:
+- listings must stay per-user (§4.5);
+- the key must come from kernel-visible metadata ("do as git does"), not the fstab or xattrs;
+- `backing_file` paths are host paths that break inside chroots;
+- `SOURCE_DATE_EPOCH=0` makes mtimes useless.
+
+### 4.5 Trust
+
+- A process only reads index files in its own `0700` directory, owned by its `euid`, mode `0400`, opened `O_NOFOLLOW`. Another user can at most squat the directory name, forcing the plain walk.
+- Index names and headers carry the mount-namespace ID, so namespaces never share an index.
+- User-namespace ownership checks compare against the in-namespace `euid`, so in-namespace "root" never trusts real root's files.
+- `AT_SECURE` processes neither read nor build.
+- Same-user, same-namespace sandboxes able to write the user's directory are equivalent to writing the user's dotfiles; out of scope.
+
+### 4.6 Kernel Patch: Mount-Namespace Change Counter
+
+`struct mnt_namespace` already keeps `event`, bumped on every mount-tree change (it is what makes `poll()` on `/proc/<pid>/mountinfo` report `POLLPRI`). `sw/linux` carries a small patch exposing it as a `__u64 event` field appended to `struct mnt_ns_info` returned by the existing size-versioned `NS_MNT_GET_INFO` `ioctl`. The reader uses it when the reported size includes it, and the `listmount` comparison otherwise. Exact layout follows upstream `nsfs` conventions at implementation time; the patch is suitable for upstream submission.
+
+### 4.7 v5 → v6 Code Map
+
+| v5 | v6 |
 | :--- | :--- |
-| Read-only bind mount of mutable dir (`mount --bind -o ro`) | `sb_magic != SQUASHFS_MAGIC` → **not** marked `FSWC_PKG_IMMUTABLE`; queries probe via kernel. |
-| Child overmount inside SquashFS (`/sw/foo/include` tmpfs) | Detected via `listmount` + `statmount` (`mnt_point` under `<prefix>/foo/...`) → `foo` excluded from `FSWC_PKG_IMMUTABLE` (moved to `mutable_dirs[]`). |
-| `/sw/*.squashfs` files & unmounted/mutable `/sw/local` dirs | `*.squashfs` (`DT_REG`) stored in `ns_*` top-level table; `mutable_dirs[]` hybrid-merged via kernel in `strcmp` order while all 91 SquashFS mounts stay cached! |
-| Internal directory symlink (`/sw/ncurses/include/ncursesw -> .`) | Per-package `d_type == DT_LNK` stored in `postings[]` → `__fswc_probe_exact` and `fswc_glob_try` fall through to kernel for that package (never false `ENOENT`). |
-| `..` component (`/sw/gcc/lib/gcc/.../../../../../include/x.h`) | Walked on `vdir_stack` *only* across verified real `DT_DIR`s on `pkg` with `WORLD_SEARCH`; `DT_LNK` or `depth == 0` falls through to kernel. |
-| File traversed as directory (`/sw/bash/bin/bash/` or `.../bash/x`) | Target `pkg` posting has `d_type == DT_REG` ≠ `DT_DIR` → returns `ENOTDIR`, **never** `ENOENT`. |
-| `0111` execute-only / `0700` root-only / ACL dirs + `setfsuid` | Unconditional kernel fallthrough (even for `uid == 0`!) whenever `!WORLD_SEARCH` (`0111` + `ENODATA`/`EOPNOTSUPP` ACL) or `!WORLD_READ_SEARCH` (`0555` + `ENODATA`/`EOPNOTSUPP` ACL); immune to `setfsuid`/`capset`/`access()` `ruid` differences. |
-| Component `> 255` bytes (`NAME_MAX`) or path `>= PATH_MAX` | Immediate bailout prior to hash probe → kernel returns exact `ENAMETOOLONG`. |
-| Non-`C` `LC_COLLATE` (e.g., `en_US.UTF-8`) | `fswc_glob_try` sorts each segment's output slice using `glibc`'s `collated_compare`, matching uncached `glob()` byte-for-byte. |
+| `fswc.c` (~4,100 lines) + `fswc.h` (~290) | `fswc-read.c` (map, validate, `fswc_lookup`; linked into `rtld` and `libc`), `fswc-build.c` (`libc` only), small `fswc.h`. Target well under 1,500 lines total. |
+| Merged Virtual Trie (hash table, `vdir`s, `vchildren`, postings) | **Delete**; replaced by the sorted `paths[]` array. |
+| `fswc_glob_try` / `fswc_walk_pkg_vdir` reimplementing glob semantics | **Delete**; `glob()` uses internal `GLOB_ALTDIRFUNC` hooks. |
+| `__fswc_resolve_pkg_wild_relpath` in `dl-load.c` / `execvpe.c` | **Replace** with per-package `fswc_lookup`; existing wildcard parsing, ordering, `FNM_PERIOD`, `AT_SECURE`, `DF_1_NODEFLIB`, `errno`, and fallback logic stays. |
+| Per-call `fswc_hash_mount_tree` | **Replace** with §4.3 validation. |
+| `ns_*` / `blob_*` / `pkg_*` tiers, `GL` slot table, cross-DSO futex, fork hooks, write-once snapshots | **Delete**; one `idx-*` file, per-process read-only mapping. |
+| Builder inside `dlopen` / `glob` / `execvpe` | **Move** to `__libc_early_init`. |
+| `mode=2`, `__fswc_probe_exact`, hooks in 11 single-path wrappers, 50 ms TTL, `mount`/`set*id`/`capset`/`setns` invalidation hooks | **Delete**; restore upstream. |
+| Per-directory permission flags, `d_type` per posting, top-level non-SquashFS handling | Simplified to "sealed or ask the kernel" per package; `d_type` per posting kept. |
+| `glibc.fswc.mode`, `glibc.fswc.max_inodes` | `glibc.fswc.enable` (`0`/`1`) only; no size cap (§4.4). |
+
+### 4.8 Tests
+
+Every scenario compares `glob()`, `execvpe()`, and `dlopen()` against a reference walker that uses raw syscalls only (no `glibc` path functions), with and without a valid index, and with `glibc.fswc.enable=0`:
+
+| Scenario | Expected |
+| :--- | :--- |
+| One-star and multi-star patterns, `**`, `GLOB_MARK`/`GLOB_ONLYDIR`/`GLOB_PERIOD`/`GLOB_CASEFOLD`/`GLOB_NOSORT`, non-`C` collation, caller-supplied `GLOB_ALTDIRFUNC` | Identical results; caller hooks bypass `FSWC` and are left untouched. |
+| `mkdir`/`rmdir` in `<prefix>`, package unmounted, replaced, overmounted, bind-mounted writable | Validation fails or the name is unsealed; identical results. |
+| `move_mount` swap of two packages (Fluffy kernel) | Counter changes; plain walk; identical results. |
+| Directory symlink inside a package (`include/ncursesw -> .`), file traversed as directory | `KERNEL`; identical results and `errno`. |
+| `0700`/`0111`/ACL directories inside a package | Package unsealed; `EACCES` preserved. |
+| Index missing, truncated, corrupt, wrong owner/mode, symlinked, squatted | Plain walk; no crash. |
+| 64 programs starting at once in a fresh namespace | Exactly one builds; all correct. |
+| Mount change during a build | Build discarded. |
+| Index left by a namespace that has since exited | Removed by the next build in any other namespace of the same user; a live namespace's index is never removed. |
+| `unshare(CLONE_NEWUSER)` at the start of `main` right after a startup build | Succeeds. |
+| `vfork()` + `execvp()`; static `libc.a` program | Never builds; correct. |
+| `dlopen` on a `PTHREAD_STACK_MIN` thread | No overflow; `objdump` confirms every `FSWC` frame in `rtld` is `< 1 KiB`. |
+| `AT_SECURE` program; user-namespace "root" | Plain walk only; never trusts another identity's index. |
+| `execvpe()`/`posix_spawnp()` where the index proves every candidate absent | Returns `-1` with exactly the `errno` the plain walk produces (`ENOENT`, or a remembered `EACCES`/`ENOTDIR`), even though no `execve` was attempted (§2.7). |
+| Package mounted after a process started, then `dlopen`/`glob`/`execvp` in that process | Validation fails; the new package is found (no per-process snapshot). |
+| `LD_PRELOAD` interposition of `opendir`/`readdir`/`stat` (`kmod` `testsuite/path.so`) | Interposed functions still see the calls the plain walk would make, or the test suite's expectations are documented as `FSWC`-off (open question, §4.9). |
+
+Mount scenarios need a private mount namespace and SquashFS mounts, which unprivileged `CHECK()` cannot create (unprivileged SquashFS mounts are impossible, and the host's AppArmor blocks user namespaces); they run in the privileged `tools/test-fswc` runner, while `CHECK()` covers everything else using a test-only internal hook that treats a tmpfs tree as sealed. A Go program performing the same walk serves as an extra oracle in CI where a Go toolchain is available.
+
+### 4.9 Open Questions
+
+1. **Cold-build cost per namespace** (§4.4). Unmeasured. If it is too high, profile before choosing any remedy.
+2. **Long-lived processes.** v6 validates per call, so correctness holds, but nothing tells a daemon that the index was rebuilt. Arm-then-poll on mountinfo was dropped implicitly, not by decision.
+3. **Reaching the namespace without `/proc`.** `PIDFD_GET_MNT_NAMESPACE` (6.11) was discussed as the path to the namespace fd for `NS_MNT_GET_INFO`; §4.6 should name the exact sequence. `NS_MNT_GET_INFO` struct extensibility is intent, not verified kernel API.
+4. **Stack budget.** Rule 4 targets < 1 KiB per `rtld` frame; v5 sits at ~1.1 KiB (an earlier target was < 512 B). v6's reader should be measured against the rule, not assumed.
+5. **`LD_PRELOAD` interposition.** Whether `glob()`'s internal `GLOB_ALTDIRFUNC` hooks call interposable symbols, which `kmod`'s test shim relies on.
+6. *(Resolved.)* **Tcl `GLOB_MOUNTS` reversal.** The project owner once proposed a mount table of `{mountpoint, vfs ops, userdata}` behind a new flag, then rejected it (Rule 8) for three reasons: it blew out the implementation complexity; Tcl's VFS is in practice only used for zip files; and Tcl can do it itself by hooking the `GLOB_ALTDIRFUNC` callbacks for its own volumes and falling back to a plain callback-free `glob()` when a pattern falls through to the native filesystem. Recorded so it is not re-proposed.
+7. **No VM harness** exists yet for Phase 3's kernel-patch gate.
+8. **Brace-scoped `GLOB_PATHS` lists** (§3.2, decided 2026-11-16). Open details:
+   - whether `{…:…}` needs `GLOB_BRACE`;
+   - how an empty member combines with a non-empty *prefix* (for example `/x{:a}`): keep it as the empty string, as brace expansion does, or treat it as `.`;
+   - the vfork-safe route for `execvpe`/`posix_spawnp`;
+   - `errno` parity through `errfunc` or `GLOB_NOCHECK`.
 
 ---
 
@@ -311,35 +432,63 @@ All shared-memory artifacts live inside a per-UID isolated directory `/dev/shm/.
 
 Every package below is modified from unmodified upstream source to participate in Fluffy's `<glob.h>` / `GLOB_PATHS` / late-bound `/sw/*` architecture. Each entry specifies **(1) Pre-v5 Prototype Baseline**, **(2) Target Ideal State**, and **(3) Upstream + Fluffy Test Suite Requirements** for `CHECK()`.
 
+**Where Fluffy's tests live (2026-11-16).** Ad hoc test code no longer lives in recipe `CHECK()` functions. Each package's Fluffy tests are in its own test suite, added by `sw/<pkg>-<ver>-fluffy-test.patch`, and `CHECK()` just runs upstream's check target:
+
+| Package | Tests |
+| :--- | :--- |
+| `binutils` | `ld/testsuite/ld-fluffy/fluffy.exp` |
+| `coreutils` | `tests/env/env-glob-path.sh`, `tests/sort/sort-compress-glob-path.sh` |
+| `man-db` | `src/tests/manpath-glob-config-path` |
+| `which` | `tests/which-glob-path.sh` (new `check-local`) |
+| `util-linux` | `tests/ts/misc/glob-paths` (`run.sh … misc/glob-paths`) |
+| `readline` | `tests/inputrc-glob.{c,sh}` (new `check`) |
+| `ncurses` | `progs/check-terminfo-dirs.sh` (`make -C progs check`) |
+| `e2fsprogs` | `lib/support/tst_profile_glob.sh`, `misc/tst_conf_glob.sh` |
+| `dejagnu` | `testsuite/runtest.libs/utils_which.test` |
+| `sqlite` | `test/autosetup-split-path.sh`, `test/sqlite3-smoke.sh` (new `check`) |
+| `iproute2` | `testsuite/unit/` (`make check-unit`) |
+| `openssl` | `test/recipes/25-test_fluffy_glob.t` + `test/fluffy_glob_test.c` |
+| `curl` | `tests/data/test3150`, `test3151` + `tests/test3150.pl` |
+| `gcc` | `gcc.dg/fluffy/fluffy.exp` (`include-*.c`, `missing-include-dirs.c`, `zlib-zstd-run.c`), `g++.dg/fluffy/*.C`; skip list replaced by `-fno-pie`/`-fno-stack-protector` dg-options, xfails and reasoned dg-skip-ifs; `lib/g++.exp` no longer needs a hand-written `testsuite_flags` |
+| `libstdcpp` | same `gcc-16.2.0-fluffy-test.patch`: `testsuite_flags.in` `-L`, standalone-build lookup in `testsuite/lib/libstdc++.exp` (no symlink) |
+
+Rules for these tests:
+- They must not depend on the host. A check that is only meaningful against a populated live prefix reports UNSUPPORTED, never a silent pass.
+- Each one has been run against unpatched code and shown to fail.
+- New executable test files use git-style `new file mode 100755` hunks, because a plain `-Naur` diff cannot set the exec bit, and some runners (`util-linux` `run.sh`) silently skip non-executable tests.
+
 ---
 
 ### Group A: Core C Library & Toolchain
 
 #### 1. `glibc` (`sw/glibc`, `sw/glibc-pass1` — v2.44)
-- **Pre-v5 Prototype Baseline** (`sw/glibc-2.44-fluffy-source.patch`, `sw/glibc-2.44-fluffy-test.patch`):
+- **Current State** (`sw/glibc-2.44-fluffy-source.patch`, `sw/glibc-2.44-fluffy-test.patch`):
   - High-bit `<glob.h>` / `<fnmatch.h>` flags implemented; `__GI_glob64` hidden alias fixed in `sysdeps/unix/sysv/linux/glob.c`; NSS/DNS stateless `/sw/*/etc/...:/etc/...` fallback (`nss_database.c`, `nss_files_fopen.c`, `nss_files_data.c`, `files-*.c`, `res_hconf.c`, `res_init.c`, `resolv_conf.c`); `paths.h` `_PATH_DEFPATH = "/sw/*/bin"`.
-  - Carried prototype `posix/glob_fluffy_cache.h` (3,285 lines) + `fc_glob_try` / `glob_literal_suffix_try` in `posix/glob.c`.
-- **Target Ideal State**:
-  - Replace `posix/glob_fluffy_cache.h` with `include/fswc.h` + `sysdeps/unix/sysv/linux/fswc.c` (`FSWC` v5 Merged Virtual Trie, unified writable `GL` `_rtld_global._dl_fswc_state` multi-prefix table + leaf futex quiescing across multi-threaded `__libc_fork` and child reset on `_Fork`, `GLIBC_TUNABLES=glibc.fswc.{mode,max_inodes}`, per-UID `/dev/shm/.fswc-<uid>/` `0400` `MAP_SHARED` blobs + Tier-1 `pkg_*` cache).
-  - Fix the 3 `GLOB_PATHS` corner cases in `posix/glob.c` (per-segment `GLOB_NOCHECK`/`GLOB_NOMAGIC` forwarding, single `GLOB_DOOFFS` initialization prior to segment `0`, and single-component-bracket + brace-aware `next_colon_sub` under `GLOB_BRACE`), non-terminal `<dir>/**/<rest>` and terminal `<literal_dir>/**` (`GLOB_CASEFOLD`) trailing-slash normalization plus symlink-to-directory root prefix traversal under `GLOB_GLOBSTAR` (`"d1/**/a.txt"` → `"d1/a.txt"`, `"/sw/**"` → `"/sw/"`, `<prefix>/<sym>/**/*` & `/sw/*/include/ncursesw/**/*.h` traversed at depth 0 and depth 1+), `GLOB_TILDE` `"~"` `getenv("HOME")` buffer copying before any in-place `dirname` mutation, `GLOB_CASEFOLD` literal-pattern `GLOB_MAGCHAR` isolation (`GLOB_KEEP_SLASHES | GLOB_CASEFOLD` and `GLOB_NOMAGIC | GLOB_CASEFOLD`), `GLOB_PERIOD` intermediate-directory parity across `mode={0,1,2}` (`GLOB_DOTDOT | GLOB_SKIPDOTS` forwarding `GLOB_PERIOD` to non-`**` intermediates while standalone `GLOB_PERIOD` preserves `tst-gnuglob`), `glob_dirscan`'s backslash-escape skip on `\@(` / `\+(` / etc. under `GLOB_EXTMATCH`, and `posix/glob_internal.h`'s unconditional `extmatch = 1` leak (`__glob_pattern_type_ext` gated on `flags & GLOB_EXTMATCH`), and guard `tst-rtld-run-static` under `ifeq (yes,$(use-ldconfig))` in `elf/Makefile` (since `tst-rtld-run-static.c` executes `%s/elf/ldconfig`, which is omitted when `use_ldconfig=no`).
-  - Wire `__fswc_resolve_pkg_wild_relpath` into `elf/dl-load.c` and `posix/execvpe.c` (enforcing `FNM_PERIOD` against leading-dot `<pkg>`/`mutable_dirs` entries like `.build` across `open_path`, `AT_SECURE` `is_trusted_path_normalize`, `DF_1_NODEFLIB`, and `execvpe`, preserving exact `errno` across skipped missing-`<subpath>` packages in `open_path_wildcard`, amortizing prefix revalidation via `seen_slot_mask` in `execvpe`, and enforcing `FSWC_SNAP_ANCESTORS_WORLD_SEARCH | FSWC_SNAP_PREFIX_WORLD_RX`, plus escape- & bracket-aware `PATH` colon splitting, literal `S_ISDIR` + `\`-unescaped `PATH` directory handling, `[[:class:]]`/`[.coll.]` bracket parsing, and leaf suffix `\`-unescaping in `execvpe.c`, and `sysdeps/unix/sysv/linux/execve.c` delegating `ENOENT` `/`-wildcard paths to `__execve_wildcard_path`); wire `fswc_glob_try` into `posix/glob.c` (deleting `fc_glob_try` and `glob_literal_suffix_try`); wire `__fswc_probe_exact` into opt-in `mode=2` read-only VFS wrappers (`open`/`openat`, `stat`/`lstat`/`fstatat`/`statx`, `access`/`faccessat`), keeping `glibc.fswc.mode=1` as the Go/raw-`SYSCALL`-safe default.
-  - Optional enhancement from [NOTES.md](NOTES.md): wildcard executable path resolution when `file` contains `/` and glob metacharacters in `execvpe` / `execve` / `posix_spawn` (first lexicographical match wins).
-- **Test Suite Recommendations** *(all tests, including legacy `posix/{test-errno,tst-execveat,tst-glob-bz30635,tst-spawn-chdir}.c` and `stdio-common/test-popen.c` hunks and `tools/{test,bench}-fswc.c` `--runner` outer launchers, must be 100% host-independent and `PATH=""`-safe: generic `/proc/self/mountinfo` SquashFS parent discovery + synthetic temp-tree fallback + self-contained static ELF test executables + `<paths.h>` `_PATH_DEFPATH`/`_PATH_STDPATH` + `fork()`/`execvp()`, with zero hardcoded `/sw`, `/snap`, `/bin/sh`, `system()`, or outer-process unpatched-host `GLOB_PATHS` dependencies)*:
-  - **Upstream Suite (`CHECK()`)**: `TIMEOUTFACTOR=4 make -O -j$(nproc) check` (specifically gating `check-abi`, `conform/*/linknamespace` including `conform/ISO11/threads.h/linknamespace` and `conform/POSIX/*/linknamespace`, `posix/tst-gnuglob`, `posix/tst-glob-tilde`, `posix/globtest`, `posix/tst-fnmatch`, `posix/tst-execvp1..4`, `posix/tst-execveat`, `posix/tst-spawn*`, `elf/tst-dlopen*`, `nss/tst-fluffy-stateless-etc`).
-  - **Tier-1 Fluffy `make check` Tests (`sw/glibc-2.44-fluffy-test.patch`)**:
-    1. `posix/tst-glob-fluffy-flags.c`: Exhaustive unit tests for `GLOB_PATHS` (empty segments `":a"`, `"a::b"`, `"a:"`, `""` → `"."`, escaped `\:` and `\\:`, colons inside `[a:b]`, `@(a:b)`, and `{/a:/b,/c}`, `GLOB_DOOFFS`, per-segment `GLOB_NOCHECK`/`GLOB_NOMAGIC`, per-segment `LC_COLLATE` ordering across `C` and `en_US.UTF-8`), `GLOB_KEEP_SLASHES` (including `GLOB_KEEP_SLASHES | GLOB_CASEFOLD`), `GLOB_EXTMATCH` (including `glob_dirscan` on escaped `\@(` / `\+(` with `/` and `GLOB_NOMAGIC` when `GLOB_EXTMATCH` is unset), `GLOB_CASEFOLD` (including `GLOB_NOMAGIC | GLOB_CASEFOLD`), `GLOB_SKIPDOTS` (including `GLOB_PERIOD | GLOB_SKIPDOTS` on intermediate hidden dirs), `GLOB_GLOBSTAR` (`**` cycle-free child-symlink rules, symlink-to-dir root prefixes before `/**/...`, `**/**` collapse), and `GLOB_DOTDOT` / `FNM_DOTDOT`.
-    2. `posix/tst-fswc-oracle.c`: Differential oracle spawning workers with `GLIBC_TUNABLES=glibc.fswc.mode={0,1,2}` across live `/proc/self/mountinfo`-discovered SquashFS prefixes (or a synthetic multi-package fallback tree when zero SquashFS mounts exist) exercising `glob`, `execvpe`, `dlopen`, `openat`, `statx`, and `faccessat`, asserting identical return values, `errno`s, `statx` fields, and `glob_t` vectors.
-    3. `posix/tst-fswc-edge.c`: `ENOTDIR` on `<file>/` and `<file>/x`, `ENAMETOOLONG` (257-byte component > `SQUASHFS_NAME_LEN=256` on SquashFS, 256-byte `<pkg>` component on `tmpfs`/`ext4`/`btrfs`, & `PATH_MAX`), `.`/`..`/`//` normalization, symlinked prefix retargeting, `O_CREAT`/`O_DIRECTORY`/`O_NOFOLLOW`/`AT_SYMLINK_NOFOLLOW`/`dfd != AT_FDCWD` (relative vs. absolute paths), raw `syscall(SYS_setresuid, ...)` bypass safety, `glibc.fswc.max_inodes=4` fallback, non-SquashFS `/tmp` `FSWC_SNAP_NO_SQUASHFS` fast bailout (0 `blob_*` / `pkg_*` files), `dlopen` `EACCES` preservation across packages missing `<subpath>`, literal & escaped `[1]` `PATH` directories in `execvpe`, and corrupted/truncated SHM header & intra-section offset rejection (`blob_*`, `ns_*`, `pkg_*`) without `SIGBUS` or `SIGSEGV`.
-    4. `posix/tst-fswc-concurrency.c` & `posix/tst-fswc-vfork.c` & `posix/tst-fswc-static.c`: 16-thread post-`RELRO` prefix stampede + concurrent multi-threaded `fork()`, cold-prefix `vfork()`+`execvpe()` heap/lock safety, `EACCES` preservation across non-executable candidates, and `libc.a` static linking.
-  - **Tier-2 Standalone Privileged Torture Runner (`test-fswc`) & Benchmark Suite (`bench-fswc`)**:
-    - Isolated `CLONE_NEWNS` runner building synthetic `.squashfs` images (`0700`, `0111`, `0005`, host/tmpfs ancestor POSIX ACL xattrs, `0751` group-readable `<prefix>` + `setgroups` drop, `.hidden` top-level `FNM_PERIOD` decoy, relative/external/dangling/`ELOOP` symlinks, 16-deep dirs, 255-byte names), testing live in-process (both `glibc` wrappers **and** raw `syscall(SYS_mount/SYS_umount2/SYS_move_mount/SYS_chroot/SYS_setresuid)` bypassing `glibc`) and external-process `mount`/`umount2`/`move_mount`/grandchild-overmount/`chroot`/`/dev/loopN` churn + `setresuid` privilege drop across `mode={0,1,2}` (with synthetic non-SquashFS fallback when run unprivileged on a bare CI runner), plus `bench-fswc` verifying `Anonymous == 0 KiB` and (with $\ge 2$ concurrent mappers) `Private_Dirty == 0 KiB` on `/.fswc-` `MAP_SHARED` VMA entries in `/proc/self/smaps`.
+  - `FSWC` v5 (`include/fswc.h`, `sysdeps/unix/sysv/linux/fswc.c` compiled into `rtld` and `libc`, writable `GL` slot table, three-tier `/dev/shm/.fswc-<uid>/` artifacts, `glibc.fswc.mode=0|1|2`, `__fswc_probe_exact` hooks in 11 single-path wrappers). Stack frames reduced to ~1.1 KiB via `mmap` workspaces so `elf/tst-dl-path-buf{,-mem}` pass.
+- **Target Ideal State** (`FSWC` v6, §4):
+  - Replace `fswc.c` with `fswc-read.c` (map, validate, `fswc_lookup`; `rtld` + `libc`) and `fswc-build.c` (`libc` only, called from `__libc_early_init`); sorted-path index per `(euid, mntns, prefix)`; §4.3 validation; `glibc.fswc.enable` (no size cap).
+  - `glob()` supplies internal `GLOB_ALTDIRFUNC` hooks (real directory reads, `FSWC`-backed `lstat`/`stat`) when the caller supplies none; delete `fswc_glob_try` and the trie.
+  - **Delete** `mode=2`, `__fswc_probe_exact`, and all hooks in `open`/`open64`/`openat`/`openat64`/`*_nocancel`/`access`/`faccessat`/`fstatat64`/`statx`, the 50 ms TTL, the `mount`/`set*id`/`capset`/`setns` wrapper invalidation hooks, the `GL` slot table, and the `__libc_fork`/`_Fork` hooks.
+  - Fix the 3 `GLOB_PATHS` corner cases in `posix/glob.c` (per-segment `GLOB_NOCHECK`/`GLOB_NOMAGIC` forwarding, single `GLOB_DOOFFS` initialization prior to segment `0`, and single-component-bracket + brace-aware `next_colon_sub` under `GLOB_BRACE`), non-terminal `<dir>/**/<rest>` and terminal `<literal_dir>/**` (`GLOB_CASEFOLD`) trailing-slash normalization plus symlink-to-directory root prefix traversal under `GLOB_GLOBSTAR`, `GLOB_TILDE` `"~"` `getenv("HOME")` buffer copying before any in-place `dirname` mutation, `GLOB_CASEFOLD` literal-pattern `GLOB_MAGCHAR` isolation, `GLOB_PERIOD` intermediate-directory parity in every `FSWC` state, `glob_dirscan`'s backslash-escape skip under `GLOB_EXTMATCH`, and `posix/glob_internal.h`'s unconditional `extmatch = 1` leak; guard `tst-rtld-run-static` under `ifeq (yes,$(use-ldconfig))` in `elf/Makefile`.
+  - Replace `__fswc_resolve_pkg_wild_relpath` in `elf/dl-load.c` and `posix/execvpe.c` with per-package `fswc_lookup`, keeping the existing behavioral details (`FNM_PERIOD` on leading-dot top-level names, `AT_SECURE` `is_trusted_path_normalize`, `DF_1_NODEFLIB`, exact `errno` across skipped packages, escape- & bracket-aware `PATH` splitting, literal `S_ISDIR` `PATH` directories, `ENOEXEC` `scripts_argv`).
+  - Make `confstr(_CS_PATH)` (`getconf PATH`) report `_PATH_STDPATH` rather than upstream's `/bin:/usr/bin`, which does not exist on Fluffy (§2.7).
+- **Test Suite Recommendations** *(all tests must be host-independent and `PATH=""`-safe: synthetic prefixes in private mount namespaces, self-contained static test executables, `<paths.h>` `_PATH_DEFPATH`/`_PATH_STDPATH`, zero hardcoded `/sw`, `/snap`, `/bin/sh`, or `system()`)*:
+  - **Upstream Suite (`CHECK()`)**: `TIMEOUTFACTOR=4 make -O -j$(nproc) check` (specifically gating `check-abi`, `conform/*/linknamespace` including `conform/ISO11/threads.h/linknamespace` and `conform/POSIX/*/linknamespace`, `posix/tst-gnuglob`, `posix/tst-glob-tilde`, `posix/globtest`, `posix/tst-fnmatch`, `posix/tst-execvp1..4`, `posix/tst-execveat`, `posix/tst-spawn*`, `elf/tst-dlopen*`, `elf/tst-dl-path-buf{,-mem}`, `nss/tst-fluffy-stateless-etc`).
+  - **Fluffy `make check` Tests (`sw/glibc-2.44-fluffy-test.patch`)**:
+    1. `posix/tst-glob-fluffy-flags.c`: Exhaustive unit tests for `GLOB_PATHS` (empty segments, escaped `\:` and `\\:`, colons inside `[a:b]`, `@(a:b)`, and `{/a:/b,/c}`, `GLOB_DOOFFS`, per-segment `GLOB_NOCHECK`/`GLOB_NOMAGIC`, per-segment `LC_COLLATE` ordering across `C` and `en_US.UTF-8`), `GLOB_KEEP_SLASHES`, `GLOB_EXTMATCH`, `GLOB_CASEFOLD`, `GLOB_SKIPDOTS`, `GLOB_GLOBSTAR`, and `GLOB_DOTDOT` / `FNM_DOTDOT`.
+    2. `posix/tst-fswc-oracle.c`: the §4.8 matrix rows that need no mounts, comparing `glob`, `execvpe`, and `dlopen` against the raw-syscall reference walker with and without a valid index and with `glibc.fswc.enable=0` (sealed trees simulated through a test-only internal hook).
+    3. `posix/tst-fswc-edge.c` (internal test, `tests-internal`): corrupt, truncated, foreign-owned, symlinked, and squatted index files; non-normalized paths; symlinked and file-as-directory components; permission-restricted packages.
+    4. `posix/tst-fswc-startup.c`: 64-program startup stampede, mount change during build, `unshare(CLONE_NEWUSER)` after a startup build, `vfork()` + `execvp()` and static `libc.a` (never build), `AT_SECURE`.
+    5. `elf/tst-fswc-stack`: `objdump` frame-size assertion for `rtld` and cold/warm `dlopen` on a `PTHREAD_STACK_MIN` thread.
+  - **Privileged runner (`tools/test-fswc`)**: the §4.8 mount rows (real SquashFS images, `mkdir`, unmount, replace, overmount, bind mounts, and `move_mount` on Fluffy's kernel).
+  - **Standalone Benchmark (`bench-fswc`)**: see Phase 0.
 
 #### 2. `binutils` (`sw/binutils`, `sw/binutils-pass1`, `sw/binutils-pass2` — v2.47)
 - **Pre-v5 Prototype Baseline** (`sw/binutils-2.47-fluffy-source.patch`):
-  - Embedded 3,286-line `include/fluffy-cache.h` and called `fc_expand_dirs` / `fc_lookup_path` in `ld/ldfile.c`; recipe passes `--with-lib-path='/sw/*/lib'` (which `genscripts.sh` emits into default linker scripts as `SEARCH_DIR("=/sw/*/lib")`). Also recursively called `ldfile_add_library_path` on `globbuf.gl_pathv[i]`, which would re-glob or infinite-recurse if a matched directory name contained `[`, `*`, or `?`.
+  - Embedded 3,286-line `include/fluffy-cache.h` and called `fc_expand_dirs` / `fc_lookup_path` in `ld/ldfile.c`; recipe passes `--with-lib-path='=/sw/*/lib'` (`genscripts.sh` copies `--with-lib-path` into the default linker scripts verbatim—it only prepends `=` to its own built-in directories, and only under `--with-sysroot`—so the explicit `=` is what makes the emitted `SEARCH_DIR("=/sw/*/lib")` sysroot-relative). Also recursively called `ldfile_add_library_path` on `globbuf.gl_pathv[i]`, which would re-glob or infinite-recurse if a matched directory name contained `[`, `*`, or `?`.
 - **Target Ideal State**:
   - **Delete `include/fluffy-cache.h` and `ldfile_try_open_bfd` `fc_lookup_path` hunks completely (-3,295+ LOC)**.
-  - Keep `ld/ldfile.c:ldfile_add_library_path`'s `=` / `$SYSROOT` (`ld_sysroot`) prefix expansion **before** a literal `stat(name, &st) == 0 && S_ISDIR(st.st_mode)` fast check (so existing literal `-L` directories whose names contain `[1]`, `*`, or `?` are preserved intact!) followed by a ~15-line `<glob.h>` (`glob(name, GLOB_ONLYDIR, NULL, &gl)`) expansion when `strpbrk(name, "*?[") != NULL`, appending each matched directory directly to `search_tail_ptr` via a non-recursive literal helper (falling back to the literal `name` on `GLOB_NOMATCH`, never re-invoking `=`/`$SYSROOT`/glob expansion on `globbuf.gl_pathv[i]`, and using only standard `GLOB_ONLYDIR` so `binutils-pass1` compiles cleanly against any bootstrap host `<glob.h>` before `glibc-pass1` exists). `glibc` `FSWC` (`mode=1`, plus opt-in `mode=2` for `bfd_openr()` negative filtering) accelerates the startup `glob()` transparently while Linux's RCU `dcache` serves exact probes.
+  - Keep `ld/ldfile.c:ldfile_add_library_path`'s `=` / `$SYSROOT` (`ld_sysroot`) prefix expansion **before** a literal `stat(name, &st) == 0 && S_ISDIR(st.st_mode)` fast check (so existing literal `-L` directories whose names contain `[1]`, `*`, or `?` are preserved intact!) followed by a ~15-line `<glob.h>` (`glob(name, GLOB_ONLYDIR, NULL, &gl)`) expansion when `strpbrk(name, "*?[") != NULL`, appending each matched directory directly to `search_tail_ptr` via a non-recursive literal helper (falling back to the literal `name` on `GLOB_NOMATCH`, never re-invoking `=`/`$SYSROOT`/glob expansion on `globbuf.gl_pathv[i]`, and using only standard `GLOB_ONLYDIR` so `binutils-pass1` compiles cleanly against any bootstrap host `<glob.h>` before `glibc-pass1` exists). `glibc` `FSWC` accelerates the startup `glob()` transparently while Linux's RCU `dcache` serves exact probes.
 - **Test Suite Recommendations**:
   - **Upstream Suite (`CHECK()`)**: `make -k check` — require zero unexpected failures across all 5 DejaGnu suites (`binutils`, `gas`, `ld`, `libctf`, `libsframe`).
   - **Fluffy Regression Tests (`sw/binutils-2.47-fluffy-test.patch` or `CHECK()`)**:
@@ -350,7 +499,7 @@ Every package below is modified from unmodified upstream source to participate i
 - **Pre-v5 Prototype Baseline** (`sw/gcc-16.2.0-fluffy-source.patch`):
   - Embedded 3,282-line `include/fluffy-cache.h` and hooked `fc_lookup_path` / `fc_inc_dir_can_skip` / `fc_expand_dirs` into `gcc/incpath.cc`, `gcc/file-find.cc`, `gcc/gcc.cc`, and `libcpp/files.cc`, alongside build/config wildcard hunks in `gcc/Makefile.in`, `gcc/configure`, and `gcc/cppdefault.cc`. Also recursively called `add_path` / `add_prefix` / `do_add_prefix` on `gbuf.gl_pathv[gi]`, which would re-glob if a matched directory name contained `[`, `*`, or `?`.
 - **Target Ideal State**:
-  - **Delete `include/fluffy-cache.h` and all `fc_*` calls across `gcc/incpath.cc`, `gcc/file-find.cc`, `gcc/gcc.cc`, and restore `libcpp/files.cc` to 100% unmodified upstream source (-3,350+ LOC)** (avoiding post-hash `file->path` mutation in `libcpp/files.cc`, relying on `FSWC` `mode=1` for `glob(GLOB_ONLYDIR)` startup expansion + Linux's RCU `dcache` or opt-in `FSWC` `mode=2` for `maybe_shorter_path` `lstat`s and `open_file` `open`s).
+  - **Delete `include/fluffy-cache.h` and all `fc_*` calls across `gcc/incpath.cc`, `gcc/file-find.cc`, `gcc/gcc.cc`, and restore `libcpp/files.cc` to 100% unmodified upstream source (-3,350+ LOC)** (avoiding post-hash `file->path` mutation in `libcpp/files.cc`, relying on `FSWC` for `glob(GLOB_ONLYDIR)` startup expansion and Linux's RCU `dcache` for `maybe_shorter_path` `lstat`s and `open_file` `open`s).
   - Retain the clean `<glob.h>` (`glob(..., GLOB_ONLYDIR, ...)`) wildcard expansions in `gcc/incpath.cc` (`add_path` + `add_sysroot_to_chain` for deferred `-I =...` / `-I $SYSROOT...`, checking `stat(path, &st) == 0 && S_ISDIR(st.st_mode)` before `glob()` — including on unescaped `iprefix`/`sysroot` candidates in `add_standard_paths` prior to `escape_glob_meta` — so existing literal `-I`/`-iprefix`/`--sysroot` directories containing `[1]`/`*`/`?` work directly, falling back to `add_literal_path` on `GLOB_NOMATCH` when `user_supplied_p` is true so `-Wmissing-include-dirs` still fires, splitting `CPATH`/`C*_INCLUDE_PATH` with escape- & single-component bracket-aware `:` scanning, and calling `update_path` on unescaped prefixes before escaping metacharacters in `iprefix`/`sysroot`/relocated prefixes), `gcc/gcc.cc` (`add_prefix`, `add_sysrooted_prefix`, `add_sysrooted_hdrs_prefix` — checking literal `S_ISDIR` before `glob()`, calling `update_path` before `escape_glob_meta` on `target_system_root`, splitting `COMPILER_PATH`/`LIBRARY_PATH`/`LPATH` with escape- & single-component bracket-aware `:` scanning, and dispatching matched/literal prefixes via `add_literal_prefix` without re-running `update_path` on `glob` matches — plus `do_spec_2` multi-word `MD_EXEC_PREFIX` used by `gcc-pass1` and `gcc-pass2`), and `gcc/file-find.cc` (`do_add_prefix` + escape-/bracket-aware `prefix_from_string`, checking literal `S_ISDIR` before `glob()` and preserving reverse `first` insertion order!), inserting matched `gbuf.gl_pathv` entries via non-recursive literal helpers (never re-globbing matched directory names, and using only standard `GLOB_ONLYDIR` so `gcc-pass1` compiles cleanly on any bootstrap host `<glob.h>` before `glibc-pass1` exists), plus the `gcc/Makefile.in`, `gcc/configure`, and `gcc/cppdefault.cc` cross/header hunks.
 - **Test Suite Recommendations**:
   - **Upstream Suite (`CHECK()`)**: `make -k check` (DejaGnu `gcc`, `g++`, `libstdc++`, `libgomp`, `libatomic`, `libitm`), specifically inspecting `gcc.dg/cpp/*` (`#include_next` across multiple `/sw/<pkg>/include` mounts!) and `g++.dg/pch/*` (precompiled headers).
@@ -367,7 +516,7 @@ Every package below is modified from unmodified upstream source to participate i
   - Already deleted bundled `lib/glob/{glob.c,glob_loop.c,gmisc.c}` (-1,849 LOC)!
   - `pathexp.c` (`shell_glob_filename`, `shell_glob_path`), `findcmd.c` (`find_user_command_in_path`, `find_in_path_element`), `bashline.c` (`command_word_completion_function`), `shell.c` (`#include "pathexp.h"`, sourcing `/sw/*/etc/profile:/etc/profile`), and bundled `lib/readline/bind.c` all delegate directly to `glibc` `glob()` with `GLOB_PATHS`, `GLOB_EXTMATCH`, `GLOB_GLOBSTAR`, `GLOB_SKIPDOTS`, `GLOB_DOTDOT`, `GLOB_CASEFOLD`.
 - **Target Ideal State**:
-  - Keep current clean architecture, ensuring `pathexp.c` (`shell_scan_path_colon`, `shell_glob_path`, and `shell_run_path_glob`) splits `PATH` colons with single-component bracket/escape/extglob awareness matching `glibc` `next_colon_sub` (bounding unclosed `[...]` and `@(...)` groups at `'/'` and honoring nested `[:..:]`/`[...]`/`[=..=]`) and expands leading `~` per `:` segment via `bash_tilde_expand` (escaping glob metacharacters in the expanded home directory) so unexported `HOME` and `$HOME` metacharacters behave identically across literal `~/bin`, wildcard `~/*/bin`, and `compgen -c`; verify zero remaining dead prototypes from `lib/glob/glob.h` once `FSWC` v5 lands.
+  - Keep current clean architecture, ensuring `pathexp.c` (`shell_scan_path_colon`, `shell_glob_path`, and `shell_run_path_glob`) splits `PATH` colons with single-component bracket/escape/extglob awareness matching `glibc` `next_colon_sub` (bounding unclosed `[...]` and `@(...)` groups at `'/'` and honoring nested `[:..:]`/`[...]`/`[=..=]`) and expands leading `~` per `:` segment via `bash_tilde_expand` (escaping glob metacharacters in the expanded home directory) so unexported `HOME` and `$HOME` metacharacters behave identically across literal `~/bin`, wildcard `~/*/bin`, and `compgen -c`; verify zero remaining dead prototypes from `lib/glob/glob.h` once `FSWC` lands.
 - **Test Suite Recommendations**:
   - **Upstream Suite (`CHECK()`)**: `make tests` (specifically gating `run-glob-test`, `run-glob-bracket`, `run-globstar`, `run-extglob`, `run-extglob2`, `run-extglob3`, `run-type`, `run-complete`).
   - **Fluffy Regression Tests (`tests/glob.tests` & `CHECK()`)**:
@@ -393,7 +542,7 @@ Every package below is modified from unmodified upstream source to participate i
      - Run `touch Modules/getpath.py` after `patch -Z -Np1` (or `make regen-frozen` during build) so `Programs/_freeze_module` regenerates `Python/frozen_modules/getpath.h` deterministically.
   2. **Upgrade `posix._glob(pattern, flags=0, root_dir=None)`**:
      - Accept both `str` (`PyUnicode_FSConverter` / `os.fsencode` `surrogateescape`) and `bytes`, plus `flags` (`GLOB_NOESCAPE`, `GLOB_KEEP_SLASHES`, `GLOB_PATHS`, `GLOB_ONLYDIR`, `GLOB_MARK`, `GLOB_GLOBSTAR`, `GLOB_PERIOD`, `GLOB_DOTDOT`, `GLOB_SKIPDOTS`, `GLOB_CASEFOLD`, `GLOB_BRACE`), while always firing both `sys.audit("glob.glob", pathname, recursive)` and `sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)` in `Lib/glob.py` prior to delegation (`test_glob` / `test_audit`).
-     - When `root_dir is not None` (and `dir_fd is None` and `pathname` is relative), normalize redundant `/` runs in `root_dir` (`//tmp/dir[1]//sub///` → `/tmp/dir[1]/sub`, `///` → `/`) before prefixing and stripping the normalized `root_dir` prefix on output (so `glibc` `glob()` directory recursion or `GLOB_CASEFOLD` never mismatches `root_dir`; if `pathname` is absolute, ignore `root_dir` per Python semantics). Whenever `(flags & GLOB_NOESCAPE)` and normalized `root_dir` contains any glob metacharacter (`*`, `?`, `[`, or `:` under `GLOB_PATHS`, `(` under `GLOB_EXTMATCH`, `{`/`}` under `GLOB_BRACE`, or leading `~` under `GLOB_TILDE*`), backslash-escape `root_dir`, double literal `\` in `pattern`, and clear `GLOB_NOESCAPE` for that `glob()` call so `glibc` `glob()` treats `root_dir` as literal `GLOBPAT_BACKSLASH` (never calling `opendir()` on `0111` execute-only ancestors of `root_dir`, never invoking `fnmatch` on `surrogateescape` raw bytes in `root_dir`, and never brace-splitting `{`/`}` under `GLOB_BRACE`) while keeping `GLOB_NOESCAPE` intact for metacharacter-free `root_dir`s like `/sw` so `fswc_glob_try` hits the FSWC index directly. When `GLOB_KEEP_SLASHES` is active and `pattern` contains unclosed `[` (`pat_has_magic && !(gl_flags & GLOB_MAGCHAR)`), collapse multiple trailing slashes on matched entries to a single `'/'` to match `iglob`.
+     - When `root_dir is not None` (and `dir_fd is None` and `pathname` is relative), normalize redundant `/` runs in `root_dir` (`//tmp/dir[1]//sub///` → `/tmp/dir[1]/sub`, `///` → `/`) before prefixing and stripping the normalized `root_dir` prefix on output (so `glibc` `glob()` directory recursion or `GLOB_CASEFOLD` never mismatches `root_dir`; if `pathname` is absolute, ignore `root_dir` per Python semantics). Whenever `(flags & GLOB_NOESCAPE)` and normalized `root_dir` contains any glob metacharacter (`*`, `?`, `[`, or `:` under `GLOB_PATHS`, `(` under `GLOB_EXTMATCH`, `{`/`}` under `GLOB_BRACE`, or leading `~` under `GLOB_TILDE*`), backslash-escape `root_dir`, double literal `\` in `pattern`, and clear `GLOB_NOESCAPE` for that `glob()` call so `glibc` `glob()` treats `root_dir` as literal `GLOBPAT_BACKSLASH` (never calling `opendir()` on `0111` execute-only ancestors of `root_dir`, never invoking `fnmatch` on `surrogateescape` raw bytes in `root_dir`, and never brace-splitting `{`/`}` under `GLOB_BRACE`) while keeping `GLOB_NOESCAPE` intact for metacharacter-free `root_dir`s like `/sw` so `glob()`'s `FSWC`-backed existence checks apply directly. When `GLOB_KEEP_SLASHES` is active and `pattern` contains unclosed `[` (`pat_has_magic && !(gl_flags & GLOB_MAGCHAR)`), collapse multiple trailing slashes on matched entries to a single `'/'` to match `iglob`.
      - Delegate `Lib/glob.py:glob()` to `posix._glob` for non-empty NUL-free `str` patterns (with `root_dir` `None` or NUL-free non-`bytes`) across `root_dir` and `include_hidden=True` (`GLOB_PERIOD | GLOB_DOTDOT`) whenever `dir_fd is None`, `pathname` contains no lone surrogates (`\ud800`–`\udfff`, checked via UTF-8 encodeability plus UTF-8 filesystem encoding when non-ASCII), `?`, `[!` / `[^`, `[:` / `[.` / `[=`, or non-ASCII `[...]` bracket expressions (preventing `glibc` `fnmatch` `EILSEQ` single-byte fallback from diverging from `iglob` on `surrogateescape` patterns or filenames mixing multi-byte UTF-8 with undecodable raw bytes), the pattern does not invoke `recursive=True` on `**` (because `test_glob.py:test_recursive_glob` requires `**` to follow symlinked directories, unlike Bash's cycle-free `GLOB_GLOBSTAR`) or contain `//` in `pathname.rstrip("/")`, and any `[a-z]`/`[]-z]` bracket range runs under `C`/`POSIX` `LC_COLLATE` (`bytes` patterns likewise stay on `iglob` because CPython sets UTF-8 `LC_CTYPE` where `glibc` treats `?` as multibyte UTF-8 whereas `iglob`/`fnmatch` treats `bytes` as single ISO-8859-1 bytes, while `posix._glob` remains directly available for both `str` and `bytes`).
   3. **Clean Up the 4 Path-List Consumers Respecting Exact Python Contracts**:
      - `Lib/os.py:get_exec_path()`: Split Unix `PATH` with single-component bracket-aware `:` scanning (so `[[:alpha:]]` / `[.coll.]` are never split mid-bracket while unclosed `[:` stops at `]`) and expand wildcard segments (`*`, `?`, `[`) via `posix._glob(..., GLOB_NOESCAPE)` while **strictly preserving `''` empty segments** (`PATH=':/bin'` → `['', '/bin']`, `PATH=''` → `['']`, **not** `'.'`, which `test_os` and `shutil.which` distinguish!).
@@ -412,7 +561,7 @@ Every package below is modified from unmodified upstream source to participate i
 - **Target Ideal State**:
   1. **Delegate `File::Glob` (`ext/File-Glob/bsd_glob.c`) to `glibc` `<glob.h>` with Exact CSH Semantics**:
      - Keep `bsd_glob.h` and `Glob.xs` ABI-untouched (`bsd_glob.h` defines its own `glob_t` and `GLOB_*` flags including opt-in `GLOB_QUOTE` and `GLOB_ALPHASORT`, with no `BG_ALTNOT`), isolating `<glob.h>` via `sys_glob_t` / saved `BG_*` enums inside `bsd_glob.c`.
-     - Preserve BSD's ~80-line brace expander (`globexp1`/`globexp2`) and `globtilde` (`PerlEnv_getenv("HOME")` / `getpwuid`) so per-branch `GLOB_NOMAGIC` (`bsd_glob('{TES*,doesntexist*,a,b}', GLOB_BRACE | GLOB_NOMAGIC)` → `['TEST', 'a', 'b']`) and per-branch `GLOB_ALPHASORT` (`ci_compare` vs locale-independent ASCII `strcmp`) match csh semantics 100%, while delegating each `glob0` leaf pattern to `glibc` `glob()` (`SYS_GLOB_NOSORT` + `GLOB_MARK` / `GLOB_ERR` / `GLOB_NOCASE` → `GLOB_CASEFOLD`, hitting `FSWC` Tier-1 $O(\text{depth})$ lookup on `/sw/*/bin/...`).
+     - Preserve BSD's ~80-line brace expander (`globexp1`/`globexp2`) and `globtilde` (`PerlEnv_getenv("HOME")` / `getpwuid`) so per-branch `GLOB_NOMAGIC` (`bsd_glob('{TES*,doesntexist*,a,b}', GLOB_BRACE | GLOB_NOMAGIC)` → `['TEST', 'a', 'b']`) and per-branch `GLOB_ALPHASORT` (`ci_compare` vs locale-independent ASCII `strcmp`) match csh semantics 100%, while delegating each `glob0` leaf pattern to `glibc` `glob()` (`SYS_GLOB_NOSORT` + `GLOB_MARK` / `GLOB_ERR` / `GLOB_NOCASE` → `GLOB_CASEFOLD`, so `/sw/*/bin/...` lookups get `glob()`'s `FSWC`-backed existence checks).
      - Translate `!(flags & GLOB_QUOTE)` by backslash-escaping literal `\`/`*`/`?`/`[`, rewrite unnegated `[^...]` to `[\^...]` (and inner `[:`/`[.`/`[=` to `\[...`) since `bsd_glob` only negates `[!...]`, and enforce `GLOB_LIMIT` (`ARG_MAX` → `GLOB_NOSPACE`) in `globextend`.
   2. **Patch `File::Spec::Unix::path()` (`dist/PathTools/lib/File/Spec/Unix.pm`)**:
      - Split `$ENV{PATH}` with single-component bracket-aware `:` scanning (so `[[:alpha:]]` is never split mid-bracket) and expand wildcard `PATH` entries (`/[*?[]/`) while normalizing empty segments to `"."` (matching upstream `File::Spec::Unix::path` lines `s/^$/./`) and keeping a `miniperl`-safe pure-Perl `opendir`/`readdir` fallback before XS `File::Glob` is built (also used when an entry contains `[:` or `[^` so POSIX character classes in `PATH` behave identically to `execvp`, wrapping regex compilation in `eval` so malformed bracket classes or reversed `[z-a]` ranges in `PATH` return non-matching cleanly rather than raising fatal regex exceptions).
@@ -481,7 +630,7 @@ Every package below is modified from unmodified upstream source to participate i
 - **Pre-v5 Prototype Baseline** (`sw/meson-1.12.0-fluffy.patch`):
   - Uses `os.get_exec_path()` and `shutil.which()` for wildcard `PATH` resolution, `HAS_CFLAGS` / `HAS_LDFLAGS` system-library lookup, and missing-shebang script invocation rewrite (note: the historical patch accidentally embedded 108 foreign `.cpython-312.pyc` binary diffs).
 - **Target Ideal State**:
-  - Strip all 108 `__pycache__/*.cpython-312.pyc` binary diffs from `sw/meson-1.12.0-fluffy.patch` (leaving pure text diffs on the 8 `.py` source/test files with preserved upstream timestamps); zero `.py` logic changes needed in `meson` for globbing once Python's `os.get_exec_path()` / `shutil.which()` run on `posix._glob` + `FSWC` v5. Note `sw/libxcrypt` (`sw/libxcrypt-4.5.2-fluffy-test.patch`) similarly expands `path()` via Perl `glob($_)` and automatically inherits Perl's `<glob.h>` delegation.
+  - Strip all 108 `__pycache__/*.cpython-312.pyc` binary diffs from `sw/meson-1.12.0-fluffy.patch` (leaving pure text diffs on the 8 `.py` source/test files with preserved upstream timestamps); zero `.py` logic changes needed in `meson` for globbing once Python's `os.get_exec_path()` / `shutil.which()` run on `posix._glob` + `FSWC`. Note `sw/libxcrypt` (`sw/libxcrypt-4.5.2-fluffy-test.patch`) similarly expands `path()` via Perl `glob($_)` and automatically inherits Perl's `<glob.h>` delegation.
 - **Test Suite Recommendations**:
   - **Upstream + Fluffy Suite (`CHECK()`)**: `python3 -B -m unittest unittests/{internal,option,tap,version,cargo,data}tests.py` (matching `sw/meson` `CHECK()`, including `ExternalProgram` lookup under `PATH=/sw/*/bin`).
 
@@ -489,7 +638,7 @@ Every package below is modified from unmodified upstream source to participate i
 - **Pre-v5 Prototype Baseline** (`sw/sqlite-3530400-fluffy.patch`; **note: `sw/sqlite` previously had no `CHECK()` function!**):
   - Patches `autosetup/autosetup` (`proc split-path`) to expand `[*?\[]` wildcard elements in `$PATH` via Tcl `glob -nocomplain -types d -- $part`.
 - **Target Ideal State**:
-  - Split `$PATH` with `GLOB_NOESCAPE`-faithful single-component bracket-aware `:` scanning in `autosetup/autosetup` (`proc split-path`, where `\` does not escape `:` or `]`), prefer `[file isdirectory $part]` before `glob`, trigger `glob` strictly on `*`/`?`/`[` via `string first` while escaping Tcl-only glob characters (`\`, `{`, `}`, and under `$::autosetup(istcl)` leading `~`), and guard `glob -nocomplain -types d --` (under `$::autosetup(istcl)`) or `glob -nocomplain --` + `[file isdirectory]` filtering (under bootstrap `jimsh0`, which lacks `-types`) with `catch` in `proc split-path` so `[[:alpha:]]`, `{a,b}`, `\`, or unmatched `{` in `$PATH` never misfires or aborts `autosetup`, accelerated by Tcl's `NativeMultiGlob` + `FSWC` v5, and add a `CHECK()` phase to `sw/sqlite`.
+  - Split `$PATH` with `GLOB_NOESCAPE`-faithful single-component bracket-aware `:` scanning in `autosetup/autosetup` (`proc split-path`, where `\` does not escape `:` or `]`), prefer `[file isdirectory $part]` before `glob`, trigger `glob` strictly on `*`/`?`/`[` via `string first` while escaping Tcl-only glob characters (`\`, `{`, `}`, and under `$::autosetup(istcl)` leading `~`), and guard `glob -nocomplain -types d --` (under `$::autosetup(istcl)`) or `glob -nocomplain --` + `[file isdirectory]` filtering (under bootstrap `jimsh0`, which lacks `-types`) with `catch` in `proc split-path` so `[[:alpha:]]`, `{a,b}`, `\`, or unmatched `{` in `$PATH` never misfires or aborts `autosetup`, accelerated by Tcl's `NativeMultiGlob` + `FSWC`, and add a `CHECK()` phase to `sw/sqlite`.
 - **Test Suite Recommendations**:
   - **New `CHECK()` for `sw/sqlite`**:
     1. Verify `autosetup`'s `cc-check-progs` resolves tools (`cc`, `ar`, `strip`) when `PATH=/sw/*/bin` and `CROSS=""`.
@@ -500,7 +649,7 @@ Every package below is modified from unmodified upstream source to participate i
   - `dejagnu`: `proc which` in `lib/utils.exp` expands wildcard `$PATH` directories via Tcl `glob -nocomplain -types d`.
   - `expect`: TEA `configure` discovers `tclConfig.sh` and `tcl.h` across `/sw/*/lib` and `/sw/*/include` and sets `STTY_BIN=stty` via `PATH`.
 - **Target Ideal State**:
-  - Split `$PATH` with `GLOB_NOESCAPE`-faithful single-component bracket-aware `:` scanning (`\` does not escape `:` or `]`), prefer `[file isdirectory $raw_dir]` before `glob`, trigger `glob` strictly on `*`/`?`/`[` via `string first` while escaping Tcl-only glob characters (`\`, `{`, `}`, and leading `~`), and pass `--` inside `catch {glob -nocomplain -types d -- $pat} expanded` in `dejagnu`'s `lib/utils.exp` (`proc which`) so `[[:alpha:]]`, `-`-prefixed, `{a,b}`, `\`, or unmatched-`{` `$PATH` segments never misfire or raise uncaught Tcl exceptions, and keep `expect`'s minimal patch; both automatically accelerate via Tcl `NativeMultiGlob` + `execvp` `FSWC` v5.
+  - Split `$PATH` with `GLOB_NOESCAPE`-faithful single-component bracket-aware `:` scanning (`\` does not escape `:` or `]`), prefer `[file isdirectory $raw_dir]` before `glob`, trigger `glob` strictly on `*`/`?`/`[` via `string first` while escaping Tcl-only glob characters (`\`, `{`, `}`, and leading `~`), and pass `--` inside `catch {glob -nocomplain -types d -- $pat} expanded` in `dejagnu`'s `lib/utils.exp` (`proc which`) so `[[:alpha:]]`, `-`-prefixed, `{a,b}`, `\`, or unmatched-`{` `$PATH` segments never misfire or raise uncaught Tcl exceptions, and keep `expect`'s minimal patch; both automatically accelerate via Tcl `NativeMultiGlob` + `execvp` `FSWC`.
 - **Test Suite Recommendations**:
   - **`dejagnu` `CHECK()`**: `make check` (`launcher`, `libdejagnu`, `report-card`, `runtest.exp`) + test `which gcc` inside `runtest` with `PATH=/sw/*/bin`.
   - **`expect` `CHECK()`**: `make test` (`all.tcl`: `cat.test`, `expect.test`, `logfile.test`, `pid.test`, `send.test`, `spawn.test`, `stty.test`).
@@ -512,9 +661,9 @@ Every package below is modified from unmodified upstream source to participate i
 #### 15. `systemd` (`sw/systemd` — v261.2)
 - **Pre-v5 Prototype Baseline** (`sw/systemd-261.2-fluffy-source.patch`):
   - Expands `/sw/*/lib/systemd/{system,user,network,...}` and `/sw/*/etc/...` across `sd-path/path-lookup.c`, `basic/conf-files.c`, `shared/conf-parser.c`, `basic/os-util.c`, `basic/path-util.c`, `shared/condition.c`, and `core/load-fragment.c` via `safe_glob()` / `glob_extend()`, keeping `/etc/systemd/system` at highest precedence and setting `99-default.preset` to `disable *`.
-  - **Hidden Cache-Bypass Trap**: Upstream `systemd`'s `safe_glob_full()` (`src/basic/glob-util.c`) unconditionally passes `GLOB_ALTDIRFUNC` with `readdir_no_dot` solely because standard `<glob.h>` lacked `GLOB_SKIPDOTS`—which would force 100% of `systemd`'s `safe_glob()` and `glob_extend()` calls to bypass `FSWC` v5!
+  - **Hidden Cache-Bypass Trap**: Upstream `systemd`'s `safe_glob_full()` (`src/basic/glob-util.c`) unconditionally passes `GLOB_ALTDIRFUNC` with `readdir_no_dot` solely because standard `<glob.h>` lacked `GLOB_SKIPDOTS`—which would force 100% of `systemd`'s `safe_glob()` and `glob_extend()` calls to bypass `FSWC`!
 - **Target Ideal State**:
-  - Patch `src/basic/glob-util.c:safe_glob_full` (~4 lines) so when `opendir_func == NULL`, it calls `glob(path, flags | GLOB_SKIPDOTS, NULL, &g)` **without** `GLOB_ALTDIRFUNC` (keeping `GLOB_ALTDIRFUNC` only when a caller supplies a custom `opendir_func`), and pass `GLOB_ONLYDIR` in `src/basic/path-util.c:find_executable_in_element` (`safe_glob(target, GLOB_ONLYDIR, &matches)`) so non-directory glob matches never clobber `*last_error` with `-ENOTDIR`, unlocking full `FSWC` v5 shared-memory acceleration across PID 1 unit/generator discovery, `conf-files.c`, `conf-parser.c`, `os-util.c`, `path-util.c`, and `condition.c`!
+  - Patch `src/basic/glob-util.c:safe_glob_full` (~4 lines) so when `opendir_func == NULL`, it calls `glob(path, flags | GLOB_SKIPDOTS, NULL, &g)` **without** `GLOB_ALTDIRFUNC` (keeping `GLOB_ALTDIRFUNC` only when a caller supplies a custom `opendir_func`), and pass `GLOB_ONLYDIR` in `src/basic/path-util.c:find_executable_in_element` (`safe_glob(target, GLOB_ONLYDIR, &matches)`) so non-directory glob matches never clobber `*last_error` with `-ENOTDIR`, unlocking full `FSWC` shared-memory acceleration across PID 1 unit/generator discovery, `conf-files.c`, `conf-parser.c`, `os-util.c`, `path-util.c`, and `condition.c`!
   - Move `"/sw/..."` vendor strings (`constants.h`, `path-util.h`, `path-lookup.c`, `os-util.c`, `hwdb-util.c`, `namespace.c`) behind a Meson `-D` prefix macro, while **never** flattening `basic/conf-files.c`'s basename-deduplicating merge (where `50-foo.conf` in `/etc` masks `/sw/<pkg>/lib/.../50-foo.conf` before sorting basenames across all directories), preserving `/dev/null` main-config masking in `shared/conf-parser.c`, escaping `root`/`rfd_path` metacharacters before `safe_glob`, replacing unmatched wildcard patterns in `sd-path/path-lookup.c`, and resolving `mount` via trusted system paths (`use_path_envvar=false`) rather than `$PATH` in `storagectl.c`.
 - **Test Suite Recommendations**:
   - **Upstream + Fluffy Suite (`CHECK()`)**: `meson test -C build --print-errorlogs`, specifically gating the 5 Fluffy-patched unit tests: `test-path-util`, `test-path-lookup`, `test-condition`, `test-conf-files`, and `test-conf-parser` (verifying `/etc` overrides `/sw/<pkg>/etc` and `/sw/<pkg>/lib`, basename masking across directories, `.wants/` symlinks across `/sw/*/lib/systemd/system`, and `ConditionPathExistsGlob=` over `/sw/*`).
@@ -524,7 +673,7 @@ Every package below is modified from unmodified upstream source to participate i
   - Patched `libkmod/libkmod-config.c` and `tools/depmod.c` to expand `/sw/*/{etc,lib}/{modprobe,depmod}.d` via `glob(path, GLOB_ALTDIRFUNC, ...)` unconditionally (so `kmod`'s `LD_PRELOAD` `testsuite/path.so` intercepts `opendir`/`stat` during `meson test`, at the cost of forcing production `modprobe`/`depmod` to bypass `FSWC`!), and hardcoded `"/sw/*/{etc,lib}/modprobe.d"` in `libkmod/libkmod.c`.
 - **Target Ideal State**:
   - Configure `sw/kmod` with `--sysconfdir=/etc` (removing Meson's empty `$DESTDIR/etc` directories in `INSTALL()` so `/sw/kmod` ships zero `/etc` paths) and order `default_config_paths` (`libkmod/libkmod.c`) and `default_cfg_paths` (`tools/depmod.c`) per UAPI drop-in hierarchy: `SYSCONFDIR "/{modprobe,depmod}.d"` (`/etc/...`) → `"/run/{modprobe,depmod}.d"` → `VENDOR_PKG_PREFIX "/*/etc/{modprobe,depmod}.d"` → `"/usr/local/lib/{modprobe,depmod}.d"` → `DISTCONFDIR "/{modprobe,depmod}.d"` → `VENDOR_PKG_PREFIX "/*/lib/{modprobe,depmod}.d"` → `"/lib/{modprobe,depmod}.d"`.
-  - Call standard `glob(path, GLOB_NOESCAPE, NULL, &gl)` in `libkmod/libkmod-config.c` and `tools/depmod.c` (omitting `GLOB_ONLYDIR` so explicit `-C '/etc/modprobe.d/*.conf'` file globs work, and falling back to literal `path` on `GLOB_NOMATCH` so explicit `-C` paths with unclosed `[` still load; production `modprobe`/`depmod` get full `FSWC` v5 acceleration), add a ~15-line `glob`/`glob64` `ROOTFS`-prefix wrapper to `testsuite/path.c` (`LD_PRELOAD` test-only shim), and pass vendor config directories via Meson `-DCFLAGS` defines rather than C `"/sw"` literals (while still preserving `FSWC` v5's `GLOB_ALTDIRFUNC` bypass for genuine callback callers).
+  - Call standard `glob(path, GLOB_NOESCAPE, NULL, &gl)` in `libkmod/libkmod-config.c` and `tools/depmod.c` (omitting `GLOB_ONLYDIR` so explicit `-C '/etc/modprobe.d/*.conf'` file globs work, and falling back to literal `path` on `GLOB_NOMATCH` so explicit `-C` paths with unclosed `[` still load; production `modprobe`/`depmod` get full `FSWC` acceleration), add a ~15-line `glob`/`glob64` `ROOTFS`-prefix wrapper to `testsuite/path.c` (`LD_PRELOAD` test-only shim), and pass vendor config directories via Meson `-DCFLAGS` defines rather than C `"/sw"` literals (while still preserving `FSWC`'s `GLOB_ALTDIRFUNC` bypass for genuine callback callers).
 - **Test Suite Recommendations**:
   - **Upstream + Fluffy Suite (`CHECK()`)**: `meson test -C build` (all 16/16 suites, specifically `test-blacklist` [`blacklist_fluffy_glob`, verifying `/etc` > `/run` > `/sw/*/etc` > `/sw/*/lib` precedence and `-C` single-file/wildcard configs] and `test-depmod` [`depmod_search_order_fluffy_sw`]).
 
@@ -565,7 +714,7 @@ Every package below is modified from unmodified upstream source to participate i
   - `man-db`: Uses `GLOB_PATHS | GLOB_NOESCAPE` in `lib/pathsearch.c` (`pathsearch` and `directory_on_path`) and `src/manp.c` (`"/sw/*/etc/man_db.conf:/etc/man_db.conf"`). Note `directory_on_path(dir)` compares `STREQ(gl.gl_pathv[i], dir)` against an absolute `dir`, which currently misses `"."` emitted by `GLOB_PATHS` for empty `:` segments (`xgetcwd()` needed) and drops non-existent literal `PATH` entries without `GLOB_NOCHECK`.
   - `groff`: Uses `GLOB_PATHS | GLOB_NOESCAPE` in `src/libs/libgroff/relocate.cpp` (`searchpath`) for executable/prefix relocation.
 - **Target Ideal State**:
-  - In `man-db`, pass `GLOB_PATHS | GLOB_NOESCAPE | GLOB_NOCHECK` in `directory_on_path()` while resolving `"."` via `xgetcwd()` before `STREQ`, and move `"/sw/*/etc/man_db.conf"` in `src/manp.c` into a `CPPFLAGS` macro. `FSWC` v5 newly indexes `share/man` and `share/groff`, making `man <page>` instant without `mandb` cache regeneration.
+  - In `man-db`, pass `GLOB_PATHS | GLOB_NOESCAPE | GLOB_NOCHECK` in `directory_on_path()` while resolving `"."` via `xgetcwd()` before `STREQ`, and move `"/sw/*/etc/man_db.conf"` in `src/manp.c` into a `CPPFLAGS` macro. `FSWC` newly indexes `share/man` and `share/groff`, making `man <page>` instant without `mandb` cache regeneration.
 - **Test Suite Recommendations**:
   - **`man-db` `CHECK()`**: `make check`, `manpath -g` `MAN_SYSTEM_CONFIG_PATH` vendor/override checks, and `MAN_SYSTEM_CONFIG_PATH="$PWD/src/man_db.conf" MANPATH=/sw/*/share/man ./src/man -w ls` (plus `MANPATH=` via `src/man_db.conf`'s `MANDATORY_MANPATH /sw/*/share/man`; passing `MAN_SYSTEM_CONFIG_PATH` since `/sw/man-db/etc/man_db.conf` is not yet installed during `CHECK()`) verifying late-bound manpage resolution across mounted packages.
   - **`groff` `CHECK()`**: `make check` (all ~190 `tmac`/`roff`/`preproc` tests).
@@ -584,7 +733,7 @@ Every package below is modified from unmodified upstream source to participate i
   - `curl`: Expands `ssl_cafile` and `ssl_capath` via `glob()` in `lib/vtls/openssl.c` (`ossl_load_trust_anchors`).
 - **Target Ideal State**:
   - In `openssl` `crypto/x509/by_dir.c` (`add_cert_dir`), split colon-delimited lists with single-component bracket-aware `:` scanning and **preserve upstream's `if (len == 0) continue;` empty-segment skip** (**never** use `GLOB_PATHS` on `SSL_CERT_DIR`, which would map empty `:` segments to `"."` and inject CWD into the X.509 root CA trust store, and never split `[[:alpha:]]` mid-bracket!) while passing `GLOB_NOESCAPE | GLOB_ONLYDIR` on non-empty wildcard segments; extend `apps/lib/opt.c` (`case '/'` on `*CApath` options, where upstream `opt_isdir(arg)` rejected `:`-separated or wildcard `-CApath` CLI arguments before `libcrypto` saw them) to split with bracket-aware `:` scanning and validate wildcard `*CApath` arguments via `GLOB_NOESCAPE | GLOB_ONLYDIR` while skipping empty `:` segments; extend `crypto/x509/by_file.c` (`by_file_ctrl_ex`, `X509_load_cert_file_ex`, and `X509_load_crl_file`, plus CLI `apps/lib/apps.c:load_crls` for `-CRLfile`) so explicit `X509_FILETYPE_PEM` (`-CAfile` / `X509_STORE_load_file` / `X509_load_cert_file` **and** `curl` `--crlfile` / `--proxy-crlfile` via `X509_load_crl_file` + `openssl verify -CRLfile`, with literal regular-file precedence and `GLOB_NOMATCH` literal fallback) wildcard paths expand with `GLOB_NOESCAPE` just like `X509_FILETYPE_DEFAULT`; and extend `crypto/conf/conf_mod.c` (`CONF_get1_default_config_file`) so when `OPENSSL_CONF` is unset, `/etc/ssl/openssl.cnf` overrides first and `--openssldir='/sw/*/etc/ssl'` expands `OPENSSLDIR "/openssl.cnf"` via `glob(..., GLOB_NOESCAPE, ...)`.
-  - Once `libcrypto`'s `X509_STORE_load_file`, `X509_load_crl_file`, and `X509_STORE_load_path` handle wildcards directly in `by_file.c` / `by_dir.c` (in both `openssl-pass1` and `openssl`), delete the redundant 65-line `glob()` wrapper in `curl`'s `lib/vtls/openssl.c` and bypass `src/tool_getparam.c`'s literal `existingfile()` `stat()` pre-check when `--cacert`/`--crlfile`/`--proxy-cacert`/`--proxy-crlfile` contain `*?[` (`-53 net LOC`, zero `<glob.h>` in `curl`, preserving `curl`'s `CURLE_SSL_CACERT_BADFILE` / `CURLE_SSL_CRL_BADFILE` error reporting when zero files match). `FSWC` v5 newly indexes `etc/ssl/certs/*`.
+  - Once `libcrypto`'s `X509_STORE_load_file`, `X509_load_crl_file`, and `X509_STORE_load_path` handle wildcards directly in `by_file.c` / `by_dir.c` (in both `openssl-pass1` and `openssl`), delete the redundant 65-line `glob()` wrapper in `curl`'s `lib/vtls/openssl.c` and bypass `src/tool_getparam.c`'s literal `existingfile()` `stat()` pre-check when `--cacert`/`--crlfile`/`--proxy-cacert`/`--proxy-crlfile` contain `*?[` (`-53 net LOC`, zero `<glob.h>` in `curl`, preserving `curl`'s `CURLE_SSL_CACERT_BADFILE` / `CURLE_SSL_CRL_BADFILE` error reporting when zero files match). `FSWC` newly indexes `etc/ssl/certs/*`.
 - **Test Suite Recommendations**:
   - **`openssl` `CHECK()`**: `HARNESS_JOBS=$(nproc) make test` + self-contained CA/leaf/CRL + `<hash>.0` fixture check (`sw/openssl` builds before `sw/ca-certificates` and `/sw/ca-certificates` ships bundle PEMs rather than `<hash>.0` hash-dir links) running `./util/wrap.pl ./apps/openssl verify` with `-CApath ":$td/sw/*/etc/ssl/certs:$td/etc/ssl/certs"` (asserting wildcard vendor discovery **and** asserting an untrusted `<hash>.0` cert in CWD is rejected despite the leading `:`), `-CAfile "$td/sw/*/etc/ssl/certs/ca-certificates.crt"`, `-CRLfile "$td/sw/*/etc/ssl/crl/*.pem" -crl_check`, `SSL_CERT_FILE`/`SSL_CERT_DIR`, non-matching `-CAfile` failure, and default `CONF_get1_default_config_file()` wildcard/override resolution when `OPENSSL_CONF` is unset.
   - **`curl` `CHECK()`**: `make test-nonflaky TFLAGS="-n -j$(nproc)"` + loopback `openssl s_server` HTTPS verification smoke check exercising wildcard `--cacert "$td/sw/*/etc/ssl/certs/ca-certificates.crt"`, `--crlfile "$td/sw/*/etc/ssl/crl/*.pem"`, `--capath ":$td/sw/*/etc/ssl/certs"` (including leading-`:` CWD untrusted-cert rejection), non-matching `--cacert` `CURLE_SSL_CACERT_BADFILE` failure, and mounted `/sw/*/etc/ssl/certs/ca-certificates.crt` bundle loading.
@@ -602,42 +751,151 @@ Every package below is modified from unmodified upstream source to participate i
 ## 6. Phased Implementation Plan & Execution Gates
 
 When executing this plan, follow these stages in strict order.
+
+Phases 4–6 were completed against `FSWC` v5 and are independent of the v6 redesign; they remain listed for their gates and audit criteria. Phases 0–3 are the v6 work, followed by Phase 7. Item 2 of Phase 4 (auditing for upstream-changing "defensive" fallbacks) is still open.
 - **Workflow rules**: Never run `sudo` directly from the agent (provide `sudo --preserve-env=FLUFFY,CROSS ./swctl build <pkg>` or `sudo --preserve-env=FLUFFY ./swctl build <pkg>` commands), always apply patches with `patch -Z -Np1`, and keep recipe `*_NEEDS` arrays alphabetically sorted, 4-space indented, with a blank line between `NEEDS` and `BUILD_NEEDS`.
-- **Companion Bootstrap Recipe Checksum & Host-Build Rule**: Whenever a shared `*-fluffy-*.patch` file changes, update its SHA-256 checksum in **every** recipe that references it in `ARCHIVES=(...)` (`sw/glibc` + `sw/glibc-pass1`; `sw/binutils` + `sw/binutils-pass{1,2}`; `sw/gcc` + `sw/gcc-pass{1,2}`; `sw/bash` + `sw/bash-pass1`; `sw/python` + `sw/python-pass1`; `sw/perl` + `sw/perl-pass1`; `sw/openssl` + `sw/openssl-pass1`; `sw/curl` + `sw/curl-pass1`; `sw/ncurses` + `sw/ncurses-pass1`; `sw/gawk` + `sw/gawk-pass1`; `sw/zlib` + `sw/zlib-pass1`). Patches compiled natively on the bootstrap host (`binutils-pass1`, `gcc-pass1`, and `ncurses-pass1`'s host `tic` tool) **must** either stick to standard `<glob.h>` flags (`0`, `GLOB_ONLYDIR`) or guard Fluffy-specific macros with `#ifdef GLOB_PATHS` so bootstrap builds cleanly on any unpatched Linux host `<glob.h>`.
+- **Companion Bootstrap Recipe Checksum & Host-Build Rule**: Whenever a shared `*-fluffy-*.patch` file changes, update its SHA-256 checksum in **every** recipe that references it in `ARCHIVES=(...)` (`sw/glibc` + `sw/glibc-pass1`; `sw/binutils` + `sw/binutils-pass{1,2}`; `sw/gcc` + `sw/gcc-pass{1,2}`; `sw/bash` + `sw/bash-pass1`; `sw/python` + `sw/python-pass1`; `sw/perl` + `sw/perl-pass1`; `sw/openssl` + `sw/openssl-pass1`; `sw/curl` + `sw/curl-pass1`; `sw/ncurses` + `sw/ncurses-pass1`; `sw/gawk` + `sw/gawk-pass1`; `sw/zlib` + `sw/zlib-pass1`). Patches compiled natively on the bootstrap host (`binutils-pass1`, `gcc-pass1`, and `ncurses-pass1`'s host `tic` tool) **must** either stick to standard `<glob.h>` flags (`0`, `GLOB_ONLYDIR`) or guard Fluffy-specific macros with `#ifdef GLOB_PATHS`.
+- **Spec discipline**: if reality diverges from this document, stop and revise it before continuing. Review adversarially and revise "until you can't find any more flaws". Periodically rebuild from scratch "instead of assuming all our logic fixes are valid". Never disable a failing test; "brainstorm a proper fix at the proper place". Any patched behavior gets a test.
+- **Sequencing**: finish a fully tested `world` build on the current implementation "before we rip the wiring out again". Every `glibc` patch change rebuilds everything downstream, so v6 phases land after the build converges.
+- **Eventual patch form**: each package's changes become a clean, rebased commit series on the local upstream clones under `~/Source/github.com/fluffy-linux/` (`git format-patch`), reading as a coherent series rather than "initial impl, fix, fix, fix". Not started; patches remain the source of truth until then.
+- **Patch regeneration**: regenerate patches with a pinned locale and timezone (`LC_ALL=C TZ=UTC`, except where an existing patch's file order was produced under another collation—keep each patch's established order) so regeneration never reorders hunks.
 
 ### Phase 0: Baseline Benchmark Harness (`bench-fswc`)
-1. Build a standalone C benchmark binary (`bench-fswc`) measuring:
-   - Tier 0 (cold `/dev/shm`), Tier 1 (cold mount namespace with warm `pkg_*`), Tier 2 (cross-process `posix_spawnp` / `execvp` $\times 1{,}000$), and Tier 3 (warm in-process `glob`, `openat`, `statx` latencies + `/proc/self/smaps` `Anonymous` & multi-mapper `Private_Dirty` KiB on `/.fswc-` mappings).
-   - Micro/macro workloads: `/sw/*/bin/bash`, `/sw/*/bin/missing`, `/sw/*/{bin,include,lib}` (`GLOB_ONLYDIR`), `/sw/*/lib/python3.14/site-packages/*`, `/sw/*/share/terminfo/*/*`, 52-dir `-I` $\times$ 200 `#include` burst, and real `g++` `<iostream>` compile+link.
-2. Record baseline metrics on the current `FSWC` v4 91-package Chapter 8 `/sw` tree.
+1. Build `bench-fswc` measuring, with `glibc.fswc.enable={0,1}`:
+   - Per-exec cost: syscalls and wall time from `execve` to `main` for a dynamically linked binary with 1, 7, and 15 `DT_NEEDED` libraries over a 100- and 300-package synthetic prefix.
+   - **`make -j` storm**: a synthetic project compiling 500 translation units with the in-tree `gcc`, total wall time.
+   - In-process latencies: `glob` (`/sw/*/bin/bash`, `/sw/*/bin/missing`, `/sw/*/{bin,include,lib}` with `GLOB_ONLYDIR`, `/sw/*/lib/python3.14/site-packages/*`, `/sw/*/share/terminfo/*/*`), `execvpe` `PATH` search, and `dlopen`, each with `glibc.fswc.enable=0` (plain walk), with a valid index, and with a missing or stale index.
+   - Cold build time and index size.
+2. Record baselines for the current v5 implementation and the plain walk.
 
-### Phase 1: `FSWC` v5 Engine & `GLIBC_TUNABLES` in `glibc` (+ `sw/glibc-pass1`)
-1. Implement `include/fswc.h`, `sysdeps/unix/sysv/linux/fswc.c`, writable `_rtld_global` (`GL`) slot table (`#ifndef SHARED` BSS in `fswc.c` for `libc.a`, leaf futex quiescing in `__libc_fork` + reset in `_Fork`), and `elf/dl-tunables.list` (`glibc.fswc.mode=0|1|2`, `glibc.fswc.max_inodes`).
-2. Delete `posix/glob_fluffy_cache.h`, `fc_glob_try`, and `glob_literal_suffix_try`; wire `__fswc_resolve_pkg_wild_relpath` (`dl-load.c` keeping wildcard `r_search_path_elem`s for live-mount `open_path` + `dlinfo` coherence, `execvpe.c` keeping `ENOEXEC` `scripts_argv` and trailing-`/` `ENOENT` normalization, both enforcing `FNM_PERIOD` and `ANCESTORS_WORLD_SEARCH | PREFIX_WORLD_RX`), `fswc_glob_try` (`posix/glob.c`), and `__fswc_probe_exact` (`mode=2` read-only VFS wrappers + stateful `..` + mount/cred invalidation hooks).
-3. Add Tier-1 `make check` tests (`tst-glob-fluffy-flags`, `tst-fswc-oracle`, `tst-fswc-edge`, `tst-fswc-concurrency`, `tst-fswc-vfork`, `tst-fswc-static`) and host-independent legacy hunks to `sw/glibc-2.44-fluffy-test.patch`, sync SHA-256 in `sw/glibc` and `sw/glibc-pass1`, and build Tier-2 `test-fswc`.
-4. **Gate 1**:
-   - `glibc` builds and passes 100% of `make check` (`CHECK()`).
-   - `test-fswc` passes 100% of pathological SquashFS (`ncursesw -> .` dir symlinks, `*.squashfs` sibling files, mutable sibling dirs, `0111`/`0700`/`0751` dirs, host/tmpfs ancestor POSIX ACLs), live mount/unmount/overmount, chroot loop-churn, and UID/`setgroups`/`setfsuid`-drop differential checks across `mode={0,1,2}`.
-   - `bench-fswc` confirms `Anonymous == 0 KiB` and (with $\ge 2$ concurrent mappers) `Private_Dirty == 0 KiB` on `/dev/shm/.fswc-<uid>/blob_*` in `/proc/self/smaps`, `< 5 µs` bailout on non-SquashFS `/tmp/*` sharing root `/`, and faster deep-path (`site-packages`, `terminfo`, `systemd`) queries than v4.
+**Harness** (`tools/bench-fswc.sh` driving `tools/bench-fswc.c`). It builds a synthetic `<prefix>` of N packages with 600 filler files each, never touching the host's `/sw`. Targets sit in the last packages, so every lookup crosses the whole prefix. It runs each measurement in three states:
+- **off:** `glibc.fswc.mode=0:glibc.fswc.enable=0`.
+- **warm:** enabled, with the index pre-built.
+- **cold:** the index directory is removed before each process.
 
-### Phase 2: Strip Leaked Cache Headers from `binutils` & `gcc` (-6,665+ LOC)
+It works with any FSWC version, through public interfaces only. Per-exec runs go through `--ldso`/`--libpath` with `<prefix>/*/lib` appended. With `--squashfs` (root, private mount namespace) each package becomes a mounted SquashFS image. Without it no package is sealed, so every state measures the plain walk plus FSWC's own overhead. `--storm` adds the 500-TU `make -j` storm and needs a compiler that expands `-I'<prefix>/*/include'`, which means Fluffy's `gcc`.
+
+**Baseline 1: v5, unprivileged, plain directories** (2026-11-16, host kernel 7.0, glibc 2.44 + current patches built with host gcc 13; one run per cell, so treat differences under ~20% as noise):
+
+| Measurement | 100 pkgs: off | 100 pkgs: v5 on (unsealed) | 300 pkgs: off | 300 pkgs: v5 on (unsealed) |
+| :--- | ---: | ---: | ---: | ---: |
+| `glob <prefix>/*/bin/bench-true` | 471 µs | 723 µs | 1,844 µs | 2,022 µs |
+| `glob <prefix>/*/bin/missing` | 457 µs | 743 µs | 1,821 µs | 1,974 µs |
+| `glob <prefix>/*/{bin,include,lib}` (`ONLYDIR\|BRACE`) | 953 µs | 1,279 µs | 3,272 µs | 3,498 µs |
+| `glob …/lib/python3.14/site-packages/*` | 1.8 ms | 2.2 ms | 4.8 ms | 7.2 ms |
+| `glob …/share/terminfo/*/*` (15k / 45k matches) | 16.1 ms | 16.8 ms | 35.7 ms | 59.4 ms |
+| exec, 1 `DT_NEEDED` | 2.2 ms | 2.5 ms | 4.8 ms | 5.3 ms |
+| exec, 7 `DT_NEEDED` | 9.7 ms | 12.9 ms | 31.4 ms | 30.6 ms |
+| exec, 15 `DT_NEEDED` | 19.0 ms | 25.6 ms | 63.6 ms | 65.7 ms |
+| syscalls, exec with 15 `DT_NEEDED` | 6,186 | 7,405 | 18,276 | 19,495 |
+| `posix_spawnp` with `PATH=<prefix>/*/bin` | 716 µs | 996 µs | 2.6 ms | 1.4 ms |
+| cold `dlopen` of a library in the last package | 3.1 ms | 1.9 ms | 4.2 ms | 6.1 ms |
+
+What it shows:
+1. **The plain walk is far outside the budget.** A 15-library exec costs 19 ms at 100 packages and 64 ms at 300, about 40–130× a normal exec. It grows linearly with packages × libraries, because `ld.so` probes every package for every `DT_NEEDED`. This is the workload FSWC exists for.
+2. **v5 on a prefix it cannot seal is slower than off**, by roughly 10–50% at 100 packages. It pays the per-call mount-tree hash and still walks (§2.3 cost 2). v6's validation must cost about nothing when no package is sealed.
+3. **Missing:** v5 *engaged*. That needs `sudo tools/bench-fswc.sh --squashfs …`, and it is the number v6 must beat.
+
+### Phase 1: Remove Single-Path Hooks (`glibc`, `glibc-pass1`)
+1. Delete `mode=2`, `__fswc_probe_exact`, its hooks in all 11 wrappers, the 50 ms TTL, `inval_gen`, and the `mount`/`set*id` wrapper invalidation hooks; restore those files to upstream.
+   - *As implemented:*
+     - **Restored to upstream:** the open/stat/access family (`access`, `faccessat`, `fstatat64`, `statx`, `open`, `open64`, `open_nocancel`, `open64_nocancel`, `openat`, `openat64`, `openat_nocancel`, `openat64_nocancel`), plus `umount2` and `nptl/setxid.h`.
+     - **Deleted:** the added wrappers `capset`, `chroot`, `fsmount`, `mount`, `mount_setattr`, `move_mount`, `pivot_root`, `setfsgid`, `setfsuid`, `setns` and `unshare`. Their `syscalls.list` and `Makefile` entries are restored too. The `execve` line stays removed, because it belongs to the separate wildcard-`execve` feature.
+     - **The 50 ms window was not `mode=2`-only.** `fswc_revalidate_snap` skipped revalidation within it for any non-forced call. It is replaced by "a slot already validated earlier in the *same* call (its seen-slot mask) is reused; everything else revalidates in full". Snapshots are immutable, so answers remain the plain walk at that earlier instant.
+     - **The invalidation hooks were redundant once nothing skips revalidation.** Per-call `statx` of every ancestor (dev, ino, mount ID, ctime) plus the mount-tree hash and euid/ruid already catch `chroot`, `setns`, `unshare(CLONE_NEWNS)`, and `set*id`.
+     - **Tests:** the tunable's maximum is now 1. The oracle, edge, and concurrency tests drop their `mode=2` passes and keep the `open`/`statx`/`access` `ENOENT` and cancellation-point checks, which now verify upstream behavior. `tools/test-fswc` asserts that single-path calls see external mounts *immediately* instead of "within 65 ms".
+     - **Local pre-gate** (host gcc 13, `-Werror`, unprivileged user namespaces enabled):
+       - `posix` 194 PASS and `elf` 546 PASS, identical to the unmodified v5 tree.
+       - Every `tst-fswc-*` passes.
+       - 9 failures occur identically in v5. They are host-build artifacts: `ldconfig`/cache tests exec `/sw/glibc/bin/ldconfig` inside the test container, plus `tst-vfork3` and `tst-tunconf1`.
+       - Gate 1 proper is still `swctl build glibc` `CHECK()`.
+     - **Pre-existing v5 race, out of scope for Phase 1:** a build racing a mount change may publish a snapshot that mixes states; v6's build re-check (§4.4 step 5) addresses it.
+2. **Gate 1**: `glibc` `CHECK()` passes; `tst-fswc-oracle` passes unchanged (results were identical by design, so this is pure removal).
+
+### Phase 2: `FSWC` v6 (`glibc`, `glibc-pass1`)
+
+Order is tests first, then a reader, a builder, and consumers one at a time, deleting v5 code as each consumer moves. After each step the tree builds with `-Werror`, `posix` and `elf` match the Phase 1 results, and `tools/bench-fswc.sh` is re-run.
+
+1. **Oracle and test hook first.**
+   - Extend `tst-fswc-oracle` with the §4.8 matrix rows that need no mounts. Its reference walker uses raw `getdents64` and `statx` only, and it compares against `glibc.fswc.enable=0`.
+   - Add the test-only sealing hook. It is an internal `libc` entry point used only by `tests-internal`; it is not a tunable and not a public symbol. It builds an index for an arbitrary prefix and treats a tmpfs tree as sealed.
+   - These tests pass against v5 and must keep passing. They are the safety net for every later step.
+2. **`fswc-read.c` (`rtld` + `libc`).**
+   - Index format of §4.2. A bounds-checked map, done once per process.
+   - Validation of §4.3: `statx(<prefix>)`, `listmount(<prefix_mnt_id>)`, `geteuid`. The counter comes in Phase 3.
+   - `fswc_lookup(prefix, pkg, relpath)` returning `ABSENT/REG/DIR/LNK/KERNEL`.
+   - Locating the index needs the mount-namespace ID, through `statmount(STATMOUNT_MNT_NS_ID)` on `<prefix>`'s mount, without `/proc`. Then `open` + `fstat` + `mmap`, about 5 syscalls once per process.
+   - In `SHARED` builds, `rtld` owns the mapping and `libc` reaches it through one writable `GL()` pointer. This replaces v5's 16-slot table. Static `libc` maps its own copy.
+   - Every frame stays under 1 KiB (`tst-fswc-stack`).
+3. **`fswc-build.c` (`libc` only, `__libc_early_init`).** The §4.4 steps:
+   - `flock` non-blocking;
+   - record the state;
+   - classify `<prefix>` entries as sealed or unsealed;
+   - walk sealed packages with `getdents64` into `mmap` arenas;
+   - sort;
+   - re-check the state;
+   - write to a temporary name, then `rename`.
+
+   Prefixes come from build configuration (`user-defined-trusted-dirs`, `_PATH_DEFPATH`), never literals. The cold build cost and index size are measured here (§4.9 item 1); if the cost is too high, profile and fix the actual hot spot.
+4. **`glob()` consumer.**
+   - When the caller passed no `GLOB_ALTDIRFUNC`, `glob()` installs internal hooks: real `opendir`/`readdir`/`closedir`, and `lstat`/`stat` answered by `fswc_lookup` where it can (`KERNEL` falls through to the real call). The caller's `glob_t` fields are restored on return.
+   - For `<prefix>/*/bin/bash` that is one `getdents64` of `<prefix>` plus 2–3 validation syscalls, instead of one `stat` per package.
+   - Optional, gated on Phase 0 numbers: serve `readdir(<prefix>)` from `top[]` too, since validation already proves `<prefix>` unchanged.
+   - Delete `fswc_glob_try`, the Merged Virtual Trie, and the `glob.c` Case A/B/C paths.
+5. **`execvpe()`/`posix_spawnp()` consumer.**
+   - Replace `__fswc_peek_slot_waitfree` / `__fswc_resolve_pkg_wild_relpath` with one validation per call plus per-package `fswc_lookup("<rel>/<file>")`.
+   - Keep the existing parsing, ordering, `FNM_PERIOD`, and `errno` logic.
+   - Verify the §4.8 `errno` row (`ENOENT` or a remembered `EACCES`/`ENOTDIR`, even when no `execve` was attempted).
+   - Callers move to the brace-scoped `{$PATH}/name` form (§3.2), so the grammar has one parser, in `glob.c`. The vfork and `errno` caveats recorded there decide how `execvpe`/`posix_spawnp` reach it. Bash's `findcmd.c` and the other `PATH` consumers switch in their own packages afterwards.
+6. **`dl-load.c` consumer.**
+   - Same replacement inside `rtld`. Keep `AT_SECURE`, `DF_1_NODEFLIB`, hwcaps subdirectories, and `errno` behavior.
+   - Delete the `GL` slot table, mount-tree hashing, the `_Fork`/`fork.c` hooks, the cross-DSO futex, and the `rtld` builder (`dl-fswc.c`).
+7. **Rework tests** per §4.8 and §5 `glibc`:
+   - drop the v5-specific tier tests;
+   - add `tst-fswc-startup` (64-program stampede, a mount change during the build, `unshare(CLONE_NEWUSER)` after a build, `vfork`/static never build, `AT_SECURE`);
+   - add the privileged mount rows to `tools/test-fswc`, except `move_mount`, which waits for Phase 3.
+8. **Gate 2:**
+   - `glibc` `CHECK()` passes 100% under `swctl`;
+   - `tools/test-fswc` mount rows pass on the host kernel;
+   - `tst-fswc-stack` passes;
+   - `bench-fswc` (sealed, `--squashfs`) shows at most 3 validation syscalls per call with a valid index;
+   - a 15-library exec at 100 and 300 packages lands within an order of magnitude of a normal exec;
+   - the `make -j` storm is faster than the plain walk;
+   - `FSWC` totals under 1,500 lines.
+
+**Budget and checkpoints:**
+- Size targets: `fswc-read.c` about 500 lines, `fswc-build.c` about 600, `fswc.h` about 150. The consumer changes should *shrink* `glob.c`, `execvpe.c`, and `dl-load.c` relative to v5.
+- Rough local timing: one `glibc` rebuild plus `posix`/`elf` checks takes about 45 minutes on the 8-core host.
+- Every step ends with patches regenerated through the round-trip-verified regenerator and checksums synced in `sw/glibc` and `sw/glibc-pass1`, but steps are landed in `sw/` only at the user's checkpoints. Each `glibc` patch change rebuilds the world.
+
+**Decisions (2026-11-16):**
+- The optional `top[]` readdir step (step 4) is decided by benchmark: measure step 4 with and without it, and keep it only if the difference is significant.
+- `fswc_lookup` also serves `ld.so`'s `glibc-hwcaps` subdirectory probes (step 6). These are `DIR` lookups answered from the index, which removes most of the remaining startup probes.
+
+### Phase 3: Kernel Namespace Counter (`linux`, `linux-headers`)
+1. Add the §4.6 `NS_MNT_GET_INFO` `event` patch to `sw/linux` (and its UAPI header to `sw/linux-headers`), with a kernel selftest.
+2. Teach `fswc-read.c` to prefer the counter when the reported struct size includes it.
+3. **Gate 3**: on Fluffy's kernel (VM boot in CI), the full §4.8 matrix passes, including `move_mount` swap; per-exec validation is 2 syscalls.
+
+### Phase 4: Strip Leaked Cache Headers from `binutils` & `gcc` (-6,665+ LOC) — *done (v5 era)*
 1. Strip `include/fluffy-cache.h` and all `fc_*` hooks from `sw/binutils-2.47-fluffy-source.patch` and `sw/gcc-16.2.0-fluffy-source.patch` (restoring `libcpp/files.cc` to unmodified upstream, checking literal `S_ISDIR` before `glob()` across `ldfile_add_library_path`, `add_path`, `add_prefix`, `add_sysrooted_prefix`, `add_sysrooted_hdrs_prefix`, and `do_add_prefix` while making them non-recursive on matched `gl_pathv` entries with `target_system_root`/relocated-prefix metacharacter escaping, and syncing SHA-256 across `binutils-pass{1,2}` and `gcc-pass{1,2}`).
-2. **Gate 2**:
+2. Audit both patches for "defensive" fallbacks that change upstream semantics (e.g. the `relocated_prefix ? relocated_prefix : ""` pattern that turned a skipped include directory into a CWD-relative `include`).
+3. **Gate 4**:
    - Rebuild `binutils` and `gcc`; pass full DejaGnu `CHECK()` suites (`binutils`, `gas`, `ld`, `libctf`, `libsframe`, `gcc`, `g++`, `libstdc++`).
-   - Verify `sw/gcc` `CHECK()` zero-`-I`/zero-`-L` C/C++ compile+link assertions (`<iostream>`, `<zlib.h>`, `<zstd.h>`, and `#include_next <stdlib.h>`) and `bench-fswc` `g++` + `ld` macrobenchmark across `glibc.fswc.mode={0,1,2}`, verifying `mode=1` (default) and `mode=2` match or beat inline `fluffy-cache.h` wall time with zero leaked cache LOC.
+   - Verify `sw/gcc` `CHECK()` zero-`-I`/zero-`-L` C/C++ compile+link assertions (`<iostream>`, `<zlib.h>`, `<zstd.h>`, and `#include_next <stdlib.h>`) and the `bench-fswc` `g++` + `ld` macrobenchmark with `glibc.fswc.enable={0,1}`, matching or beating inline `fluffy-cache.h` wall time.
 
-### Phase 3: Language Runtime Glob Unification (`python`, `perl`, `tcl`)
+### Phase 5: Language Runtime Glob Unification (`python`, `perl`, `tcl`) — *done (v5 era)*
 1. **`python` (+ `python-pass1`)**: Re-freeze `Modules/getpath.py` (globbing `ENV_PATH` `d` prior to `joinpath`), upgrade `posix._glob` (`str|bytes`, all flags, escaped `root_dir` including `GLOB_NOESCAPE | GLOB_BRACE`), fast-path `str` patterns in `Lib/glob.py` (preserving `bytes` ISO-8859-1 single-byte, `LC_ALL=C` multi-byte UTF-8 `?`/`[é]`, and `[a-z]` codepoint-range `iglob` parity), clean up `os.py`, `shutil.py`, `getpath.py`, and `site.py` (`GLOB_ONLYDIR` prefix expansion), and expand `sw/Python-3.14.7-fluffy-test.patch` (with `/bin/sh` fallback for `unix_shell` when `/sw/bash/bin/bash` is absent).
 2. **`perl` (+ `perl-pass1`)**: Delegate `ext/File-Glob/bsd_glob.c` leaf patterns to `<glob.h>` (`GLOB_NOMAGIC`, `GLOB_BRACE`, `GLOB_LIMIT`, `SvUTF8`), patch `File::Spec::Unix::path()` (`miniperl`-safe with `eval`-guarded regex compilation), wire `@INC`/`PERL5LIB`/`otherlibdirs` wildcard directory expansion in `perl.c:S_incpush` (`GLOB_ONLYDIR | GLOB_NOESCAPE`), and add tests to `sw/perl-5.44.0-fluffy-test.patch`.
 3. **`tcl`**: Replace `TclFSIsPureNative()` with `TclFSPatternIsNative()` (honoring `listVolumesProc == NULL` interceptors, top-level `{...}` VFS/root guards, and bidirectional VFS volume overlap checks), enable balanced `{a,b}` `GLOB_BRACE` in `CanUseNativeMultiGlob` (preserving `NativeMatchType`), split `$env(PATH)` with `GLOB_NOESCAPE` parity and guard `init.tcl` wildcard `glob` loops with `catch` and `--`, and expand `sw/tcl8.6.18-fluffy-test.patch`.
-4. **Gate 3**:
+4. **Gate 5**:
    - Full `CHECK()` suites pass 100% in `python` (`test_glob`, `test_site`, `test_os`, `test_shutil`, `test_getpath` + frozen subprocess test), `perl` (`make test_harness`), and `tcl` (`make test` including `fileSystem.test`).
 
-### Phase 4: CLI & System `GLOB_PATHS` Consolidation, C-Literal Cleanup & `CHECK()` Gap Closure
+### Phase 6: CLI & System `GLOB_PATHS` Consolidation, C-Literal Cleanup & `CHECK()` Gap Closure — *done (v5 era)*
 1. Simplify `which` (`which.c`, bracket/escape-aware `PATH` splitting, per-call flag reset when `PATH` is unset, `PATH=""` → `"."`, `GLOB_SKIPDOTS`, preserving `--show-dot` / `--show-tilde`, unexpanded wildcard `~*/...` expansion, and `$HOME` metacharacter safety), `make` & `coreutils` (`lib/findprog-in.c` with `GLOB_PATHS | GLOB_NOESCAPE | GLOB_NOCHECK`), `systemd` (`src/basic/glob-util.c` `GLOB_SKIPDOTS` when `opendir_func == NULL` instead of `GLOB_ALTDIRFUNC` + `GLOB_ONLYDIR` in `find_executable_in_element`), `kmod` (`--sysconfdir=/etc`, `/etc` → `/run` → `/sw/*/etc` → `/sw/*/lib` order, `GLOB_NOESCAPE` + literal `-C` fallback in `libkmod-config.c`/`depmod.c` + `testsuite/path.c` `glob` wrapper), `dbus` (bracket-aware `:` split + `GLOB_ONLYDIR | GLOB_NOESCAPE` post-suffix + `(st_dev, st_ino)` `<includedir>` dedup), `readline` (`-DSYS_INPUTRC`, literal-first open before `GLOB_PATHS | GLOB_NOESCAPE | GLOB_TILDE`, `S_ISDIR` skip), `man-db` (`directory_on_path` `"."` `xgetcwd` + `GLOB_NOCHECK`), `util-linux` (`GLOB_NOESCAPE` + per-segment empty-`:` filtering in `configs.c`/`fsck.c`/`context.c` + `agetty.c` `GLOB_PATHS`), `shadow` (`getdef.c`/`groupio.c`/`pwio.c`/`prefix_flag.c` prefix metacharacter escaping + `GLOB_NOESCAPE` + `commonio_open` `!db->setname || db->prefix_db` `ENOENT` guard + `gr_materialize_member` CoW in `usermod.c`/`userdel.c`), `e2fsprogs` (`profile_helpers.c` bracket-aware `:` split + `profile.c` `GLOB_NOESCAPE` fixing CWD `get_dirlist(".")`), `dejagnu` & `sqlite` (`GLOB_NOESCAPE` bracket-aware `:` split + Tcl metacharacter escaping + `catch {glob -nocomplain -types d -- ...}`), `meson` (strip 108 foreign `.pyc` binaries from `sw/meson-1.12.0-fluffy.patch`), and `openssl` (+ `openssl-pass1`) / `curl` (+ `curl-pass1`) (`by_dir.c` & `apps/lib/opt.c` bracket-aware `:` split + empty-segment skip + `by_file.c` explicit `-CAfile` & `X509_load_crl_file` globbing + removing `curl` `openssl.c` wrapper); add bracket-aware direct `my_list` `TERMINFO_DIRS` glob expansion to `ncurses` (+ `ncurses-pass1`); ensure zero-initialized `glob_t` and unconditional `globfree()` across all `glob()` callsites; move remaining C/C++ `"/sw/..."` default literals (`bash`, `readline`, `make`, `kmod`, `dbus`, `man-db`, `util-linux`, `shadow`, `e2fsprogs`, `iproute2`, `systemd`, plus `<paths.h>` `_PATH_BSHELL` in `gawk` + `gawk-pass1`, `libcap`, `ninja`, and `tar` — keeping `argv[0] = "sh"` where POSIX `/bin/sh` compatibility mode is expected) into build/config macros (`paths.h` / `CFLAGS` / Meson `-D`).
 2. Add missing `CHECK()` blocks to `sw/ncurses` and `sw/sqlite`, upgrade `sw/iproute2` and `sw/which` `CHECK()` suites, and extend existing `CHECK()` assertions in `sw/readline`, `sw/shadow`, `sw/util-linux`, and `sw/e2fsprogs`.
-3. **Gate 4**:
+3. **Gate 6**:
    - Every package modified from upstream source has an automated `CHECK()` test exercising its Fluffy wildcard/stateless-`/etc` code paths and passes cleanly.
 
-### Phase 5: End-to-End `world` Convergence & Final Audit
-1. Run `sudo --preserve-env=FLUFFY ./swctl build world` (and verify `CROSS=1` checksum consistency), confirming `git grep fluf''fy-cache -- sw/` returns 0 hits, zero C logic files hardcode `"/sw"`, and all `world` `CHECK()` suites pass.
+### Phase 7: End-to-End `world` Convergence & Final Audit
+1. Run `sudo --preserve-env=FLUFFY ./swctl build world` (and verify `CROSS=1` checksum consistency), confirming `git grep fluf''fy-cache -- sw/` returns 0 hits, zero C logic files hardcode `"/sw"`, no `glibc` single-path wrapper references `fswc`, and all `world` `CHECK()` suites pass.

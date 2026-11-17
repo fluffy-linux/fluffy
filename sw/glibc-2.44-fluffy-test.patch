@@ -11,8 +11,8 @@ diff --no-dereference -Naur glibc-2.44/nss/Makefile glibc-2.44.test/nss/Makefile
    tst-nss-action-parse \
 diff --no-dereference -Naur glibc-2.44/nss/tst-fluffy-stateless-etc.c glibc-2.44.test/nss/tst-fluffy-stateless-etc.c
 --- glibc-2.44/nss/tst-fluffy-stateless-etc.c	1970-01-01 00:00:00.000000000 +0000
-+++ glibc-2.44.test/nss/tst-fluffy-stateless-etc.c	2026-01-01 00:00:00.000000000 +0000
-@@ -0,0 +1,251 @@
++++ glibc-2.44.test/nss/tst-fluffy-stateless-etc.c	1970-01-01 00:00:00.000000000 +0000
+@@ -0,0 +1,275 @@
 +/* Test Fluffy stateless /etc multi-file NSS, nsswitch, host.conf, resolv.conf.
 +   Copyright (C) 2026 Free Software Foundation, Inc.  */
 +
@@ -20,6 +20,7 @@ diff --no-dereference -Naur glibc-2.44/nss/tst-fluffy-stateless-etc.c glibc-2.44
 +#include <errno.h>
 +#include <grp.h>
 +#include <netdb.h>
++#include <netinet/in.h>
 +#include <pwd.h>
 +#include <resolv.h>
 +#include <stdbool.h>
@@ -94,7 +95,7 @@ diff --no-dereference -Naur glibc-2.44/nss/tst-fluffy-stateless-etc.c glibc-2.44
 +              "shared:x:1400000002:1400000002:UserOverride:/home/shared:/sw/bash/bin/bash\n"
 +              "alice:x:1000:1000:Alice:/home/alice:/sw/bash/bin/bash");
 +
-+  /* Direct lookups: user /etc wins over /sw/*, vendor users resolve cleanly.  */
++  /* Direct lookups: user /etc wins over /sw/<pkg>, vendor users resolve cleanly.  */
 +  struct passwd *pw = getpwnam ("shared");
 +  TEST_VERIFY_EXIT (pw != NULL);
 +  TEST_COMPARE_STRING (pw->pw_gecos, "UserOverride");
@@ -207,6 +208,29 @@ diff --no-dereference -Naur glibc-2.44/nss/tst-fluffy-stateless-etc.c glibc-2.44
 +  TEST_VERIFY (got_v4);
 +  TEST_VERIFY (got_v6);
 +
++  /* AF_INET6 lookups must parse the hosts files as AF_INET6: only ::1, never
++     the IPv4 line.  With "multi on" the file walk continues past the first
++     match, and an entry parsed as the wrong family used to abort in
++     gethostbyname3_multi (h_length != 16).  */
++  struct addrinfo hints6 = { .ai_family = AF_INET6, .ai_socktype = SOCK_STREAM };
++  ai = NULL;
++  TEST_COMPARE (getaddrinfo ("localhost", NULL, &hints6, &ai), 0);
++  TEST_VERIFY_EXIT (ai != NULL);
++  for (struct addrinfo *p = ai; p != NULL; p = p->ai_next)
++    {
++      TEST_COMPARE (p->ai_family, AF_INET6);
++      TEST_VERIFY (IN6_IS_ADDR_LOOPBACK
++                   (&((struct sockaddr_in6 *) p->ai_addr)->sin6_addr));
++    }
++  freeaddrinfo (ai);
++
++  struct hostent *he6 = gethostbyname2 ("localhost", AF_INET6);
++  TEST_VERIFY_EXIT (he6 != NULL);
++  TEST_COMPARE (he6->h_addrtype, AF_INET6);
++  TEST_COMPARE (he6->h_length, 16);
++  TEST_VERIFY (IN6_IS_ADDR_LOOPBACK ((struct in6_addr *) he6->h_addr_list[0]));
++  TEST_VERIFY (he6->h_addr_list[1] == NULL);
++
 +  struct addrinfo hints4 = { .ai_family = AF_INET, .ai_socktype = SOCK_STREAM };
 +  ai = NULL;
 +  TEST_COMPARE (getaddrinfo ("box.fluffy", NULL, &hints4, &ai), 0);
@@ -269,18 +293,6 @@ diff --no-dereference -Naur glibc-2.44/nss/tst-fluffy-stateless-etc.root/postcle
 +++ glibc-2.44.test/nss/tst-fluffy-stateless-etc.root/postclean.req	2026-01-01 00:00:00.000000000 +0000
 @@ -0,0 +1 @@
 +clean
-diff --no-dereference -Naur glibc-2.44/posix/globtest.sh glibc-2.44.test/posix/globtest.sh
---- glibc-2.44/posix/globtest.sh	2026-07-24 13:16:45.000000000 +0000
-+++ glibc-2.44.test/posix/globtest.sh	2026-07-24 13:16:45.000000000 +0000
-@@ -21,7 +21,7 @@
- 
- common_objpfx=$1; shift
- test_via_rtld_prefix=$1; shift
--test_program_prefix=$1; shift
-+test_program_prefix="env $1"; shift
- test_wrapper_env=$1; shift
- logfile=$common_objpfx/posix/globtest.out
- 
 diff --no-dereference -Naur glibc-2.44/posix/Makefile glibc-2.44.test/posix/Makefile
 --- glibc-2.44/posix/Makefile	2026-07-24 13:16:45.000000000 +0000
 +++ glibc-2.44.test/posix/Makefile	2026-07-24 13:16:45.000000000 +0000
@@ -339,6 +351,18 @@ diff --no-dereference -Naur glibc-2.44/posix/Makefile glibc-2.44.test/posix/Make
  
  test-xfail-annexc = yes
  $(objpfx)annexc.out: $(objpfx)annexc
+diff --no-dereference -Naur glibc-2.44/posix/globtest.sh glibc-2.44.test/posix/globtest.sh
+--- glibc-2.44/posix/globtest.sh	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.test/posix/globtest.sh	2026-07-24 13:16:45.000000000 +0000
+@@ -21,7 +21,7 @@
+ 
+ common_objpfx=$1; shift
+ test_via_rtld_prefix=$1; shift
+-test_program_prefix=$1; shift
++test_program_prefix="env $1"; shift
+ test_wrapper_env=$1; shift
+ logfile=$common_objpfx/posix/globtest.out
+ 
 diff --no-dereference -Naur glibc-2.44/posix/test-errno.c glibc-2.44.test/posix/test-errno.c
 --- glibc-2.44/posix/test-errno.c	2026-07-24 13:16:45.000000000 +0000
 +++ glibc-2.44.test/posix/test-errno.c	2026-07-24 13:16:45.000000000 +0000
@@ -374,7 +398,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-execveat.c glibc-2.44.test/posi
  #include <sys/types.h>
  #include <dirent.h>
  #include <support/check.h>
-@@ -74,60 +77,195 @@
+@@ -74,60 +77,196 @@
    return 0;
  }
  
@@ -474,12 +498,13 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-execveat.c glibc-2.44.test/posi
 +     falling back to a self-contained static ELF stub when no shell exists.  */
 +  if (access (_PATH_BSHELL, X_OK) == 0)
 +    {
-+      const char *sl = strrchr (_PATH_BSHELL, '/');
-+      if (sl != NULL && sl > _PATH_BSHELL)
++      const char *bshell = _PATH_BSHELL;
++      const char *sl = strrchr (bshell, '/');
++      if (sl != NULL && sl > bshell)
 +        {
-+          resolved_dir = xstrndup (_PATH_BSHELL, (size_t) (sl - _PATH_BSHELL));
++          resolved_dir = xstrndup (bshell, (size_t) (sl - bshell));
 +          resolved_prog = xstrdup (sl + 1);
-+          resolved_sh = xstrdup (_PATH_BSHELL);
++          resolved_sh = xstrdup (bshell);
 +          bin_dir = resolved_dir;
 +          bin_prog = resolved_prog;
 +          bin_sh = resolved_sh;
@@ -586,7 +611,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-execveat.c glibc-2.44.test/posi
    xclose (fd);
  
  #ifdef O_PATH
-@@ -135,7 +273,7 @@
+@@ -135,7 +274,7 @@
       Obtain a file descriptor that can be used for two purposes: to
       indicate a location in the filesystem tree and to perform
       operations that act purely at the file descriptor level.  */
@@ -595,7 +620,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-execveat.c glibc-2.44.test/posi
    /* Check the empty pathname.  Dirfd is a regular file with O_PATH.  */
    call_execveat (fd, "", 0, ENOENT, __LINE__);
    /* Same check for an empty pathname, but with AT_EMPTY_PATH flag.
-@@ -146,17 +284,16 @@
+@@ -146,17 +285,16 @@
    call_execveat (fd, "", AT_EMPTY_PATH | AT_SYMLINK_NOFOLLOW, 0, __LINE__);
    xclose (fd);
  
@@ -617,7 +642,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-execveat.c glibc-2.44.test/posi
    xcopy_file_range (fd, 0, fd_out, 0, st.st_size, 0);
    xfchmod (fd_out, 0700);
    xclose (fd);
-@@ -171,15 +308,20 @@
+@@ -171,15 +309,20 @@
    xclose (fd_out);
    free (symlink_name);
    free (tmp_sh);
@@ -643,7 +668,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-execveat.c glibc-2.44.test/posi
 diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-concurrency.c glibc-2.44.test/posix/tst-fswc-concurrency.c
 --- glibc-2.44/posix/tst-fswc-concurrency.c	1970-01-01 00:00:00.000000000 +0000
 +++ glibc-2.44.test/posix/tst-fswc-concurrency.c	2026-01-01 00:00:00.000000000 +0000
-@@ -0,0 +1,379 @@
+@@ -0,0 +1,341 @@
 +/* 16-thread post-RELRO prefix stampede + pthread_cancel open() point test.
 +   Copyright (C) 2026 Free Software Foundation, Inc.  */
 +
@@ -813,30 +838,6 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-concurrency.c glibc-2.44.t
 +  return pfx_out;
 +}
 +
-+static void
-+exec_self_direct (char *argv[])
-+{
-+  char *const child_argv[] = { argv[0], (char *) "--direct", NULL };
-+  struct support_spawn_wrapped *w
-+    = support_spawn_wrap (argv[0], child_argv, NULL, 0);
-+  const char *extra_llp = getenv ("LD_LIBRARY_PATH");
-+  if (extra_llp != NULL && extra_llp[0] != '\0')
-+    {
-+      for (size_t i = 0; w->argv[i] != NULL; ++i)
-+        {
-+          if (strcmp (w->argv[i], "--library-path") == 0
-+              && w->argv[i + 1] != NULL)
-+            {
-+              ((char **) w->argv)[i + 1]
-+                = xasprintf ("%s:%s", w->argv[i + 1], extra_llp);
-+              break;
-+            }
-+        }
-+    }
-+  execve (w->path, w->argv, w->envp);
-+  _exit (127);
-+}
-+
 +static void *
 +stampede_worker (void *arg)
 +{
@@ -874,7 +875,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-concurrency.c glibc-2.44.t
 +        }
 +      else if (tid == 1 && (iter % 4) == 0)
 +        {
-+          /* Force inval_gen bumps concurrently with slot acquisition & fork. */
++          /* Credential syscalls concurrently with slot acquisition & fork.  */
 +          (void) setegid (getegid ());
 +        }
 +
@@ -905,8 +906,8 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-concurrency.c glibc-2.44.t
 +{
 +  const char *miss_path = (const char *) arg;
 +  /* Self-cancel while deferred cancellation is enabled, then invoke open() on
-+     a cached-negative SquashFS path: POSIX requires open() to act as a
-+     cancellation point rather than returning -1/ENOENT!  */
++     a missing path inside a cached package: POSIX requires open() to act as
++     a cancellation point rather than returning -1/ENOENT.  */
 +  TEST_COMPARE (pthread_cancel (pthread_self ()), 0);
 +  int fd = open (miss_path, O_RDONLY);
 +  if (fd >= 0)
@@ -918,6 +919,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-concurrency.c glibc-2.44.t
 +do_test (int argc, char *argv[])
 +{
 +  (void) argc;
++  (void) argv;
 +  char *tmp = support_create_temp_directory ("tst-fswc-conc-");
 +  char *plain = xasprintf ("%s/plain", tmp);
 +  char *p1 = xasprintf ("%s/pkgA", plain);
@@ -981,8 +983,8 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-concurrency.c glibc-2.44.t
 +  xwaitpid (fpid, &status, 0);
 +  TEST_VERIFY (WIFEXITED (status) && WEXITSTATUS (status) == 0);
 +
-+  /* Verify open() remains a POSIX cancellation point even on mode=2 negative
-+     cache hits.  */
++  /* Verify open() on a missing path inside a cached package remains a POSIX
++     cancellation point (the wrapper is unmodified upstream).  */
 +  if (g_first_pkg_dir != NULL)
 +    {
 +      char miss[840];
@@ -993,21 +995,6 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-concurrency.c glibc-2.44.t
 +      pthread_t cth = xpthread_create (NULL, cancel_open_worker, miss);
 +      void *res = xpthread_join (cth);
 +      TEST_VERIFY (res == PTHREAD_CANCELED);
-+    }
-+
-+  /* Also run the full stampede + cancellation check under explicit mode=2!  */
-+  if (getenv ("FSWC_CONC_SUBMODE") == NULL)
-+    {
-+      pid_t m2pid = xfork ();
-+      if (m2pid == 0)
-+        {
-+          setenv ("GLIBC_TUNABLES", "glibc.fswc.mode=2", 1);
-+          setenv ("FSWC_CONC_SUBMODE", "2", 1);
-+          exec_self_direct (argv);
-+        }
-+      int m2st = 0;
-+      xwaitpid (m2pid, &m2st, 0);
-+      TEST_VERIFY (WIFEXITED (m2st) && WEXITSTATUS (m2st) == 0);
 +    }
 +
 +  nftw (tmp, rm_child_cb, 32, FTW_DEPTH | FTW_PHYS);
@@ -1025,8 +1012,8 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-concurrency.c glibc-2.44.t
 +#include <support/test-driver.c>
 diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/posix/tst-fswc-edge.c
 --- glibc-2.44/posix/tst-fswc-edge.c	1970-01-01 00:00:00.000000000 +0000
-+++ glibc-2.44.test/posix/tst-fswc-edge.c	1970-01-01 00:00:00.000000000 +0000
-@@ -0,0 +1,1059 @@
++++ glibc-2.44.test/posix/tst-fswc-edge.c	2026-11-17 02:21:05.074001765 +0000
+@@ -0,0 +1,1070 @@
 +/* Edge-case, errno, symlink-prefix, max_inodes, raw-syscall, and SHM tests.
 +   Copyright (C) 2026 Free Software Foundation, Inc.  */
 +
@@ -1420,7 +1407,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +static int
 +trail_exec_worker (const char *trail_pat)
 +{
-+  /* Warm FSWC slot first so mode={1,2} exercise try_fswc_wildcard_elem.  */
++  /* Warm the FSWC slot first, so a cached index cannot change the result.  */
 +  size_t len = strlen (trail_pat);
 +  TEST_VERIFY_EXIT (len > 2 && trail_pat[len - 1] == '/');
 +  char *warm_pat = xstrdup (trail_pat);
@@ -1436,6 +1423,16 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +  errno = 0;
 +  TEST_COMPARE (execve (trail_pat, eargv, eenvp), -1);
 +  TEST_COMPARE (errno, ENOENT);
++
++  /* The same pattern without the trailing slash matches an existing file,
++     but execve() takes its path literally and never expands
++     metacharacters, so it must fail with ENOENT too (not EACCES/ENOEXEC
++     from reaching the matched file, and certainly not run anything).  */
++  char *nontrail = xstrndup (trail_pat, len - 1);
++  errno = 0;
++  TEST_COMPARE (execve (nontrail, eargv, eenvp), -1);
++  TEST_COMPARE (errno, ENOENT);
++  free (nontrail);
 +  return 0;
 +}
 +
@@ -1527,8 +1524,8 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +    globfree (&gl);
 +  }
 +
-+  /* 3. statx invalid flags (-EINVAL on FORCE_SYNC | DONT_SYNC) must never be
-+     masked by mode=2 negative filter.  */
++  /* 3. statx invalid flags (-EINVAL on FORCE_SYNC | DONT_SYNC) on a path
++     inside a cached package must reach the kernel unmodified.  */
 +  {
 +    struct statx stx;
 +    char miss[1024];
@@ -1716,13 +1713,14 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +    free (dyn_root);
 +    TEST_VERIFY (WIFEXITED (status) && WEXITSTATUS (status) == 0);
 +
-+    /* 5b2. Trailing slash on wildcard execve("<pfx>/<star>/<rel_reg>/", ...)
-+       must set errno = ENOENT across mode={0,1,2} when only regular files match.  */
++    /* 5b2. execve() never expands glob metacharacters: both
++       "<pfx>/<star>/<rel_reg>/" and "<pfx>/<star>/<rel_reg>" (which would
++       match an existing file as a pattern) fail with ENOENT in mode={0,1}.  */
 +    {
 +      const char *rel_reg = active_reg + strlen (active_pfx) + 1
 +                            + strlen (active_pkg) + 1;
 +      char *trail_pat = xasprintf ("%s/*/%s/", active_pfx, rel_reg);
-+      for (int m = 0; m <= 2; ++m)
++      for (int m = 0; m <= 1; ++m)
 +        {
 +          pid_t tpid = xfork ();
 +          if (tpid == 0)
@@ -1851,9 +1849,9 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +    TEST_COMPARE (glob (pat, 0, NULL, &gl), 0);
 +    globfree (&gl);
 +
-+    /* Verify mode={0,1,2} parity on <literal_dir>/ ** under
++    /* Verify mode={0,1} parity on <literal_dir>/ ** under
 +       GLOB_GLOBSTAR | GLOB_CASEFOLD (all must emit "<active_pfx>/").  */
-+    for (int m = 0; m <= 2; ++m)
++    for (int m = 0; m <= 1; ++m)
 +      {
 +        pid_t pid = xfork ();
 +        if (pid == 0)
@@ -1903,7 +1901,12 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +                        if (is_blob && sz >= 88)
 +                          {
 +                            uint32_t off = 0;
-+                            memcpy (&off, buf + (pass == 0 ? 56 : 60), 4);
++                            /* struct fswc_header (88 bytes): pkgs_off is at
++                               offset 60, vdirs_off at offset 64.  The
++                               internal <fswc.h> is not usable from the
++                               testsuite module, so hardcode them.  */
++                            size_t hdr_field = pass == 0 ? 60 : 64;
++                            memcpy (&off, buf + hdr_field, 4);
 +                            if (off + 4 <= sz)
 +                              {
 +                                uint32_t bad_off = 0x40000000u;
@@ -1913,23 +1916,30 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +                          }
 +                        else if (is_pkg && sz >= 64)
 +                          {
-+                            uint32_t nent = 0, eoff = 0;
-+                            memcpy (&nent, buf + 32, 4);
-+                            memcpy (&eoff, buf + 44, 4);
++                            uint32_t ndir = 0, nent = 0, doff = 0, eoff = 0;
++                            memcpy (&ndir, buf + 36, 4);
++                            memcpy (&nent, buf + 40, 4);
++                            memcpy (&doff, buf + 48, 4);
++                            memcpy (&eoff, buf + 52, 4);
++                            uint32_t bad_off = 0x40000000u;
 +                            if (nent > 0 && eoff + 4 <= sz)
 +                              {
-+                                uint32_t bad_off = 0x40000000u;
 +                                memcpy (buf + eoff, &bad_off, 4);
 +                                mutated = true;
 +                              }
++                            else if (ndir > 0 && doff + 8 <= sz)
++                              {
++                                memcpy (buf + doff + 4, &bad_off, 4);
++                                mutated = true;
++                              }
 +                          }
-+                        else if (is_ns && sz >= 112)
++                        else if (is_ns && sz >= 128)
 +                          {
 +                            uint32_t nmut = 0, ntop = 0, moff = 0, toff = 0;
 +                            memcpy (&nmut, buf + 20, 4);
 +                            memcpy (&ntop, buf + 24, 4);
-+                            memcpy (&moff, buf + 96, 4);
-+                            memcpy (&toff, buf + 100, 4);
++                            memcpy (&moff, buf + 112, 4);
++                            memcpy (&toff, buf + 116, 4);
 +                            uint32_t bad_off = 0x40000000u;
 +                            if (nmut > 0 && moff + 4 <= sz)
 +                              {
@@ -1939,6 +1949,11 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +                            else if (ntop > 0 && toff + 4 <= sz)
 +                              {
 +                                memcpy (buf + toff, &bad_off, 4);
++                                mutated = true;
++                              }
++                            else
++                              {
++                                memcpy (buf + 112, &bad_off, 4);
 +                                mutated = true;
 +                              }
 +                          }
@@ -2057,23 +2072,6 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 +    free (esc_seg2);
 +  }
 +
-+  /* 7. Also re-run the entire edge suite under explicit mode=2 so __fswc_probe_exact
-+     VFS negative-filter edge cases (ENOTDIR, ENAMETOOLONG, statx -EINVAL, ..)
-+     are verified alongside default mode=1!  */
-+  if (getenv ("FSWC_EDGE_SUBMODE") == NULL)
-+    {
-+      pid_t m2pid = xfork ();
-+      if (m2pid == 0)
-+        {
-+          setenv ("GLIBC_TUNABLES", "glibc.fswc.mode=2", 1);
-+          setenv ("FSWC_EDGE_SUBMODE", "2", 1);
-+          exec_self_direct (argv);
-+        }
-+      int m2st = 0;
-+      xwaitpid (m2pid, &m2st, 0);
-+      TEST_VERIFY (WIFEXITED (m2st) && WEXITSTATUS (m2st) == 0);
-+    }
-+
 +  nftw (tmp, rm_child_cb, 32, FTW_DEPTH | FTW_PHYS);
 +  free (sym_pfx);
 +  free (empty_dir);
@@ -2089,8 +2087,8 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-edge.c glibc-2.44.test/pos
 diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-oracle.c glibc-2.44.test/posix/tst-fswc-oracle.c
 --- glibc-2.44/posix/tst-fswc-oracle.c	1970-01-01 00:00:00.000000000 +0000
 +++ glibc-2.44.test/posix/tst-fswc-oracle.c	2026-01-01 00:00:00.000000000 +0000
-@@ -0,0 +1,461 @@
-+/* Differential oracle testing FSWC mode={0,1,2} across glob, VFS, and execvpe.
+@@ -0,0 +1,456 @@
++/* Differential oracle testing FSWC mode={0,1} across glob, VFS, and execvpe.
 +   Copyright (C) 2026 Free Software Foundation, Inc.  */
 +
 +#include <dirent.h>
@@ -2494,8 +2492,8 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-oracle.c glibc-2.44.test/p
 +  const char *prefix = pick_prefix (fb, disc_buf, sizeof (disc_buf));
 +  printf ("info: running FSWC differential oracle against prefix: %s\n", prefix);
 +
-+  char *outs[3];
-+  for (int mode = 0; mode <= 2; ++mode)
++  char *outs[2];
++  for (int mode = 0; mode <= 1; ++mode)
 +    {
 +      outs[mode] = xasprintf ("%s/out_mode_%d.txt", tmp, mode);
 +      pid_t pid = xfork ();
@@ -2513,22 +2511,17 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-oracle.c glibc-2.44.test/p
 +      TEST_VERIFY_EXIT (WIFEXITED (status) && WEXITSTATUS (status) == 0);
 +    }
 +
-+  size_t len0 = 0, len1 = 0, len2 = 0;
++  size_t len0 = 0, len1 = 0;
 +  char *b0 = slurp_file (outs[0], &len0);
 +  char *b1 = slurp_file (outs[1], &len1);
-+  char *b2 = slurp_file (outs[2], &len2);
 +
 +  if (len0 != len1 || memcmp (b0, b1, len0) != 0)
 +    FAIL_EXIT1 ("mode=0 vs mode=1 mismatch!\n--- mode=0 ---\n%s\n--- mode=1 ---\n%s",
 +                b0, b1);
-+  if (len0 != len2 || memcmp (b0, b2, len0) != 0)
-+    FAIL_EXIT1 ("mode=0 vs mode=2 mismatch!\n--- mode=0 ---\n%s\n--- mode=2 ---\n%s",
-+                b0, b2);
 +
 +  free (b0);
 +  free (b1);
-+  free (b2);
-+  for (int mode = 0; mode <= 2; ++mode)
++  for (int mode = 0; mode <= 1; ++mode)
 +    free (outs[mode]);
 +  nftw (tmp, rm_child_cb, 32, FTW_DEPTH | FTW_PHYS);
 +  free (fb_hsh);
@@ -2789,9 +2782,9 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-static.c glibc-2.44.test/p
 +#include <support/test-driver.c>
 diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-vfork.c glibc-2.44.test/posix/tst-fswc-vfork.c
 --- glibc-2.44/posix/tst-fswc-vfork.c	1970-01-01 00:00:00.000000000 +0000
-+++ glibc-2.44.test/posix/tst-fswc-vfork.c	2026-01-01 00:00:00.000000000 +0000
-@@ -0,0 +1,361 @@
-+/* vfork() + execvpe() CLONE_VM safety, EACCES stickiness, and slash-wildcards.
++++ glibc-2.44.test/posix/tst-fswc-vfork.c	2026-11-17 02:21:05.075024600 +0000
+@@ -0,0 +1,347 @@
++/* vfork() + execvpe() CLONE_VM safety, EACCES stickiness, and literal slash paths.
 +   Copyright (C) 2026 Free Software Foundation, Inc.  */
 +
 +#include <dirent.h>
@@ -3010,6 +3003,28 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-vfork.c glibc-2.44.test/po
 +  return buf;
 +}
 +
++static int __attribute__ ((noinline))
++vfork_execvpe_wait (const char *cmd, char *const envp[], int fail_code,
++                    int *out_err)
++{
++  volatile int child_err = 0;
++  pid_t pid = vfork ();
++  if (pid < 0)
++    FAIL_EXIT1 ("vfork failed: %m");
++  if (pid == 0)
++    {
++      char *const av[] = { (char *) cmd, NULL };
++      execvpe (av[0], av, envp);
++      child_err = errno;
++      _exit (fail_code);
++    }
++  int status = 0;
++  xwaitpid (pid, &status, 0);
++  if (out_err != NULL)
++    *out_err = child_err;
++  return status;
++}
++
 +static int
 +do_test (int argc, char *argv[])
 +{
@@ -3057,19 +3072,8 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-vfork.c glibc-2.44.test/po
 +  /* 1. Sticky EACCES across vfork() + execvpe() on cold & warm wildcard PATH.  */
 +  for (int iter = 0; iter < 16; ++iter)
 +    {
-+      volatile int child_err = 0;
-+      pid_t pid = vfork ();
-+      if (pid < 0)
-+        FAIL_EXIT1 ("vfork failed: %m");
-+      if (pid == 0)
-+        {
-+          char *const av[] = { (char *) "only_nonexec", NULL };
-+          execvpe (av[0], av, envp);
-+          child_err = errno;
-+          _exit (126);
-+        }
-+      int status = 0;
-+      xwaitpid (pid, &status, 0);
++      int child_err = 0;
++      int status = vfork_execvpe_wait ("only_nonexec", envp, 126, &child_err);
 +      TEST_VERIFY (WIFEXITED (status) && WEXITSTATUS (status) == 126);
 +      TEST_COMPARE (child_err, EACCES);
 +      TEST_COMPARE_STRING (canary, "FLUFFY_VFORK_HEAP_CANARY_OK");
@@ -3081,36 +3085,19 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-vfork.c glibc-2.44.test/po
 +    {
 +      for (int iter = 0; iter < 16; ++iter)
 +        {
-+          pid_t pid = vfork ();
-+          if (pid < 0)
-+            FAIL_EXIT1 ("vfork failed: %m");
-+          if (pid == 0)
-+            {
-+              char *const av[] = { (char *) "vfork_ok_cmd", NULL };
-+              execvpe (av[0], av, envp);
-+              _exit (127);
-+            }
-+          int status = 0;
-+          xwaitpid (pid, &status, 0);
++          int status = vfork_execvpe_wait ("vfork_ok_cmd", envp, 127, NULL);
 +          TEST_VERIFY (WIFEXITED (status) && WEXITSTATUS (status) == 0);
 +        }
 +
-+      /* Slash-wildcard execvpe("<tmp>/pkgs/<star>/bin/vfork_ok_cmd", ...).  */
++      /* A path containing a slash is always literal: execvpe() never
++         expands glob metacharacters in it, even when the pattern would
++         match an executable.  "<tmp>/pkgs/<star>/bin/vfork_ok_cmd" does not
++         exist literally, so the exec must fail and nothing may run.  */
 +      char slash_wild[1024];
 +      snprintf (slash_wild, sizeof (slash_wild),
 +                "%s/pkgs/*/bin/vfork_ok_cmd", tmp);
-+      pid_t spid = vfork ();
-+      if (spid < 0)
-+        FAIL_EXIT1 ("vfork failed: %m");
-+      if (spid == 0)
-+        {
-+          char *const av[] = { slash_wild, NULL };
-+          execvpe (av[0], av, envp);
-+          _exit (127);
-+        }
-+      int sstatus = 0;
-+      xwaitpid (spid, &sstatus, 0);
-+      TEST_VERIFY (WIFEXITED (sstatus) && WEXITSTATUS (sstatus) == 0);
++      int sstatus = vfork_execvpe_wait (slash_wild, envp, 127, NULL);
++      TEST_VERIFY (WIFEXITED (sstatus) && WEXITSTATUS (sstatus) == 127);
 +
 +      /* #!-less +x script -> ENOEXEC fallback via _PATH_BSHELL (only if
 +         _PATH_BSHELL is executable in this environment).  */
@@ -3123,15 +3110,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-fswc-vfork.c glibc-2.44.test/po
 +          TEST_COMPARE (fclose (fp), 0);
 +          TEST_COMPARE (chmod (nohash, 0755), 0);
 +
-+          pid_t npid = vfork ();
-+          if (npid == 0)
-+            {
-+              char *const av[] = { (char *) "nohash_script", NULL };
-+              execvpe (av[0], av, envp);
-+              _exit (127);
-+            }
-+          int nstatus = 0;
-+          xwaitpid (npid, &nstatus, 0);
++          int nstatus = vfork_execvpe_wait ("nohash_script", envp, 127, NULL);
 +          TEST_VERIFY (WIFEXITED (nstatus) && WEXITSTATUS (nstatus) == 0);
 +          free (nohash);
 +        }
@@ -3260,7 +3239,7 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-glob-bz30635.c glibc-2.44.test/
 +  touch_temp_reg (f_hdr);
 +  touch_temp_reg (f_types);
 +
-+  /* "<tdir>/*/////bin/bash" padded to SIZE - 1 bytes.  */
++  /* "<tdir>/<star>/////bin/bash" padded to SIZE - 1 bytes.  */
 +  size_t tlen = strlen (tdir);
 +  const char *tail = "bin/bash";
 +  size_t tail_len = strlen (tail);
@@ -3350,8 +3329,8 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-glob-bz30635.c glibc-2.44.test/
  }
 diff --no-dereference -Naur glibc-2.44/posix/tst-glob-fluffy-flags.c glibc-2.44.test/posix/tst-glob-fluffy-flags.c
 --- glibc-2.44/posix/tst-glob-fluffy-flags.c	1970-01-01 00:00:00.000000000 +0000
-+++ glibc-2.44.test/posix/tst-glob-fluffy-flags.c	2026-01-01 00:00:00.000000000 +0000
-@@ -0,0 +1,509 @@
++++ glibc-2.44.test/posix/tst-glob-fluffy-flags.c	2026-11-17 02:25:31.057864294 +0000
+@@ -0,0 +1,517 @@
 +/* Exhaustive unit tests for Fluffy <glob.h> and <fnmatch.h> extensions.
 +   Copyright (C) 2026 Free Software Foundation, Inc.  */
 +
@@ -3712,6 +3691,15 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-glob-fluffy-flags.c glibc-2.44.
 +    TEST_COMPARE_STRING (gl.gl_pathv[0], "no_such_dir/leaf");
 +    TEST_VERIFY ((gl.gl_flags & GLOB_MAGCHAR) == 0);
 +    globfree (&gl);
++
++    memset (&gl, 0, sizeof (gl));
++    TEST_COMPARE (glob ("", GLOB_NOMAGIC, NULL, &gl), GLOB_NOMATCH);
++    globfree (&gl);
++
++    memset (&gl, 0, sizeof (gl));
++    TEST_COMPARE (glob ("no_such_escaped\\/", GLOB_NOMAGIC, NULL, &gl),
++                  GLOB_NOMATCH);
++    globfree (&gl);
 +  }
 +
 +  expect_glob ("d1/.*", GLOB_SKIPDOTS, 0, 0, "d1/.dotfile", NULL);
@@ -3810,8 +3798,9 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-glob-fluffy-flags.c glibc-2.44.
 +    free (real_home_env);
 +  }
 +
-+  /* 10. execvpe / posix_spawnp POSIX character classes [[:alpha:]] and
-+     backslash-escaped suffix characters in wildcard PATH / file paths.  */
++  /* 10. posix_spawnp POSIX character classes [[:alpha:]] and backslash
++     escapes in wildcard PATH elements; a file path given directly is always
++     literal, even when it would match an executable as a pattern.  */
 +  {
 +    xmkdirp ("xpkg/bin", 0755);
 +    xmkdirp ("xpkg/b*n", 0755);
@@ -3832,17 +3821,15 @@ diff --no-dereference -Naur glibc-2.44/posix/tst-glob-fluffy-flags.c glibc-2.44.
 +        TEST_VERIFY (WIFEXITED (st1) && WEXITSTATUS (st1) == 0);
 +        free (p1);
 +
++        /* As a pattern this matches xpkg/b*n/star*cmd, but no file has this
++           literal name, so neither call may run anything.  */
 +        char *wfile = xasprintf ("%s/[[:alpha:]]*/b\\*n/star\\*cmd", base);
 +        char *argv2[] = { (char *) "star*cmd", NULL };
 +        sr = posix_spawnp (&spid, wfile, NULL, NULL, argv2, env1);
-+        TEST_COMPARE (sr, 0);
-+        xwaitpid (spid, &st1, 0);
-+        TEST_VERIFY (WIFEXITED (st1) && WEXITSTATUS (st1) == 0);
++        TEST_COMPARE (sr, ENOENT);
 +
 +        sr = posix_spawn (&spid, wfile, NULL, NULL, argv2, env1);
-+        TEST_COMPARE (sr, 0);
-+        xwaitpid (spid, &st1, 0);
-+        TEST_VERIFY (WIFEXITED (st1) && WEXITSTATUS (st1) == 0);
++        TEST_COMPARE (sr, ENOENT);
 +        free (wfile);
 +        if (saved_path != NULL)
 +          {
@@ -4221,3 +4208,19 @@ diff --no-dereference -Naur glibc-2.44/stdlib/tst-realpath-toolong.c glibc-2.44.
  
    free (base);
    return 0;
+diff --no-dereference -Naur glibc-2.44/stdlib/tst-system.c glibc-2.44.test/stdlib/tst-system.c
+--- glibc-2.44/stdlib/tst-system.c	2026-07-24 13:16:45.000000000 +0000
++++ glibc-2.44.test/stdlib/tst-system.c	2026-07-24 13:16:45.000000000 +0000
+@@ -231,6 +231,12 @@
+ 
+   TEST_COMPARE (system (""), 0);
+ 
++  /* POSIX requires system() to behave like "sh -c".  Where _PATH_BSHELL
++     is bash (Fluffy: /sw/bash/bin/sh -> bash), it must run in POSIX mode.  */
++  TEST_COMPARE (system ("test -z \"$BASH_VERSION\""
++                        " || case :$SHELLOPTS: in *:posix:*) ;; *) exit 1;; esac"),
++                0);
++
+   return 0;
+ }
+ 
