@@ -10,7 +10,7 @@ VERSION=1.6.3
 ARCHIVES=(
     87daefacd7958b4a69f88c6856dbd1634261963c414079d0c371f589cd66a2e3 https://github.com/fluffy-linux/dejagnu/releases/download/dejagnu-$VERSION-release/dejagnu-$VERSION.tar.gz
     9f39bfd22753e0e2f0c4c7b30c335842c768a2e982bcbe5b8150e1c1ed0ddc12 file://dejagnu-$VERSION-fluffy-source.patch
-    41a5ab8452af4d665f4eab676229c33a8bc7901034e8a2281c7e1f0bd005bdd2 file://dejagnu-$VERSION-fluffy-test.patch
+    4bfe7bdb2c90092ebed5a5d26a42124b3fa71cd0f1817c6e4a9763a4ecce141d file://dejagnu-$VERSION-fluffy-test.patch
 )
 
 if test -v CROSS
@@ -100,43 +100,6 @@ MAKE() {
 CHECK() {
     cd build
     make check
-
-    tclsh <<'EOF'
-set td [exec mktemp -d]
-set d_bkt [file join $td {1:pkg} bin]
-set d_bs  [file join $td "dir_bs\\"]
-set d_lit [file join $td "lit\[1\]" bin]
-set d_li1 [file join $td "lit1" bin]
-set d_br  [file join $td {br{a,b}} pkg bin]
-file mkdir $d_bkt $d_bs $d_lit $d_li1 $d_br
-foreach {d fn} [list $d_bkt dj_probe $d_lit lit_probe $d_li1 lit_probe $d_br br_probe] {
-    set fp [file join $d $fn]
-    set fd [open $fp w]
-    puts $fd "stub"
-    close $fd
-    file attributes $fp -permissions 0755
-}
-
-proc verbose {args} {}
-proc warning {args} {}
-source ../lib/utils.exp
-
-set env(PATH) "/sw/*/bin"
-if {[which gcc] eq "0"} {
-    error "which gcc failed under PATH=/sw/*/bin"
-}
-set env(PATH) [format ":%s:%s:%s/%s/*/bin:%s/%s/bin:/sw/*/bin" $d_bs $d_lit $td {br{a,b}} $td {1[a:]pkg}]
-if {[which dj_probe] ne [file join $d_bkt dj_probe]} {
-    error "which dj_probe failed under bracket-colon PATH"
-}
-if {[which lit_probe] ne [file join $d_lit lit_probe]} {
-    error "which lit_probe failed literal \[1\] precedence"
-}
-if {[which br_probe] ne [file join $d_br br_probe]} {
-    error "which br_probe failed brace literal wildcard PATH"
-}
-file delete -force $td
-EOF
 }
 
 INSTALL() {

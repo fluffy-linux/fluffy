@@ -12,6 +12,7 @@ HAS_LDFLAGS=-lsqlite3
 ARCHIVES=(
     0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c https://github.com/fluffy-linux/sqlite/releases/download/version-3.53.4/sqlite-autoconf-$VERSION.tar.gz
     8633b6b7310a836affd8c3c17e5f77ef13a1938970bd37c4f01eb6bb051d2e2d file://sqlite-$VERSION-fluffy.patch
+    8075977877737249f9f13b34228b1dad98021eed6073041d0a599b728ba02685 file://sqlite-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -68,6 +69,7 @@ fi
 
 MAKE() {
     patch -Z -Np1 -i sqlite-$VERSION-fluffy.patch
+    patch -Z -Np1 -i sqlite-$VERSION-fluffy-test.patch
 
     CROSS="" ./configure \
         --prefix=/sw/sqlite \
@@ -84,48 +86,7 @@ MAKE() {
 }
 
 CHECK() {
-    local td p src="$PWD"
-    td="$(mktemp -d)"
-    mkdir -p "$td/dir_bs\\" "$td/lit[1]/bin" "$td/lit1/bin" "$td/br{a,b}/pkg/bin"
-    for f in "$td/lit[1]/bin/lit_probe" "$td/lit1/bin/lit_probe" "$td/br{a,b}/pkg/bin/br_probe"
-    do
-        printf '#!/sw/bash/bin/bash\nexit 0\n' > "$f"
-        chmod 755 "$f"
-    done
-    cat > "$td/auto.def" <<'EOF'
-use cc
-foreach t {cc ar strip} {
-    if {![cc-check-progs $t]} {
-        user-error "failed to resolve $t via wildcard PATH"
-    }
-}
-set td [getenv TD]
-if {[find-executable-path lit_probe] ne "$td/lit\[1\]/bin/lit_probe"} {
-    user-error "literal \[1\] precedence failed"
-}
-if {[find-executable-path br_probe] ne "$td/br{a,b}/pkg/bin/br_probe"} {
-    user-error "brace literal wildcard PATH failed"
-}
-EOF
-    p="$td/dir_bs\\:$td/{unclosed*:$td/lit[1]/bin:$td/br{a,b}/*/bin:/sw/[[:alpha:]]*/bin:/sw/[b:]inutils/bin:/sw/*/bin"
-    (
-        cd "$td"
-        TD="$td" CROSS="" PATH="$p" tclsh "$src/autosetup/autosetup"
-        gcc -O1 "$src/autosetup/jimsh0.c" -o "$td/jimsh0"
-        TD="$td" CROSS="" PATH="$p" "$td/jimsh0" "$src/autosetup/autosetup"
-    )
-    rm -rf "$td"
-
-    local out
-    out="$(LD_LIBRARY_PATH="$PWD" ./sqlite3 :memory: \
-        "CREATE VIRTUAL TABLE t USING fts5(x);
-         CREATE VIRTUAL TABLE t4 USING fts4(x);
-         INSERT INTO t VALUES ('fluffy glob');
-         INSERT INTO t4 VALUES ('fluffy fts4');
-         SELECT x FROM t WHERE t MATCH 'fluffy';
-         SELECT x FROM t4 WHERE t4 MATCH 'fluffy';
-         SELECT json_extract('{\"k\":\"ok\"}', '$.k');")"
-    test "$out" = $'fluffy glob\nfluffy fts4\nok'
+    make check
 }
 
 INSTALL() {

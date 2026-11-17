@@ -68,6 +68,92 @@ diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/runtest.libs/utils.test
  }
  
  ### Do not adjust the comment on the next line. The grep test case
+diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/runtest.libs/utils_which.test dejagnu-1.6.3/testsuite/runtest.libs/utils_which.test
+--- dejagnu-1.6.3.orig/testsuite/runtest.libs/utils_which.test	1970-01-01 00:00:00.000000000 +0000
++++ dejagnu-1.6.3/testsuite/runtest.libs/utils_which.test	2021-05-20 22:04:35.000000000 +0000
+@@ -0,0 +1,82 @@
++# Test 'which' in lib/utils.exp with wildcard PATH entries.	-*- Tcl -*-
++#
++# Fluffy Linux late-binds PATH through glob patterns such as /sw/*/bin.
++# These tests build their own fixture tree under a temporary directory,
++# so they do not depend on the host's /sw, /usr or /bin.
++
++if [ file exists $srcdir/$subdir/default_procs.tcl ] {
++    source $srcdir/$subdir/default_procs.tcl
++} else {
++    puts "ERROR: $srcdir$subdir/default_procs.tcl doesn't exist"
++}
++
++set file $srcdir/../lib/utils.exp
++if [ file exists $file] {
++    source $file
++} else {
++    puts "ERROR: $file doesn't exist"
++}
++
++set td [exec mktemp -d]
++set d_sw  [file join $td sw pkg bin]
++set d_bkt [file join $td {1:pkg} bin]
++set d_bs  [file join $td "dir_bs\\"]
++set d_lit [file join $td "lit\[1\]" bin]
++set d_li1 [file join $td "lit1" bin]
++set d_br  [file join $td {br{a,b}} pkg bin]
++file mkdir $d_sw $d_bkt $d_bs $d_lit $d_li1 $d_br
++foreach {d fn} [list $d_sw fluffy_cc $d_bkt dj_probe \
++		    $d_lit lit_probe $d_li1 lit_probe $d_br br_probe] {
++    set fp [file join $d $fn]
++    set fd [open $fp w]
++    puts $fd "stub"
++    close $fd
++    file attributes $fp -permissions 0755
++}
++
++set saved_path $env(PATH)
++
++# A PATH made only of a wildcard entry, like PATH=/sw/*/bin.
++#
++set env(PATH) [file join $td sw * bin]
++if {[which fluffy_cc] eq [file join $d_sw fluffy_cc]} {
++    pass "which, wildcard-only PATH"
++} else {
++    fail "which, wildcard-only PATH"
++}
++
++# An empty entry, a literal directory ending in a backslash, a literal
++# directory containing brackets, a wildcard entry with literal braces,
++# a bracket expression containing a colon, and a trailing wildcard entry.
++#
++set env(PATH) [format ":%s:%s:%s/%s/*/bin:%s/%s/bin:%s/sw/*/bin" \
++		   $d_bs $d_lit $td {br{a,b}} $td {1[a:]pkg} $td]
++
++if {[which dj_probe] eq [file join $d_bkt dj_probe]} {
++    pass "which, colon inside a bracket expression does not split PATH"
++} else {
++    fail "which, colon inside a bracket expression does not split PATH"
++}
++
++if {[which lit_probe] eq [file join $d_lit lit_probe]} {
++    pass "which, existing literal directory with brackets wins over its glob match"
++} else {
++    fail "which, existing literal directory with brackets wins over its glob match"
++}
++
++if {[which br_probe] eq [file join $d_br br_probe]} {
++    pass "which, braces in a wildcard PATH entry are literal"
++} else {
++    fail "which, braces in a wildcard PATH entry are literal"
++}
++
++if {[which fluffy_cc] eq [file join $d_sw fluffy_cc]} {
++    pass "which, trailing wildcard PATH entry after escapes"
++} else {
++    fail "which, trailing wildcard PATH entry after escapes"
++}
++
++set env(PATH) $saved_path
++file delete -force $td
++
++puts "END utils_which.test"
 diff --no-dereference -Naur dejagnu-1.6.3.orig/testsuite/runtest.main/pr48155-csh.sh dejagnu-1.6.3/testsuite/runtest.main/pr48155-csh.sh
 --- dejagnu-1.6.3.orig/testsuite/runtest.main/pr48155-csh.sh	2021-05-05 21:45:09.000000000 +0000
 +++ dejagnu-1.6.3/testsuite/runtest.main/pr48155-csh.sh	2021-05-05 21:45:09.000000000 +0000

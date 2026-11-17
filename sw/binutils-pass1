@@ -16,7 +16,7 @@ MAKE() {
     cd build
     ../configure \
         --prefix=/sw/binutils \
-        --with-lib-path='/sw/*/lib' \
+        --with-lib-path='=/sw/*/lib' \
         --target=$FLUFFY_TGT \
         --disable-nls \
         --enable-gprofng=no \

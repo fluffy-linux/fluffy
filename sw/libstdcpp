@@ -10,6 +10,7 @@ VERSION=16.2.0
 ARCHIVES=(
     e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://github.com/fluffy-linux/gcc/releases/download/releases/gcc-$VERSION/gcc-$VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
+    97d116c530c63bc79ff3db863b4c4177a67c03d57885e443c839bb417723ef79 file://gcc-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -66,6 +67,7 @@ fi
 
 MAKE() {
     patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-test.patch
 
     ln -sv gthr-posix.h libgcc/gthr-default.h
 
@@ -76,19 +78,17 @@ MAKE() {
         --disable-multilib \
         --disable-nls \
         --disable-libstdcxx-pch \
-        --with-gxx-include-dir=/sw/libstdcpp/include/c++
+        --with-gxx-include-dir=/sw/libstdcpp/include/c++ \
+        CXX='g++ -nostdinc++' \
+        CXXFLAGS='-g -O2'
     make
 }
 
 CHECK() {
     cd build
-    ln -sfv . libstdc++-v3
-    sed -i 's|SECTIONLDFLAGS="|SECTIONLDFLAGS="-L${BUILD_DIR}/src/.libs |' scripts/testsuite_flags
-    sed -i '/TEST_GCC_EXEC_PREFIX/d' testsuite/Makefile
     ulimit -s -H unlimited
     LD_LIBRARY_PATH="$PWD/src/.libs" make -k check
     ../contrib/test_summary -t
-    rm -fv libstdc++-v3
     ! grep -E '^(FAIL|XPASS|UNRESOLVED|ERROR):' $(find . -name '*.sum')
 }
 

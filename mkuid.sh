@@ -3,6 +3,10 @@ set -euo pipefail
 
 MIN_ID=1073741824 # 2^30 (0x40000000)
 MAX_ID=2147483647 # 2^31 - 1 (0x7fffffff)
+# systemd's foreign UID range (foreign-uid-base, docs/UIDS-GIDS.md) lies inside
+# [MIN_ID, MAX_ID]; nss-systemd and uid_is_foreign() own it, so never allocate there.
+FOREIGN_MIN=2147352576 # 0x7ffe0000
+FOREIGN_MAX=2147418111 # 0x7ffeffff
 SW_DIR="${SW_DIR:-$(dirname "$(realpath "$0")")/sw}"
 
 usage() {
@@ -103,6 +107,9 @@ do
             if (( gid < MIN_ID || gid > MAX_ID ))
             then
                 err "$loc: group '$gname' GID $gid outside [$MIN_ID, $MAX_ID]"
+            elif (( gid >= FOREIGN_MIN && gid <= FOREIGN_MAX ))
+            then
+                err "$loc: group '$gname' GID $gid inside systemd's foreign UID range [$FOREIGN_MIN, $FOREIGN_MAX]"
             fi
         fi
 
@@ -189,6 +196,9 @@ do
             if (( uid < MIN_ID || uid > MAX_ID ))
             then
                 err "$loc: user '$uname' UID $uid outside [$MIN_ID, $MAX_ID]"
+            elif (( uid >= FOREIGN_MIN && uid <= FOREIGN_MAX ))
+            then
+                err "$loc: user '$uname' UID $uid inside systemd's foreign UID range [$FOREIGN_MIN, $FOREIGN_MAX]"
             fi
             if [[ "$upass" != "*" ]]
             then
@@ -262,7 +272,7 @@ while true
 do
     rand32=$(od -An -tu4 -N4 /dev/urandom | tr -d '[:space:]')
     candidate=$(( MIN_ID + (rand32 & 1073741823) ))
-    if [[ -z "${used_ids[$candidate]:-}" ]]
+    if [[ -z "${used_ids[$candidate]:-}" ]] && (( candidate < FOREIGN_MIN || candidate > FOREIGN_MAX ))
     then
         echo "$candidate"
         exit 0

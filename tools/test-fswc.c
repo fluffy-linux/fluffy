@@ -1,5 +1,6 @@
 /* test-fswc.c -- Tier-2 Standalone Unprivileged + Privileged CLONE_NEWNS
- *                Torture & Differential Oracle Runner for FSWC v5.
+ *                Torture & Differential Oracle Runner for FSWC v5
+ *                (single-path wrapper hooks removed: mode={0,1}).
  *
  * Host-independent & non-glibc-caller-aware:
  *   - Zero hardcoded /sw, /snap, /bin/sh, or /usr/bin assumptions (discovers
@@ -530,7 +531,7 @@ dump_oracle_snapshot (FILE *out, const char *prefix)
     }
 
   /* Also verify wildcard PATH posix_spawnp across restricted subdirs and
-     dlopen/dlerror ENOENT invariants across mode={0,1,2}.  */
+     dlopen/dlerror ENOENT invariants across mode={0,1}.  */
   {
     const char *old_path = getenv ("PATH");
     char *saved = old_path != NULL ? strdup (old_path) : NULL;
@@ -624,8 +625,8 @@ static void
 verify_modes_identical (int argc, char **argv, const char *prefix,
                         const char *work_dir, const char *cred_mode)
 {
-  char outs[3][512];
-  for (int mode = 0; mode <= 2; ++mode)
+  char outs[2][512];
+  for (int mode = 0; mode <= 1; ++mode)
     {
       snprintf (outs[mode], sizeof (outs[mode]),
                 "%s/oracle_%s_m%d.txt", work_dir, cred_mode, mode);
@@ -688,18 +689,14 @@ verify_modes_identical (int argc, char **argv, const char *prefix,
                  "oracle worker mode=%d (%s) failed", mode, cred_mode);
     }
 
-  size_t l0 = 0, l1 = 0, l2 = 0;
+  size_t l0 = 0, l1 = 0;
   char *b0 = read_all (outs[0], &l0);
   char *b1 = read_all (outs[1], &l1);
-  char *b2 = read_all (outs[2], &l2);
 
   ASSERT_OK (l0 == l1 && memcmp (b0, b1, l0) == 0,
              "mode=0 vs mode=1 mismatch (%s)!", cred_mode);
-  ASSERT_OK (l0 == l2 && memcmp (b0, b2, l0) == 0,
-             "mode=0 vs mode=2 mismatch (%s)!", cred_mode);
   free (b0);
   free (b1);
-  free (b2);
 }
 
 static void
@@ -905,12 +902,12 @@ run_privileged_squashfs_torture (int argc, char **argv)
   ASSERT_OK (mount_loop_squashfs (mount_bin, sqA, mntA) == 0, "mount pkgA");
   ASSERT_OK (mount_loop_squashfs (mount_bin, sqB, mntB) == 0, "mount pkgB");
 
-  printf ("  [priv] 1. Differential oracle across mode={0,1,2} as root, fsuid=nobody, uid=nobody...\n");
+  printf ("  [priv] 1. Differential oracle across mode={0,1} as root, fsuid=nobody, uid=nobody...\n");
   verify_modes_identical (argc, argv, pfx, work, "root");
   verify_modes_identical (argc, argv, pfx, work, "fsuid_nobody");
   verify_modes_identical (argc, argv, pfx, work, "uid_nobody");
 
-  for (int m = 0; m <= 2; ++m)
+  for (int m = 0; m <= 1; ++m)
     spawn_priv_torture_mode (argc, argv, m, work, pfx, mntA, mntB,
                              sqA, sqB, mount_bin);
 
@@ -956,7 +953,7 @@ priv_torture_worker (int mode, const char *work, const char *pfx,
              "raw SYS_umount2 must restore curses.h immediately (0 ms)!");
   globfree (&gl);
 
-  printf ("  [priv mode=%d] 3. External-process mount coherence (0 ms glob, <= 65 ms mode=2 VFS)...\n",
+  printf ("  [priv mode=%d] 3. External-process mount coherence (0 ms glob and single-path VFS)...\n",
           mode);
   char ext_probe[1024];
   snprintf (ext_probe, sizeof (ext_probe), "%s/ext_vfs_probe.h", over_inc);
@@ -984,15 +981,14 @@ priv_torture_worker (int mode, const char *work, const char *pfx,
   ASSERT_OK (glob (pat, 0, NULL, &gl) == GLOB_NOMATCH,
              "glob() must detect external-process overmount with 0 ms delay!");
 
-  /* Within <= 65 ms (past the 50 ms epoch window), mode=2 single-path statx and
-     openat must also observe the external mount!  */
-  usleep (65000);
+  /* Single-path statx and openat are unmodified upstream wrappers: they must
+     observe the external mount immediately, with zero delay.  */
   {
     struct statx stx;
     ASSERT_OK (statx (AT_FDCWD, ext_probe, 0, STATX_BASIC_STATS, &stx) == 0,
-               "mode=%d statx after <= 65 ms external mount", mode);
+               "mode=%d statx immediately after external mount", mode);
     int efd = openat (AT_FDCWD, ext_probe, O_RDONLY);
-    ASSERT_OK (efd >= 0, "mode=%d openat after <= 65 ms external mount", mode);
+    ASSERT_OK (efd >= 0, "mode=%d openat immediately after external mount", mode);
     close (efd);
   }
   ASSERT_OK (umount2 (over_inc, 0) == 0, "cleanup ext overmount");
@@ -1058,9 +1054,8 @@ priv_torture_worker (int mode, const char *work, const char *pfx,
     ASSERT_OK (glob (pat, 0, NULL, &gl) == GLOB_NOMATCH,
                "raw MS_MOVE overmount must hide curses.h in 0 ms!");
 
-    usleep (65000);
     int mfd = openat (AT_FDCWD, moved_hdr, O_RDONLY);
-    ASSERT_OK (mfd >= 0, "mode=%d openat moved_over.h after <= 65 ms", mode);
+    ASSERT_OK (mfd >= 0, "mode=%d openat moved_over.h immediately", mode);
     close (mfd);
 
     ASSERT_OK (umount2 (over_inc, 0) == 0, "umount moved over_inc");
@@ -1366,7 +1361,7 @@ main (int argc, char **argv)
     snprintf (p, sizeof (p), "%s/pkgA-1.0.squashfs", synth);
     write_str (p, "decoy\n", 0644);
 
-    printf ("  [unpriv] Testing synthetic multi-package tree across mode={0,1,2}...\n");
+    printf ("  [unpriv] Testing synthetic multi-package tree across mode={0,1}...\n");
     verify_modes_identical (argc, argv, synth, work, "synth");
   }
 
@@ -1376,7 +1371,7 @@ main (int argc, char **argv)
   const char *live = discover_squash_prefix (live_buf, sizeof (live_buf));
   if (live != NULL)
     {
-      printf ("  [unpriv] Testing live SquashFS prefix: %s across mode={0,1,2}...\n",
+      printf ("  [unpriv] Testing live SquashFS prefix: %s across mode={0,1}...\n",
               live);
       verify_modes_identical (argc, argv, live, work, "self");
     }

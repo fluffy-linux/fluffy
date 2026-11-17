@@ -12,6 +12,7 @@ HAS_LDFLAGS="-lext2fs -lcom_err"
 ARCHIVES=(
     da274408bebbfd13a5a2fc3cfc66e3ffff17c48534673aa67f88d49b99123b96 https://github.com/fluffy-linux/e2fsprogs/releases/download/v$VERSION/e2fsprogs-$VERSION.tar.gz
     0ce30f1956b55e2d7e4af90e1bb120435cabafa39e76b1fa31bf26ae3b5986c4 file://e2fsprogs-$VERSION-fluffy-source.patch
+    d1719856af3fe94eb70b2a5b0fca923a1eba85dd705a690e538caf0a56801705 file://e2fsprogs-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -69,6 +70,7 @@ fi
 
 MAKE() {
     patch -Z -Np1 -i e2fsprogs-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i e2fsprogs-$VERSION-fluffy-test.patch
 
     mkdir -p build
     cd build
@@ -94,42 +96,11 @@ MAKE() {
 }
 
 CHECK() {
-    local d bp td
-    for d in lib/et lib/ss lib/e2p lib/ext2fs misc e2fsck debugfs resize
+    local d
+    for d in lib/et lib/ss lib/e2p lib/ext2fs lib/support misc e2fsck debugfs resize
     do
         make -C "build/$d" check
     done
-    make -C build/lib/support test_profile
-
-    bp="$PWD/build"
-    td=$(mktemp -d)
-    mkdir -p "$td/sw/pkgA/etc" "$td/sw/pkgB/etc" "$td/sw/1:pkg/etc" "$td/etc" "$td/cwd"
-    printf '[defaults]\n\tkey = from_pkgA\n\tvendor_only = keep_me\n[fs_types]\n\tfluffy_test = {\n\t\tblocksize = 4096\n\t\tinode_size = 256\n\t}\n' > "$td/sw/pkgA/etc/mke2fs.conf"
-    printf '[defaults]\n\tother = from_pkgB\n' > "$td/sw/pkgB/etc/mke2fs.conf"
-    printf '[defaults]\n\tcolon_key = from_colon\n' > "$td/sw/1:pkg/etc/mke2fs.conf"
-    printf '[options]\n\tallow_cancellation = true\n' > "$td/sw/pkgA/etc/e2fsck.conf"
-    printf 'INVALID SYNTAX === [[[\n' > "$td/cwd/badconf"
-
-    test "$("$bp/lib/support/test_profile" "$td/etc/mke2fs.conf:$td/sw/*/etc/mke2fs.conf" query1 defaults key)" = "from_pkgA"
-    test "$("$bp/lib/support/test_profile" "$td/etc/mke2fs.conf:$td/sw/*/etc/mke2fs.conf" query1 defaults other)" = "from_pkgB"
-    test "$("$bp/lib/support/test_profile" "$td/sw/[[:alpha:]]*/etc/mke2fs.conf:$td/sw/1[a:]pkg/etc/mke2fs.conf" query1 defaults colon_key)" = "from_colon"
-
-    (
-        cd "$td/cwd"
-        test "$("$bp/lib/support/test_profile" ":$td/sw/*/etc/mke2fs.conf:" query1 defaults key)" = "from_pkgA"
-        truncate -s 16M "$td/fs.img"
-        LD_LIBRARY_PATH="$bp/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
-            MKE2FS_CONFIG="$td/sw/*/etc/mke2fs.conf" \
-            "$bp/misc/mke2fs" -q -F -T fluffy_test "$td/fs.img"
-        LD_LIBRARY_PATH="$bp/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
-            E2FSCK_CONFIG="$td/sw/*/etc/e2fsck.conf" \
-            "$bp/e2fsck/e2fsck" -fn "$td/fs.img" >/dev/null
-    )
-
-    printf '[defaults]\n\tkey = from_etc\n' > "$td/etc/mke2fs.conf"
-    test "$("$bp/lib/support/test_profile" "$td/etc/mke2fs.conf:$td/sw/*/etc/mke2fs.conf" query1 defaults key)" = "from_etc"
-    test "$("$bp/lib/support/test_profile" "$td/etc/mke2fs.conf:$td/sw/*/etc/mke2fs.conf" query1 defaults vendor_only)" = "keep_me"
-    rm -rf "$td"
 }
 
 INSTALL() {

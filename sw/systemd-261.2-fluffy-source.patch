@@ -1280,7 +1280,15 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-condition.c systemd
 diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-files.c systemd-261.2/src/test/test-conf-files.c
 --- systemd-261.2.orig/src/test/test-conf-files.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/test/test-conf-files.c	2026-07-23 17:07:04.000000000 +0000
-@@ -482,4 +482,26 @@
+@@ -11,6 +11,7 @@
+ #include "fd-util.h"
+ #include "fileio.h"
+ #include "fs-util.h"
++#include "mkdir.h"
+ #include "path-util.h"
+ #include "rm-rf.h"
+ #include "string-util.h"
+@@ -482,4 +483,26 @@
          inserted = mfree(inserted);
  }
  
@@ -1310,7 +1318,17 @@ diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-files.c system
 diff --no-dereference -Naur systemd-261.2.orig/src/test/test-conf-parser.c systemd-261.2/src/test/test-conf-parser.c
 --- systemd-261.2.orig/src/test/test-conf-parser.c	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/src/test/test-conf-parser.c	2026-07-23 17:07:04.000000000 +0000
-@@ -503,4 +503,73 @@
+@@ -7,7 +7,9 @@
+ #include "fileio.h"
+ #include "log.h"
+ #include "mkdir.h"
++#include "path-util.h"
+ #include "rm-rf.h"
++#include "string-util.h"
+ #include "strv.h"
+ #include "tests.h"
+ #include "time-util.h"
+@@ -503,4 +505,73 @@
          ASSERT_STREQ(F, NULL);
  }
  

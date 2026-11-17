@@ -2380,15 +2380,6 @@ diff -Naur openssl-4.0.1.orig/test/generate_ssl_tests.pl openssl-4.0.1/test/gene
  # Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/test/ocsp-tests/mk-ocsp-cert-chain.sh openssl-4.0.1/test/ocsp-tests/mk-ocsp-cert-chain.sh
---- openssl-4.0.1.orig/test/ocsp-tests/mk-ocsp-cert-chain.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/ocsp-tests/mk-ocsp-cert-chain.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- 
- opensslcmd() {
-     LD_LIBRARY_PATH=../.. ../../apps/openssl $@
 diff -Naur openssl-4.0.1.orig/test/pkits-test.pl openssl-4.0.1/test/pkits-test.pl
 --- openssl-4.0.1.orig/test/pkits-test.pl	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/test/pkits-test.pl	2026-06-09 07:36:41.000000000 -0400
@@ -5353,24 +5344,6 @@ diff -Naur openssl-4.0.1.orig/test/recipes/92-test_engine_stubs.t openssl-4.0.1/
  # Copyright 2025 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-build.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- #
- # Copyright 2023 The OpenSSL Project Authors. All Rights Reserved.
- #
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_cf_quiche_data/quiche-server.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- #
- # Copyright 2023-2025 The OpenSSL Project Authors. All Rights Reserved.
- #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche.t openssl-4.0.1/test/recipes/95-test_external_cf_quiche.t
 --- openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche.t	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/test/recipes/95-test_external_cf_quiche.t	2026-06-09 07:36:41.000000000 -0400
@@ -5380,24 +5353,6 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_cf_quiche.t openssl-
  # Copyright 2023 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_external.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- 
- #
- # Copyright 2026 The OpenSSL Project Authors. All Rights Reserved.
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_ech_bssl_data/ech_bssl_server_external.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- 
- #
- # Copyright 2026 The OpenSSL Project Authors. All Rights Reserved.
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl.t openssl-4.0.1/test/recipes/95-test_external_ech_bssl.t
 --- openssl-4.0.1.orig/test/recipes/95-test_external_ech_bssl.t	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/test/recipes/95-test_external_ech_bssl.t	2026-06-09 07:36:41.000000000 -0400
@@ -5416,15 +5371,6 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_ech_nss.t openssl-4.
  # Copyright 2025-2026 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_krb5_data/krb5.sh openssl-4.0.1/test/recipes/95-test_external_krb5_data/krb5.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_krb5_data/krb5.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_krb5_data/krb5.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh -ex
-+#!/sw/bash/bin/bash -ex
- #
- # Copyright 2017-2026 The OpenSSL Project Authors. All Rights Reserved.
- #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_krb5.t openssl-4.0.1/test/recipes/95-test_external_krb5.t
 --- openssl-4.0.1.orig/test/recipes/95-test_external_krb5.t	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/test/recipes/95-test_external_krb5.t	2026-06-09 07:36:41.000000000 -0400
@@ -5443,15 +5389,6 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider_data/oqs
  
  # Test openssl CA functionality using oqsprovider for alg $1
  
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh openssl-4.0.1/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_oqsprovider_data/oqsprovider.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- #
- # Copyright 2022-2025 The OpenSSL Project Authors. All Rights Reserved.
- #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider.t openssl-4.0.1/test/recipes/95-test_external_oqsprovider.t
 --- openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider.t	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/test/recipes/95-test_external_oqsprovider.t	2026-06-09 07:36:41.000000000 -0400
@@ -5461,15 +5398,6 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_oqsprovider.t openss
  # Copyright 2022-2026 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh openssl-4.0.1/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_pkcs11_provider_data/pkcs11-provider.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- #
- # Copyright 2024-2026 The OpenSSL Project Authors. All Rights Reserved.
- #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pkcs11_provider.t openssl-4.0.1/test/recipes/95-test_external_pkcs11_provider.t
 --- openssl-4.0.1.orig/test/recipes/95-test_external_pkcs11_provider.t	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/test/recipes/95-test_external_pkcs11_provider.t	2026-06-09 07:36:41.000000000 -0400
@@ -5479,15 +5407,6 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pkcs11_provider.t op
  # Copyright 2024 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pyca_data/cryptography.sh openssl-4.0.1/test/recipes/95-test_external_pyca_data/cryptography.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_pyca_data/cryptography.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_pyca_data/cryptography.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- #
- # Copyright 2017-2021 The OpenSSL Project Authors. All Rights Reserved.
- # Copyright (c) 2017, Oracle and/or its affiliates.  All rights reserved.
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pyca.t openssl-4.0.1/test/recipes/95-test_external_pyca.t
 --- openssl-4.0.1.orig/test/recipes/95-test_external_pyca.t	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/test/recipes/95-test_external_pyca.t	2026-06-09 07:36:41.000000000 -0400
@@ -5497,15 +5416,6 @@ diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_pyca.t openssl-4.0.1
  # Copyright 2015-2025 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh openssl-4.0.1/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh
---- openssl-4.0.1.orig/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/recipes/95-test_external_rpki-client-portable_data/rpki-client-portable.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh -ex
-+#!/sw/bash/bin/bash -ex
- #
- # Copyright 2025-2026 The OpenSSL Project Authors. All Rights Reserved.
- #
 diff -Naur openssl-4.0.1.orig/test/recipes/95-test_external_rpki-client-portable.t openssl-4.0.1/test/recipes/95-test_external_rpki-client-portable.t
 --- openssl-4.0.1.orig/test/recipes/95-test_external_rpki-client-portable.t	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/test/recipes/95-test_external_rpki-client-portable.t	2026-06-09 07:36:41.000000000 -0400
@@ -5848,15 +5758,6 @@ diff -Naur openssl-4.0.1.orig/test/run_tests.pl openssl-4.0.1/test/run_tests.pl
  # Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/test/smime-certs/mksmime-certs.sh openssl-4.0.1/test/smime-certs/mksmime-certs.sh
---- openssl-4.0.1.orig/test/smime-certs/mksmime-certs.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/test/smime-certs/mksmime-certs.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- # Copyright 2013-2025 The OpenSSL Project Authors. All Rights Reserved.
- #
- # Licensed under the Apache License 2.0 (the "License").  You may not use
 diff -Naur openssl-4.0.1.orig/util/add-depends.pl openssl-4.0.1/util/add-depends.pl
 --- openssl-4.0.1.orig/util/add-depends.pl	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/util/add-depends.pl	2026-06-09 07:36:41.000000000 -0400
@@ -5893,15 +5794,6 @@ diff -Naur openssl-4.0.1.orig/util/c-compress-test.pl openssl-4.0.1/util/c-compr
  #
  # TEST c-compress-pl with a number of examples and what should happen to them
  
-diff -Naur openssl-4.0.1.orig/util/check-malloc-errs openssl-4.0.1/util/check-malloc-errs
---- openssl-4.0.1.orig/util/check-malloc-errs	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/check-malloc-errs	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- # Copyright 2018 The OpenSSL Project Authors. All Rights Reserved.
- #
- # Licensed under the Apache License 2.0 (the "License").  You may not use
 diff -Naur openssl-4.0.1.orig/util/check-news-changes.sh openssl-4.0.1/util/check-news-changes.sh
 --- openssl-4.0.1.orig/util/check-news-changes.sh	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/util/check-news-changes.sh	2026-06-09 07:36:41.000000000 -0400
@@ -5992,15 +5884,6 @@ diff -Naur openssl-4.0.1.orig/util/find-unused-errs openssl-4.0.1/util/find-unus
  # Copyright 2016 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/util/fips-checksums.sh openssl-4.0.1/util/fips-checksums.sh
---- openssl-4.0.1.orig/util/fips-checksums.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/fips-checksums.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#! /bin/sh
-+#!/sw/bash/bin/bash
- 
- HERE=`dirname $0`
- 
 diff -Naur openssl-4.0.1.orig/util/fix-deprecation openssl-4.0.1/util/fix-deprecation
 --- openssl-4.0.1.orig/util/fix-deprecation	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/util/fix-deprecation	2026-06-09 07:36:41.000000000 -0400
@@ -6287,15 +6170,6 @@ diff -Naur openssl-4.0.1.orig/util/su-filter.pl openssl-4.0.1/util/su-filter.pl
  # Copyright 2015-2016 The OpenSSL Project Authors. All Rights Reserved.
  #
  # Licensed under the Apache License 2.0 (the "License").  You may not use
-diff -Naur openssl-4.0.1.orig/util/update_abi_check.sh openssl-4.0.1/util/update_abi_check.sh
---- openssl-4.0.1.orig/util/update_abi_check.sh	2026-06-09 07:36:41.000000000 -0400
-+++ openssl-4.0.1/util/update_abi_check.sh	2026-06-09 07:36:41.000000000 -0400
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/sw/bash/bin/bash
- #
- abidw --out-file ./.github/workflows/libcrypto-abi.xml libcrypto.so
- abidw --out-file ./.github/workflows/libssl-abi.xml libssl.so
 diff -Naur openssl-4.0.1.orig/util/withlibctx.pl openssl-4.0.1/util/withlibctx.pl
 --- openssl-4.0.1.orig/util/withlibctx.pl	2026-06-09 07:36:41.000000000 -0400
 +++ openssl-4.0.1/util/withlibctx.pl	2026-06-09 07:36:41.000000000 -0400

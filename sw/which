@@ -10,6 +10,7 @@ VERSION=2.25
 ARCHIVES=(
     1cb83e4f702e60b8211ab5ec4c2afbab1b1dec80209456a7d2faf7584ed225ea https://github.com/fluffy-linux/which/releases/download/v$VERSION/which-$VERSION.tar.gz
     c001e76ac9740d5b03bf5d6aff178595ef10dd593aa4dba89790637c01baa2c3 file://which-$VERSION-fluffy-source.patch
+    cc504bfcfd8b0afd02fd8e609c738c318f7b862e14c2d39de2e1e6b2153f660e file://which-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -59,6 +60,7 @@ fi
 
 MAKE() {
     patch -Z -Np1 -i which-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i which-$VERSION-fluffy-test.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
@@ -67,47 +69,7 @@ MAKE() {
 }
 
 CHECK() {
-    local td wbin rc=0
-    td="$(mktemp -d)"
-    wbin="$PWD/which"
-    mkdir -p "$td/pkg1/bin" "$td/pkg2/bin" "$td/cwd/~pkg/bin" "$td/colon:dir" "$td/home[1]/bin" "$td/home[1]/pkgs/p1/bin"
-    ln -sf /sw/coreutils/bin/true "$td/pkg1/bin/fluffytest"
-    ln -sf /sw/coreutils/bin/true "$td/pkg2/bin/fluffytest"
-    ln -sf /sw/coreutils/bin/true "$td/colon:dir/coloncmd"
-    ln -sf /sw/coreutils/bin/true "$td/home[1]/bin/homecmd"
-    ln -sf /sw/coreutils/bin/true "$td/home[1]/pkgs/p1/bin/homewild"
-    ln -sf /sw/coreutils/bin/true "$td/cwd/~pkg/bin/tildestar_cmd"
-    touch "$td/pkg1/bin/nonexec"
-    chmod 0644 "$td/pkg1/bin/nonexec"
-    ln -sf /sw/coreutils/bin/true "$td/pkg2/bin/nonexec"
-    ln -sf /sw/coreutils/bin/true "$td/cwd/localcmd"
-
-    test "$(PATH='/sw/*/bin' ./which bash)" = "/sw/bash/bin/bash"
-    test "$(PATH='/sw/[[:alpha:]]*/bin' ./which bash)" = "/sw/bash/bin/bash"
-    test "$(PATH="$td/*/bin" ./which fluffytest)" = "$td/pkg1/bin/fluffytest"
-    test "$(PATH="$td/*/bin:$td/*/bin" ./which -a fluffytest | wc -l)" = "4"
-    test "$(cd "$td/cwd" && PATH="" "$wbin" --show-dot localcmd)" = "./localcmd"
-    test "$(cd "$td/cwd" && PATH="\\.:$td/*/bin" "$wbin" --show-dot localcmd)" = "./localcmd"
-    test "$(cd "$td/cwd" && PATH=":$td/*/bin" "$wbin" --show-dot localcmd)" = "./localcmd"
-    test "$(cd "$td/cwd" && PATH="$td/*/bin::$td/pkg2/bin" "$wbin" --show-dot localcmd)" = "./localcmd"
-    test "$(cd "$td/cwd" && PATH="$td/*/bin:" "$wbin" --show-dot localcmd)" = "./localcmd"
-    test "$(PATH="$td/colon\\:dir:$td/*/bin" ./which coloncmd)" = "$td/colon:dir/coloncmd"
-    test "$(PATH='/sw/[b]ash/bin' ./which bash)" = "/sw/bash/bin/bash"
-    test "$(PATH="[[:alpha]:$td/pkg1/bin" ./which fluffytest)" = "$td/pkg1/bin/fluffytest"
-    test "$(cd "$td/cwd" && PATH='~*/bin' "$wbin" tildestar_cmd)" = "$td/cwd/~pkg/bin/tildestar_cmd"
-    test "$(PATH="$td/*/bin" ./which nonexec)" = "$td/pkg2/bin/nonexec"
-    test "$(HOME="$td/home[1]" PATH="~/bin:$td/*/bin" ./which homecmd)" = "$td/home[1]/bin/homecmd"
-    test "$(HOME="$td/home[1]" PATH="~/*/p1/bin" ./which homewild)" = "$td/home[1]/pkgs/p1/bin/homewild"
-    rc=0
-    HOME="$td/home[1]" PATH="~/bin:$td/*/bin" ./which --skip-tilde homecmd 2>/dev/null || rc=$?
-    test "$rc" -eq 1
-    rc=0
-    PATH='/sw/*/bin' ./which definitely_missing_cmd 2>/dev/null || rc=$?
-    test "$rc" -eq 1
-    rc=0
-    env -u PATH ./which "$wbin" definitely_missing_cmd >/dev/null 2>&1 || rc=$?
-    test "$rc" -eq 1
-    rm -rf "$td"
+    make check
 }
 
 INSTALL() {

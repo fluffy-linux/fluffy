@@ -12,6 +12,7 @@ ARCHIVES=(
     7c2aecf9ae24b87b019595e382b9f41d2c96de7f95abe95ad8cacc7e2ce1bbcc file://coreutils-$VERSION-i18n-1.patch
     2bc3a5a73b2eba8a3e29554f43baa0c2c8c1e4a75cee059c4fb68785f1b8c29a file://coreutils-$VERSION-fluffy-shell.patch
     772b05846fb1b22ccf3d7aeb635e8c3aab8f23b3c3f2b8ffb5f570e2e2194e9d file://coreutils-$VERSION-fluffy-source.patch
+    25c8f3ee5260452b82aaef2d3a9bf200077b19fdefaac15169df34760ce6ee22 file://coreutils-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -96,6 +97,7 @@ MAKE() {
     patch -Z -Np1 -i coreutils-$VERSION-i18n-1.patch
     patch -Z -Np1 -i coreutils-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i coreutils-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i coreutils-$VERSION-fluffy-test.patch
 
     autoreconf -fv
     automake -af
@@ -105,12 +107,6 @@ MAKE() {
 }
 
 CHECK() {
-    PATH=/sw/*/bin ./src/env true
-    PATH=:/sw/*/bin ./src/timeout 5 bash -c exit
-    local rc=0
-    PATH=/sw/bash/bin/bash ./src/env non_existent_cmd 2>/dev/null || rc=$?
-    test "$rc" -eq 126
-
     unset SOURCE_DATE_EPOCH
     make RUN_EXPENSIVE_TESTS=yes check < /dev/null
 }

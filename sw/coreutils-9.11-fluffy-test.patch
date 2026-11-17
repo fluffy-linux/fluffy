@@ -1,0 +1,126 @@
+diff --no-dereference -Naur coreutils-9.11.orig/tests/env/env-glob-path.sh coreutils-9.11/tests/env/env-glob-path.sh
+--- coreutils-9.11.orig/tests/env/env-glob-path.sh	1970-01-01 00:00:00.000000000 +0000
++++ coreutils-9.11/tests/env/env-glob-path.sh	2026-04-17 12:24:37.000000000 +0000
+@@ -0,0 +1,40 @@
++#!/bin/sh
++# Test env and timeout command lookup through wildcard PATH entries.
++
++# Copyright (C) 2026 Free Software Foundation, Inc.
++
++# This program is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++. "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
++print_ver_ env timeout
++
++env_=$(command -v env) || framework_failure_
++timeout_=$(command -v timeout) || framework_failure_
++
++mkdir -p pkg/a/bin pkg/b/bin || framework_failure_
++printf '#!%s\nexit 0\n' "$SHELL" > pkg/b/bin/fluffy-probe || framework_failure_
++chmod +x pkg/b/bin/fluffy-probe || framework_failure_
++
++# env runs a program found through "<prefix>/*/bin".
++PATH="$PWD/pkg/*/bin" "$env_" fluffy-probe || fail=1
++
++# timeout does too, with a leading empty (current directory) element.
++PATH=":$PWD/pkg/*/bin" "$timeout_" 10 fluffy-probe || fail=1
++
++# A PATH element naming a regular file gives ENOTDIR, so env exits 126
++# (found but not runnable) rather than 127 (not found).
++returns_ 126 env PATH="$PWD/pkg/b/bin/fluffy-probe" \
++  "$env_" no-such-command 2> /dev/null || fail=1
++
++Exit $fail
+diff --no-dereference -Naur coreutils-9.11.orig/tests/local.mk coreutils-9.11/tests/local.mk
+--- coreutils-9.11.orig/tests/local.mk	2026-04-17 12:24:37.000000000 +0000
++++ coreutils-9.11/tests/local.mk	2026-04-17 12:24:37.000000000 +0000
+@@ -257,6 +257,7 @@
+   tests/fmt/width.sh				\
+   tests/misc/echo.sh				\
+   tests/env/env.sh				\
++  tests/env/env-glob-path.sh			\
+   tests/env/env-signal-handler.sh		\
+   tests/ptx/ptx.pl				\
+   tests/test/test.pl				\
+@@ -426,6 +427,7 @@
+   tests/sort/sort.pl				\
+   tests/sort/sort-benchmark-random.sh		\
+   tests/sort/sort-compress.sh			\
++  tests/sort/sort-compress-glob-path.sh		\
+   tests/sort/sort-compress-hang.sh		\
+   tests/sort/sort-compress-proc.sh		\
+   tests/sort/sort-continue.sh			\
+diff --no-dereference -Naur coreutils-9.11.orig/tests/sort/sort-compress-glob-path.sh coreutils-9.11/tests/sort/sort-compress-glob-path.sh
+--- coreutils-9.11.orig/tests/sort/sort-compress-glob-path.sh	1970-01-01 00:00:00.000000000 +0000
++++ coreutils-9.11/tests/sort/sort-compress-glob-path.sh	2026-04-17 12:24:37.000000000 +0000
+@@ -0,0 +1,59 @@
++#!/bin/sh
++# Test that sort finds --compress-program through wildcard PATH entries.
++
++# Copyright (C) 2026 Free Software Foundation, Inc.
++
++# This program is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++. "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
++print_ver_ sort
++
++sort_=$(command -v sort) || framework_failure_
++seq -w 2000 > exp || framework_failure_
++tac exp > in || framework_failure_
++
++mkdir -p pkg/a/bin pkg/b/bin cwd || framework_failure_
++cat <<EOF > pkg/b/bin/fzip || framework_failure_
++#!$SHELL
++tr 41 14
++touch "$PWD/ok"
++EOF
++chmod +x pkg/b/bin/fzip || framework_failure_
++
++# The program is found in the second package through "<prefix>/*/bin".
++PATH="$PWD/pkg/*/bin:$PATH" sort -S 1k --compress-program=fzip in > out \
++  || fail=1
++compare exp out || fail=1
++test -f ok || fail=1
++rm -f ok
++
++# A leading empty PATH element means the current directory, which has no
++# fzip; the wildcard element after it still supplies the program.
++(cd cwd && PATH=":$PWD/../pkg/*/bin:$PATH" \
++   sort -S 1k --compress-program=fzip ../in > ../out) || fail=1
++compare exp out || fail=1
++test -f ok || fail=1
++rm -f ok
++
++# A PATH element naming a regular file reports "Not a directory" rather
++# than "No such file or directory" when nothing is found.
++cat <<\EOF > exp-err
++sort: could not run compress program 'missing': Not a directory
++EOF
++PATH="$PWD/pkg/b/bin/fzip" "$sort_" --compress-program=missing -S 1k in \
++  > out 2> err || fail=1
++compare exp out || fail=1
++compare exp-err err || fail=1
++
++Exit $fail

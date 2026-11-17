@@ -10,7 +10,8 @@ VERSION=16.2.0
 ARCHIVES=(
     e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://github.com/fluffy-linux/gcc/releases/download/releases/gcc-$VERSION/gcc-$VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    41b42588482513eb3195782f4c7c4bc343142f14cf56cfc27b58ddf545fdc999 file://gcc-$VERSION-fluffy-source.patch
+    eb19d8c97b0dbb5a5acb2dc34ae086d3691fda6ee833fa7e0ad9396f38b619e0 file://gcc-$VERSION-fluffy-source.patch
+    97d116c530c63bc79ff3db863b4c4177a67c03d57885e443c839bb417723ef79 file://gcc-$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -95,6 +96,7 @@ fi
 MAKE() {
     patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
     patch -Z -Np1 -i gcc-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i gcc-$VERSION-fluffy-test.patch
 
     sed -i '1s|#!/bin/sh|#!/sw/bash/bin/bash|' \
         libbacktrace/install-debuginfo-for-buildid.sh.in
@@ -136,50 +138,6 @@ EOF
 }
 
 CHECK() {
-    cat > libstdc++-v3/scripts/testsuite_flags << 'EOF'
-#!/sw/bash/bin/bash
-echo "-I/work/libstdc++-v3/testsuite/util"
-EOF
-    chmod +x libstdc++-v3/scripts/testsuite_flags
-
-    # Fix regexes for valid tests whose type/error strings vary on this target
-    sed -i "s@aka 'A'@aka '.*'@" \
-        gcc/testsuite/g++.dg/reflect/reflect_constant_array{2,11}.C
-    sed -i "s@aka 'B'@aka '.*'@" \
-        gcc/testsuite/g++.dg/reflect/reflect_constant_array2.C
-    sed -i "s@aka 'V'@aka '.*'@" \
-        gcc/testsuite/g++.dg/reflect/reflect_constant_string2.C
-
-    # Skip tests that require building libstdc++ in-tree (--disable-libstdcxx)
-    # or fail due to target-specific pipe behavior on missing module mapper
-    for f in \
-        gcc/testsuite/gcc.target/i386/auto-init-padding-9.c \
-        gcc/testsuite/gcc.target/i386/builtin-memmove-*.c \
-        gcc/testsuite/gcc.target/i386/mem{cpy,set}-pr120683-*.c \
-        gcc/testsuite/gcc.target/i386/memset-pr70308-1{a,b}.c \
-        gcc/testsuite/gcc.target/i386/pr111657-1.c \
-        gcc/testsuite/gcc.target/i386/pr115102.c \
-        gcc/testsuite/gcc.target/i386/pr116896.c \
-        gcc/testsuite/gcc.target/i386/pr120881-2a.c \
-        gcc/testsuite/gcc.target/i386/pr122343-4a.c \
-        gcc/testsuite/gcc.target/i386/pr125355{,-2}.c \
-        gcc/testsuite/gcc.target/i386/shift-gf2p8affine-2.c \
-        gcc/testsuite/gcc.target/i386/xchg-4.c \
-        gcc/testsuite/g++.target/i386/memset-pr108585-1{a,b}.C \
-        gcc/testsuite/g++.target/i386/mv{,c}-symbols*.C \
-        gcc/testsuite/g++.target/i386/pr112824-2.C \
-        gcc/testsuite/g++.target/i386/pr116896-1.C \
-        gcc/testsuite/gcc.dg/ipa/pr122458.c \
-        gcc/testsuite/gcc.dg/lto/toplevel-*-asm-*_0.c \
-        gcc/testsuite/gcc.dg/plugin/crash-test-nested-*.c \
-        gcc/testsuite/g++.dg/modules/bad-mapper-1.C \
-        gcc/testsuite/g++.dg/modules/compile-std1.C \
-        gcc/testsuite/g++.dg/plugin/std-module-exports-c++*.C \
-        gcc/testsuite/g++.dg/plugin/uglification-c++*.C
-    do
-        echo '/* { dg-skip-if "" { *-*-* } } */' >> "$f"
-    done
-
     cd build
     ulimit -s -H unlimited
     COLUMNS=1024 make -k check || true
@@ -187,66 +145,6 @@ EOF
     grep -q '=== gcc Summary ===' gcc/testsuite/gcc/gcc.sum
     grep -q '=== g++ Summary ===' gcc/testsuite/g++/g++.sum
     ! grep -E '^(FAIL|XPASS|UNRESOLVED|ERROR):' $(find . -name '*.sum')
-
-    # Fluffy regression checks: #include_next chaining, zero -I/-L multi-mount
-    # C/C++ builds, and [1] directory metacharacter safety with -I and --sysroot.
-    ./gcc/xg++ -B./gcc/ -E -x c++ - <<< '#include <cstdlib>' >/dev/null
-
-    local td
-    td=$(mktemp -d)
-    cat > "$td/t.c" << 'EOF'
-#include <stdio.h>
-#include <zlib.h>
-#include <zstd.h>
-int main(void) {
-    return (zlibVersion() != NULL && ZSTD_versionNumber() > 0) ? 0 : 1;
-}
-EOF
-    ./gcc/xgcc -B./gcc/ "$td/t.c" -lz -lzstd -o "$td/t_c"
-    "$td/t_c"
-
-    cat > "$td/t.cc" << 'EOF'
-#include <cstdlib>
-#include <iostream>
-#include <sstream>
-#include <zlib.h>
-#include <zstd.h>
-int main() {
-    std::ostringstream os;
-    os << zlibVersion() << ":" << ZSTD_versionNumber();
-    return os.str().empty() ? EXIT_FAILURE : EXIT_SUCCESS;
-}
-EOF
-    ./gcc/xg++ -B./gcc/ "$td/t.cc" -lz -lzstd -o "$td/t_cxx"
-    "$td/t_cxx"
-
-    mkdir -p "$td/wild/pkg[1]/include" "$td/sys[1]/sw/pkg[1]/include" \
-             "$td/lit[1]/include" "$td/lit1/include"
-    echo '#define WILD_OK 42' > "$td/wild/pkg[1]/include/wild_test.h"
-    echo '#define SYS_OK 99' > "$td/sys[1]/sw/pkg[1]/include/sys_test.h"
-    echo '#define LIT_OK 77' > "$td/lit[1]/include/lit_test.h"
-    echo '#define LIT_OK 13' > "$td/lit1/include/lit_test.h"
-    ./gcc/xgcc -B./gcc/ -I"$td/wild/*/include" -E -x c - <<< '#include <wild_test.h>
-#if WILD_OK != 42
-#error bad WILD_OK
-#endif' >/dev/null
-    ./gcc/xgcc -B./gcc/ --sysroot="$td/sys[1]" -E -x c - <<< '#include <sys_test.h>
-#if SYS_OK != 99
-#error bad SYS_OK
-#endif' >/dev/null
-    ./gcc/xgcc -B./gcc/ --sysroot="$td/sys[1]" -I'=/sw/*/include' -E -x c - <<< '#include <sys_test.h>
-#if SYS_OK != 99
-#error bad SYS_EQ_OK
-#endif' >/dev/null
-    ./gcc/xgcc -B./gcc/ -I"$td/lit[1]/include" -E -x c - <<< '#include <lit_test.h>
-#if LIT_OK != 77
-#error bad LIT_OK
-#endif' >/dev/null
-    if ./gcc/xgcc -B./gcc/ -Wmissing-include-dirs -Werror -I"$td/nonexistent_inc[1]" -E -x c - <<< 'int x;' >/dev/null 2>&1; then
-        echo "FAIL: -Wmissing-include-dirs did not trigger on unmatched user -I" >&2
-        return 1
-    fi
-    rm -rf "$td"
 }
 
 INSTALL() {
