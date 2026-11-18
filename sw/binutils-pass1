@@ -9,8 +9,8 @@ ARCHIVES=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i binutils-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i binutils-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../binutils-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../binutils-$VERSION-fluffy-source.patch
 
     mkdir -v build
     cd build

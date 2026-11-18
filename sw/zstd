@@ -7,8 +7,6 @@ fi
 
 VERSION=1.5.7
 
-HAS_LDFLAGS=-lzstd
-
 ARCHIVES=(
     eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3 https://github.com/fluffy-linux/zstd/releases/download/v$VERSION/zstd-$VERSION.tar.gz
     e272e701c83fa96fd32888aaf7299a407eeb82ccd45a17380f2cbcec3a8942a4 file://zstd-$VERSION-fluffy-source.patch
@@ -38,6 +36,7 @@ then
         lz4
         make-pass1
         patch-pass1
+        pkgconf
         sed-pass1
         tar-pass1
         xz
@@ -58,6 +57,7 @@ else
         lz4
         make
         patch
+        pkgconf
         sed
         tar
         xz
@@ -66,8 +66,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i zstd-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i zstd-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../zstd-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../zstd-$VERSION-fluffy-test.patch
     make prefix=/sw/zstd
 }
 

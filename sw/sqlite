@@ -7,8 +7,6 @@ fi
 
 VERSION=3530400
 
-HAS_LDFLAGS=-lsqlite3
-
 ARCHIVES=(
     0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c https://github.com/fluffy-linux/sqlite/releases/download/version-3.53.4/sqlite-autoconf-$VERSION.tar.gz
     8633b6b7310a836affd8c3c17e5f77ef13a1938970bd37c4f01eb6bb051d2e2d file://sqlite-$VERSION-fluffy.patch
@@ -68,8 +66,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i sqlite-$VERSION-fluffy.patch
-    patch -Z -Np1 -i sqlite-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../sqlite-$VERSION-fluffy.patch
+    patch -Z -Np1 -i ../sqlite-$VERSION-fluffy-test.patch
 
     CROSS="" ./configure \
         --prefix=/sw/sqlite \

@@ -7,8 +7,6 @@ fi
 
 VERSION=8.23.0
 
-HAS_LDFLAGS=-lcurl
-
 ARCHIVES=(
     8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5 https://github.com/fluffy-linux/curl/releases/download/curl-${VERSION//./_}/curl-$VERSION.tar.xz
     b6b341c45975d84b4c40be1e4a3830a52bcc02f2323169ced5c277c6bdfa6c78 file://curl-$VERSION-fluffy-source.patch
@@ -44,6 +42,7 @@ then
         openssl
         patch-pass1
         perl
+        pkgconf
         python
         sed
         tar-pass1
@@ -70,6 +69,7 @@ else
         openssl
         patch
         perl
+        pkgconf
         python
         sed
         tar
@@ -80,9 +80,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i curl-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i curl-$VERSION-fluffy-test.patch
-    patch -Z -Np1 -i curl-$VERSION-fluffy-ch8.patch
+    patch -Z -Np1 -i ../curl-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../curl-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../curl-$VERSION-fluffy-ch8.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/curl \

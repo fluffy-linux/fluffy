@@ -9,7 +9,7 @@ VERSION=1.12.0
 
 ARCHIVES=(
     88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c https://github.com/fluffy-linux/meson/releases/download/$VERSION/meson-$VERSION.tar.gz
-    ef56213768674c73d03ca1e1370539e2f9b3dc831087ca893dc810247e8b8602 file://meson-$VERSION-fluffy.patch
+    1d8fcae24eb8b5ce3172d9efc8bbd00437a369517cc049974eabdc3c135017ff file://meson-$VERSION-fluffy.patch
 )
 
 NEEDS=(
@@ -53,7 +53,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i meson-$VERSION-fluffy.patch
+    patch -Z -Np1 -i ../meson-$VERSION-fluffy.patch
     pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 }
 

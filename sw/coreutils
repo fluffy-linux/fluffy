@@ -94,10 +94,10 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i coreutils-$VERSION-i18n-1.patch
-    patch -Z -Np1 -i coreutils-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i coreutils-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i coreutils-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../coreutils-$VERSION-i18n-1.patch
+    patch -Z -Np1 -i ../coreutils-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../coreutils-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../coreutils-$VERSION-fluffy-test.patch
 
     autoreconf -fv
     automake -af

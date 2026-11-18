@@ -63,8 +63,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i diffutils-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i diffutils-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../diffutils-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../diffutils-$VERSION-fluffy-source.patch
 
     ac_cv_path_PR_PROGRAM=pr CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/diffutils

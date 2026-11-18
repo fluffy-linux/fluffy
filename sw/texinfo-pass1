@@ -35,8 +35,8 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i texinfo-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i texinfo-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../texinfo-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../texinfo-$VERSION-fluffy-test.patch
     CONFIG_SITE=/sw/glibc/share/config.site CONFIG_SHELL=/sw/bash/bin/bash ./configure \
         --prefix=/sw/texinfo
     make

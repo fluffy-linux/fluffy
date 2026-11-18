@@ -16,15 +16,6 @@ diff --no-dereference -Naur systemd-261.2.orig/meson.build systemd-261.2/meson.b
  
  #####################################################################
  
-@@ -1282,7 +1290,7 @@
- conf.set10('HAVE_BZIP2', libbzip2.found())
- libbzip2_cflags = libbzip2.partial_dependency(includes: true, compile_args: true)
- 
--libxz = dependency('liblzma',
-+libxz = dependency('liblzma', 'xz',
-                    required : get_option('xz'))
- conf.set10('HAVE_XZ', libxz.found())
- libxz_cflags = libxz.partial_dependency(includes: true, compile_args: true)
 diff --no-dereference -Naur systemd-261.2.orig/meson_options.txt systemd-261.2/meson_options.txt
 --- systemd-261.2.orig/meson_options.txt	2026-07-23 17:07:04.000000000 +0000
 +++ systemd-261.2/meson_options.txt	2026-07-23 17:07:04.000000000 +0000

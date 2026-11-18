@@ -80,7 +80,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i gettext-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../gettext-$VERSION-fluffy-shell.patch
 
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/gettext \

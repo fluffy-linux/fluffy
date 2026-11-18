@@ -7,8 +7,6 @@ fi
 
 VERSION=8.6.18
 
-HAS_LDFLAGS=-ltcl8.6
-
 ARCHIVES=(
     14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-src.tar.gz
     bee2d83a19ce50624eeae951be29fe5f654b171357a6391123caf18107cec543 https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-html.tar.gz
@@ -65,8 +63,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i tcl$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i tcl$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../tcl$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../tcl$VERSION-fluffy-test.patch
 
     SRCDIR=$(pwd)
     cd unix
@@ -115,5 +113,7 @@ INSTALL() {
         mv -v $DESTDIR/sw/tcl/share/man/man3/{Thread,Tcl_Thread}.3
     fi
     mkdir -v -p $DESTDIR/sw/tcl/share/doc/tcl-$VERSION
-    cp -v -r ../tcl$VERSION-html/tcl$VERSION/html/* $DESTDIR/sw/tcl/share/doc/tcl-$VERSION
+    tar --strip-components=2 --no-same-owner --no-same-permissions \
+        -C $DESTDIR/sw/tcl/share/doc/tcl-$VERSION \
+        -xf ../../tcl$VERSION-html.tar.gz
 }

@@ -7,8 +7,6 @@ fi
 
 VERSION=4.0.1
 
-HAS_LDFLAGS="-lssl -lcrypto"
-
 ARCHIVES=(
     2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/fluffy-linux/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
     3327a2e133ba3204da818d5b546175fe8196276664942f6b02770f660dedee35 file://openssl-$VERSION-fluffy-ch8.patch
@@ -70,9 +68,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i openssl-$VERSION-fluffy-ch8.patch
-    patch -Z -Np1 -i openssl-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i openssl-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../openssl-$VERSION-fluffy-ch8.patch
+    patch -Z -Np1 -i ../openssl-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../openssl-$VERSION-fluffy-test.patch
 
     ./config \
         --prefix=/sw/openssl \

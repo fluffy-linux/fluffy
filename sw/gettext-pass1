@@ -32,7 +32,7 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i gettext-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../gettext-$VERSION-fluffy-shell.patch
     CONFIG_SITE=/sw/glibc/share/config.site ./configure --disable-shared
     make
 }

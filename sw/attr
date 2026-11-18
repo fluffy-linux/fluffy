@@ -7,8 +7,6 @@ fi
 
 VERSION=2.6.0
 
-HAS_LDFLAGS=-lattr
-
 ARCHIVES=(
     d42fa374513180bb48cb11a46696f488240e5124ff1e6ad88b0abff706985612 https://github.com/fluffy-linux/attr/releases/download/v$VERSION/attr-$VERSION.tar.gz
     4fe15575f01abb0491890e93899695bbb398a34e7c00590398362e571d667f14 file://attr-$VERSION-fluffy-test.patch
@@ -60,7 +58,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i attr-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../attr-$VERSION-fluffy-test.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \

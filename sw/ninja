@@ -14,26 +14,26 @@ ARCHIVES=(
 )
 
 NEEDS=(
-    bash
+    bash-pass1
     glibc
     libgcc
-    libstdcpp
+    libstdcpp-pass1
 )
 
 if test -v CROSS
 then
     BUILD_NEEDS=(
-        bash
-        binutils
+        bash-pass1
+        binutils-pass2
         coreutils-pass1
-        gcc
+        gcc-pass2
         glibc
         libgcc
-        libstdcpp
+        libstdcpp-pass1
         linux-headers
         patch-pass1
-        python
-        sed
+        python-pass1
+        sed-pass1
         util-linux-pass1
     )
 else
@@ -47,15 +47,15 @@ else
         libstdcpp
         linux-headers
         patch
-        python
+        python-pass1
         sed
-        util-linux
+        util-linux-pass1
     )
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ninja-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ninja-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../ninja-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../ninja-$VERSION-fluffy-test.patch
 
     sed -i '/int Guess/a \
   int   j = 0;\

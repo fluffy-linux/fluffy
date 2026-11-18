@@ -7,8 +7,6 @@ fi
 
 VERSION=2.6.4
 
-HAS_LDFLAGS=-lfl
-
 ARCHIVES=(
     e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995 https://github.com/fluffy-linux/flex/releases/download/v$VERSION/flex-$VERSION.tar.gz
 )

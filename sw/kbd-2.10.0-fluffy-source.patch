@@ -13,19 +13,6 @@ diff --no-dereference -Naur kbd-2.10.0.orig/configure kbd-2.10.0/configure
    *) :
      RESIZECONS_PROGS=no
   ;; #(
-@@ -19814,9 +19814,9 @@
- 		PKG_CONFIG=""
- 	fi
- fi
--if test -z "$PKG_CONFIG"; then
--	as_fn_error $? "pkg-config not found" "$LINENO" 5
--fi
-+: "${LZMA_CFLAGS:=${XZ_CFLAGS:-}}"
-+: "${LZMA_LIBS:=${XZ_LIBS:-}}"
-+PKG_CONFIG="false" 
- 
- { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking the configure options..." >&5
- printf '%s\n' "$as_me: checking the configure options..." >&6;}
 diff --no-dereference -Naur kbd-2.10.0.orig/data/compress.sh kbd-2.10.0/data/compress.sh
 --- kbd-2.10.0.orig/data/compress.sh	2026-03-18 13:49:48.272721550 +0000
 +++ kbd-2.10.0/data/compress.sh	2026-03-18 13:49:48.272721550 +0000

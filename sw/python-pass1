@@ -2,9 +2,6 @@ ON=cross-build
 
 VERSION=3.14.7
 
-HAS_CFLAGS=-I/sw/python/include/python3.14
-HAS_LDFLAGS=-lpython3.14
-
 ARCHIVES=(
     3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/Python-$VERSION.tar.xz
     b1b9929b2260e4dd55b5afd8b3b9c291a8e5373738611714b75b3b9f995ead49 file://Python-$VERSION-fluffy-source.patch
@@ -39,6 +36,7 @@ BUILD_NEEDS=(
     mpdecimal-pass1
     ncurses-pass1
     patch-pass1
+    pkgconf-pass1
     sed-pass1
     tar-pass1
     util-linux-pass1
@@ -48,7 +46,7 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i Python-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../Python-$VERSION-fluffy-source.patch
     touch Modules/getpath.py
 
     export CONFIG_SHELL=/sw/bash/bin/bash

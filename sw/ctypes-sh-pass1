@@ -18,6 +18,8 @@ BUILD_NEEDS=(
     glibc-pass1
     libffi-pass1
     linux-headers
+    pkgconf-pass1
+    zlib-pass1  # configure insists, but only struct support (off: no libelf) uses it
 )
 
 MAKE() {

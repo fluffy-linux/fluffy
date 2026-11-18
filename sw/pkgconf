@@ -1,0 +1,83 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=3.0.5
+
+ARCHIVES=(
+    3acd3a8a3cce65a8d620321855d92fb602e026cbe8e13ee36bdec58483b59ace https://github.com/fluffy-linux/pkgconf/releases/download/pkgconf-$VERSION/pkgconf-$VERSION.tar.xz
+    88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c https://github.com/fluffy-linux/meson/releases/download/1.12.0/meson-1.12.0.tar.gz
+    ca3dded8953ee2319643466a6f7022ce37432bbc61cd510d6f29a9a04e7ce0bf file://pkgconf-$VERSION-fluffy.patch
+)
+
+NEEDS=(
+    glibc
+)
+
+# As LFS, pkgconf is built with meson.py from the meson tarball, under the
+# temporary python: the final python and util-linux use pkgconf, and ninja
+# is built from python-pass1 and util-linux-pass1, so nothing loops.
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash-pass1
+        binutils-pass2
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gcc-pass2
+        glibc
+        libgcc
+        linux-headers
+        ninja
+        patch-pass1
+        python-pass1
+        sed-pass1
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gcc
+        glibc
+        libgcc
+        linux-headers
+        ninja
+        patch
+        python-pass1
+        sed
+    )
+fi
+
+MAKE() {
+    apply_patch ../pkgconf-$VERSION-fluffy.patch
+    tar -xf ../meson-1.12.0.tar.gz
+
+    mkdir build
+    cd build
+    python3 ../meson-1.12.0/meson.py setup \
+        --prefix=/sw/pkgconf \
+        --libdir=/sw/pkgconf/lib \
+        --buildtype=release \
+        -Dwith-pkg-config-dir='/sw/*/lib/pkgconfig:/sw/*/share/pkgconfig' \
+        -Dwith-system-libdir='/sw/*/lib' \
+        -Dwith-system-includedir='/sw/*/include' \
+        ..
+    ninja
+}
+
+CHECK() {
+    ninja -C build test
+}
+
+INSTALL() {
+    DESTDIR=$DESTDIR ninja -C build install
+    ln -sv pkgconf $DESTDIR/sw/pkgconf/bin/pkg-config
+    ln -sv pkgconf.1 $DESTDIR/sw/pkgconf/share/man/man1/pkg-config.1
+}

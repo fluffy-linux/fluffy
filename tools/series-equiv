@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# series-equiv TARBALL OLD_PATCHES NEW_PATCH -- prove a package's new
+# patch equivalent to the patches it replaces.
+#
+#   TARBALL      the release tarball the recipe downloads
+#   OLD_PATCHES  the old patches, colon-separated, in the recipe's order
+#   NEW_PATCH    the new patch, from git format-patch (see NOTES.md)
+#
+# Extracts TARBALL twice, applies OLD_PATCHES to one copy as the old recipes
+# did (patch -Z -Np1) and NEW_PATCH to the other as recipes now do (swctl's
+# apply_patch), and compares every entry's type and mode, and every file's
+# contents.  A file from the tarball must also keep its mtime.  A new
+# file's mtime is only the time it was written, so a difference there is
+# only noted.  A directory's mtime only records when patch wrote into it, so
+# it is not compared.  Exits 0 only when the trees are equivalent.
+set -euo pipefail
+umask 022   # As swctl builds.
+eval "$(sed -n '/^apply_patch() {$/,/^}$/p' "$(dirname "$(realpath "$0")")/../swctl")"
+tarball="$(realpath "$1")" old="$2" new="$(realpath "$3")"
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+for side in old new
+do
+    mkdir "$work/$side"
+    tar --no-same-owner -xf "$tarball" -C "$work/$side"
+done
+apply() {   # apply DIR COMMAND PATCH...
+    local dir cmd p
+    dir="$(echo "$1"/*)"
+    cmd="$2"
+    shift 2
+    for p in "$@"
+    do
+        p="$(realpath "$p")"
+        (cd "$dir" && $cmd "$p" > /dev/null) || {
+            echo "series-equiv: $p does not apply" >&2
+            exit 1
+        }
+    done
+}
+IFS=: read -ra olds <<< "$old"
+apply "$work/old" "patch -s -Z -Np1 -i" "${olds[@]}"
+apply "$work/new" apply_patch "$new"
+mkdir "$work/base"
+tar --no-same-owner -xf "$tarball" -C "$work/base"
+listing() {   # listing DIR [MTIMES]: type, mode, (mtime,) content hash.
+    (cd "$1"/* && find . -printf '%y %m %T@ %p\n' | sort -k4) |
+        while read -r type mode mtime path
+        do
+            sum=-
+            if test "$type" = f
+            then
+                sum="$(sha256sum < "$1"/*/"$path" | cut -c1-16)"
+            fi
+            if test "$type" = d || { test -z "${2:-}" && ! test -e "$work/base"/*/"$path"; }
+            then
+                mtime=-
+            fi
+            printf '%s %s %s %s %s\n' "$path" "$type" "$mode" "$mtime" "$sum"
+        done
+}
+notes="$(diff <(listing "$work/old" all) <(listing "$work/new" all) | grep '^[<>]' || true)"
+if diff <(listing "$work/old") <(listing "$work/new")
+then
+    echo "series-equiv: equivalent (contents, types, modes; mtimes of tarball files)"
+    if test -n "$notes"
+    then
+        echo "series-equiv: note: new files' mtimes differ (< old, > new):"
+        echo "$notes" | sed 's/^/  /'
+    fi
+else
+    echo "series-equiv: the trees differ (< old patches, > new series)" >&2
+    exit 1
+fi
