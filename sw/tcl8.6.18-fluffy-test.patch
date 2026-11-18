@@ -64,36 +64,42 @@ diff --no-dereference -Naur tcl8.6.18/tests/unixFile.test tcl8.6.18.test/tests/u
  
  set oldpwd [pwd]
  cd [temporaryDirectory]
-@@ -56,6 +58,173 @@
+@@ -56,6 +58,183 @@
      set env(PATH) ":/dummy"
      testfindexecutable junk
  } $absPath
 +test unixFile-1.8 {Tcl_FindExecutable wildcard PATH} -constraints {testfindexecutable unix} -setup {
-+    file mkdir pkg_b/bin pkg_a/bin
-+    file attributes [makeFile "" pkg_b/bin/wjunk] -perm 0o777
-+    file attributes [makeFile "" pkg_a/bin/wjunk] -perm 0o777
++    file mkdir wsw/pkg_b/bin wsw/pkg_a/bin
++    file attributes [makeFile "" wsw/pkg_b/bin/wjunk] -perm 0o777
++    file attributes [makeFile "" wsw/pkg_a/bin/wjunk] -perm 0o777
 +} -body {
-+    set env(PATH) "/dummy:[pwd]/pkg_*/bin"
-+    testfindexecutable wjunk
++    set env(PATH) "/dummy:[pwd]/wsw/pkg_*/bin"
++    set r1 [testfindexecutable wjunk]
++    set env(PATH) "/dummy:[pwd]/wsw/*/bin"
++    list $r1 [testfindexecutable wjunk]
 +} -cleanup {
-+    removeFile pkg_a/bin/wjunk
-+    removeFile pkg_b/bin/wjunk
-+    file delete -force pkg_a pkg_b
-+} -result [file join [temporaryDirectory] pkg_a bin wjunk]
++    file delete -force wsw
++} -result [list {} [file join [temporaryDirectory] wsw pkg_a bin wjunk]]
 +test unixFile-1.9 {auto_execok wildcard PATH} -constraints {unix} -setup {
 +    auto_reset
-+    file mkdir pkg_b/bin pkg_a/bin
-+    file attributes [makeFile "" pkg_b/bin/wjunk2] -perm 0o777
-+    file attributes [makeFile "" pkg_a/bin/wjunk2] -perm 0o777
++    file mkdir wsw/pkg_b/bin wsw/pkg_a/bin wsw/.hidden/bin
++    file attributes [makeFile "" wsw/pkg_b/bin/wjunk2] -perm 0o777
++    file attributes [makeFile "" wsw/pkg_a/bin/wjunk2] -perm 0o777
++    file attributes [makeFile "" wsw/.hidden/bin/wjunk3] -perm 0o777
 +} -body {
-+    set env(PATH) [format "-bad_opt*:/unclosed%cbrace*:%s/pkg_*/bin" 123 [pwd]]
-+    auto_execok wjunk2
++    set env(PATH) [format "-bad_opt*:/unclosed%cbrace*:%s/wsw/pkg_*/bin" 123 [pwd]]
++    set r1 [auto_execok wjunk2]
++    auto_reset
++    set env(PATH) [format "-bad_opt*:/unclosed%cbrace*:%s/wsw/*/bin" 123 [pwd]]
++    set r2 [auto_execok wjunk2]
++    set r3 [auto_execok wjunk3]
++    auto_reset
++    set env(PATH) "[pwd]/*/*/bin"
++    list $r1 $r2 $r3 [auto_execok wjunk2]
 +} -cleanup {
 +    auto_reset
-+    removeFile pkg_a/bin/wjunk2
-+    removeFile pkg_b/bin/wjunk2
-+    file delete -force pkg_a pkg_b
-+} -result [list [file join [temporaryDirectory] pkg_a bin wjunk2]]
++    file delete -force wsw
++} -result [list {} [list [file join [temporaryDirectory] wsw pkg_a bin wjunk2]] {} {}]
 +test unixFile-1.10 {native brace glob while simplefs:/ volume is mounted} -constraints {unix testsimplefilesystem} -setup {
 +    file mkdir pkg_a/bin pkg_b/bin pkg_c/bin
 +    makeFile "" pkg_a/bin/tool1
@@ -182,26 +188,30 @@ diff --no-dereference -Naur tcl8.6.18/tests/unixFile.test tcl8.6.18.test/tests/u
 +    }
 +    file delete -force $tdir $fakeHome
 +} -result [list "[file normalize [file join [temporaryDirectory] tilde_escape]]/~/local_only" 1 "[file normalize [file join [temporaryDirectory] tilde_escape]]/a/~/deep_only" 1 {a/~ ~/local_only} 1]
-+test unixFile-1.15 {auto_execok bracket-aware colon split in PATH} -constraints {unix} -setup {
++test unixFile-1.15 {auto_execok: colon always splits PATH, brackets are literal} -constraints {unix} -setup {
 +    auto_reset
 +    set cdir [file join [temporaryDirectory] "p:b" bin]
-+    set udir [file join [temporaryDirectory] "\[unclosed" sub]
-+    file mkdir $cdir $udir
-+    set exe [file join $cdir bktcolon_cmd]
-+    close [open $exe w]
-+    file attributes $exe -perm 0o755
++    set ldir [file join [temporaryDirectory] "p\[a\]b" bin]
++    file mkdir $cdir $ldir
++    foreach d [list $cdir $ldir] {
++	set exe [file join $d bktcolon_cmd]
++	close [open $exe w]
++	file attributes $exe -perm 0o755
++    }
 +} -body {
-+    set env(PATH) "[file join [temporaryDirectory] \[unclosed sub]:[file join [temporaryDirectory] {p[a:]b} bin]"
++    set env(PATH) [file join [temporaryDirectory] {p[a:]b} bin]
 +    set r1 [auto_execok bktcolon_cmd]
 +    auto_reset
-+    set env(PATH) [format {[[:alpha]:%s:[[:digit:]]} [file join [temporaryDirectory] {p[a:]b} bin]]
++    set env(PATH) [format {[[:alpha]:%s:[[:digit:]]} [file join [temporaryDirectory] {p[a]b} bin]]
 +    set r2 [auto_execok bktcolon_cmd]
-+    list $r1 $r2
++    auto_reset
++    set env(PATH) [file join [temporaryDirectory] {p[ab]b} bin]
++    list $r1 $r2 [auto_execok bktcolon_cmd]
 +} -cleanup {
 +    auto_reset
-+    file delete -force [file join [temporaryDirectory] "p:b"] [file join [temporaryDirectory] "\[unclosed"]
-+} -result [list [list [file join [temporaryDirectory] "p:b" bin bktcolon_cmd]] [list [file join [temporaryDirectory] "p:b" bin bktcolon_cmd]]]
-+test unixFile-1.16 {auto_execok GLOB_NOESCAPE parity on backslash, braces, and literal [1]} -constraints {unix} -setup {
++    file delete -force [file join [temporaryDirectory] "p:b"] [file join [temporaryDirectory] "p\[a\]b"]
++} -result [list {} [list [file join [temporaryDirectory] "p\[a\]b" bin bktcolon_cmd]] {}]
++test unixFile-1.16 {auto_execok: backslash, braces, and [1] are literal in PATH} -constraints {unix} -setup {
 +    auto_reset
 +    set bsdir [file join [temporaryDirectory] "dir_bs\\"]
 +    set litbr [file join [temporaryDirectory] "lit\[1\]" bin]

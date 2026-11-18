@@ -385,7 +385,7 @@ diff --no-dereference -Naur tcl8.6.18.orig/library/init.tcl tcl8.6.18/library/in
  		}
  	    }
  	}}
-@@ -728,14 +745,95 @@
+@@ -728,14 +745,41 @@
  	}
  	return $auto_execs($name)
      }
@@ -397,88 +397,34 @@ diff --no-dereference -Naur tcl8.6.18.orig/library/init.tcl tcl8.6.18/library/in
 -	if {[file executable $file] && ![file isdirectory $file]} {
 -	    set auto_execs($name) [list $file]
 -	    return $auto_execs($name)
-+    set pathStr $env(PATH)
-+    if {[string first {[} $pathStr] < 0} {
-+	set pathList [split $pathStr :]
-+    } else {
-+	set pathList {}
-+	set pathLen [string length $pathStr]
-+	set segStart 0
-+	set idx 0
-+	while {$idx < $pathLen} {
-+	    set ch [string index $pathStr $idx]
-+	    if {$ch eq ":"} {
-+		lappend pathList [string range $pathStr $segStart [expr {$idx - 1}]]
-+		incr idx
-+		set segStart $idx
-+		continue
-+	    }
-+	    if {$ch eq "\["} {
-+		set q [expr {$idx + 1}]
-+		if {$q < $pathLen && [string index $pathStr $q] in {! ^}} {
-+		    incr q
-+		}
-+		if {$q < $pathLen && [string index $pathStr $q] eq "\]"} {
-+		    incr q
-+		}
-+		while {$q < $pathLen} {
-+		    set qc [string index $pathStr $q]
-+		    if {$qc eq "\]" || $qc eq "/"} {
-+			break
-+		    }
-+		    if {$qc eq "\[" && ($q + 1) < $pathLen
-+			    && [string index $pathStr [expr {$q + 1}]] in {: . =}} {
-+			set ctype [string index $pathStr [expr {$q + 1}]]
-+			set inner [expr {$q + 2}]
-+			while {$inner < $pathLen} {
-+			    set ic [string index $pathStr $inner]
-+			    if {$ic eq "/" || ($ctype ne "." && $ic eq "\]")} {
-+				break
-+			    }
-+			    if {$ic eq $ctype && ($inner + 1) < $pathLen
-+				    && [string index $pathStr [expr {$inner + 1}]] eq "\]"} {
-+				set q [expr {$inner + 2}]
-+				set inner -1
-+				break
-+			    }
-+			    incr inner
-+			}
-+			if {$inner == -1} {
-+			    continue
-+			}
-+		    }
-+		    incr q
-+		}
-+		if {$q < $pathLen && [string index $pathStr $q] eq "\]"} {
-+		    set idx [expr {$q + 1}]
-+		    continue
-+		}
-+	    }
-+	    incr idx
++    # The search-list rule shared with execvp and glob (GLOB_PATHS): split
++    # on every ":", an empty element is ".", and a path component that is
++    # exactly "*" (at most one per element) stands for each entry of that
++    # directory not starting with ".", in byte order.  Every other
++    # character is literal.
++    foreach elem [split $env(PATH) :] {
++	if {$elem eq ""} {
++	    set elem .
 +	}
-+	lappend pathList [string range $pathStr $segStart end]
-+    }
-+    foreach pattern $pathList {
-+	if {$pattern eq ""} {
-+	    set pattern .
-+	}
-+	if {[file isdirectory $pattern]} {
-+	    set dirs [list $pattern]
-+	} elseif {[string first * $pattern] >= 0
-+		|| [string first ? $pattern] >= 0
-+		|| [string first "\[" $pattern] >= 0} {
-+	    set gpat [string map {\\ \\\\ \{ \\{ \} \\}} $pattern]
-+	    if {[string index $gpat 0] eq "~"} {
-+		set gpat "\\$gpat"
-+	    }
-+	    if {[catch {glob -nocomplain -types d -- $gpat} dirs]
-+		    || [llength $dirs] == 0} {
-+		set dirs [list $pattern]
-+	    } else {
-+		set dirs [lsort -ascii $dirs]
-+	    }
++	set parts [split $elem /]
++	set star [lsearch -all -exact $parts *]
++	if {[llength $star] == 0} {
++	    set dirs [list $elem]
++	} elseif {[llength $star] > 1} {
++	    continue
 +	} else {
-+	    set dirs [list $pattern]
++	    set base [join [lrange $parts 0 $star-1] /]
++	    if {$star == 0} {
++		set base .
++	    } elseif {$base eq ""} {
++		set base /
++	    } elseif {[string index $base 0] eq "~"} {
++		set base ./$base
++	    }
++	    set dirs {}
++	    foreach entry [lsort [glob -nocomplain -tails -directory $base -- *]] {
++		lappend dirs [join [lreplace $parts $star $star $entry] /]
++	    }
 +	}
 +	foreach dir $dirs {
 +	    set file [file join $dir $name]
@@ -607,7 +553,7 @@ diff --no-dereference -Naur tcl8.6.18.orig/unix/tclUnixFile.c tcl8.6.18/unix/tcl
 -	 * strings directly.
 -	 */
 +	memset(&g, 0, sizeof(g));
-+	if (glob(p, GLOB_PATHS | GLOB_NOESCAPE, NULL, &g) == 0) {
++	if (glob(p, GLOB_PATHS, NULL, &g) == 0) {
 +	    for (i = 0; i < g.gl_pathc; i++) {
 +		const char *dir = g.gl_pathv[i];
  

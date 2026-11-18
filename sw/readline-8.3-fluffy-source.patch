@@ -44,10 +44,46 @@ diff --no-dereference -Naur readline-8.3.orig/bind.c readline-8.3/bind.c
      {
        FREE (last_readline_init_file);
        last_readline_init_file = savestring (filename);
-@@ -1129,6 +1133,69 @@
+@@ -1129,6 +1133,107 @@
    return (0);
  }
  
++/* Return a copy of LIST with a leading ~ expanded in each ':'-separated
++   element; GLOB_PATHS search lists have no tilde syntax of their own.  */
++static char *
++_rl_tilde_expand_list (const char *list)
++{
++  char *result = 0;
++  size_t len = 0;
++  const char *p = list;
++
++  for (;;)
++    {
++      const char *end = strchr (p, ':');
++      size_t n = end ? (size_t)(end - p) : strlen (p);
++      char *elem = (char *)xmalloc (n + 1);
++      char *exp;
++      size_t elen;
++
++      memcpy (elem, p, n);
++      elem[n] = '\0';
++      exp = (*elem == '~') ? tilde_expand_word (elem) : elem;
++      elen = strlen (exp);
++      result = (char *)xrealloc (result, len + elen + 2);
++      memcpy (result + len, exp, elen);
++      len += elen;
++      if (exp != elem)
++	xfree (exp);
++      xfree (elem);
++      if (end == 0)
++	break;
++      result[len++] = ':';
++      p = end + 1;
++    }
++  result[len] = '\0';
++  return result;
++}
++
 +static int
 +_rl_read_init_file (const char *filename, int include_level)
 +{
@@ -67,9 +103,10 @@ diff --no-dereference -Naur readline-8.3.orig/bind.c readline-8.3/bind.c
 +    glob_t gl;
 +    int any_ok = 0;
 +    int last_err = ENOENT;
++    char *pattern = _rl_tilde_expand_list (filename);
 +
 +    memset (&gl, 0, sizeof (gl));
-+    if (glob (filename, GLOB_PATHS | GLOB_NOESCAPE | GLOB_TILDE, NULL, &gl) == 0)
++    if (glob (pattern, GLOB_PATHS, NULL, &gl) == 0)
 +      {
 +	size_t gi;
 +	for (gi = 0; gi < gl.gl_pathc; ++gi)
@@ -97,6 +134,7 @@ diff --no-dereference -Naur readline-8.3.orig/bind.c readline-8.3/bind.c
 +	  }
 +      }
 +    globfree (&gl);
++    xfree (pattern);
 +
 +    if (any_ok)
 +      {

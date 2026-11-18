@@ -440,10 +440,16 @@ This reverses the earlier "`pkg-config` is verboten" decision. The owner's call:
     - `openssl`'s `mv share/doc/openssl share/doc/openssl-$VERSION`: drop the `mv` and keep upstream's name.
   - Find any stragglers with `grep -n 'share/doc[^ ]*\$VERSION' sw/*`.
 - **No backward compatibility while developing**, including migration logic ("that's just backwards compat under a different name"). No `sbin`, and no `/bin/sh` symlink.
-- **Agents never run `sudo`.** Hand the user `sudo --preserve-env=FLUFFY[,CROSS] ./swctl build <pkg>`.
+- **Agents never run `sudo`.** Hand the user `sudo --preserve-env=FLUFFY,CROSS ./swctl build <pkg>` (always both: `CROSS` must pass through even when unset).
 - **Resources.** The build host is 16 GB / 8 cores, and builds run at low priority.
 
 ### Recurring Build Pitfalls
+
+- **Deleting a source file from a glibc build tree is not enough.** The object stays in the subdirectory's `stamp.o*` lists and, worse, in `libc_pic.a` and `libc.a`: `ar` adds and updates members but never removes them, so `libc.so` keeps linking the deleted code. After deleting a source, remove its objects, the subdirectory's `stamp.o*`, and `libc.a`/`libc_pic.a`/`libc_pic.os`/`libc.so`, then rebuild; verify with `nm`. (Found 2026-11-17: v5's `fswc.c` survived its deletion this way.)
+- **Restoring a file with `cp -p` or `mv` of a `cp -p` copy keeps its old mtime,** so `make` does not rebuild and you test the previous build. `touch` it after restoring.
+- **A test prefix must look like the real one.** v6 passed every local test and then failed four in `world`, because the real `/sw` holds an image file beside each package directory and the test tree held only directories. The FSWC oracle now builds its prefixes after `/sw` (image files, symlinks, odd names, thousands of entries). A local run that binds the extracted packages into a private `/sw`, with an empty `.squashfs` file beside each, reproduces three of the four (`tst-glob-bz30635` needs real SquashFS). Found 2026-11-17.
+- **`libc_malloc_debug.so` with `MALLOC_CHECK_=3` is not fork-safe in threaded programs.** Its checker has its own copy of `main_arena`, whose lock `fork` does not reset, so a child forked while another thread allocates can block forever in `malloc_check`. Use it in single-threaded test workers only. Found 2026-11-17 while chasing what looked like an FSWC deadlock.
+- **A bare `gcc` outside `swctl` cannot find `cc1`** ("cannot execute 'cc1': posix_spawnp: No such file or directory"). libiberty's `make_relative_prefix` looks itself up by splitting `PATH` on `:` with no wildcard support, so `/sw/*/bin/gcc` never matches and the driver falls back to relative `../libexec` paths. `swctl` (and the local runner) hide this by exporting `GCC_EXEC_PREFIX=/sw/gcc/lib/gcc/`; nothing else in the repository sets it, so an interactive shell presumably lacks it (not yet checked on a booted system). This affects old and v6 `glibc` alike. Fix it in `gcc`'s libiberty with the shared search-list rule (`glob ("{" PATH "}/gcc", GLOB_PATHS)`). Found 2026-11-17.
 
 - `/bin/sh: bad interpreter`. Fixed per package with `-shell.patch` files from `mkbashpatch`, then hand-reviewed.
 - Wildcard configure values expanded by the build shell. Always single-quote them (`--with-lib-path='=/sw/*/lib'`).
