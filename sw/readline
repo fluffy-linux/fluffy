@@ -11,7 +11,7 @@ HAS_LDFLAGS=-lreadline
 
 ARCHIVES=(
     fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc https://github.com/fluffy-linux/readline/releases/download/readline-$VERSION/readline-$VERSION.tar.gz
-    1e7bfa1a4b47d35f816c85676b76dec8784e20fb7a148ab6d212c18fd57febbe file://readline-$VERSION-fluffy-source.patch
+    4c546a28728661b9068ad00490fee38c71221ba9a7dcac96730e1bb86ecf39ba file://readline-$VERSION-fluffy-source.patch
     8ecd98ef0d0f739435efbcf45938a01fff823cc7fd12c72055e213a450a53405 file://readline-$VERSION-fluffy-test.patch
 )
 

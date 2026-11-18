@@ -4,7 +4,7 @@ VERSION=5.3
 
 ARCHIVES=(
     0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://github.com/fluffy-linux/bash/releases/download/bash-$VERSION/bash-$VERSION.tar.gz
-    f7b59e4800e659f04a0e9291a89d228fc8bd6a3fe9e638dcec146d4c1481c811 file://bash-$VERSION-fluffy-source.patch
+    de296e30a85cacb6eaa6c111e7f93326cc54465d6b3fa936e850dee1807a0ecc file://bash-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
