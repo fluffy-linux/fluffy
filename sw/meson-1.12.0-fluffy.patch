@@ -14,85 +14,6 @@ diff --no-dereference -Naur meson-1.12.0.orig/mesonbuild/backend/backends.py mes
              exe_for_machine = MachineChoice.BUILD
          else:
              exe_cmd = [exe]
-diff --no-dereference -Naur meson-1.12.0.orig/mesonbuild/dependencies/base.py meson-1.12.0/mesonbuild/dependencies/base.py
---- meson-1.12.0.orig/mesonbuild/dependencies/base.py	2026-08-10 21:41:11.000000000 +0000
-+++ meson-1.12.0/mesonbuild/dependencies/base.py	2026-08-10 21:41:11.000000000 +0000
-@@ -9,6 +9,8 @@
- import copy
- import dataclasses
- import os
-+import re
-+import shlex
- import collections
- import itertools
- import typing as T
-@@ -681,6 +683,35 @@
-     type_name = DependencyTypeName('system')
- 
- 
-+class SystemLibraryDependency(SystemDependency):
-+
-+    """Environment-variable driven dependency (<NAME>_CFLAGS / <NAME>_LIBS), like Autoconf pkg.m4."""
-+
-+    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs) -> None:
-+        super().__init__(name, environment, kwargs)
-+        raw_key = re.sub(r'[^A-Za-z0-9]', '_', name).upper()
-+        keys = [raw_key]
-+        if raw_key.startswith('LIB') and len(raw_key) > 3:
-+            keys.append(raw_key[3:])
-+
-+        for key in keys:
-+            cflags = os.environ.get(f'{key}_CFLAGS')
-+            libs = os.environ.get(f'{key}_LDFLAGS')
-+            if libs is None:
-+                libs = os.environ.get(f'{key}_LIBS')
-+            if cflags is not None or libs is not None:
-+                self.compile_args = shlex.split(cflags or '')
-+                self.link_args = shlex.split(libs or '')
-+                self.version = os.environ.get(f'{key}_VERSION')
-+                self.is_found = True
-+                break
-+
-+    def _check_version(self) -> None:
-+        if not self.is_found or self.version is None:
-+            return
-+        super()._check_version()
-+
-+
- class BuiltinDependency(ExternalDependency):
- 
-     """Dependency base for Builtin type dependencies."""
-diff --no-dereference -Naur meson-1.12.0.orig/mesonbuild/dependencies/detect.py meson-1.12.0/mesonbuild/dependencies/detect.py
---- meson-1.12.0.orig/mesonbuild/dependencies/detect.py	2026-08-10 21:41:11.000000000 +0000
-+++ meson-1.12.0/mesonbuild/dependencies/detect.py	2026-08-10 21:41:11.000000000 +0000
-@@ -187,6 +187,9 @@
-             dep = [entry]
-         else:
-             dep = entry(env, kwargs)
-+        if kwargs.get('method', DependencyMethods.AUTO) in {DependencyMethods.AUTO, DependencyMethods.SYSTEM}:
-+            from .base import SystemLibraryDependency
-+            dep = [DependencyCandidate.from_dependency(name, SystemLibraryDependency, (env, kwargs))] + dep
-         return dep
- 
-     candidates: T.List['DependencyGenerator'] = []
-@@ -194,7 +197,7 @@
-     method = kwargs.get('method', DependencyMethods.AUTO)
-     if method is DependencyMethods.AUTO:
-         # Just use the standard detection methods.
--        methods = [DependencyMethods.PKGCONFIG, DependencyMethods.EXTRAFRAMEWORK, DependencyMethods.CMAKE]
-+        methods = [DependencyMethods.PKGCONFIG, DependencyMethods.EXTRAFRAMEWORK, DependencyMethods.CMAKE, DependencyMethods.SYSTEM]
-     else:
-         # If it's explicitly requested, use that detection method (only).
-         methods = [method]
-@@ -222,4 +225,8 @@
-         from .cmake import CMakeDependency
-         candidates.append(DependencyCandidate.from_dependency(name, CMakeDependency, (env, kwargs)))
- 
-+    if DependencyMethods.SYSTEM in methods:
-+        from .base import SystemLibraryDependency
-+        candidates.append(DependencyCandidate.from_dependency(name, SystemLibraryDependency, (env, kwargs)))
-+
-     return candidates
 diff --no-dereference -Naur meson-1.12.0.orig/mesonbuild/dependencies/misc.py meson-1.12.0/mesonbuild/dependencies/misc.py
 --- meson-1.12.0.orig/mesonbuild/dependencies/misc.py	2026-08-10 21:41:11.000000000 +0000
 +++ meson-1.12.0/mesonbuild/dependencies/misc.py	2026-08-10 21:41:11.000000000 +0000
@@ -117,20 +38,6 @@ diff --no-dereference -Naur meson-1.12.0.orig/mesonbuild/mdevenv.py meson-1.12.0
          if "bash" in args[0]:
              # Let the GC remove the tmp file
              tmprc = tempfile.NamedTemporaryFile(mode='w', encoding='utf-8')
-diff --no-dereference -Naur meson-1.12.0.orig/mesonbuild/modules/pkgconfig.py meson-1.12.0/mesonbuild/modules/pkgconfig.py
---- meson-1.12.0.orig/mesonbuild/modules/pkgconfig.py	2026-08-10 21:41:11.000000000 +0000
-+++ meson-1.12.0/mesonbuild/modules/pkgconfig.py	2026-08-10 21:41:11.000000000 +0000
-@@ -151,8 +151,8 @@
-                     and obj.get_id() in self.metadata):
-                 self._check_generated_pc_deprecation(obj)
-                 processed_reqs.append(self.metadata[obj.get_id()].filebase)
--            elif isinstance(obj, PkgConfigDependency):
--                if obj.found():
-+            elif isinstance(obj, (PkgConfigDependency, dependencies.ExternalDependency)):
-+                if obj.found() and obj.name != 'threads':
-                     processed_reqs.append(obj.name)
-                     self.add_version_reqs(obj.name, obj.version_reqs)
-             elif isinstance(obj, str):
 diff --no-dereference -Naur meson-1.12.0.orig/mesonbuild/programs.py meson-1.12.0/mesonbuild/programs.py
 --- meson-1.12.0.orig/mesonbuild/programs.py	2026-08-10 21:41:11.000000000 +0000
 +++ meson-1.12.0/mesonbuild/programs.py	2026-08-10 21:41:11.000000000 +0000
@@ -208,42 +115,10 @@ diff --no-dereference -Naur meson-1.12.0.orig/mesonbuild/programs.py meson-1.12.
 diff --no-dereference -Naur meson-1.12.0.orig/unittests/internaltests.py meson-1.12.0/unittests/internaltests.py
 --- meson-1.12.0.orig/unittests/internaltests.py	2026-08-10 21:41:11.000000000 +0000
 +++ meson-1.12.0/unittests/internaltests.py	2026-08-10 21:41:11.000000000 +0000
-@@ -2233,3 +2233,45 @@
+@@ -2233,3 +2233,13 @@
                  self.assertEqual(actual.compile_args, expected.compile_args)
                  self.assertEqual(actual.link_args, expected.link_args)
                  self.assertEqual(actual.cmake, expected.cmake)
-+
-+    def test_fluffy_system_library_dependency(self) -> None:
-+        from mesonbuild.dependencies.base import SystemLibraryDependency
-+        env = mock.MagicMock()
-+        env.machines.host.is_64_bit = True
-+        env.is_cross_build.return_value = False
-+        kwargs = {'native': MachineChoice.HOST, 'required': False, 'version': ['>= 1.4.4']}
-+
-+        with mock.patch.dict(os.environ, {'ZSTD_CFLAGS': '-I/sw/zstd/include', 'ZSTD_LIBS': '-L/sw/zstd/lib -lzstd'}, clear=False):
-+            dep = SystemLibraryDependency('libzstd', env, kwargs)
-+            dep._check_version()
-+            self.assertTrue(dep.found())
-+            self.assertEqual(dep.get_compile_args(), ['-I/sw/zstd/include'])
-+            self.assertEqual(dep.get_link_args(), ['-L/sw/zstd/lib', '-lzstd'])
-+
-+        with mock.patch.dict(os.environ, {'ZSTD_LIBS': '-lzstd'}, clear=True):
-+            dep_libs_only = SystemLibraryDependency('libzstd', env, kwargs)
-+            dep_libs_only._check_version()
-+            self.assertTrue(dep_libs_only.found())
-+            self.assertEqual(dep_libs_only.get_compile_args(), [])
-+            self.assertEqual(dep_libs_only.get_link_args(), ['-lzstd'])
-+
-+        with mock.patch.dict(os.environ, {'OPENSSL_CFLAGS': ' ', 'OPENSSL_LDFLAGS': '-lssl -lcrypto'}, clear=True):
-+            dep_ldflags = SystemLibraryDependency('openssl', env, kwargs)
-+            dep_ldflags._check_version()
-+            self.assertTrue(dep_ldflags.found())
-+            self.assertEqual(dep_ldflags.get_compile_args(), [])
-+            self.assertEqual(dep_ldflags.get_link_args(), ['-lssl', '-lcrypto'])
-+
-+        with mock.patch.dict(os.environ, {}, clear=True):
-+            dep_missing = SystemLibraryDependency('libzstd', env, kwargs)
-+            self.assertFalse(dep_missing.found())
 +
 +    def test_fluffy_shebang_rewrite(self) -> None:
 +        with tempfile.TemporaryDirectory() as tmpdir:

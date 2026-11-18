@@ -1,0 +1,43 @@
+ON=host-build
+
+VERSION=3.0.5
+
+ARCHIVES=(
+    3acd3a8a3cce65a8d620321855d92fb602e026cbe8e13ee36bdec58483b59ace https://github.com/fluffy-linux/pkgconf/releases/download/pkgconf-$VERSION/pkgconf-$VERSION.tar.xz
+    ca3dded8953ee2319643466a6f7022ce37432bbc61cd510d6f29a9a04e7ce0bf file://pkgconf-$VERSION-fluffy.patch
+)
+
+NEEDS=(
+    glibc-pass1
+)
+
+# Not in LFS, whose chapter 6 builds nothing that needs pkg-config.  Ours
+# does (curl-pass1, python-pass1, util-linux-pass1, ...), and pkg-config
+# here searches the /sw it builds for, not the host's.  Its system
+# directories are the ones stock gcc-pass1 searches, so every other
+# package's -I and -L are printed in full.
+BUILD_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
+
+MAKE() {
+    apply_patch ../pkgconf-$VERSION-fluffy.patch
+
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/pkgconf \
+        --host=$FLUFFY_TGT \
+        --build=$(./config.guess) \
+        --disable-static \
+        --with-pkg-config-dir='/sw/*/lib/pkgconfig:/sw/*/share/pkgconfig' \
+        --with-system-libdir=/sw/glibc/lib \
+        --with-system-includedir=/sw/glibc/include:/sw/linux-headers/include
+    make
+}
+
+INSTALL() {
+    make install
+    ln -sv pkgconf $DESTDIR/sw/pkgconf/bin/pkg-config
+    find $DESTDIR/sw/pkgconf/lib -name '*.la' -delete
+}

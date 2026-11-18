@@ -74,8 +74,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i findutils-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i findutils-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../findutils-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../findutils-$VERSION-fluffy-test.patch
 
     ac_cv_path_SORT=sort CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/findutils \

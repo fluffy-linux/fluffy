@@ -69,8 +69,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i texinfo-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i texinfo-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../texinfo-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../texinfo-$VERSION-fluffy-test.patch
 
     ./configure \
         --prefix=/sw/texinfo

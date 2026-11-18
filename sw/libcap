@@ -7,8 +7,6 @@ fi
 
 VERSION=2.78
 
-HAS_LDFLAGS=-lcap
-
 ARCHIVES=(
     0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11 https://github.com/fluffy-linux/libcap/releases/download/libcap-$VERSION/libcap-$VERSION.tar.xz
     623b95d39afee29bc662f8f4e16389646009236c6a1cf112805fb5f4100bf44c file://libcap-$VERSION-fluffy-source.patch
@@ -58,7 +56,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i libcap-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../libcap-$VERSION-fluffy-source.patch
 
     sed -i '/install -m.*STA/d' libcap/Makefile
     make prefix=/sw/libcap lib=lib sbin=bin

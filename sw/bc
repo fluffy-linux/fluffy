@@ -64,8 +64,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i bc-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i bc-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../bc-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../bc-$VERSION-fluffy-test.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
     CC='gcc -std=c99' \
     $CONFIG_SHELL ./configure \

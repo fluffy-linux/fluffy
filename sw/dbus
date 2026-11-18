@@ -7,9 +7,6 @@ fi
 
 VERSION=1.16.2
 
-HAS_CFLAGS="-I/sw/dbus/include/dbus-1.0 -I/sw/dbus/lib/dbus-1.0/include"
-HAS_LDFLAGS="-ldbus-1"
-
 ARCHIVES=(
     0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2 https://github.com/fluffy-linux/dbus/releases/download/dbus-$VERSION/dbus-$VERSION.tar.xz
     d7eaafd3f57d803f85181edd17093d18dd4e0349f85d75e77a88fe9859c52aa1 file://dbus-$VERSION-fluffy-source.patch
@@ -42,6 +39,7 @@ then
         meson
         ninja
         patch
+        pkgconf
         python
         sed
         systemd
@@ -66,6 +64,7 @@ else
         meson
         ninja
         patch
+        pkgconf
         python
         sed
         systemd
@@ -75,7 +74,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i dbus-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../dbus-$VERSION-fluffy-source.patch
 
     mkdir -p build
     cd build
@@ -102,8 +101,8 @@ INSTALL() {
     DESTDIR=$DESTDIR ninja -C build install
 
     mkdir -p $DESTDIR/sw/dbus/etc
-    install -m 644 dbus.passwd $DESTDIR/sw/dbus/etc/passwd
-    install -m 644 dbus.group $DESTDIR/sw/dbus/etc/group
+    install -m 644 ../dbus.passwd $DESTDIR/sw/dbus/etc/passwd
+    install -m 644 ../dbus.group $DESTDIR/sw/dbus/etc/group
 
     rm -rf $DESTDIR/sw/dbus/lib/tmpfiles.d
     mkdir -p $DESTDIR/sw/dbus/var/lib/dbus

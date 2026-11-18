@@ -11,7 +11,7 @@ ARCHIVES=(
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://github.com/fluffy-linux/mpc/releases/download/$MPC_VERSION/mpc-$MPC_VERSION.tar.xz
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://github.com/fluffy-linux/gmp/releases/download/gmp-$GMP_VERSION/gmp-$GMP_VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    eb19d8c97b0dbb5a5acb2dc34ae086d3691fda6ee833fa7e0ad9396f38b619e0 file://gcc-$VERSION-fluffy-source.patch
+    3cf2b179b45314f0f9ab87d94b94b281cb8065a34b5d93de940c6bf57ad3e128 file://gcc-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -30,11 +30,14 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i gcc-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../gcc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../gcc-$VERSION-fluffy-source.patch
 
+    tar -xf ../mpfr-$MPFR_VERSION.tar.xz
     mv -v mpfr-$MPFR_VERSION mpfr
+    tar -xf ../mpc-$MPC_VERSION.tar.xz
     mv -v mpc-$MPC_VERSION mpc
+    tar -xf ../gmp-$GMP_VERSION.tar.xz
     mv -v gmp-$GMP_VERSION gmp
 
     sed -e '/m64=/s/lib64/lib/' \
@@ -45,7 +48,7 @@ MAKE() {
 #undef STARTFILE_PREFIX_SPEC
 #define STARTFILE_PREFIX_SPEC "/sw/*/lib/"
 #undef MD_EXEC_PREFIX
-#define MD_EXEC_PREFIX "/sw/*/$FLUFFY_TGT/bin/ /sw/*/bin/"
+#define MD_EXEC_PREFIX "/sw/*/bin/"
 EOF
 
     sed '/thread_header =/s/@.*@/gthr-posix.h/' \

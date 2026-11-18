@@ -7,8 +7,6 @@ fi
 
 VERSION=4.5.2
 
-HAS_LDFLAGS=-lcrypt
-
 ARCHIVES=(
     71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071 https://github.com/fluffy-linux/libxcrypt/releases/download/v$VERSION/libxcrypt-$VERSION.tar.xz
     0a0c1ff0c61708f89d3aec4d334345aac48b50d821b5e6c795ffd15f1774b44d file://libxcrypt-$VERSION-fluffy-source.patch
@@ -59,8 +57,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i libxcrypt-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i libxcrypt-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../libxcrypt-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../libxcrypt-$VERSION-fluffy-test.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \

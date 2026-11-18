@@ -77,13 +77,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i linux-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../linux-$VERSION-fluffy-shell.patch
 
-    if [ -f "config-$VERSION" ]; then
-        cp -v config-$VERSION .config
-    else
-        cp -v ../config-$VERSION .config
-    fi
+    cp -v ../config-$VERSION .config
 
     make olddefconfig
     make -j$(nproc) bzImage modules

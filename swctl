@@ -415,11 +415,6 @@ register_entry() {
     local recipe_checksum="${FLUFFY_RECIPE_CHECKSUM}"
     local needs=""
 
-    if [[ "${HAS_CFLAGS:-}" == *\"* || "${HAS_LDFLAGS:-}" == *\"* ]]
-    then
-        fatal "HAS_CFLAGS and HAS_LDFLAGS must not contain double quotes in $pkg"
-    fi
-
     if (( ${#NEEDS[@]} > 0 ))
     then
         local old_ifs="$IFS"
@@ -462,14 +457,6 @@ register_entry() {
     fi
 
     local options="X-fluffy.image-checksum=$img_chk"
-    if test -n "${HAS_CFLAGS:-}"
-    then
-        options="$options,X-fluffy.cflags=\"$HAS_CFLAGS\""
-    fi
-    if test -n "${HAS_LDFLAGS:-}"
-    then
-        options="$options,X-fluffy.ldflags=\"$HAS_LDFLAGS\""
-    fi
     if test -n "$needs"
     then
         options="$options,X-fluffy.needs=\"$needs\""
@@ -684,9 +671,45 @@ run_phase() {
     log -n "($elapsed)"
 }
 
+# apply_patch FILE: apply FILE (any patch, such as git format-patch output)
+# with patch -Np1 in the current directory, then give every file that was
+# already there its old mtime back.  Patching then never makes a source look
+# newer than what make generates from it (configure.ac than configure, say),
+# without timestamps in the patch.  New files keep the time of patching.
+# Recipes call it from their phases.
+apply_patch() {
+    local -A stamps
+    local mtime path marker
+    while IFS=$'\t' read -r -d '' mtime path
+    do
+        stamps["$path"]="$mtime"
+    done < <(find . -type f -printf '%T@\t%p\0')
+    marker="$(mktemp)"
+    patch -Np1 -i "$1"
+    while IFS= read -r -d '' path
+    do
+        if test -n "${stamps[$path]+set}"
+        then
+            touch -d "@${stamps[$path]}" -- "$path"
+        fi
+    done < <(find . -type f -newer "$marker" -print0)
+    rm -f -- "$marker"
+}
+
 lockdown_exec() {
     (
         wd="$(pwd)"
+        # A phase sees $work_dir/src at /work: the source directory, and
+        # beside it ARCHIVES[1..N], which recipes use as ../<file>.
+        local src_root="$work_dir/src" sub=""
+        if test "$1" != SQUASHFS
+        then
+            case "$wd" in
+                "$src_root") ;;
+                "$src_root"/*) sub="${wd#"$src_root"}" ;;
+                *) fatal "phase $1 starts outside $src_root: $wd" ;;
+            esac
+        fi
 
         case "$1" in
             CHECK)
@@ -740,12 +763,28 @@ lockdown_exec() {
             fi
         fi
 
+        # /work is $work_dir/src, read-only, with only the source directory
+        # writable (MAKE, INSTALL) or overlaid (CHECK).  Without an extracted
+        # source directory, /work itself is the phase's directory.
+        mount_work() {
+            local dir=/work
+            if test -n "$sub"
+            then
+                call mount "$src_root" /work $NULL $(( MS_BIND | MS_REC )) $NULL
+                call mount none /work $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
+                dir="/work$sub"
+            fi
+            if test "$1" == CHECK
+            then
+                call mount overlay "$dir" overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
+            else
+                call mount "$wd" "$dir" $NULL $(( MS_BIND | MS_REC )) $NULL
+            fi
+        }
+
         case "$1" in
-            MAKE)
-                call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
-                ;;
-            CHECK)
-                call mount overlay /work overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
+            MAKE|CHECK)
+                mount_work "$1"
                 ;;
             INSTALL)
                 mkdir -p "/sw/.build/destdir/sw/$mount_pkg"
@@ -754,7 +793,7 @@ lockdown_exec() {
                 then
                     call mount none /sw/.build $NULL $(( MS_BIND | MS_REMOUNT | MS_RDONLY )) $NULL
                 fi
-                call mount "$wd" /work $NULL $(( MS_BIND | MS_REC )) $NULL
+                mount_work "$1"
                 ;;
             SQUASHFS)
                 ;;
@@ -784,35 +823,9 @@ lockdown_exec() {
             call mount tmpfs /var/tmp tmpfs $(( MS_NOSUID | MS_NODEV )) "mode=1777"
         fi
 
-        local -a dep_exports=()
         if test "$1" != SQUASHFS
         then
-            local dep dep_fs dep_cflags dep_ldflags canon_dep env_prefix
-            for dep in "${BUILD_NEEDS[@]}"
-            do
-                dep_fs="$NULL"
-                find_fs_by_pkg "$dep" dep_fs
-                if test "$dep_fs" != "$NULL"
-                then
-                    dep_cflags=""
-                    dep_ldflags=""
-                    get_fs_opt "$dep_fs" "X-fluffy.cflags" dep_cflags || true
-                    get_fs_opt "$dep_fs" "X-fluffy.ldflags" dep_ldflags || true
-                    if test -n "$dep_cflags" || test -n "$dep_ldflags"
-                    then
-                        canon_dep="${dep%-pass*}"
-                        env_prefix="${canon_dep^^}"
-                        env_prefix="${env_prefix//[^A-Z0-9_]/_}"
-                        dep_exports+=(
-                            "${env_prefix}_CFLAGS=${dep_cflags:- }"
-                            "${env_prefix}_LDFLAGS=${dep_ldflags:- }"
-                            "${env_prefix}_LIBS=${dep_ldflags:- }"
-                        )
-                    fi
-                fi
-            done
-
-            cd /work
+            cd "/work$sub"
             call setgroups 0 $NULL
             call setresgid "$SUDO_GID" "$SUDO_GID" "$SUDO_GID"
             call setresuid "$SUDO_UID" "$SUDO_UID" "$SUDO_UID"
@@ -836,7 +849,7 @@ lockdown_exec() {
         if test "$ON" != host-build
         then
             export MAKEFLAGS="$MAKEFLAGS SHELL=/sw/bash/bin/bash"
-            export PATH='/sw/*/bin' SHELL=/sw/bash/bin/bash CONFIG_SHELL=/sw/bash/bin/bash GCC_EXEC_PREFIX=/sw/gcc/lib/gcc/
+            export PATH='/sw/*/bin' SHELL=/sw/bash/bin/bash CONFIG_SHELL=/sw/bash/bin/bash
         else
             export PATH=/usr/bin
             if test ! -L /bin
@@ -859,10 +872,6 @@ lockdown_exec() {
             export DESTDIR=/sw/.build/destdir MAKEFLAGS="$MAKEFLAGS DESTDIR=/sw/.build/destdir" PATH="/sw/.build/destdir/sw/$mount_pkg/bin:$PATH"
         fi
 
-        if (( ${#dep_exports[@]} > 0 ))
-        then
-            export "${dep_exports[@]}"
-        fi
 
         "$1"
     )
@@ -901,7 +910,7 @@ build_single_pkg() {
         mount_pkg="${pkg%-pass*}"
 
         unset -f MAKE CHECK INSTALL
-        unset VERSION HAS_CFLAGS HAS_LDFLAGS
+        unset VERSION
         declare -ga ARCHIVES=() archives=() NEEDS=() BUILD_NEEDS=()
 
         SQUASHFS() {
@@ -1027,22 +1036,19 @@ build_single_pkg() {
                     fi
                 done
 
+                # ARCHIVES[0], if a tarball, becomes the source directory the
+                # recipe runs in.  Everything else is placed beside it, never
+                # unpacked: the recipe uses it as ../<file>.
                 cd "$work_dir/src"
                 for idx in "${!archives[@]}"
                 do
                     archive="${archives[idx]}"
-                    case "$archive" in
-                        *.tar.*)
-                            tar --no-same-owner --no-same-permissions --one-top-level="${archive%%?(-src).tar.*}" -xf "$work_dir/archives/$archive"
-                            if (( idx == 0 ))
-                            then
-                                cd "${archive%%?(-src).tar.*}"
-                            fi
-                            ;;
-                        *)
-                            cp -- "$work_dir/archives/$archive" .
-                            ;;
-                    esac
+                    if (( idx == 0 )) && [[ "$archive" == *.tar.* ]]
+                    then
+                        tar --no-same-owner --no-same-permissions --one-top-level="${archive%%?(-src).tar.*}" -xf "$work_dir/archives/$archive"
+                    else
+                        cp -- "$work_dir/archives/$archive" .
+                    fi
                 done
             )
         }
@@ -1144,7 +1150,7 @@ plan_pkgs() {
     tmp_plan="$(mktemp)"
     if ! (
         declare -a order=() root_nodes=()
-        declare -A pkg_loaded=() pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_needs=() pkg_bneeds=() pkg_includes=()
+        declare -A pkg_loaded=() pkg_ver=() pkg_needs=() pkg_bneeds=() pkg_includes=()
 
         load_pkg_meta() {
             local pkg_name="$1"
@@ -1168,8 +1174,6 @@ plan_pkgs() {
                 ON=fluffy-build
             fi
             VERSION=""
-            HAS_CFLAGS=""
-            HAS_LDFLAGS=""
             ARCHIVES=()
             NEEDS=()
             BUILD_NEEDS=()
@@ -1178,11 +1182,6 @@ plan_pkgs() {
             source "$recipe_file"
             unset current_eval_pkg
             unset -f MAKE CHECK INSTALL
-
-            if [[ "${HAS_CFLAGS:-}" == *\"* || "${HAS_LDFLAGS:-}" == *\"* ]]
-            then
-                fatal "HAS_CFLAGS and HAS_LDFLAGS must not contain double quotes in $pkg_name"
-            fi
 
             local need_pkg
             for need_pkg in "${NEEDS[@]}"
@@ -1208,8 +1207,6 @@ plan_pkgs() {
 
             pkg_loaded["$pkg_name"]=1
             pkg_ver["$pkg_name"]="$VERSION"
-            pkg_cflags["$pkg_name"]="${HAS_CFLAGS:-}"
-            pkg_ldflags["$pkg_name"]="${HAS_LDFLAGS:-}"
             pkg_needs["$pkg_name"]="${NEEDS[*]}"
 
             local -a direct_bneeds=()
@@ -1221,7 +1218,7 @@ plan_pkgs() {
             direct_bneeds+=("${BUILD_NEEDS[@]}")
             pkg_bneeds["$pkg_name"]="${direct_bneeds[*]}"
 
-            unset ON VERSION HAS_CFLAGS HAS_LDFLAGS ARCHIVES NEEDS BUILD_NEEDS
+            unset ON VERSION ARCHIVES NEEDS BUILD_NEEDS
         }
 
         build_step() {
@@ -1273,7 +1270,7 @@ plan_pkgs() {
                 continue
             fi
             pkg="${node#build:}"
-            printf '%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}" "${pkg_cflags[$pkg]:-}" "${pkg_ldflags[$pkg]:-}"
+            printf '%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}"
         done
     ) > "$tmp_plan"
     then
@@ -1283,20 +1280,16 @@ plan_pkgs() {
 
     order=()
     pkg_ver=()
-    pkg_cflags=()
-    pkg_ldflags=()
     pkg_bneeds=()
     pkg_img_chk=()
     pkg_includes=()
-    local p v b inc cf lf
-    while IFS=$'\x1f' read -r p v b inc cf lf
+    local p v b inc
+    while IFS=$'\x1f' read -r p v b inc
     do
         order+=("$p")
         pkg_ver["$p"]="$v"
         pkg_bneeds["$p"]="$b"
         pkg_includes["$p"]="$inc"
-        pkg_cflags["$p"]="$cf"
-        pkg_ldflags["$p"]="$lf"
     done < "$tmp_plan"
     rm -f "$tmp_plan"
 }
@@ -1335,7 +1328,7 @@ build_pkgs() {
     fi
 
     local -a order=()
-    local -A pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
     plan_pkgs "$plan_mode" "$@"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1436,7 +1429,7 @@ refresh_recipe_checksums() {
     fi
 
     local -a order=()
-    local -A pkg_ver=() pkg_cflags=() pkg_ldflags=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
     plan_pkgs build "${target_pkgs[@]}"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1466,14 +1459,6 @@ refresh_recipe_checksums() {
         if test "$fs" != "$NULL"
         then
             local options="X-fluffy.image-checksum=$img_chk"
-            if test -n "${pkg_cflags[$pkg]:-}"
-            then
-                options="$options,X-fluffy.cflags=\"${pkg_cflags[$pkg]}\""
-            fi
-            if test -n "${pkg_ldflags[$pkg]:-}"
-            then
-                options="$options,X-fluffy.ldflags=\"${pkg_ldflags[$pkg]}\""
-            fi
             if test -n "$needs_str"
             then
                 options="$options,X-fluffy.needs=\"$needs_str\""

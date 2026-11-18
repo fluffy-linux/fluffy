@@ -30,7 +30,7 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i perl-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../perl-$VERSION-fluffy-source.patch
     sh Configure -des \
         -D prefix=/sw/perl \
         -D vendorprefix=/sw/perl \

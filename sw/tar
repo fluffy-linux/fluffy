@@ -70,8 +70,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i tar-$VERSION-acl_fix-1.patch
-    patch -Z -Np1 -i tar-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../tar-$VERSION-acl_fix-1.patch
+    patch -Z -Np1 -i ../tar-$VERSION-fluffy-source.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     FORCE_UNSAFE_CONFIGURE=1 $CONFIG_SHELL ./configure \

@@ -56,6 +56,13 @@ END
     make
 }
 
+CHECK() {
+    cd build
+    # The unwinder finds frames through PT_GNU_EH_FRAME: without it every
+    # pthread_exit, pthread_cancel and C++ throw aborts, silently.
+    $FLUFFY_TGT-readelf -lW libgcc_s.so.1 | grep -q GNU_EH_FRAME
+}
+
 INSTALL() {
     cd build
     make install

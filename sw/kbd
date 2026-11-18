@@ -10,7 +10,7 @@ VERSION=2.10.0
 ARCHIVES=(
     6e5ca4f8d76ee9e3a8db700b667f13e12aac9933828a64e1aaad93d26be9b479 https://github.com/fluffy-linux/kbd/releases/download/v$VERSION/kbd-$VERSION.tar.xz
     8be28dcb11420624a500f2ea4fe975f771174bffee50e54ec8cd295a2dec104e file://kbd-$VERSION-backspace-1.patch
-    2e4261029fa3cc1da9adb2c6449e1d6580a5109580374b1a9ba48fccce11aaf4 file://kbd-$VERSION-fluffy-source.patch
+    0be43a7780f58b0d54b229b373fc6109be7823ac542c4961ff62bcc924075387 file://kbd-$VERSION-fluffy-source.patch
     ab4cc59862782ac4f2daeff0115306c3f9968fac54d9227c802f866c22d541c2 file://kbd-$VERSION-fluffy-test.patch
 )
 
@@ -41,6 +41,7 @@ then
         make-pass1
         patch-pass1
         perl
+        pkgconf
         sed
         tar-pass1
     )
@@ -66,15 +67,16 @@ else
         make
         patch
         perl
+        pkgconf
         sed
         tar
     )
 fi
 
 MAKE() {
-    patch -Z -Np1 -i kbd-$VERSION-backspace-1.patch
-    patch -Z -Np1 -i kbd-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i kbd-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../kbd-$VERSION-backspace-1.patch
+    patch -Z -Np1 -i ../kbd-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../kbd-$VERSION-fluffy-test.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     $CONFIG_SHELL ./configure \

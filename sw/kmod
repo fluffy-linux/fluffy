@@ -7,12 +7,10 @@ fi
 
 VERSION=34.2
 
-HAS_LDFLAGS=-lkmod
-
 ARCHIVES=(
     5a5d5073070cc7e0c7a7a3c6ec2a0e1780850c8b47b3e3892226b93ffcb9cb54 https://github.com/fluffy-linux/kmod/releases/download/v$VERSION/kmod-$VERSION.tar.xz
     e96a0f0805dd970126554b6b35c85b6ec73bb02394939c0c65e964b9ec2c0fb1 file://kmod-$VERSION-fluffy-test.patch
-    11e6ed00e7f15bd8446a4f4f9160e3e1c441e8c71bae199c8459d69c18040202 file://kmod-$VERSION-fluffy.patch
+    92b7b08c05e6b2bb355ba7188953fd458bb40ef2c38ff05a5d4503926443a254 file://kmod-$VERSION-fluffy.patch
 )
 
 NEEDS=(
@@ -43,6 +41,7 @@ then
         ninja
         openssl
         patch-pass1
+        pkgconf
         python
         sed
         xz
@@ -68,6 +67,7 @@ else
         ninja
         openssl
         patch
+        pkgconf
         python
         sed
         xz
@@ -77,8 +77,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i kmod-$VERSION-fluffy-test.patch
-    patch -Z -Np1 -i kmod-$VERSION-fluffy.patch
+    patch -Z -Np1 -i ../kmod-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../kmod-$VERSION-fluffy.patch
 
     mkdir -p build
     cd build

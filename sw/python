@@ -7,9 +7,6 @@ fi
 
 VERSION=3.14.7
 
-HAS_CFLAGS=-I/sw/python/include/python3.14
-HAS_LDFLAGS=-lpython3.14
-
 ARCHIVES=(
     3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/Python-$VERSION.tar.xz
     d484b784ec35c5776c5ff55f81fa984b5251a38b532b24bb00e43148bd73ffe9 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/python-$VERSION-docs-html.tar.bz2
@@ -82,6 +79,7 @@ then
         ncurses
         openssl
         patch-pass1
+        pkgconf
         readline
         sed
         sqlite
@@ -116,6 +114,7 @@ else
         ncurses
         openssl
         patch
+        pkgconf
         readline
         sed
         sqlite
@@ -128,8 +127,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i Python-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i Python-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../Python-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../Python-$VERSION-fluffy-test.patch
     touch Modules/getpath.py
 
     export CONFIG_SHELL=/sw/bash/bin/bash
@@ -156,9 +155,7 @@ disable-pip-version-check = true
 EOF
 
     install -v -dm755 $DESTDIR/sw/python/share/doc/python-$VERSION/html
-    if [ -d ../python-$VERSION-docs-html/python-$VERSION-docs-html ]; then
-        cp -a ../python-$VERSION-docs-html/python-$VERSION-docs-html/* $DESTDIR/sw/python/share/doc/python-$VERSION/html/
-    elif [ -d ../python-$VERSION-docs-html ]; then
-        cp -a ../python-$VERSION-docs-html/* $DESTDIR/sw/python/share/doc/python-$VERSION/html/
-    fi
+    tar --strip-components=1 --no-same-owner --no-same-permissions \
+        -C $DESTDIR/sw/python/share/doc/python-$VERSION/html \
+        -xf ../python-$VERSION-docs-html.tar.bz2
 }

@@ -67,11 +67,11 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i glibc-fhs-1.patch
-    patch -Z -Np1 -i glibc-$VERSION-upstream_fixes-1.patch
-    patch -Z -Np1 -i glibc-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i glibc-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i glibc-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../glibc-fhs-1.patch
+    patch -Z -Np1 -i ../glibc-$VERSION-upstream_fixes-1.patch
+    patch -Z -Np1 -i ../glibc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../glibc-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../glibc-$VERSION-fluffy-test.patch
 
     mkdir -v build
     cd build
@@ -115,8 +115,8 @@ INSTALL() {
     make localedata/install-locales
 
     mkdir -p $DESTDIR/sw/glibc/etc
-    install -m 644 ../glibc.passwd $DESTDIR/sw/glibc/etc/passwd
-    install -m 644 ../glibc.group $DESTDIR/sw/glibc/etc/group
+    install -m 644 ../../glibc.passwd $DESTDIR/sw/glibc/etc/passwd
+    install -m 644 ../../glibc.group $DESTDIR/sw/glibc/etc/group
 
     cat > $DESTDIR/sw/glibc/etc/host.conf << "EOF"
 multi on
@@ -147,7 +147,7 @@ rpc: files
 # End /sw/glibc/etc/nsswitch.conf
 EOF
 
-    pushd ../tzdata$TZDATA_VERSION
+    tar -xf ../../tzdata$TZDATA_VERSION.tar.gz
     ZONEINFO=$DESTDIR/sw/glibc/share/zoneinfo
     mkdir -pv $ZONEINFO/{posix,right}
     for tz in etcetera southamerica northamerica europe africa antarctica asia australasia backward
@@ -159,7 +159,6 @@ EOF
     cp -v zone.tab zone1970.tab iso3166.tab $ZONEINFO
     zic -d $ZONEINFO -p America/New_York
     unset ZONEINFO
-    popd
 
     mkdir -p $DESTDIR/sw/glibc/share
     cat > $DESTDIR/sw/glibc/share/config.site << "EOF"

@@ -16,6 +16,7 @@ BUILD_NEEDS=(
     glibc-pass1
     linux-headers
     ncurses-pass1
+    pkgconf-pass1
 )
 
 MAKE() {
@@ -41,7 +42,8 @@ MAKE() {
         --without-systemd \
         --without-udev \
         --without-tinfo \
-        ADJTIME_PATH=/var/lib/hwclock/adjtime
+        ADJTIME_PATH=/var/lib/hwclock/adjtime \
+        CPPFLAGS=-I/sw/ncurses/include
     make
 }
 

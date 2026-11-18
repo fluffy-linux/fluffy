@@ -69,7 +69,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i grub-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../grub-$VERSION-fluffy-source.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     $CONFIG_SHELL ./configure \

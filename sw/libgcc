@@ -57,7 +57,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i gcc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../gcc-$VERSION-fluffy-shell.patch
 
     sed 's|^gcc_objdir =.*|gcc_objdir = ./gcc|' \
         -i libgcc/Makefile.in

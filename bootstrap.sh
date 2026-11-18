@@ -4,6 +4,22 @@ set -euo pipefail
 DIR="$(dirname "$(realpath "$0")")"
 FLUFFY="${FLUFFY:-/mnt/fluffy}"
 
+# Never interactive unless asked: a terminal on stdin does not mean a person
+# is there (Buildkite runs commands in a pseudo-terminal).
+set_root_password=0
+for arg in "$@"
+do
+    case "$arg" in
+        --root-password)
+            set_root_password=1
+            ;;
+        *)
+            echo "Usage: $0 [--root-password]" >&2
+            exit 2
+            ;;
+    esac
+done
+
 "$DIR/mkuid.sh" --check
 
 if ! mountpoint -q "$FLUFFY"
@@ -111,7 +127,10 @@ fi
 
 if ! awk -F: '$1 == "root" && $2 != "" && $2 != "!" && $2 != "*" { found=1 } END { exit !found }' "$FLUFFY/etc/shadow"
 then
-    if test -t 0 && test -s "$FLUFFY/etc/fluffy/fstab" && grep -q '^/sw/shadow-[0-9]' "$FLUFFY/etc/fluffy/fstab"
+    if test "$set_root_password" = 0
+    then
+        echo "bootstrap: root has no password; run $0 --root-password to set one" >&2
+    elif test -s "$FLUFFY/etc/fluffy/fstab" && grep -q '^/sw/shadow-[0-9]' "$FLUFFY/etc/fluffy/fstab"
     then
         FLUFFY="$FLUFFY" unshare -m bash -euo pipefail -c '
             mount --make-rprivate /
@@ -131,6 +150,8 @@ then
                 chroot "$FLUFFY" /sw/shadow/bin/passwd root
             fi
         '
+    else
+        echo "bootstrap: cannot set root's password yet: shadow is not built" >&2
     fi
 fi
 

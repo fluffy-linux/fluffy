@@ -18,10 +18,10 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i glibc-fhs-1.patch
-    patch -Z -Np1 -i glibc-$VERSION-upstream_fixes-1.patch
-    patch -Z -Np1 -i glibc-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i glibc-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../glibc-fhs-1.patch
+    patch -Z -Np1 -i ../glibc-$VERSION-upstream_fixes-1.patch
+    patch -Z -Np1 -i ../glibc-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../glibc-$VERSION-fluffy-source.patch
 
     mkdir -v build
     cd build
@@ -46,8 +46,8 @@ INSTALL() {
     sed '/RTLDLIST/s@/usr@@g' -i $DESTDIR/sw/glibc/bin/ldd
 
     mkdir -p $DESTDIR/sw/glibc/etc
-    install -m 644 ../glibc.passwd $DESTDIR/sw/glibc/etc/passwd
-    install -m 644 ../glibc.group $DESTDIR/sw/glibc/etc/group
+    install -m 644 ../../glibc.passwd $DESTDIR/sw/glibc/etc/passwd
+    install -m 644 ../../glibc.group $DESTDIR/sw/glibc/etc/group
 
     cat > $DESTDIR/sw/glibc/etc/host.conf << "EOF"
 multi on

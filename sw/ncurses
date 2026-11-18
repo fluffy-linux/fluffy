@@ -7,8 +7,6 @@ fi
 
 VERSION=6.6
 
-HAS_LDFLAGS=-lncursesw
-
 ARCHIVES=(
     355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://github.com/fluffy-linux/ncurses-snapshots/releases/download/v${VERSION//./_}/ncurses-$VERSION.tar.gz
     cdefcbf2a3aba49744668c4c69d994422f48576a20b1f7ff200efe378d39e8a7 file://ncurses-$VERSION-fluffy-source.patch
@@ -61,8 +59,8 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ncurses-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ncurses-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../ncurses-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../ncurses-$VERSION-fluffy-test.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
@@ -74,6 +72,8 @@ MAKE() {
         --without-debug \
         --without-normal \
         --with-cxx-shared \
+        --enable-pc-files \
+        --with-pkg-config-libdir=/sw/ncurses/lib/pkgconfig \
         --enable-widec \
         --enable-overwrite \
         AWK=gawk
@@ -94,6 +94,7 @@ INSTALL() {
 
     for lib in ncurses form panel menu ncurses++; do
         ln -sfv lib${lib}w.so $DESTDIR/sw/ncurses/lib/lib${lib}.so
+        ln -sfv ${lib}w.pc    $DESTDIR/sw/ncurses/lib/pkgconfig/${lib}.pc
     done
     ln -sfv libncursesw.so $DESTDIR/sw/ncurses/lib/libcurses.so
 

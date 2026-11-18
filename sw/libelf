@@ -7,11 +7,9 @@ fi
 
 VERSION=0.195
 
-HAS_LDFLAGS=-lelf
-
 ARCHIVES=(
     37629fdf7f1f3dc2818e138fca2b8094177d6c2d0f701d3bb650a561218dc026 https://github.com/fluffy-linux/elfutils/releases/download/elfutils-$VERSION/elfutils-$VERSION.tar.bz2
-    9c66b11fb8210d288c7baab64f388d8489284972d97b280299c4a4e48a724f8b file://elfutils-$VERSION-fluffy.patch
+    16d1008b693b207f4495d06a0e67f2e4bd1d022edb588eba1bb046a7b31040e9 file://elfutils-$VERSION-fluffy.patch
 )
 
 NEEDS=(
@@ -45,6 +43,7 @@ then
         m4
         make-pass1
         patch-pass1
+        pkgconf
         sed
         tar-pass1
         xz
@@ -73,6 +72,7 @@ else
         m4
         make
         patch
+        pkgconf
         sed
         tar
         xz
@@ -82,7 +82,7 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i elfutils-$VERSION-fluffy.patch
+    patch -Z -Np1 -i ../elfutils-$VERSION-fluffy.patch
 
     ./configure \
         --prefix=/sw/libelf \
@@ -99,5 +99,6 @@ CHECK() {
 
 INSTALL() {
     make -C libelf install
+    install -vDm644 config/libelf.pc $DESTDIR/sw/libelf/lib/pkgconfig/libelf.pc
     rm -v $DESTDIR/sw/libelf/lib/libelf.a
 }

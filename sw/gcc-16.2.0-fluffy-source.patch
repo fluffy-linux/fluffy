@@ -1,1178 +1,3 @@
-diff --no-dereference -Naur gcc-16.2.0.orig/gcc/configure gcc-16.2.0/gcc/configure
---- gcc-16.2.0.orig/gcc/configure	2026-08-07 07:47:29.994988106 +0000
-+++ gcc-16.2.0/gcc/configure	2026-08-07 07:47:29.994988106 +0000
-@@ -15282,7 +15282,7 @@
- 
- if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x ||
-    test x$build != x$host || test "x$with_build_sysroot" != x; then
--  if test "x$with_build_sysroot" != x; then
-+  if test "x$with_build_sysroot" != x || test "x$configured_native_system_header_dir" != x; then
-     BUILD_SYSTEM_HEADER_DIR=$with_build_sysroot'$${sysroot_headers_suffix}$(NATIVE_SYSTEM_HEADER_DIR)'
-   else
-     BUILD_SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
-@@ -15297,7 +15297,7 @@
-     SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
-   fi
- 
--  if test "x$with_build_sysroot" != "x"; then
-+  if test "x$with_build_sysroot" != "x" || test "x$configured_native_system_header_dir" != x; then
-     target_header_dir="${with_build_sysroot}${native_system_header_dir}"
-   elif test "x$with_sysroot" = x; then
-     target_header_dir="${test_exec_prefix}/${target_noncanonical}/sys-include"
-@@ -15319,9 +15319,16 @@
- # This prevents libgcc2 from containing any code which requires libc
- # support.
- : ${inhibit_libc=false}
-+inhibit_libc_found_stdio=no
-+for f in $target_header_dir/stdio.h; do
-+  if test -f "$f"; then
-+    inhibit_libc_found_stdio=yes
-+    break
-+  fi
-+done
- if { { test x$host != x$target && test "x$with_sysroot" = x ; } ||
-        test x$with_newlib = xyes ; } &&
--     { test "x$with_headers" = xno || test ! -f "$target_header_dir/stdio.h"; } ; then
-+     { test "x$with_headers" = xno || test "$inhibit_libc_found_stdio" = no; } ; then
-        inhibit_libc=true
- fi
- 
-diff --no-dereference -Naur gcc-16.2.0.orig/gcc/cppdefault.cc gcc-16.2.0/gcc/cppdefault.cc
---- gcc-16.2.0.orig/gcc/cppdefault.cc	2026-08-07 07:46:06.072688487 +0000
-+++ gcc-16.2.0/gcc/cppdefault.cc	2026-08-07 07:46:06.072688487 +0000
-@@ -30,7 +30,6 @@
- 
- #if defined (CROSS_DIRECTORY_STRUCTURE) && !defined (TARGET_SYSTEM_ROOT)
- # undef LOCAL_INCLUDE_DIR
--# undef NATIVE_SYSTEM_HEADER_DIR
- #else
- # undef CROSS_INCLUDE_DIR
- #endif
-diff --no-dereference -Naur gcc-16.2.0.orig/gcc/file-find.cc gcc-16.2.0/gcc/file-find.cc
---- gcc-16.2.0.orig/gcc/file-find.cc	2026-08-07 07:46:06.150689700 +0000
-+++ gcc-16.2.0/gcc/file-find.cc	2026-08-07 07:46:06.150689700 +0000
-@@ -105,11 +105,9 @@
-   return 0;
- }
- 
--/* Add an entry for PREFIX to prefix list PREFIX.
--   Add at beginning if FIRST is true.  */
--
--void
--do_add_prefix (struct path_prefix *pprefix, const char *prefix, bool first)
-+static void
-+do_add_literal_prefix (struct path_prefix *pprefix, const char *prefix,
-+		       bool first)
- {
-   struct prefix_list *pl, **prev;
-   int len;
-@@ -139,6 +137,47 @@
-   *prev = pl;
- }
- 
-+/* Add an entry for PREFIX to prefix list PREFIX.
-+   Add at beginning if FIRST is true.  */
-+
-+void
-+do_add_prefix (struct path_prefix *pprefix, const char *prefix, bool first)
-+{
-+  struct stat st;
-+  if (stat (prefix, &st) == 0 && S_ISDIR (st.st_mode))
-+    {
-+      do_add_literal_prefix (pprefix, prefix, first);
-+      return;
-+    }
-+
-+  if (strpbrk (prefix, "*?[") != NULL)
-+    {
-+      glob_t gbuf = {};
-+      int gr = glob (prefix, GLOB_ONLYDIR, NULL, &gbuf);
-+      if (gr == 0)
-+	{
-+	  const char sep[2] = { DIR_SEPARATOR, 0 };
-+	  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
-+	    {
-+	      size_t idx = first ? (gbuf.gl_pathc - 1 - gi) : gi;
-+	      size_t glen = strlen (gbuf.gl_pathv[idx]);
-+	      char *dir = (glen > 0
-+			   && IS_DIR_SEPARATOR (gbuf.gl_pathv[idx][glen - 1]))
-+			  ? xstrdup (gbuf.gl_pathv[idx])
-+			  : concat (gbuf.gl_pathv[idx], sep, NULL);
-+	      do_add_literal_prefix (pprefix, dir, first);
-+	      free (dir);
-+	    }
-+	}
-+      else if (gr == GLOB_NOMATCH)
-+	do_add_literal_prefix (pprefix, prefix, first);
-+      globfree (&gbuf);
-+      return;
-+    }
-+
-+  do_add_literal_prefix (pprefix, prefix, first);
-+}
-+
- /* Add an entry for PREFIX at the end of prefix list PREFIX.  */
- 
- void
-@@ -168,6 +207,64 @@
-     prefix_from_string (p, pprefix);
- }
- 
-+static const char *
-+scan_path_sep_elem (const char *p)
-+{
-+  const char *q = p;
-+  while (*q != '\0' && *q != PATH_SEPARATOR)
-+    {
-+      if (PATH_SEPARATOR == ':'
-+	  && *q == '\\' && q[1] != '\0' && q[1] != PATH_SEPARATOR
-+	  && !IS_DIR_SEPARATOR (q[1]))
-+	{
-+	  q += 2;
-+	  continue;
-+	}
-+      if (PATH_SEPARATOR == ':' && *q == '[')
-+	{
-+	  const char *r = q + 1;
-+	  if (*r == '!' || *r == '^')
-+	    r++;
-+	  if (*r == ']')
-+	    r++;
-+	  bool closed = false;
-+	  while (*r != '\0' && !IS_DIR_SEPARATOR (*r))
-+	    {
-+	      if (*r == '\\' && r[1] != '\0' && !IS_DIR_SEPARATOR (r[1]))
-+		{
-+		  r += 2;
-+		  continue;
-+		}
-+	      if (*r == '[' && (r[1] == ':' || r[1] == '.' || r[1] == '='))
-+		{
-+		  char ctype = r[1];
-+		  const char *s = r + 2;
-+		  while (*s != '\0' && !IS_DIR_SEPARATOR (*s)
-+			 && (ctype == '.' || *s != ']')
-+			 && !(*s == ctype && s[1] == ']'))
-+		    s++;
-+		  if (*s == ctype && s[1] == ']')
-+		    {
-+		      r = s + 2;
-+		      continue;
-+		    }
-+		}
-+	      if (*r == ']')
-+		{
-+		  q = r + 1;
-+		  closed = true;
-+		  break;
-+		}
-+	      r++;
-+	    }
-+	  if (closed)
-+	    continue;
-+	}
-+      q++;
-+    }
-+  return q;
-+}
-+
- void
- prefix_from_string (const char *p, struct path_prefix *pprefix)
- {
-@@ -177,34 +274,33 @@
-   if (debug)
-     fprintf (stderr, "Convert string '%s' into prefixes, separator = '%c'\n", p, PATH_SEPARATOR);
- 
--  startp = endp = p;
-+  startp = p;
-   while (1)
-     {
--      if (*endp == PATH_SEPARATOR || *endp == 0)
-+      endp = scan_path_sep_elem (startp);
-+      if (endp == startp)
- 	{
--	  strncpy (nstore, startp, endp-startp);
--	  if (endp == startp)
--	    {
--	      strcpy (nstore, "./");
--	    }
--	  else if (! IS_DIR_SEPARATOR (endp[-1]))
-+	  strcpy (nstore, "./");
-+	}
-+      else
-+	{
-+	  memcpy (nstore, startp, endp - startp);
-+	  if (! IS_DIR_SEPARATOR (endp[-1]))
- 	    {
- 	      nstore[endp-startp] = DIR_SEPARATOR;
- 	      nstore[endp-startp+1] = 0;
- 	    }
- 	  else
- 	    nstore[endp-startp] = 0;
-+	}
- 
--	  if (debug)
--	    fprintf (stderr, "  - add prefix: %s\n", nstore);
-+      if (debug)
-+	fprintf (stderr, "  - add prefix: %s\n", nstore);
- 
--	  add_prefix (pprefix, nstore);
--	  if (*endp == 0)
--	    break;
--	  endp = startp = endp + 1;
--	}
--      else
--	endp++;
-+      add_prefix (pprefix, nstore);
-+      if (*endp == 0)
-+	break;
-+      startp = endp + 1;
-     }
-   free (nstore);
- }
-diff --no-dereference -Naur gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
---- gcc-16.2.0.orig/gcc/gcc.cc	2026-08-07 07:46:06.189690306 +0000
-+++ gcc-16.2.0/gcc/gcc.cc	2026-08-07 07:46:06.189690306 +0000
-@@ -1649,7 +1649,6 @@
- #endif
- 
- #ifdef CROSS_DIRECTORY_STRUCTURE  /* Don't use these prefixes for a cross compiler.  */
--#undef MD_EXEC_PREFIX
- #undef MD_STARTFILE_PREFIX
- #undef MD_STARTFILE_PREFIX_1
- #endif
-@@ -3157,10 +3156,85 @@
-    the complete value of machine_suffix.
-    2 means try both machine_suffix and just_machine_suffix.  */
- 
-+static const char *
-+scan_path_sep_elem (const char *p)
-+{
-+  const char *q = p;
-+  while (*q != '\0' && *q != PATH_SEPARATOR)
-+    {
-+      if (PATH_SEPARATOR == ':'
-+	  && *q == '\\' && q[1] != '\0' && q[1] != PATH_SEPARATOR
-+	  && !IS_DIR_SEPARATOR (q[1]))
-+	{
-+	  q += 2;
-+	  continue;
-+	}
-+      if (PATH_SEPARATOR == ':' && *q == '[')
-+	{
-+	  const char *r = q + 1;
-+	  if (*r == '!' || *r == '^')
-+	    r++;
-+	  if (*r == ']')
-+	    r++;
-+	  bool closed = false;
-+	  while (*r != '\0' && !IS_DIR_SEPARATOR (*r))
-+	    {
-+	      if (*r == '\\' && r[1] != '\0' && !IS_DIR_SEPARATOR (r[1]))
-+		{
-+		  r += 2;
-+		  continue;
-+		}
-+	      if (*r == '[' && (r[1] == ':' || r[1] == '.' || r[1] == '='))
-+		{
-+		  char ctype = r[1];
-+		  const char *s = r + 2;
-+		  while (*s != '\0' && !IS_DIR_SEPARATOR (*s)
-+			 && (ctype == '.' || *s != ']')
-+			 && !(*s == ctype && s[1] == ']'))
-+		    s++;
-+		  if (*s == ctype && s[1] == ']')
-+		    {
-+		      r = s + 2;
-+		      continue;
-+		    }
-+		}
-+	      if (*r == ']')
-+		{
-+		  q = r + 1;
-+		  closed = true;
-+		  break;
-+		}
-+	      r++;
-+	    }
-+	  if (closed)
-+	    continue;
-+	}
-+      q++;
-+    }
-+  return q;
-+}
-+
-+static char *
-+escape_glob_meta (const char *s)
-+{
-+  size_t len = strlen (s);
-+  char *out = XNEWVEC (char, len * 2 + 1);
-+  char *d = out;
-+
-+  for (size_t i = 0; i < len; i++)
-+    {
-+      if (s[i] == '\\' || s[i] == '*' || s[i] == '?' || s[i] == '[')
-+	*d++ = '\\';
-+      *d++ = s[i];
-+    }
-+  *d = '\0';
-+  return out;
-+}
-+
- static void
--add_prefix (struct path_prefix *pprefix, const char *prefix,
--	    const char *component, /* enum prefix_priority */ int priority,
--	    int require_machine_suffix, int os_multilib)
-+add_literal_prefix (struct path_prefix *pprefix, char *owned_prefix,
-+		    /* enum prefix_priority */ int priority,
-+		    int require_machine_suffix, int os_multilib)
- {
-   struct prefix_list *pl, **prev;
-   int len;
-@@ -3172,13 +3246,12 @@
- 
-   /* Keep track of the longest prefix.  */
- 
--  prefix = update_path (prefix, component);
--  len = strlen (prefix);
-+  len = strlen (owned_prefix);
-   if (len > pprefix->max_len)
-     pprefix->max_len = len;
- 
-   pl = XNEW (struct prefix_list);
--  pl->prefix = prefix;
-+  pl->prefix = owned_prefix;
-   pl->require_machine_suffix = require_machine_suffix;
-   pl->priority = priority;
-   pl->os_multilib = os_multilib;
-@@ -3188,6 +3261,63 @@
-   (*prev) = pl;
- }
- 
-+static void
-+expand_and_add_prefix (struct path_prefix *pprefix, const char *pattern,
-+		       char *owned_fallback,
-+		       /* enum prefix_priority */ int priority,
-+		       int require_machine_suffix, int os_multilib)
-+{
-+  glob_t gbuf = {};
-+  int gr = glob (pattern, GLOB_ONLYDIR, NULL, &gbuf);
-+  if (gr == 0)
-+    {
-+      for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
-+	{
-+	  size_t glen = strlen (gbuf.gl_pathv[gi]);
-+	  char *dir = (glen > 0
-+		       && IS_DIR_SEPARATOR (gbuf.gl_pathv[gi][glen - 1]))
-+		      ? xstrdup (gbuf.gl_pathv[gi])
-+		      : concat (gbuf.gl_pathv[gi], dir_separator_str, NULL);
-+	  add_literal_prefix (pprefix, dir, priority,
-+			      require_machine_suffix, os_multilib);
-+	}
-+      free (owned_fallback);
-+    }
-+  else if (gr == GLOB_NOMATCH && owned_fallback != NULL)
-+    add_literal_prefix (pprefix, owned_fallback, priority,
-+			require_machine_suffix, os_multilib);
-+  else
-+    free (owned_fallback);
-+  globfree (&gbuf);
-+}
-+
-+static void
-+add_prefix (struct path_prefix *pprefix, const char *prefix,
-+	    const char *component, /* enum prefix_priority */ int priority,
-+	    int require_machine_suffix, int os_multilib)
-+{
-+  char *upd = update_path (prefix, component);
-+  struct stat st;
-+  if (stat (upd, &st) == 0 && S_ISDIR (st.st_mode))
-+    {
-+      add_literal_prefix (pprefix, upd, priority,
-+			  require_machine_suffix, os_multilib);
-+      return;
-+    }
-+
-+  if (strpbrk (upd, "*?[") != NULL)
-+    {
-+      char *fb = (priority != PREFIX_PRIORITY_LAST) ? xstrdup (upd) : NULL;
-+      expand_and_add_prefix (pprefix, upd, fb, priority,
-+			     require_machine_suffix, os_multilib);
-+      free (upd);
-+      return;
-+    }
-+
-+  add_literal_prefix (pprefix, upd, priority,
-+		      require_machine_suffix, os_multilib);
-+}
-+
- /* Same as add_prefix, but prepending target_system_root to prefix.  */
- /* The target_system_root prefix has been relocated by gcc_exec_prefix.  */
- static void
-@@ -3201,6 +3331,7 @@
- 
-   if (target_system_root)
-     {
-+      bool has_wild = strpbrk (prefix, "*?[") != NULL;
-       char *sysroot_no_trailing_dir_separator = xstrdup (target_system_root);
-       size_t sysroot_len = strlen (target_system_root);
- 
-@@ -3208,17 +3339,38 @@
- 	  && target_system_root[sysroot_len - 1] == DIR_SEPARATOR)
- 	sysroot_no_trailing_dir_separator[sysroot_len - 1] = '\0';
- 
--      if (target_sysroot_suffix)
--	prefix = concat (sysroot_no_trailing_dir_separator,
--			 target_sysroot_suffix, prefix, NULL);
--      else
--	prefix = concat (sysroot_no_trailing_dir_separator, prefix, NULL);
--
-+      char *base = (target_sysroot_suffix
-+		    ? concat (sysroot_no_trailing_dir_separator,
-+			      target_sysroot_suffix, NULL)
-+		    : xstrdup (sysroot_no_trailing_dir_separator));
-       free (sysroot_no_trailing_dir_separator);
- 
--      /* We have to override this because GCC's notion of sysroot
--	 moves along with GCC.  */
--      component = "GCC";
-+      char *raw_full = concat (base, prefix, NULL);
-+      char *lit_full = update_path (raw_full, "GCC");
-+      free (raw_full);
-+
-+      struct stat st;
-+      if (!has_wild || (stat (lit_full, &st) == 0 && S_ISDIR (st.st_mode)))
-+	{
-+	  free (base);
-+	  add_literal_prefix (pprefix, lit_full, priority,
-+			      require_machine_suffix, os_multilib);
-+	  return;
-+	}
-+
-+      char *upd_base = update_path (base, "GCC");
-+      free (base);
-+      char *esc_base = escape_glob_meta (upd_base);
-+      free (upd_base);
-+      char *upd_tail = update_path (prefix, NULL);
-+      char *full = concat (esc_base, upd_tail, NULL);
-+      free (upd_tail);
-+      free (esc_base);
-+      free (lit_full);
-+      expand_and_add_prefix (pprefix, full, NULL, priority,
-+			     require_machine_suffix, os_multilib);
-+      free (full);
-+      return;
-     }
- 
-   add_prefix (pprefix, prefix, component, priority,
-@@ -3238,6 +3390,7 @@
- 
-   if (target_system_root)
-     {
-+      bool has_wild = strpbrk (prefix, "*?[") != NULL;
-       char *sysroot_no_trailing_dir_separator = xstrdup (target_system_root);
-       size_t sysroot_len = strlen (target_system_root);
- 
-@@ -3245,17 +3398,38 @@
- 	  && target_system_root[sysroot_len - 1] == DIR_SEPARATOR)
- 	sysroot_no_trailing_dir_separator[sysroot_len - 1] = '\0';
- 
--      if (target_sysroot_hdrs_suffix)
--	prefix = concat (sysroot_no_trailing_dir_separator,
--			 target_sysroot_hdrs_suffix, prefix, NULL);
--      else
--	prefix = concat (sysroot_no_trailing_dir_separator, prefix, NULL);
--
-+      char *base = (target_sysroot_hdrs_suffix
-+		    ? concat (sysroot_no_trailing_dir_separator,
-+			      target_sysroot_hdrs_suffix, NULL)
-+		    : xstrdup (sysroot_no_trailing_dir_separator));
-       free (sysroot_no_trailing_dir_separator);
- 
--      /* We have to override this because GCC's notion of sysroot
--	 moves along with GCC.  */
--      component = "GCC";
-+      char *raw_full = concat (base, prefix, NULL);
-+      char *lit_full = update_path (raw_full, "GCC");
-+      free (raw_full);
-+
-+      struct stat st;
-+      if (!has_wild || (stat (lit_full, &st) == 0 && S_ISDIR (st.st_mode)))
-+	{
-+	  free (base);
-+	  add_literal_prefix (pprefix, lit_full, priority,
-+			      require_machine_suffix, os_multilib);
-+	  return;
-+	}
-+
-+      char *upd_base = update_path (base, "GCC");
-+      free (base);
-+      char *esc_base = escape_glob_meta (upd_base);
-+      free (upd_base);
-+      char *upd_tail = update_path (prefix, NULL);
-+      char *full = concat (esc_base, upd_tail, NULL);
-+      free (upd_tail);
-+      free (esc_base);
-+      free (lit_full);
-+      expand_and_add_prefix (pprefix, full, NULL, priority,
-+			     require_machine_suffix, os_multilib);
-+      free (full);
-+      return;
-     }
- 
-   add_prefix (pprefix, prefix, component, priority,
-@@ -4918,31 +5092,34 @@
-       const char *startp, *endp;
-       char *nstore = (char *) alloca (strlen (temp) + 3);
- 
--      startp = endp = temp;
-+      startp = temp;
-       while (1)
- 	{
--	  if (*endp == PATH_SEPARATOR || *endp == 0)
-+	  endp = scan_path_sep_elem (startp);
-+	  if (endp == startp)
- 	    {
--	      strncpy (nstore, startp, endp - startp);
--	      if (endp == startp)
--		strcpy (nstore, concat (".", dir_separator_str, NULL));
--	      else if (!IS_DIR_SEPARATOR (endp[-1]))
-+	      char *dot = concat (".", dir_separator_str, NULL);
-+	      strcpy (nstore, dot);
-+	      free (dot);
-+	    }
-+	  else
-+	    {
-+	      memcpy (nstore, startp, endp - startp);
-+	      if (!IS_DIR_SEPARATOR (endp[-1]))
- 		{
- 		  nstore[endp - startp] = DIR_SEPARATOR;
- 		  nstore[endp - startp + 1] = 0;
- 		}
- 	      else
- 		nstore[endp - startp] = 0;
--	      add_prefix (&exec_prefixes, nstore, 0,
--			  PREFIX_PRIORITY_LAST, 0, 0);
--	      add_prefix (&include_prefixes, nstore, 0,
--			  PREFIX_PRIORITY_LAST, 0, 0);
--	      if (*endp == 0)
--		break;
--	      endp = startp = endp + 1;
- 	    }
--	  else
--	    endp++;
-+	  add_prefix (&exec_prefixes, nstore, 0,
-+		      PREFIX_PRIORITY_LAST, 0, 0);
-+	  add_prefix (&include_prefixes, nstore, 0,
-+		      PREFIX_PRIORITY_LAST, 0, 0);
-+	  if (*endp == 0)
-+	    break;
-+	  startp = endp + 1;
- 	}
-     }
- 
-@@ -4952,29 +5129,32 @@
-       const char *startp, *endp;
-       char *nstore = (char *) alloca (strlen (temp) + 3);
- 
--      startp = endp = temp;
-+      startp = temp;
-       while (1)
- 	{
--	  if (*endp == PATH_SEPARATOR || *endp == 0)
-+	  endp = scan_path_sep_elem (startp);
-+	  if (endp == startp)
-+	    {
-+	      char *dot = concat (".", dir_separator_str, NULL);
-+	      strcpy (nstore, dot);
-+	      free (dot);
-+	    }
-+	  else
- 	    {
--	      strncpy (nstore, startp, endp - startp);
--	      if (endp == startp)
--		strcpy (nstore, concat (".", dir_separator_str, NULL));
--	      else if (!IS_DIR_SEPARATOR (endp[-1]))
-+	      memcpy (nstore, startp, endp - startp);
-+	      if (!IS_DIR_SEPARATOR (endp[-1]))
- 		{
- 		  nstore[endp - startp] = DIR_SEPARATOR;
- 		  nstore[endp - startp + 1] = 0;
- 		}
- 	      else
- 		nstore[endp - startp] = 0;
--	      add_prefix (&startfile_prefixes, nstore, NULL,
--			  PREFIX_PRIORITY_LAST, 0, 1);
--	      if (*endp == 0)
--		break;
--	      endp = startp = endp + 1;
- 	    }
--	  else
--	    endp++;
-+	  add_prefix (&startfile_prefixes, nstore, NULL,
-+		      PREFIX_PRIORITY_LAST, 0, 1);
-+	  if (*endp == 0)
-+	    break;
-+	  startp = endp + 1;
- 	}
-     }
- 
-@@ -4985,29 +5165,32 @@
-       const char *startp, *endp;
-       char *nstore = (char *) alloca (strlen (temp) + 3);
- 
--      startp = endp = temp;
-+      startp = temp;
-       while (1)
- 	{
--	  if (*endp == PATH_SEPARATOR || *endp == 0)
-+	  endp = scan_path_sep_elem (startp);
-+	  if (endp == startp)
-+	    {
-+	      char *dot = concat (".", dir_separator_str, NULL);
-+	      strcpy (nstore, dot);
-+	      free (dot);
-+	    }
-+	  else
- 	    {
--	      strncpy (nstore, startp, endp - startp);
--	      if (endp == startp)
--		strcpy (nstore, concat (".", dir_separator_str, NULL));
--	      else if (!IS_DIR_SEPARATOR (endp[-1]))
-+	      memcpy (nstore, startp, endp - startp);
-+	      if (!IS_DIR_SEPARATOR (endp[-1]))
- 		{
- 		  nstore[endp - startp] = DIR_SEPARATOR;
- 		  nstore[endp - startp + 1] = 0;
- 		}
- 	      else
- 		nstore[endp - startp] = 0;
--	      add_prefix (&startfile_prefixes, nstore, NULL,
--			  PREFIX_PRIORITY_LAST, 0, 1);
--	      if (*endp == 0)
--		break;
--	      endp = startp = endp + 1;
- 	    }
--	  else
--	    endp++;
-+	  add_prefix (&startfile_prefixes, nstore, NULL,
-+		      PREFIX_PRIORITY_LAST, 0, 1);
-+	  if (*endp == 0)
-+	    break;
-+	  startp = endp + 1;
- 	}
-     }
- 
-@@ -8556,15 +8739,13 @@
-   for (i = 0; i < ARRAY_SIZE (driver_self_specs); i++)
-     do_self_spec (driver_self_specs[i]);
- 
--  /* If not cross-compiling, look for executables in the standard
--     places.  */
--  if (*cross_compile == '0')
--    {
--      if (*md_exec_prefix)
--	{
--	  add_prefix (&exec_prefixes, md_exec_prefix, "GCC",
--		      PREFIX_PRIORITY_LAST, 0, 0);
--	}
-+  if (*md_exec_prefix != 0
-+      && do_spec_2 (md_exec_prefix, NULL) == 0
-+      && do_spec_1 (" ", 0, NULL) == 0)
-+    {
-+      for (const char *arg : argbuf)
-+	add_prefix (&exec_prefixes, arg, "GCC",
-+		    PREFIX_PRIORITY_LAST, 0, 0);
-     }
- 
-   /* Process sysroot_suffix_spec.  */
-diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpath.cc
---- gcc-16.2.0.orig/gcc/incpath.cc	2026-08-07 07:46:06.226690881 +0000
-+++ gcc-16.2.0/gcc/incpath.cc	2026-08-07 07:46:06.226690881 +0000
-@@ -27,6 +27,26 @@
- #include "incpath.h"
- #include "cppdefault.h"
- 
-+static void add_literal_path (char *path, incpath_kind chain, int cxx_aware,
-+			      bool user_supplied_p);
-+
-+static char *
-+escape_glob_meta (const char *s)
-+{
-+  size_t len = strlen (s);
-+  char *out = XNEWVEC (char, len * 2 + 1);
-+  char *d = out;
-+
-+  for (size_t i = 0; i < len; i++)
-+    {
-+      if (s[i] == '\\' || s[i] == '*' || s[i] == '?' || s[i] == '[')
-+	*d++ = '\\';
-+      *d++ = s[i];
-+    }
-+  *d = '\0';
-+  return out;
-+}
-+
- /* Microsoft Windows does not natively support inodes.
-    VMS has non-numeric inodes.  */
- #ifdef VMS
-@@ -52,6 +72,7 @@
- 
- static void add_env_var_paths (const char *, incpath_kind);
- static void add_standard_paths (const char *, const char *, const char *, int);
-+static void add_literal_path (char *, incpath_kind, int, bool);
- static void free_path (struct cpp_dir *, int);
- static void merge_include_chains (const char *, cpp_reader *, int);
- static void add_sysroot_to_chain (const char *, int);
-@@ -94,12 +115,71 @@
-   free (path);
- }
- 
-+static const char *
-+scan_path_sep_elem (const char *p)
-+{
-+  const char *q = p;
-+  while (*q != '\0' && *q != PATH_SEPARATOR)
-+    {
-+      if (PATH_SEPARATOR == ':'
-+	  && *q == '\\' && q[1] != '\0' && q[1] != PATH_SEPARATOR
-+	  && !IS_DIR_SEPARATOR (q[1]))
-+	{
-+	  q += 2;
-+	  continue;
-+	}
-+      if (PATH_SEPARATOR == ':' && *q == '[')
-+	{
-+	  const char *r = q + 1;
-+	  if (*r == '!' || *r == '^')
-+	    r++;
-+	  if (*r == ']')
-+	    r++;
-+	  bool closed = false;
-+	  while (*r != '\0' && !IS_DIR_SEPARATOR (*r))
-+	    {
-+	      if (*r == '\\' && r[1] != '\0' && !IS_DIR_SEPARATOR (r[1]))
-+		{
-+		  r += 2;
-+		  continue;
-+		}
-+	      if (*r == '[' && (r[1] == ':' || r[1] == '.' || r[1] == '='))
-+		{
-+		  char ctype = r[1];
-+		  const char *s = r + 2;
-+		  while (*s != '\0' && !IS_DIR_SEPARATOR (*s)
-+			 && (ctype == '.' || *s != ']')
-+			 && !(*s == ctype && s[1] == ']'))
-+		    s++;
-+		  if (*s == ctype && s[1] == ']')
-+		    {
-+		      r = s + 2;
-+		      continue;
-+		    }
-+		}
-+	      if (*r == ']')
-+		{
-+		  q = r + 1;
-+		  closed = true;
-+		  break;
-+		}
-+	      r++;
-+	    }
-+	  if (closed)
-+	    continue;
-+	}
-+      q++;
-+    }
-+  return q;
-+}
-+
- /* Read ENV_VAR for a PATH_SEPARATOR-separated list of file names; and
-    append all the names to the search path CHAIN.  */
- static void
- add_env_var_paths (const char *env_var, incpath_kind chain)
- {
--  char *p, *q, *path;
-+  const char *p, *q;
-+  char *path;
- 
-   q = getenv (env_var);
- 
-@@ -108,9 +188,7 @@
- 
-   for (p = q; *q; p = q + 1)
-     {
--      q = p;
--      while (*q != 0 && *q != PATH_SEPARATOR)
--	q++;
-+      q = scan_path_sep_elem (p);
- 
-       if (p == q)
- 	path = xstrdup (".");
-@@ -125,6 +203,33 @@
-     }
- }
- 
-+static void
-+add_standard_dir (char *raw_str, char *esc_pat, int cxx_aware)
-+{
-+  if (esc_pat == NULL)
-+    {
-+      add_literal_path (raw_str, INC_SYSTEM, cxx_aware, false);
-+      return;
-+    }
-+
-+  struct HOST_STAT_FOR_64BIT_INODES st;
-+  if (HOST_STAT_FOR_64BIT_INODES (raw_str, &st) == 0 && S_ISDIR (st.st_mode))
-+    {
-+      free (esc_pat);
-+      add_literal_path (raw_str, INC_SYSTEM, cxx_aware, false);
-+      return;
-+    }
-+
-+  free (raw_str);
-+  glob_t gbuf = {};
-+  if (glob (esc_pat, GLOB_ONLYDIR, NULL, &gbuf) == 0)
-+    for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
-+      add_literal_path (xstrdup (gbuf.gl_pathv[gi]), INC_SYSTEM, cxx_aware,
-+			false);
-+  globfree (&gbuf);
-+  free (esc_pat);
-+}
-+
- /* Append the standard include chain defined in cppdefault.cc.  */
- static void
- add_standard_paths (const char *sysroot, const char *iprefix,
-@@ -151,21 +256,46 @@
- 		continue;
- 	      if (!filename_ncmp (p->fname, cpp_GCC_INCLUDE_DIR, len))
- 		{
--		  char *str = concat (iprefix, p->fname + len, NULL);
-+		  bool has_wild = strpbrk (p->fname + len, "*?[") != NULL;
-+		  char *raw_str = concat (iprefix, p->fname + len, NULL);
-+		  char *esc_pat = NULL;
-+		  if (has_wild)
-+		    {
-+		      char *esc_iprefix = escape_glob_meta (iprefix);
-+		      esc_pat = concat (esc_iprefix, p->fname + len, NULL);
-+		      free (esc_iprefix);
-+		    }
- 		  if (p->multilib == 1 && imultilib)
--		    str = reconcat (str, str, dir_separator_str,
--				    imultilib, NULL);
-+		    {
-+		      raw_str = reconcat (raw_str, raw_str, dir_separator_str,
-+					  imultilib, NULL);
-+		      if (esc_pat)
-+			{
-+			  char *esc_ml = escape_glob_meta (imultilib);
-+			  esc_pat = reconcat (esc_pat, esc_pat,
-+					      dir_separator_str, esc_ml, NULL);
-+			  free (esc_ml);
-+			}
-+		    }
- 		  else if (p->multilib == 2)
- 		    {
- 		      if (!imultiarch)
- 			{
--			  free (str);
-+			  free (raw_str);
-+			  free (esc_pat);
- 			  continue;
- 			}
--		      str = reconcat (str, str, dir_separator_str,
--				      imultiarch, NULL);
-+		      raw_str = reconcat (raw_str, raw_str, dir_separator_str,
-+					  imultiarch, NULL);
-+		      if (esc_pat)
-+			{
-+			  char *esc_ma = escape_glob_meta (imultiarch);
-+			  esc_pat = reconcat (esc_pat, esc_pat,
-+					      dir_separator_str, esc_ma, NULL);
-+			  free (esc_ma);
-+			}
- 		    }
--		  add_path (str, INC_SYSTEM, p->cxx_aware, false);
-+		  add_standard_dir (raw_str, esc_pat, p->cxx_aware);
- 		}
- 	    }
- 	}
-@@ -176,7 +306,9 @@
-       if (p->cplusplus == 0
- 	  || (cxx_stdinc && (p->cplusplus == flag_stdlib_kind)))
- 	{
--	  char *str;
-+	  char *raw_str;
-+	  char *esc_pat = NULL;
-+	  bool fname_has_wild = strpbrk (p->fname, "*?[") != NULL;
- 
- 	  /* Should this directory start with the sysroot?  */
- 	  if (sysroot && p->add_sysroot)
-@@ -186,7 +318,15 @@
- 
- 	      if (sysroot_len > 0 && sysroot[sysroot_len - 1] == DIR_SEPARATOR)
- 		sysroot_no_trailing_dir_separator[sysroot_len - 1] = '\0';
--	      str = concat (sysroot_no_trailing_dir_separator, p->fname, NULL);
-+	      raw_str = concat (sysroot_no_trailing_dir_separator, p->fname,
-+				NULL);
-+	      if (fname_has_wild)
-+		{
-+		  char *esc
-+		    = escape_glob_meta (sysroot_no_trailing_dir_separator);
-+		  esc_pat = concat (esc, p->fname, NULL);
-+		  free (esc);
-+		}
- 	      free (sysroot_no_trailing_dir_separator);
- 	    }
- 	  else if (!p->add_sysroot && relocated
-@@ -211,28 +351,64 @@
- 					    cpp_PREFIX);
- 		  free (dummy);
- 		}
-+	      if (!relocated_prefix)
-+		continue;
- 	      ostr = concat (relocated_prefix,
- 			     p->fname + cpp_PREFIX_len,
- 			     NULL);
--	      str = update_path (ostr, p->component);
-+	      raw_str = update_path (ostr, p->component);
- 	      free (ostr);
-+	      if (fname_has_wild)
-+		{
-+		  char *upd_reloc = update_path (relocated_prefix, p->component);
-+		  char *esc_reloc = escape_glob_meta (upd_reloc);
-+		  char *upd_tail
-+		    = update_path (p->fname + cpp_PREFIX_len, p->component);
-+		  esc_pat = concat (esc_reloc, upd_tail, NULL);
-+		  free (upd_tail);
-+		  free (esc_reloc);
-+		  free (upd_reloc);
-+		}
- 	    }
- 	  else
--	    str = update_path (p->fname, p->component);
-+	    {
-+	      raw_str = update_path (p->fname, p->component);
-+	      if (fname_has_wild)
-+		esc_pat = xstrdup (raw_str);
-+	    }
- 
- 	  if (p->multilib == 1 && imultilib)
--	    str = reconcat (str, str, dir_separator_str, imultilib, NULL);
-+	    {
-+	      raw_str = reconcat (raw_str, raw_str, dir_separator_str,
-+				  imultilib, NULL);
-+	      if (esc_pat)
-+		{
-+		  char *esc_ml = escape_glob_meta (imultilib);
-+		  esc_pat = reconcat (esc_pat, esc_pat, dir_separator_str,
-+				      esc_ml, NULL);
-+		  free (esc_ml);
-+		}
-+	    }
- 	  else if (p->multilib == 2)
- 	    {
- 	      if (!imultiarch)
- 		{
--		  free (str);
-+		  free (raw_str);
-+		  free (esc_pat);
- 		  continue;
- 		}
--	      str = reconcat (str, str, dir_separator_str, imultiarch, NULL);
-+	      raw_str = reconcat (raw_str, raw_str, dir_separator_str,
-+				  imultiarch, NULL);
-+	      if (esc_pat)
-+		{
-+		  char *esc_ma = escape_glob_meta (imultiarch);
-+		  esc_pat = reconcat (esc_pat, esc_pat, dir_separator_str,
-+				      esc_ma, NULL);
-+		  free (esc_ma);
-+		}
- 	    }
- 
--	  add_path (str, INC_SYSTEM, p->cxx_aware, false);
-+	  add_standard_dir (raw_str, esc_pat, p->cxx_aware);
- 	}
-     }
- }
-@@ -326,18 +502,83 @@
- static void
- add_sysroot_to_chain (const char *sysroot, int chain)
- {
--  struct cpp_dir *p;
-+  struct cpp_dir **pp = &heads[chain];
-+  struct cpp_dir *last = NULL;
- 
--  for (p = heads[chain]; p != NULL; p = p->next)
-+  while (*pp != NULL)
-     {
-+      struct cpp_dir *p = *pp;
-       if (p->user_supplied_p)
- 	{
-+	  const char *suffix = NULL;
- 	  if (p->name[0] == '=')
--	    p->name = concat (sysroot, p->name + 1, NULL);
--	  if (startswith (p->name, "$SYSROOT"))
--	    p->name = concat (sysroot, p->name + strlen ("$SYSROOT"), NULL);
-+	    suffix = p->name + 1;
-+	  else if (startswith (p->name, "$SYSROOT"))
-+	    suffix = p->name + strlen ("$SYSROOT");
-+
-+	  if (suffix != NULL)
-+	    {
-+	      char *lit_full = sysroot ? concat (sysroot, suffix, NULL)
-+				       : xstrdup (p->name);
-+	      const char *check_wild = sysroot ? suffix : p->name;
-+	      struct HOST_STAT_FOR_64BIT_INODES st;
-+	      if ((HOST_STAT_FOR_64BIT_INODES (lit_full, &st) != 0
-+		   || !S_ISDIR (st.st_mode))
-+		  && strpbrk (check_wild, "*?[") != NULL)
-+		{
-+		  char *esc_sys = sysroot ? escape_glob_meta (sysroot) : NULL;
-+		  char *pat = sysroot ? concat (esc_sys, suffix, NULL)
-+				      : xstrdup (p->name);
-+		  free (esc_sys);
-+		  glob_t gbuf = {};
-+		  if (glob (pat, GLOB_ONLYDIR, NULL, &gbuf) == 0
-+		      && gbuf.gl_pathc > 0)
-+		    {
-+		      free (pat);
-+		      free (lit_full);
-+		      struct cpp_dir *orig_next = p->next;
-+		      free ((void *) p->name);
-+		      p->name = xstrdup (gbuf.gl_pathv[0]);
-+		      p->len = strlen (p->name);
-+#ifndef INO_T_EQ
-+		      free ((void *) p->canonical_name);
-+		      p->canonical_name = lrealpath (p->name);
-+#endif
-+		      struct cpp_dir *cur = p;
-+		      for (size_t gi = 1; gi < gbuf.gl_pathc; gi++)
-+			{
-+			  struct cpp_dir *nd = XNEW (cpp_dir);
-+			  *nd = *p;
-+			  nd->name = xstrdup (gbuf.gl_pathv[gi]);
-+			  nd->len = strlen (nd->name);
-+#ifndef INO_T_EQ
-+			  nd->canonical_name = lrealpath (nd->name);
-+#endif
-+			  cur->next = nd;
-+			  cur = nd;
-+			}
-+		      cur->next = orig_next;
-+		      globfree (&gbuf);
-+		      last = cur;
-+		      pp = &cur->next;
-+		      continue;
-+		    }
-+		  globfree (&gbuf);
-+		  free (pat);
-+		}
-+	      free ((void *) p->name);
-+	      p->name = lit_full;
-+	      p->len = strlen (lit_full);
-+#ifndef INO_T_EQ
-+	      free ((void *) p->canonical_name);
-+	      p->canonical_name = lrealpath (lit_full);
-+#endif
-+	    }
- 	}
-+      last = p;
-+      pp = &p->next;
-     }
-+  tails[chain] = last;
- }
- 
- /* Merge the four include chains together in the order quote, bracket,
-@@ -353,15 +594,13 @@
- static void
- merge_include_chains (const char *sysroot, cpp_reader *pfile, int verbose)
- {
--  /* Add the sysroot to user-supplied paths starting with "=".  */
--  if (sysroot)
--    {
--      add_sysroot_to_chain (sysroot, INC_QUOTE);
--      add_sysroot_to_chain (sysroot, INC_BRACKET);
--      add_sysroot_to_chain (sysroot, INC_SYSTEM);
--      add_sysroot_to_chain (sysroot, INC_AFTER);
--      add_sysroot_to_chain (sysroot, INC_EMBED);
--    }
-+  /* Add the sysroot to user-supplied paths starting with "=" or "$SYSROOT"
-+     (or expand deferred relative wildcards if sysroot is NULL).  */
-+  add_sysroot_to_chain (sysroot, INC_QUOTE);
-+  add_sysroot_to_chain (sysroot, INC_BRACKET);
-+  add_sysroot_to_chain (sysroot, INC_SYSTEM);
-+  add_sysroot_to_chain (sysroot, INC_AFTER);
-+  add_sysroot_to_chain (sysroot, INC_EMBED);
- 
-   /* Join the SYSTEM and AFTER chains.  Remove duplicates in the
-      resulting SYSTEM chain.  */
-@@ -444,10 +683,9 @@
-   tails[chain] = p;
- }
- 
--/* Add PATH to the include chain CHAIN. PATH must be malloc-ed and
--   NUL-terminated.  */
--void
--add_path (char *path, incpath_kind chain, int cxx_aware, bool user_supplied_p)
-+static void
-+add_literal_path (char *path, incpath_kind chain, int cxx_aware,
-+		  bool user_supplied_p)
- {
-   cpp_dir *p;
-   size_t pathlen = strlen (path);
-@@ -484,6 +722,50 @@
-   add_cpp_dir_path (p, chain);
- }
- 
-+/* Add PATH to the include chain CHAIN. PATH must be malloc-ed and
-+   NUL-terminated.  */
-+void
-+add_path (char *path, incpath_kind chain, int cxx_aware, bool user_supplied_p)
-+{
-+  if (user_supplied_p && (path[0] == '=' || startswith (path, "$SYSROOT")))
-+    {
-+      add_literal_path (path, chain, cxx_aware, user_supplied_p);
-+      return;
-+    }
-+
-+  struct HOST_STAT_FOR_64BIT_INODES st;
-+  if (HOST_STAT_FOR_64BIT_INODES (path, &st) == 0 && S_ISDIR (st.st_mode))
-+    {
-+      add_literal_path (path, chain, cxx_aware, user_supplied_p);
-+      return;
-+    }
-+
-+  if (strpbrk (path, "*?[") != NULL)
-+    {
-+      glob_t gbuf = {};
-+      int gr = glob (path, GLOB_ONLYDIR, NULL, &gbuf);
-+      if (gr == 0)
-+	{
-+	  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
-+	    add_literal_path (xstrdup (gbuf.gl_pathv[gi]), chain, cxx_aware,
-+			      user_supplied_p);
-+	  globfree (&gbuf);
-+	  free (path);
-+	  return;
-+	}
-+      globfree (&gbuf);
-+      if (gr == GLOB_NOMATCH && user_supplied_p)
-+	{
-+	  add_literal_path (path, chain, cxx_aware, user_supplied_p);
-+	  return;
-+	}
-+      free (path);
-+      return;
-+    }
-+
-+  add_literal_path (path, chain, cxx_aware, user_supplied_p);
-+}
-+
- /* Exported function to handle include chain merging, duplicate
-    removal, and registration with cpplib.  */
- void
 diff --no-dereference -Naur gcc-16.2.0.orig/gcc/Makefile.in gcc-16.2.0/gcc/Makefile.in
 --- gcc-16.2.0.orig/gcc/Makefile.in	2026-08-07 07:46:05.499679583 +0000
 +++ gcc-16.2.0/gcc/Makefile.in	2026-08-07 07:46:05.499679583 +0000
@@ -1196,6 +21,227 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/Makefile.in gcc-16.2.0/gcc/Makef
  
  # Directory for prefix to system directories, for
  # each of $(system_prefix)/usr/include, $(system_prefix)/usr/lib, etc.
+diff --no-dereference -Naur gcc-16.2.0.orig/gcc/configure gcc-16.2.0/gcc/configure
+--- gcc-16.2.0.orig/gcc/configure	2026-08-07 07:47:29.994988106 +0000
++++ gcc-16.2.0/gcc/configure	2026-08-07 07:47:29.994988106 +0000
+@@ -15282,7 +15282,7 @@
+ 
+ if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x ||
+    test x$build != x$host || test "x$with_build_sysroot" != x; then
+-  if test "x$with_build_sysroot" != x; then
++  if test "x$with_build_sysroot" != x || test "x$configured_native_system_header_dir" != x; then
+     BUILD_SYSTEM_HEADER_DIR=$with_build_sysroot'$${sysroot_headers_suffix}$(NATIVE_SYSTEM_HEADER_DIR)'
+   else
+     BUILD_SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
+@@ -15297,7 +15297,7 @@
+     SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
+   fi
+ 
+-  if test "x$with_build_sysroot" != "x"; then
++  if test "x$with_build_sysroot" != "x" || test "x$configured_native_system_header_dir" != x; then
+     target_header_dir="${with_build_sysroot}${native_system_header_dir}"
+   elif test "x$with_sysroot" = x; then
+     target_header_dir="${test_exec_prefix}/${target_noncanonical}/sys-include"
+diff --no-dereference -Naur gcc-16.2.0.orig/gcc/file-find.cc gcc-16.2.0/gcc/file-find.cc
+--- gcc-16.2.0.orig/gcc/file-find.cc	2026-08-07 07:46:06.150689700 +0000
++++ gcc-16.2.0/gcc/file-find.cc	2026-08-07 07:46:06.150689700 +0000
+@@ -108,8 +108,8 @@
+ /* Add an entry for PREFIX to prefix list PREFIX.
+    Add at beginning if FIRST is true.  */
+ 
+-void
+-do_add_prefix (struct path_prefix *pprefix, const char *prefix, bool first)
++static void
++do_add_prefix_1 (struct path_prefix *pprefix, const char *prefix, bool first)
+ {
+   struct prefix_list *pl, **prev;
+   int len;
+@@ -139,6 +139,27 @@
+   *prev = pl;
+ }
+ 
++/* Fluffy: a whole '*' path component in PREFIX stands for every directory
++   it matches, in byte order, as glob's GLOB_PATHS expands it for execvp and
++   the dynamic loader; GLOB_NOMAGIC keeps a prefix without one as it is.
++   Matches added at the beginning are added last first, to keep them in
++   order.  */
++
++void
++do_add_prefix (struct path_prefix *pprefix, const char *prefix, bool first)
++{
++  glob_t gbuf;
++
++  if (glob (prefix, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) != 0)
++    do_add_prefix_1 (pprefix, prefix, first);
++  else
++    for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
++      do_add_prefix_1 (pprefix,
++		       gbuf.gl_pathv[first ? gbuf.gl_pathc - 1 - gi : gi],
++		       first);
++  globfree (&gbuf);
++}
++
+ /* Add an entry for PREFIX at the end of prefix list PREFIX.  */
+ 
+ void
+diff --no-dereference -Naur gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
+--- gcc-16.2.0.orig/gcc/gcc.cc	2026-08-07 07:46:06.189690306 +0000
++++ gcc-16.2.0/gcc/gcc.cc	2026-08-07 07:46:06.189690306 +0000
+@@ -3158,9 +3158,9 @@
+    2 means try both machine_suffix and just_machine_suffix.  */
+ 
+ static void
+-add_prefix (struct path_prefix *pprefix, const char *prefix,
+-	    const char *component, /* enum prefix_priority */ int priority,
+-	    int require_machine_suffix, int os_multilib)
++add_prefix_1 (struct path_prefix *pprefix, const char *prefix,
++	      const char *component, /* enum prefix_priority */ int priority,
++	      int require_machine_suffix, int os_multilib)
+ {
+   struct prefix_list *pl, **prev;
+   int len;
+@@ -3188,6 +3188,29 @@
+   (*prev) = pl;
+ }
+ 
++/* Fluffy: a whole '*' path component in PREFIX stands for every directory
++   it matches, in byte order, as glob's GLOB_PATHS expands it for execvp and
++   the dynamic loader; GLOB_NOMAGIC keeps a prefix without one as it is.  */
++
++static void
++add_prefix (struct path_prefix *pprefix, const char *prefix,
++	    const char *component, /* enum prefix_priority */ int priority,
++	    int require_machine_suffix, int os_multilib)
++{
++  char *path = update_path (prefix, component);
++  glob_t gbuf;
++
++  if (glob (path, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) != 0)
++    add_prefix_1 (pprefix, path, NULL, priority, require_machine_suffix,
++		  os_multilib);
++  else
++    for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
++      add_prefix_1 (pprefix, gbuf.gl_pathv[gi], NULL, priority,
++		    require_machine_suffix, os_multilib);
++  globfree (&gbuf);
++  free (path);
++}
++
+ /* Same as add_prefix, but prepending target_system_root to prefix.  */
+ /* The target_system_root prefix has been relocated by gcc_exec_prefix.  */
+ static void
+@@ -4850,10 +4873,29 @@
+   /* FIXME: make_relative_prefix doesn't yet work for VMS.  */
+   if (!gcc_exec_prefix)
+     {
+-      gcc_exec_prefix = get_relative_prefix (decoded_options[0].arg,
++      /* Fluffy: a bare name was found in PATH, whose elements may have a
++	 whole '*' component, so find it the same way, with glob's
++	 GLOB_PATHS search list "{PATH}/NAME".  make_relative_prefix's own
++	 search reads each element literally.  */
++      const char *self = decoded_options[0].arg;
++      const char *path = env.get ("PATH");
++      glob_t gbuf;
++      if (lbasename (self) == self && path != NULL
++	  && glob (concat ("{", path, "}/", self, NULL), GLOB_PATHS,
++		   NULL, &gbuf) == 0)
++	{
++	  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
++	    if (access (gbuf.gl_pathv[gi], X_OK) == 0)
++	      {
++		self = xstrdup (gbuf.gl_pathv[gi]);
++		break;
++	      }
++	  globfree (&gbuf);
++	}
++      gcc_exec_prefix = get_relative_prefix (self,
+ 					     standard_bindir_prefix,
+ 					     standard_exec_prefix);
+-      gcc_libexec_prefix = get_relative_prefix (decoded_options[0].arg,
++      gcc_libexec_prefix = get_relative_prefix (self,
+ 					     standard_bindir_prefix,
+ 					     standard_libexec_prefix);
+       if (gcc_exec_prefix)
+diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpath.cc
+--- gcc-16.2.0.orig/gcc/incpath.cc	2026-08-07 07:46:06.226690881 +0000
++++ gcc-16.2.0/gcc/incpath.cc	2026-08-07 07:46:06.226690881 +0000
+@@ -332,10 +332,34 @@
+     {
+       if (p->user_supplied_p)
+ 	{
++	  const char *name = p->name;
++	  glob_t gbuf;
++
+ 	  if (p->name[0] == '=')
+ 	    p->name = concat (sysroot, p->name + 1, NULL);
+ 	  if (startswith (p->name, "$SYSROOT"))
+ 	    p->name = concat (sysroot, p->name + strlen ("$SYSROOT"), NULL);
++
++	  /* Fluffy: expand the sysrooted path as add_path does any other,
++	     one entry per match, each after the last.  */
++	  if (p->name != name
++	      && glob (p->name, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) == 0)
++	    {
++	      p->name = xstrdup (gbuf.gl_pathv[0]);
++	      p->len = strlen (p->name);
++	      for (size_t gi = 1; gi < gbuf.gl_pathc; gi++)
++		{
++		  struct cpp_dir *q = XNEW (struct cpp_dir);
++		  *q = *p;
++		  q->name = xstrdup (gbuf.gl_pathv[gi]);
++		  q->len = strlen (q->name);
++		  p->next = q;
++		  p = q;
++		}
++	      if (p->next == NULL)
++		tails[chain] = p;
++	      globfree (&gbuf);
++	    }
+ 	}
+     }
+ }
+@@ -446,8 +470,9 @@
+ 
+ /* Add PATH to the include chain CHAIN. PATH must be malloc-ed and
+    NUL-terminated.  */
+-void
+-add_path (char *path, incpath_kind chain, int cxx_aware, bool user_supplied_p)
++static void
++add_path_1 (char *path, incpath_kind chain, int cxx_aware,
++	    bool user_supplied_p)
+ {
+   cpp_dir *p;
+   size_t pathlen = strlen (path);
+@@ -484,6 +509,29 @@
+   add_cpp_dir_path (p, chain);
+ }
+ 
++/* Fluffy: a whole '*' path component in PATH stands for every directory it
++   matches, in byte order, as glob's GLOB_PATHS expands it for execvp and
++   the dynamic loader; GLOB_NOMAGIC keeps a path without one as it is.  A
++   user's "=" or "$SYSROOT" path is expanded in add_sysroot_to_chain, once
++   the sysroot is known.  */
++void
++add_path (char *path, incpath_kind chain, int cxx_aware, bool user_supplied_p)
++{
++  glob_t gbuf;
++
++  if ((user_supplied_p && (path[0] == '=' || startswith (path, "$SYSROOT")))
++      || glob (path, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) != 0)
++    {
++      add_path_1 (path, chain, cxx_aware, user_supplied_p);
++      return;
++    }
++  for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
++    add_path_1 (xstrdup (gbuf.gl_pathv[gi]), chain, cxx_aware,
++		user_supplied_p);
++  globfree (&gbuf);
++  free (path);
++}
++
+ /* Exported function to handle include chain merging, duplicate
+    removal, and registration with cpplib.  */
+ void
 diff --no-dereference -Naur gcc-16.2.0.orig/gcc/system.h gcc-16.2.0/gcc/system.h
 --- gcc-16.2.0.orig/gcc/system.h	2026-08-07 07:46:06.533695651 +0000
 +++ gcc-16.2.0/gcc/system.h	2026-08-07 07:46:06.533695651 +0000

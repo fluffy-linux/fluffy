@@ -7,8 +7,6 @@ fi
 
 VERSION=2.42.2
 
-HAS_LDFLAGS="-lblkid -luuid"
-
 ARCHIVES=(
     03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a https://github.com/fluffy-linux/util-linux/releases/download/v$VERSION/util-linux-$VERSION.tar.xz
     7479ec8c51e074b1ff7a7648b6f114f365b6fbebd1b3f7e360608e1ebf2fac48 file://util-linux-$VERSION-fluffy-source.patch
@@ -44,6 +42,7 @@ then
         make
         ncurses
         patch
+        pkgconf
         sed
         systemd
         tar
@@ -68,6 +67,7 @@ else
         make
         ncurses
         patch
+        pkgconf
         sed
         systemd
         tar
@@ -77,14 +77,11 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i util-linux-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i util-linux-$VERSION-fluffy-test.patch
+    patch -Z -Np1 -i ../util-linux-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../util-linux-$VERSION-fluffy-test.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site \
-    PKG_CONFIG="false" \
-    SYSTEMD_CFLAGS=" " \
-    SYSTEMD_LIBS="-lsystemd" \
     $CONFIG_SHELL ./configure \
         --prefix=/sw/util-linux \
         --sbindir=/sw/util-linux/bin \
@@ -126,8 +123,8 @@ INSTALL() {
     rm -rf $DESTDIR/sw/util-linux/lib/sysusers.d
 
     mkdir -pv $DESTDIR/sw/util-linux/etc
-    install -m 644 util-linux.passwd $DESTDIR/sw/util-linux/etc/passwd
-    install -m 644 util-linux.group $DESTDIR/sw/util-linux/etc/group
+    install -m 644 ../util-linux.passwd $DESTDIR/sw/util-linux/etc/passwd
+    install -m 644 ../util-linux.group $DESTDIR/sw/util-linux/etc/group
     cat > $DESTDIR/sw/util-linux/etc/issue << "EOF"
 \S
 Kernel \r on \m (\l)

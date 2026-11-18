@@ -1,15 +1,3 @@
-diff --no-dereference -Naur shadow-4.20.2.orig/configure shadow-4.20.2/configure
---- shadow-4.20.2.orig/configure	2026-08-08 12:18:11.743111722 +0000
-+++ shadow-4.20.2/configure	2026-08-08 12:18:11.743111722 +0000
-@@ -17065,7 +17065,7 @@
- 	fi
- fi
- if test -z "$PKG_CONFIG"; then
--	as_fn_error $? "pkg-config not found" "$LINENO" 5
-+	:
- fi
- 
- pkg_failed=no
 diff --no-dereference -Naur shadow-4.20.2.orig/etc/login.defs shadow-4.20.2/etc/login.defs
 --- shadow-4.20.2.orig/etc/login.defs	2026-08-04 18:02:12.996395611 +0000
 +++ shadow-4.20.2/etc/login.defs	2026-08-04 18:02:12.996395611 +0000

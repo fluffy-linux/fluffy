@@ -7,13 +7,11 @@ fi
 
 VERSION=261.2
 
-HAS_LDFLAGS="-lsystemd -ludev"
-
 ARCHIVES=(
     ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec https://github.com/fluffy-linux/systemd/releases/download/v$VERSION/systemd-$VERSION.tar.gz
     9be13865c9c7f9fecba7b86fc5185aecef00164c87ed68b4f6884283aefebe50 https://github.com/fluffy-linux/systemd/releases/download/v$VERSION/systemd-man-pages-$VERSION.tar.xz
     7b62b8271aa5532fcf9011d8d6d0fd5c01070dab862c482741d3f600f8f51962 file://systemd-$VERSION-fluffy-shell.patch
-    37b34e8621bf537a11ce2ab7649df1dffade7d1f3f6ac2cf6c3e6feb7951d7e1 file://systemd-$VERSION-fluffy-source.patch
+    05199805a4d9eb4bebe913ff9a379a3de133cf453d118c4d6fe6031983363baa file://systemd-$VERSION-fluffy-source.patch
     1b46ffd4c8c02f909646ace178ca78f980928279185835216b0bdc1ff9f106f7 file://systemd.passwd
     23d078bd659027ca416d7c6c12a396ffa3fa4a489c89bced6d6765fe0e326f78 file://systemd.group
 )
@@ -59,6 +57,7 @@ then
         ninja
         openssl
         patch
+        pkgconf
         python
         sed
         tar
@@ -94,6 +93,7 @@ else
         ninja
         openssl
         patch
+        pkgconf
         python
         sed
         tar
@@ -105,18 +105,12 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i systemd-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i systemd-$VERSION-fluffy-source.patch
+    patch -Z -Np1 -i ../systemd-$VERSION-fluffy-shell.patch
+    patch -Z -Np1 -i ../systemd-$VERSION-fluffy-source.patch
 
     mkdir -p build
     cd build
 
-    MOUNT_CFLAGS="-I/sw/util-linux/include/libmount" \
-    MOUNT_LIBS="-lmount" \
-    BLKID_CFLAGS="-I/sw/util-linux/include/blkid" \
-    BLKID_LIBS="-lblkid" \
-    FDISK_CFLAGS="-I/sw/util-linux/include/libfdisk" \
-    FDISK_LIBS="-lfdisk" \
     meson setup .. \
         --prefix=/sw/systemd \
         --buildtype=release \
@@ -202,8 +196,8 @@ INSTALL() {
     rm -rfv $DESTDIR/sw/systemd/share/factory/etc
 
     mkdir -pv $DESTDIR/sw/systemd/etc
-    install -m 644 systemd.passwd $DESTDIR/sw/systemd/etc/passwd
-    install -m 644 systemd.group $DESTDIR/sw/systemd/etc/group
+    install -m 644 ../systemd.passwd $DESTDIR/sw/systemd/etc/passwd
+    install -m 644 ../systemd.group $DESTDIR/sw/systemd/etc/group
     ln -sfv /run/systemd/resolve/stub-resolv.conf $DESTDIR/sw/systemd/etc/resolv.conf
 
     cat > $DESTDIR/sw/systemd/lib/os-release << "EOF"
@@ -287,11 +281,7 @@ EOF
         $SYSUNITDIR/systemd-journald.service.wants/systemd-journald-audit.socket
 
     mkdir -pv $DESTDIR/sw/systemd/share/man
-    if test -d systemd-man-pages-$VERSION
-    then
-        cp -a systemd-man-pages-$VERSION/* $DESTDIR/sw/systemd/share/man/
-    elif test -d ../systemd-man-pages-$VERSION
-    then
-        cp -a ../systemd-man-pages-$VERSION/* $DESTDIR/sw/systemd/share/man/
-    fi
+    tar --strip-components=1 --no-same-owner --no-same-permissions \
+        -C $DESTDIR/sw/systemd/share/man \
+        -xf ../systemd-man-pages-$VERSION.tar.xz
 }
