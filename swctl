@@ -1316,7 +1316,10 @@ build_pkgs() {
         fatal "SUDO_UID and SUDO_GID must be unprivileged (non-zero)"
     fi
 
-    # set low priority to not lock up the host
+    # Low priority, so the host stays responsive: CPU nice 9, and the idle
+    # I/O class (ioprio_set, IOPRIO_WHO_PROCESS, self, IDLE << 13).  Every
+    # build process inherits both.  Not nice 19: glibc's posix/tst-nice needs
+    # nice(10) to raise the value by 10, so 9 is the most it can start at.
     dlcall setpriority int:0 int:0 int:9
     dlcall syscall long:251 int:1 int:0 int:24576
 
