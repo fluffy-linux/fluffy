@@ -56,29 +56,32 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/file-find.cc gcc-16.2.0/gcc/file
  {
    struct prefix_list *pl, **prev;
    int len;
-@@ -139,6 +139,27 @@
+@@ -139,6 +139,30 @@
    *prev = pl;
  }
  
 +/* Fluffy: a whole '*' path component in PREFIX stands for every directory
 +   it matches, in byte order, as glob's GLOB_PATHS expands it for execvp and
-+   the dynamic loader; GLOB_NOMAGIC keeps a prefix without one as it is.
-+   Matches added at the beginning are added last first, to keep them in
-+   order.  */
++   the dynamic loader.  Any other prefix, even an empty one, is upstream's:
++   GLOB_PATHS would read "" as "." and split at ':'.  Matches added at the
++   beginning are added last first, to keep them in order.  */
 +
 +void
 +do_add_prefix (struct path_prefix *pprefix, const char *prefix, bool first)
 +{
 +  glob_t gbuf;
 +
-+  if (glob (prefix, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) != 0)
-+    do_add_prefix_1 (pprefix, prefix, first);
++  if (strchr (prefix, '*') != NULL
++      && glob (prefix, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) == 0)
++    {
++      for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
++	do_add_prefix_1 (pprefix,
++			 gbuf.gl_pathv[first ? gbuf.gl_pathc - 1 - gi : gi],
++			 first);
++      globfree (&gbuf);
++    }
 +  else
-+    for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
-+      do_add_prefix_1 (pprefix,
-+		       gbuf.gl_pathv[first ? gbuf.gl_pathc - 1 - gi : gi],
-+		       first);
-+  globfree (&gbuf);
++    do_add_prefix_1 (pprefix, prefix, first);
 +}
 +
  /* Add an entry for PREFIX at the end of prefix list PREFIX.  */
@@ -100,13 +103,14 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
  {
    struct prefix_list *pl, **prev;
    int len;
-@@ -3188,6 +3188,29 @@
+@@ -3188,6 +3188,33 @@
    (*prev) = pl;
  }
  
 +/* Fluffy: a whole '*' path component in PREFIX stands for every directory
 +   it matches, in byte order, as glob's GLOB_PATHS expands it for execvp and
-+   the dynamic loader; GLOB_NOMAGIC keeps a prefix without one as it is.  */
++   the dynamic loader.  Any other prefix, even an empty one, is upstream's:
++   GLOB_PATHS would read "" as "." and split at ':'.  */
 +
 +static void
 +add_prefix (struct path_prefix *pprefix, const char *prefix,
@@ -116,21 +120,24 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/gcc.cc gcc-16.2.0/gcc/gcc.cc
 +  char *path = update_path (prefix, component);
 +  glob_t gbuf;
 +
-+  if (glob (path, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) != 0)
++  if (strchr (path, '*') != NULL
++      && glob (path, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) == 0)
++    {
++      for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
++	add_prefix_1 (pprefix, gbuf.gl_pathv[gi], NULL, priority,
++		      require_machine_suffix, os_multilib);
++      globfree (&gbuf);
++    }
++  else
 +    add_prefix_1 (pprefix, path, NULL, priority, require_machine_suffix,
 +		  os_multilib);
-+  else
-+    for (size_t gi = 0; gi < gbuf.gl_pathc; gi++)
-+      add_prefix_1 (pprefix, gbuf.gl_pathv[gi], NULL, priority,
-+		    require_machine_suffix, os_multilib);
-+  globfree (&gbuf);
 +  free (path);
 +}
 +
  /* Same as add_prefix, but prepending target_system_root to prefix.  */
  /* The target_system_root prefix has been relocated by gcc_exec_prefix.  */
  static void
-@@ -4850,10 +4873,29 @@
+@@ -4850,10 +4877,29 @@
    /* FIXME: make_relative_prefix doesn't yet work for VMS.  */
    if (!gcc_exec_prefix)
      {
@@ -179,7 +186,7 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpat
 +
 +	  /* Fluffy: expand the sysrooted path as add_path does any other,
 +	     one entry per match, each after the last.  */
-+	  if (p->name != name
++	  if (p->name != name && strchr (p->name, '*') != NULL
 +	      && glob (p->name, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) == 0)
 +	    {
 +	      p->name = xstrdup (gbuf.gl_pathv[0]);
@@ -212,21 +219,23 @@ diff --no-dereference -Naur gcc-16.2.0.orig/gcc/incpath.cc gcc-16.2.0/gcc/incpat
  {
    cpp_dir *p;
    size_t pathlen = strlen (path);
-@@ -484,6 +509,29 @@
+@@ -484,6 +509,31 @@
    add_cpp_dir_path (p, chain);
  }
  
 +/* Fluffy: a whole '*' path component in PATH stands for every directory it
 +   matches, in byte order, as glob's GLOB_PATHS expands it for execvp and
-+   the dynamic loader; GLOB_NOMAGIC keeps a path without one as it is.  A
-+   user's "=" or "$SYSROOT" path is expanded in add_sysroot_to_chain, once
-+   the sysroot is known.  */
++   the dynamic loader.  Any other path, even an empty one, is upstream's:
++   GLOB_PATHS would read "" as "." and split at ':'.  A user's "=" or
++   "$SYSROOT" path is expanded in add_sysroot_to_chain, once the sysroot is
++   known.  */
 +void
 +add_path (char *path, incpath_kind chain, int cxx_aware, bool user_supplied_p)
 +{
 +  glob_t gbuf;
 +
 +  if ((user_supplied_p && (path[0] == '=' || startswith (path, "$SYSROOT")))
++      || strchr (path, '*') == NULL
 +      || glob (path, GLOB_PATHS | GLOB_NOMAGIC, NULL, &gbuf) != 0)
 +    {
 +      add_path_1 (path, chain, cxx_aware, user_supplied_p);

@@ -394,6 +394,32 @@ Recovered from earlier assistant sessions, so the reasoning survives. Quotes are
 - **Boot.** A static `/init` in the btrfs root, no initramfs.
 - **Hermeticity (open).** "I don't like that things can accidentally depend on my build dependencies." Ideas so far: a separate `/builder/*` path, and an ACCEPTANCE phase that monitors path accesses.
 
+### Idea: Kernel Support for Wildcard Lookup (2026-11-18, not planned)
+
+The question Fluffy asks is "how far can I push squashfs packages using glob() as the resolution primitive instead of symlink farms". Success is staying within 10–20% of plain-path performance. FSWC is the userspace approximation; the owner's theory is that the caching and invalidation ultimately belong in the kernel. A design sketch, for if that ever becomes possible:
+
+- **Two globs, two kernel roles.**
+  - **The restricted search list** (ld.so and `execvp`: malloc-free, one whole-`*` component) is small enough for the kernel to *answer*. Something like an `openat2` resolve flag (`RESOLVE_GLOB_FIRST`) would open the first match of `/sw/*/lib/NAME` in byte order, walking candidates under RCU against the dentry cache. One syscall replaces ld.so's search loop, and `PATH` search everywhere has the same shape, so the idea is not Fluffy-specific.
+  - **The expressive `glob()`** (extglob, braces, `**`, case-folding, collation; the one swapped in for Python, Perl and Tcl) stays in glibc: matching rules are policy. Matching is cheap; enumerating directories and knowing whether a cached listing is still valid are not. So the kernel would only *accelerate* it, by saying exactly when a directory changed, and FSWC would keep the listings and do all matching.
+- **Track damage, not freshness.** "There's no sense keeping an index nice and updated if nobody is asking about it… the real question is 'is the index damaged, and if so, where'."
+  - Directories carry an in-memory damage stamp, never stored on disk and paired with the boot ID. It works like a cascading mtime, Merkle-ish, meaning "something under here changed".
+  - A global damage epoch advances only when someone queries. A write stamps its directory and walks up, stopping at the first ancestor already stamped this epoch. Writes between queries then cost about one step, with no hot counter at `/`.
+  - Mounting and unmounting count as changes to the parent, so mounting `/sw/zlib` damages `/sw`.
+  - A reader keeps the epoch its index was built at. "Damaged?" is one comparison at the top, and "where?" descends only into newer stamps, so the cost scales with the damage, not the tree.
+  - A stamp means "may have changed": false positives are allowed, missed changes are not. Each reader keeps its own epoch.
+  - It is damage tracking as in a compositor: nothing is repainted until a frame is wanted, and then only the damaged regions are.
+  - A first version kept a per-directory "observed" bit so writes could stop propagating early. Advancing the epoch on queries gives the same early stop without the kernel knowing who is watching, and it keeps nothing per consumer.
+- **Validity is per lookup, not per index.** "You can trust a damaged index if the damage would not affect your lookup."
+  - `/sw/*/lib/libz.so.1` depends only on `/sw` and each package's `lib/`; damage under `share/` or `bin/` is irrelevant.
+  - A first match is invalidated only by damage in candidates at or before the hit in byte order. A full expansion or a negative result depends on every candidate.
+  - Repair is lazy and targeted: a lookup repairs only the damage it overlaps, as demand-driven incremental systems such as Salsa and Bazel do. Stamps are per directory, so a damaged candidate directory is re-read, which is cheap; rebuilding must stay cheap for this to work.
+  - Per-directory granularity suits Fluffy's packaging model. Package directories are small, apart from the large header trees (linux-headers, glibc's `include`). And since packages are read-only squashfs images, nothing below `/sw/<pkg>` changes except by mounting a different image: in practice damage only lands on `/sw` and on package mount points, never partway into a package.
+- **Prior art.**
+  - Plan 9's union directories (`bind -a`): an ordered search built into the namespace, close to what `/sw/*` does with glob. Linux never adopted them; overlayfs is the nearest relative, with the depth limits noted above.
+  - btrfs's per-node generations (`find-new`): ordered by inode, not path, and blind to squashfs mounts.
+  - macOS FSEvents: "changed under this directory since event N", built on a log.
+  - io_uring could batch validation `statx` calls for long-running programs, but ring setup costs more than it saves for the thousands of short-lived processes a build spawns.
+
 ### `pkgconf` (decided 2026-11-17, done 2026-11-18)
 
 This reversed the earlier "`pkg-config` is verboten" decision. `pkgconf` is back, exactly as LFS 13.1 builds it, and Fluffy's home-grown replacement is gone.
@@ -431,6 +457,25 @@ This reversed the earlier "`pkg-config` is verboten" decision. `pkgconf` is back
   apply_patch ../gcc-$VERSION-fluffy.patch
   ```
   An earlier build script had swctl unpack every tarball into the first archive's directory. All recipes were moved to this layout on 2026-11-18: gcc-pass1, gcc-pass2 and pkgconf unpack their extra tarballs themselves; glibc, python, systemd and tcl unpack their data and docs tarballs at install time, LFS-style. python's HTML docs were silently never installed under the old layout.
+
+- **Build priority is nice 9 with the idle I/O class (2026-11-18).** That is the lowest the test suites allow:
+  - nice 19 fails glibc's `posix/tst-nice` (`nice(10)` must raise the value by 10);
+  - `SCHED_IDLE` and `SCHED_BATCH` fail `tst-sched_setattr` and `tst-sched_setattr-thread`, which require `SCHED_OTHER`.
+  - *Planned:* set the policy per phase, a rule for every package rather than a recipe knob. MAKE and INSTALL are throughput work that no test observes, so they run under `SCHED_IDLE` and take only spare CPU. CHECK stays under `SCHED_OTHER` at nice 9, which the test suites expect. Each phase already runs in its own sandbox, set up as root, so `lockdown_exec` sets the policy there before dropping privileges, and the phase's process tree inherits it.
+  - *Not yet tried:* a cgroup with `CPUWeight=1` and `IOWeight=1` (for example via `systemd-run --scope`), which yields as strongly while processes still see nice and `SCHED_OTHER`.
+  - Don't stop a build with Ctrl-Z during tests: their timeouts are wall-clock, so stopped compiles fail as timeouts.
+
+- **Idea: time left in the progress line (2026-11-18).** The question is "how long does this have left?" at a glance. The only change is an `XhYm left` after the current/total count:
+  ```
+  glibc [41/132 3h12m left]: PREPARE(3s) MAKE(2m34s) CHECK(18m51s) INSTALL(2m8s) PACKAGE(11s)
+  ```
+  - It is the expected duration of this run (the recorded durations of every package it builds, skipping those that will be `UP-TO-DATE`) minus the time elapsed since the run started. Once elapsed time passes the expectation it reads `XhYm overtime` instead. It updates once per package; the line stays append-only.
+  - Without a recorded duration for every package the run builds, it shows nothing; a partial guess would mislead.
+  - Durations live in a local, display-only file such as `/sw/.build/timings`, rewritten after each build. Never put them in the signed fstab or the images: they differ by machine and run, so every rebuild would change the manifest even when every image is identical.
+
+- **Planned: phases without a controlling terminal (2026-11-18).** Anything a phase writes to `/dev/tty` bypasses `phase.log` and lands in the middle of swctl's progress line, for example `CHECKvia send_tty(13s)` from expect's `tests/logfile.test`. glibc writes its fatal errors there too. That is likely why the `mksquashfs` crash showed only "Aborted (core dumped)" and its reason was never seen. (That crash came from gcc-pass1's specs file dropping `--eh-frame-hdr`; see the libgcc-pass1 CHECK.)
+  - Fix: swctl runs each phase in a new session (`setsid`), so no phase has a controlling terminal. `/dev/tty` is then unavailable inside builds, and such output goes to stderr, which is the phase log.
+  - expect is not a blocker: `logfile.test` calls `send_tty` only when `::tty_spawn_id` exists, and its expected log matches either way. Other test suites may behave differently without a terminal (skip, or fail), so validate with a full world, not package by package.
 
 - **swctl exports only build-environment knobs (decided 2026-11-18).** Variables such as `DESTDIR`, `FLUFFY` and `CROSS` describe the build environment and belong in swctl. Anything that names a package's path or tunes one package belongs in that package's recipe or patch. A variable that only works around a package bug, such as the former `GCC_EXEC_PREFIX=/sw/gcc/lib/gcc/`, is fixed in the package instead.
 

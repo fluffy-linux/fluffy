@@ -11,7 +11,7 @@ ARCHIVES=(
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://github.com/fluffy-linux/mpc/releases/download/$MPC_VERSION/mpc-$MPC_VERSION.tar.xz
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://github.com/fluffy-linux/gmp/releases/download/gmp-$GMP_VERSION/gmp-$GMP_VERSION.tar.xz
     14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    3cf2b179b45314f0f9ab87d94b94b281cb8065a34b5d93de940c6bf57ad3e128 file://gcc-$VERSION-fluffy-source.patch
+    9811dcd56cd2adebe504b7e88e29fcd8e7b1b8c6f8591900b79fef3defa7b07f file://gcc-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
