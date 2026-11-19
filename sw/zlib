@@ -7,11 +7,10 @@ fi
 
 VERSION=1.3.2
 
-# Experiment: built from the Fluffy branch itself (its commits on upstream's
-# v1.3.2 tag), no patch.  GitHub's branch tarball until the commits are
-# settled.
+# Built from Fluffy's branch (our commits on upstream's v1.3.2 tag), no
+# patch: GitHub's tarball of the branch until it is released.
 ARCHIVES=(
-    d1b57bf060086f75fa1bb6585418892de057dbff5dbb9e42157faf3584ffb53b https://github.com/fluffy-linux/zlib/archive/refs/heads/exp/zlib-$VERSION.tar.gz
+    57b937080a41d041ed1221ac44bcc967bcb8dbcc16d6e9bd85bf23499866e7f3 https://github.com/fluffy-linux/zlib/archive/refs/heads/fluffy/v$VERSION.tar.gz
 )
 
 NEEDS=(

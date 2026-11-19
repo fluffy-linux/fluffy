@@ -7,11 +7,10 @@ fi
 
 VERSION=8.3
 
-# Experiment: built from the Fluffy branch itself (its commits on upstream's
-# readline-8.3 tag), no patch.  GitHub's branch tarball until the commits are
-# settled; then a released readline-8.3-fluffyN archive.
+# Built from Fluffy's branch (our commits on upstream's readline-8.3 tag), no
+# patch: GitHub's tarball of the branch until it is released.
 ARCHIVES=(
-    3eea73061d7cb5cc63ba77e5e6e5e8f9d450f8699bd6f2b51f339a1120d19ef6 https://github.com/fluffy-linux/readline/archive/refs/heads/exp/readline-$VERSION.tar.gz
+    9a15243e6fc0b3d7c768c0c8ef1024f4c0f8b5cb6b3cbbdafde0b04dc236a1bc https://github.com/fluffy-linux/readline/archive/refs/heads/fluffy/readline-$VERSION.tar.gz
 )
 
 if test -v CROSS
