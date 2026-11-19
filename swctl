@@ -1037,15 +1037,19 @@ build_single_pkg() {
                 done
 
                 # ARCHIVES[0], if a tarball, becomes the source directory the
-                # recipe runs in.  Everything else is placed beside it, never
-                # unpacked: the recipe uses it as ../<file>.
+                # recipe runs in, named after the file: its own single
+                # top-level directory is stripped, whatever it is called
+                # (a GitHub branch archive's is <repo>-<branch>).  Everything
+                # else is placed beside it, never unpacked: the recipe uses it
+                # as ../<file>.
                 cd "$work_dir/src"
                 for idx in "${!archives[@]}"
                 do
                     archive="${archives[idx]}"
                     if (( idx == 0 )) && [[ "$archive" == *.tar.* ]]
                     then
-                        tar --no-same-owner --no-same-permissions --one-top-level="${archive%%?(-src).tar.*}" -xf "$work_dir/archives/$archive"
+                        mkdir "${archive%%?(-src).tar.*}"
+                        tar --no-same-owner --no-same-permissions --strip-components=1 -C "${archive%%?(-src).tar.*}" -xf "$work_dir/archives/$archive"
                     else
                         cp -- "$work_dir/archives/$archive" .
                     fi

@@ -7,9 +7,11 @@ fi
 
 VERSION=8.3
 
+# Experiment: built from the Fluffy branch itself (its commits on upstream's
+# readline-8.3 tag), no patch.  GitHub's branch tarball until the commits are
+# settled; then a released readline-8.3-fluffyN archive.
 ARCHIVES=(
-    fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc https://github.com/fluffy-linux/readline/releases/download/readline-$VERSION/readline-$VERSION.tar.gz
-    915f4e129b39b9f37f76cd9895479249d44fd08464f77bb191729fbef7bf604b file://readline-$VERSION-fluffy.patch
+    3eea73061d7cb5cc63ba77e5e6e5e8f9d450f8699bd6f2b51f339a1120d19ef6 https://github.com/fluffy-linux/readline/archive/refs/heads/exp/readline-$VERSION.tar.gz
 )
 
 if test -v CROSS
@@ -67,7 +69,6 @@ else
 fi
 
 MAKE() {
-    apply_patch ../readline-$VERSION-fluffy.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/readline \
