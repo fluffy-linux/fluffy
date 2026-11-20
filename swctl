@@ -722,6 +722,26 @@ install_targets() {
         if test "$ret" != "int:0"
         then
             dlcall -r int -n sys_err mnt_context_get_syscall_errno "$cxt"
+            # Show what is already at $tgt: libmount refuses (-EBUSY) to mount
+            # an image again where it is already mounted, even under another.
+            local mi_line mi_dev mi_bf
+            local -a mi_fields
+            log "mounts at $tgt:"
+            while read -r mi_line
+            do
+                read -ra mi_fields <<< "$mi_line"
+                test "${mi_fields[4]}" == "$tgt" || continue
+                mi_dev="${mi_line##* - }"
+                read -ra mi_fields <<< "$mi_dev"
+                mi_dev="${mi_fields[1]}"
+                mi_bf="/sys/class/block/${mi_dev##*/}/loop/backing_file"
+                if test -r "$mi_bf"
+                then
+                    log "  $mi_dev ($(< "$mi_bf"))"
+                else
+                    log "  $mi_dev (no readable $mi_bf)"
+                fi
+            done < /proc/self/mountinfo
             fatal "failed to mount $src on $tgt: rc=${ret#*:} errno=${sys_err#*:}"
         fi
         dlcall mnt_free_context "$cxt"
