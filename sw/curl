@@ -5,13 +5,13 @@ else
     ON=fluffy-build
 fi
 
-VERSION=8.23.0
+VERSION=8.21.0
 
+# Built straight from Fluffy's branch (our commits on upstream's curl-8_21_0
+# tag): swctl fetches the pinned commit with git.  The tag has no configure
+# or Makefile.in, so MAKE regenerates them with autoreconf.
 ARCHIVES=(
-    8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5 https://github.com/fluffy-linux/curl/releases/download/curl-${VERSION//./_}/curl-$VERSION.tar.xz
-    b6b341c45975d84b4c40be1e4a3830a52bcc02f2323169ced5c277c6bdfa6c78 file://curl-$VERSION-fluffy-source.patch
-    bd8a02ea946a7c8e8f7e585d381ca252bcee7de0505ad0981ae36320c9ef5963 file://curl-$VERSION-fluffy-test.patch
-    039bf88a47db3d62b63eb94922b71f459b9526b51d78bef85f4adb6f26826655 file://curl-$VERSION-fluffy-ch8.patch
+    429dd9723ccde175f5ff919348b35f8175e020ca https://github.com/fluffy-linux/curl.git#refs/heads/fluffy/curl-${VERSION//./_}
 )
 
 NEEDS=(
@@ -25,6 +25,8 @@ NEEDS=(
 if test -v CROSS
 then
     BUILD_NEEDS=(
+        autoconf
+        automake
         bash
         binutils
         ca-certificates
@@ -37,10 +39,11 @@ then
         grep
         gzip-pass1
         libgcc
+        libtool
         linux-headers
+        m4
         make-pass1
         openssl
-        patch-pass1
         perl
         pkgconf
         python
@@ -52,6 +55,8 @@ then
     )
 else
     BUILD_NEEDS=(
+        autoconf
+        automake
         bash
         binutils
         ca-certificates
@@ -64,10 +69,11 @@ else
         grep
         gzip
         libgcc
+        libtool
         linux-headers
+        m4
         make
         openssl
-        patch
         perl
         pkgconf
         python
@@ -80,10 +86,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../curl-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../curl-$VERSION-fluffy-test.patch
-    patch -Z -Np1 -i ../curl-$VERSION-fluffy-ch8.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
+    # Fluffy's autotools (LFS's autoconf, automake and libtool).
+    autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/curl \
         --disable-static \
