@@ -1,0 +1,35 @@
+# Autoconf at the version a package's release tarball was generated with,
+# built from git inside the package's own build to regenerate its
+# configure.  A version's file (autoconf-<ver>.common) appends that
+# version's branch to ARCHIVES, so it is placed as ../autoconf.tar, and
+# sources this file; MAKE calls autoconf_build before autoreconf.
+#
+# Building autoconf from git takes an existing autoconf and automake (its
+# own configure is generated): the host's in host-build, Fluffy's packaged
+# ones otherwise.  The man pages need help2man and the manual makeinfo;
+# neither is built.
+# It installs into the build's own prefix, never into a package's DESTDIR.
+
+if test "$ON" != host-build
+then
+    BUILD_NEEDS+=(
+        autoconf
+        automake
+        m4
+        perl
+    )
+fi
+
+autoconf_build() {
+    local prefix="$PWD/.autotools"
+    mkdir -p .autotools-build
+    tar -xf ../autoconf.tar -C .autotools-build
+    (
+        cd .autotools-build/autoconf
+        autoreconf -fi
+        ${CONFIG_SHELL:-/bin/sh} ./configure --prefix="$prefix"
+        make dist_man_MANS= INFO_DEPS=
+        make dist_man_MANS= INFO_DEPS= DESTDIR= install
+    )
+    export PATH="$prefix/bin:$PATH"
+}

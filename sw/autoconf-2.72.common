@@ -1,0 +1,7 @@
+# autoconf 2.72, built from git in the package's own build: Fluffy's branch
+# (upstream's v2.72 tag plus .tarball-version).  See autoconf.common.
+ARCHIVES+=(
+    4a585d21143aa6a26dab53d7e9b735035de1a183 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+)
+
+source sw/autoconf.common

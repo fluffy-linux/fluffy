@@ -1,0 +1,33 @@
+# Automake at the version a package's release tarball was generated with,
+# built from git inside the package's own build to regenerate its
+# Makefile.in files.  A version's file (automake-<ver>.common) appends that
+# version's branch to ARCHIVES, so it is placed as ../automake.tar, and
+# sources this file; MAKE calls automake_build after autoconf_build (its
+# bootstrap runs that autoconf) and before autoreconf.
+#
+# Its aclocal searches its own macros, then, through a dirlist, every
+# package's /sw/*/share/aclocal.  The man pages need help2man and the
+# manual makeinfo; neither is built, nor the example tarball.
+# It installs into the build's own prefix, never into a package's DESTDIR.
+
+if test "$ON" != host-build
+then
+    BUILD_NEEDS+=(
+        perl
+    )
+fi
+
+automake_build() {
+    local prefix="$PWD/.autotools"
+    mkdir -p .autotools-build
+    tar -xf ../automake.tar -C .autotools-build
+    (
+        cd .autotools-build/automake
+        ${CONFIG_SHELL:-/bin/sh} ./bootstrap
+        ${CONFIG_SHELL:-/bin/sh} ./configure --prefix="$prefix"
+        make man1_MANS= INFO_DEPS= dist_doc_DATA=
+        make man1_MANS= INFO_DEPS= dist_doc_DATA= DESTDIR= install
+    )
+    mkdir -p "$prefix/share/aclocal"
+    echo '/sw/*/share/aclocal' > "$prefix/share/aclocal/dirlist"
+}
