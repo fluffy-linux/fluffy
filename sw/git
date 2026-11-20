@@ -5,18 +5,23 @@ else
     ON=fluffy-build
 fi
 
-VERSION=2.56.1
+VERSION=2.55.0
 
-# Built straight from Fluffy's branch (our commits on upstream's v2.56.1
+# Built straight from Fluffy's branch (our commits on upstream's v2.55.0
 # tag): swctl fetches the pinned commit with git, the host's for git-pass1
 # (host-build), git-pass1's (or a previous git's) for git.
 ARCHIVES=(
-    4c7316be4ef31a4afbe373a3e6ef25519c5b6431 https://github.com/fluffy-linux/git.git#refs/heads/fluffy/v$VERSION
+    a14c36575f51bc18f9c4478038aaf125a2a4a317 https://github.com/fluffy-linux/git.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
     curl
+    expat
     glibc
+    openssl
+    pcre2
+    perl
+    python
     zlib
 )
 
@@ -28,17 +33,23 @@ then
         coreutils-pass1
         curl
         diffutils-pass1
+        expat
         findutils-pass1
         gawk-pass1
         gcc
+        gettext
         glibc
         grep
         libgcc
         linux-headers
         make-pass1
         openssl
+        pcre2
+        perl
         pkgconf
+        python
         sed
+        tcl
         zlib
         zstd
     )
@@ -49,42 +60,55 @@ else
         coreutils
         curl
         diffutils
+        expat
         findutils
         gawk
         gcc
+        gettext
         glibc
         grep
         libgcc
         linux-headers
         make
         openssl
+        pcre2
+        perl
         pkgconf
+        python
         sed
+        tcl
         zlib
         zstd
     )
 fi
 
-# The same minimal git as git-pass1: what swctl's PREPARE needs, fetch and
-# archive (builtins) and git-remote-https (libcurl).  No Perl, Python,
-# Tcl/Tk, gettext, expat or Rust yet.
+# As BLFS 13.1-systemd builds it.  git's tag has no configure (only its
+# release tarball does), so BLFS's configure options become the Makefile
+# variables they set:
+# --with-gitconfig=/etc/gitconfig is ETC_GITCONFIG, --with-python=python3
+# PYTHON_PATH, --with-libpcre2 USE_LIBPCRE2.  NO_RUST as BLFS says when
+# rustc is not installed.  perllibdir is perl's site_perl under /sw/git,
+# which perl searches through its /sw/*/lib/perl5/<ver>/site_perl dirs.
 MAKE() {
     cat > config.mak << END
 prefix = /sw/git
+perllibdir = /sw/git/lib/perl5/5.44/site_perl
+ETC_GITCONFIG = /etc/gitconfig
 SHELL_PATH = /sw/bash/bin/bash
+PERL_PATH = /sw/perl/bin/perl
+PYTHON_PATH = /sw/python/bin/python3
 CC = gcc
-CFLAGS = -O2 $(pkg-config --cflags zlib libcurl)
-LDFLAGS = $(pkg-config --libs-only-L zlib libcurl)
+CFLAGS = -O2 $(pkg-config --cflags zlib libcurl libpcre2-8 expat openssl)
+LDFLAGS = $(pkg-config --libs-only-L zlib libcurl libpcre2-8 expat openssl)
 CURL_LDFLAGS = $(pkg-config --libs libcurl)
-NO_PERL = 1
-NO_PYTHON = 1
-NO_TCLTK = 1
-NO_GETTEXT = 1
-NO_EXPAT = 1
-NO_OPENSSL = 1
+USE_LIBPCRE2 = 1
 NO_RUST = 1
 END
     make
+}
+
+CHECK() {
+    GIT_UNZIP=nonexist make test -k
 }
 
 INSTALL() {
