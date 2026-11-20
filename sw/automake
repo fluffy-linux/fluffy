@@ -117,6 +117,9 @@ CHECK() {
     make -j$(($(nproc)>4?$(nproc):4)) check
 }
 
+# aclocal finds other packages' macros (libtool's, pkgconf's, gettext's)
+# through a dirlist in its own macro directory; its lines may be globs.
 INSTALL() {
     make install
+    echo '/sw/*/share/aclocal' > $DESTDIR/sw/automake/share/aclocal/dirlist
 }

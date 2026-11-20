@@ -1,11 +1,12 @@
 ON=host-build
 
-VERSION=8.23.0
+VERSION=8.21.0
 
+# Built straight from Fluffy's branch (our commits on upstream's curl-8_21_0
+# tag): swctl fetches the pinned commit with git.  The tag has no configure
+# or Makefile.in, so MAKE regenerates them with autoreconf.
 ARCHIVES=(
-    8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5 https://github.com/fluffy-linux/curl/releases/download/curl-${VERSION//./_}/curl-$VERSION.tar.xz
-    b6b341c45975d84b4c40be1e4a3830a52bcc02f2323169ced5c277c6bdfa6c78 file://curl-$VERSION-fluffy-source.patch
-    bd8a02ea946a7c8e8f7e585d381ca252bcee7de0505ad0981ae36320c9ef5963 file://curl-$VERSION-fluffy-test.patch
+    9f43e798f75b411aaa1c615b864c2d9cc19f62a1 https://github.com/fluffy-linux/curl.git#refs/heads/fluffy/curl-${VERSION//./_}
 )
 
 NEEDS=(
@@ -23,7 +24,6 @@ BUILD_NEEDS=(
     linux-headers
     make-pass1
     openssl-pass1
-    patch-pass1
     pkgconf-pass1
     sed-pass1
     zlib-pass1
@@ -31,9 +31,9 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i ../curl-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../curl-$VERSION-fluffy-test.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
+    # The host's autotools, as host-build uses the host's other tools.
+    autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/curl \
         --host=$FLUFFY_TGT \
