@@ -10,7 +10,7 @@ VERSION=8.3
 # Built straight from Fluffy's branch (our commits on upstream's
 # readline-8.3 tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    53376d2fa3912ba45a9137ea7acefe395b10ea23 https://github.com/fluffy-linux/readline.git#refs/heads/fluffy/readline-$VERSION
+    3c222808d7179aa7ddee09d0ef145987f8380a39 https://github.com/fluffy-linux/readline.git#refs/heads/fluffy/readline-$VERSION
 )
 
 if test -v CROSS
@@ -42,7 +42,6 @@ then
         linux-headers
         make-pass1
         ncurses-pass1
-        patch-pass1
         sed-pass1
         tar-pass1
     )
@@ -61,7 +60,6 @@ else
         linux-headers
         make
         ncurses
-        patch
         sed
         tar
     )
@@ -85,37 +83,4 @@ CHECK() {
 INSTALL() {
     make install
     install -v -m644 doc/*.{ps,pdf,html,dvi} $DESTDIR/sw/readline/share/doc/readline-$VERSION
-
-    install -dm755 $DESTDIR/sw/readline/etc
-    cat > $DESTDIR/sw/readline/etc/inputrc << "EOF"
-# Begin /sw/readline/etc/inputrc
-
-set horizontal-scroll-mode Off
-set meta-flag On
-set input-meta On
-set convert-meta Off
-set output-meta On
-set bell-style none
-
-"\eOd": backward-word
-"\eOc": forward-word
-"\e[1;5D": backward-word
-"\e[1;5C": forward-word
-"\e[1;3D": backward-word
-"\e[1;3C": forward-word
-
-"\e[1~": beginning-of-line
-"\e[4~": end-of-line
-"\e[5~": beginning-of-history
-"\e[6~": end-of-history
-"\e[3~": delete-char
-"\e[2~": quoted-insert
-
-"\eOH": beginning-of-line
-"\eOF": end-of-line
-"\e[H": beginning-of-line
-"\e[F": end-of-line
-
-# End /sw/readline/etc/inputrc
-EOF
 }
