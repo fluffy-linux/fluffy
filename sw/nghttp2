@@ -1,0 +1,87 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.70.0
+
+# Built straight from Fluffy's branch (our commits on upstream's v1.70.0
+# tag): swctl fetches the pinned commit and its submodules with git.  The
+# tag has no configure or Makefile.in, so MAKE regenerates them.
+ARCHIVES=(
+    a76d083a8f147b05baf35ecb5ccac760383c842f https://github.com/fluffy-linux/nghttp2.git#refs/heads/fluffy/v$VERSION
+)
+
+NEEDS=(
+    glibc
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        autoconf
+        automake
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        libgcc
+        libtool
+        linux-headers
+        m4
+        make-pass1
+        perl
+        pkgconf
+        sed
+    )
+else
+    BUILD_NEEDS=(
+        autoconf
+        automake
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        libtool
+        linux-headers
+        m4
+        make
+        perl
+        pkgconf
+        sed
+    )
+fi
+
+# As BLFS 13.1-systemd builds it: the library only.
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoreconf -fi
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+        --prefix=/sw/nghttp2 \
+        --disable-static \
+        --enable-lib-only \
+        --docdir=/sw/nghttp2/share/doc/nghttp2-$VERSION
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+    find $DESTDIR/sw/nghttp2/lib -name '*.la' -delete
+}
