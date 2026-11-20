@@ -4,7 +4,7 @@ VERSION=8.21.0
 
 # Built straight from Fluffy's branch (our commits on upstream's curl-8_21_0
 # tag): swctl fetches the pinned commit with git.  The tag has no configure
-# or Makefile.in, so MAKE regenerates them with autoreconf.
+# or Makefile.in, so MAKE regenerates them.
 ARCHIVES=(
     a7d85d2fe87a066f7ad214ea37827a0e04af2e73 https://github.com/fluffy-linux/curl.git#refs/heads/fluffy/curl-${VERSION//./_}
 )
@@ -30,9 +30,16 @@ BUILD_NEEDS=(
     zstd-pass1
 )
 
+# Regenerated with the autotools curl's release tarball was made with.
+source sw/autoconf-2.71.common
+source sw/automake-1.16.5.common
+source sw/libtool-2.4.7.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
-    # The host's autotools, as host-build uses the host's other tools.
+    autoconf_build
+    automake_build
+    libtool_build
     autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/curl \

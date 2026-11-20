@@ -21,8 +21,6 @@ NEEDS=(
 if test -v CROSS
 then
     BUILD_NEEDS=(
-        autoconf
-        automake
         bash
         binutils
         coreutils-pass1
@@ -33,9 +31,7 @@ then
         glibc
         grep
         libgcc
-        libtool
         linux-headers
-        m4
         make-pass1
         perl
         pkgconf
@@ -43,8 +39,6 @@ then
     )
 else
     BUILD_NEEDS=(
-        autoconf
-        automake
         bash
         binutils
         coreutils
@@ -55,9 +49,7 @@ else
         glibc
         grep
         libgcc
-        libtool
         linux-headers
-        m4
         make
         perl
         pkgconf
@@ -65,9 +57,17 @@ else
     )
 fi
 
+# Regenerated with the autotools nghttp2's release tarball was made with.
+source sw/autoconf-2.71.common
+source sw/automake-1.16.5.common
+source sw/libtool-2.4.7.common
+
 # As BLFS 13.1-systemd builds it: the library only.
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
     autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/nghttp2 \

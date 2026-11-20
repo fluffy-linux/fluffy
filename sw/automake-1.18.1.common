@@ -1,0 +1,7 @@
+# automake 1.18.1, built from git in the package's own build: Fluffy's
+# branch (upstream's v1.18.1 tag).  See automake.common.
+ARCHIVES+=(
+    153298e27fa9414b25453440a2f36e1bb7bedfc1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+)
+
+source sw/automake.common

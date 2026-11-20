@@ -1,0 +1,9 @@
+# libtool 2.4.7, built from git in the package's own build: Fluffy's branch
+# (upstream's v2.4.7 tag plus relative submodule URLs, .tarball-version and
+# .serial, and a buildreq without help2man or makeinfo).  See
+# libtool.common.
+ARCHIVES+=(
+    5e3be7ab26ea416c6c29a3b6536d5e8d778f4142 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
+)
+
+source sw/libtool.common
