@@ -43,6 +43,7 @@ then
         perl-pass1
         python-pass1
         sed-pass1
+        tar-pass1
     )
 else
     BUILD_NEEDS=(
@@ -63,6 +64,7 @@ else
         perl
         python
         sed
+        tar
     )
 fi
 
