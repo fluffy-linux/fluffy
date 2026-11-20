@@ -7,6 +7,7 @@ NEEDS=(
     coreutils-pass1
     ctypes-sh-pass1
     curl-pass1
+    git-pass1
     gzip-pass1
     signify-pass1
     squashfs-tools-pass1

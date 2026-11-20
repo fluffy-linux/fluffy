@@ -7,10 +7,10 @@ fi
 
 VERSION=8.3
 
-# Built from Fluffy's branch (our commits on upstream's readline-8.3 tag), no
-# patch: GitHub's tarball of the branch until it is released.
+# Built straight from Fluffy's branch (our commits on upstream's
+# readline-8.3 tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    9a15243e6fc0b3d7c768c0c8ef1024f4c0f8b5cb6b3cbbdafde0b04dc236a1bc https://github.com/fluffy-linux/readline/archive/refs/heads/fluffy/readline-$VERSION.tar.gz
+    a9d581eb912f5a85a96e786d9c0506e932b5569b https://github.com/fluffy-linux/readline.git#refs/heads/fluffy/readline-$VERSION
 )
 
 if test -v CROSS

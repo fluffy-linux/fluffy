@@ -1,0 +1,91 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.56.1
+
+# Built from Fluffy's branch (our commits on upstream's v2.56.1 tag), no
+# patch: GitHub's tarball of the branch until it is released.
+ARCHIVES=(
+    4a7c41570f3c239c0c8b67320b1244357c4b4864830c2ed50d5337e35f15abdb https://github.com/fluffy-linux/git/archive/refs/heads/fluffy/v$VERSION.tar.gz
+)
+
+NEEDS=(
+    curl
+    glibc
+    zlib
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        curl
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make-pass1
+        openssl
+        pkgconf
+        sed
+        zlib
+        zstd
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        curl
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        openssl
+        pkgconf
+        sed
+        zlib
+        zstd
+    )
+fi
+
+# The same minimal git as git-pass1: what swctl's PREPARE needs, fetch and
+# archive (builtins) and git-remote-https (libcurl).  No Perl, Python,
+# Tcl/Tk, gettext, expat or Rust yet.
+MAKE() {
+    cat > config.mak << END
+prefix = /sw/git
+SHELL_PATH = /sw/bash/bin/bash
+CC = gcc
+CFLAGS = -O2 $(pkg-config --cflags zlib libcurl)
+LDFLAGS = $(pkg-config --libs-only-L zlib libcurl)
+CURL_LDFLAGS = $(pkg-config --libs libcurl)
+NO_PERL = 1
+NO_PYTHON = 1
+NO_TCLTK = 1
+NO_GETTEXT = 1
+NO_EXPAT = 1
+NO_OPENSSL = 1
+NO_RUST = 1
+END
+    make
+}
+
+INSTALL() {
+    make install
+}

@@ -7,6 +7,7 @@ NEEDS=(
     coreutils
     ctypes-sh
     curl
+    git
     gzip
     signify
     squashfs-tools
