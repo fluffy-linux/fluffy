@@ -7,10 +7,10 @@ fi
 
 VERSION=1.3.2
 
-# Built from Fluffy's branch (our commits on upstream's v1.3.2 tag), no
-# patch: GitHub's tarball of the branch until it is released.
+# Built straight from Fluffy's branch (our commits on upstream's v1.3.2
+# tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    57b937080a41d041ed1221ac44bcc967bcb8dbcc16d6e9bd85bf23499866e7f3 https://github.com/fluffy-linux/zlib/archive/refs/heads/fluffy/v$VERSION.tar.gz
+    b794956e494df6b9d8cf7d3012a3724085bf0233 https://github.com/fluffy-linux/zlib.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -33,7 +33,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         sed-pass1
         tar-pass1
         xz-pass1
@@ -53,7 +52,6 @@ else
         libgcc
         linux-headers
         make
-        patch
         sed
         tar
         xz
