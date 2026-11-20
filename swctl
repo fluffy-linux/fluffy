@@ -204,15 +204,17 @@ fetch_git() {
 # submodules, not theirs, as "git submodule update" does by default.
 # Prints "<commit> <url> <path>" per submodule of REPO's COMMIT.
 git_submodules() {
-    local repo="$1" commit="$2" key name path sub rel base url
+    local repo="$1" commit="$2" key name path mode type sub rel base url
     store_git cat-file -e "$commit:.gitmodules" 2> /dev/null || return 0
     while read -r key path
     do
         name="${key#submodule.}"
         name="${name%.path}"
         # A path naming no gitlink in the tree is skipped, as git skips it.
-        sub="$(store_git ls-tree "$commit" -- "$path" | awk '$2 == "commit" { print $3 }')"
-        test -n "$sub" || continue
+        # (Parsed with read, not awk: PREPARE has only cross-build's tools.)
+        type="" sub=""
+        read -r mode type sub _ < <(store_git ls-tree "$commit" -- "$path") || true
+        test "$type" == commit || continue
         rel="$(store_git config --blob "$commit:.gitmodules" --get "submodule.$name.url")" ||
             fatal "$repo: submodule $path has no URL"
         [[ "$rel" == ../* || "$rel" == ./* ]] ||
