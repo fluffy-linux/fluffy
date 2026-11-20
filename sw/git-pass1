@@ -6,7 +6,7 @@ VERSION=2.55.0
 # tag): swctl fetches the pinned commit with git, the host's for git-pass1
 # (host-build), git-pass1's (or a previous git's) for git.
 ARCHIVES=(
-    abd479cbe172c1128951ed132486027f40203bdb https://github.com/fluffy-linux/git.git#refs/heads/fluffy/v$VERSION
+    5f994fe76cd821841fab7d35d5027e4cf751c171 https://github.com/fluffy-linux/git.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
