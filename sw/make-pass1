@@ -4,6 +4,7 @@ VERSION=4.4.1
 
 ARCHIVES=(
     dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3 https://github.com/fluffy-linux/make/releases/download/$VERSION/make-$VERSION.tar.gz
+    e0af2f05d59bf8989d97706bd78f5a9342d895faa70b245c292df273e617a876 file://make-$VERSION-fluffy-source.patch
 )
 
 NEEDS=(
@@ -16,7 +17,11 @@ BUILD_NEEDS=(
     linux-headers
 )
 
+# make runs a command with no shell syntax itself, searching PATH, and
+# Fluffy's PATH is a glob(GLOB_PATHS) list (/sw/*/bin): without the patch
+# such a command (automake's bootstrap runs "echo") is never found.
 MAKE() {
+    patch -Z -Np1 -i ../make-$VERSION-fluffy-source.patch
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/make \
         --host=$FLUFFY_TGT \
