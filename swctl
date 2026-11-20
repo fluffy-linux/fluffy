@@ -125,41 +125,6 @@ then
 fi
 
 FSTAB=${FSTAB:-/sw/.build/fstab}
-SEC_KEY="${FLUFFY_SIGN_KEY:-/sw/.build/sign.sec}"
-PUB_KEY="${FLUFFY_PUB_KEY:-/sw/.build/sign.pub}"
-
-sign_file() {
-    signify -S -s "$SEC_KEY" -m "$1" -x - | tail -n 1
-}
-
-verify_fstab_signature() {
-    test -f "$FSTAB" || return 0
-    if test ! -f "$PUB_KEY"
-    then
-        fatal "public key not found for verifying $FSTAB: $PUB_KEY"
-    fi
-
-    local first_line="" sig=""
-    IFS= read -r first_line < "$FSTAB" || true
-    if [[ "$first_line" != "# fluffy.signature="* ]]
-    then
-        fatal "missing signature header in $FSTAB"
-    fi
-    sig="${first_line#\# fluffy.signature=}"
-
-    local tmp_msg="" tmp_sig=""
-    tmp_msg="$(mktemp)"
-    tmp_sig="$(mktemp)"
-    if ! tail -n +2 "$FSTAB" > "$tmp_msg" \
-        || ! printf 'untrusted comment: verify %s\n%s\n' "$FSTAB" "$sig" > "$tmp_sig" \
-        || ! signify -V -q -p "$PUB_KEY" -m "$tmp_msg" -x "$tmp_sig"
-    then
-        rm -f "$tmp_msg" "$tmp_sig"
-        fatal "signature verification failed for $FSTAB"
-    fi
-    rm -f "$tmp_msg" "$tmp_sig"
-}
-
 check_sha256() {
     test -f "$1" && test "$(sha256sum "$1" | cut -d' ' -f1)" == "$2"
 }
@@ -451,7 +416,6 @@ reload_fstab() {
 
     if test -f "$FSTAB"
     then
-        verify_fstab_signature
         call mnt_table_parse_fstab "$mnt_table" "string:$FSTAB"
     fi
 }
@@ -611,26 +575,11 @@ register_entry() {
     call mnt_fs_set_options "$mnt_fs" "string:$options"
 }
 
-sign_and_save_fstab() {
-    if test ! -f "$SEC_KEY"
-    then
-        fatal "signing key not found: $SEC_KEY"
-    fi
-
-    local tmp_content fstab_sig
+save_fstab() {
     mkdir -p "${FSTAB%/*}"
-    tmp_content="$(mktemp "${FSTAB%/*}/.fstab.XXXXXX")"
-
+    # An fstab from before signing was removed starts with a
+    # "# fluffy.signature=" line, which libmount keeps as the intro comment.
     call mnt_table_set_intro_comment "$mnt_table" $NULL
-    call mnt_table_replace_file "$mnt_table" "string:$tmp_content"
-    if ! fstab_sig="$(sign_file "$tmp_content")" || test -z "$fstab_sig"
-    then
-        rm -f "$tmp_content"
-        fatal "failed to sign $FSTAB"
-    fi
-    rm -f "$tmp_content"
-
-    call mnt_table_set_intro_comment "$mnt_table" "string:# fluffy.signature=$fstab_sig"$'\n'
     call mnt_table_replace_file "$mnt_table" "string:$FSTAB"
     chmod 0644 "$FSTAB"
 }
@@ -1259,7 +1208,7 @@ build_single_pkg() {
                 call setresgid 0 0 0
                 reload_fstab
                 register_entry "$squashfs_file"
-                sign_and_save_fstab
+                save_fstab
                 rm -rf "$work_dir"/{src,installed,test-results,test-work}
             )
             rm -f "$phase_log"
@@ -1656,8 +1605,8 @@ refresh_recipe_checksums() {
         fi
     done
 
-    sign_and_save_fstab
-    log "successfully signed and saved $FSTAB"
+    save_fstab
+    log "successfully saved $FSTAB"
 }
 
 case "$1" in
