@@ -22,6 +22,8 @@ MS_BIND=0x00001000
 MS_REC=0x00004000
 MS_PRIVATE=0x00040000
 
+MNT_DETACH=2
+
 log() {
     echo "$@" >&2
 }
@@ -710,8 +712,8 @@ install_targets() {
             fi
         fi
 
-        mkdir -p "$tgt"
-
+        # X-mount.mkdir makes $tgt: no external mkdir, which a phase whose
+        # /sw holds only its BUILD_NEEDS may not have.
         call_ptr cxt mnt_new_context
         call mnt_context_set_source "$cxt" "string:$src"
         call mnt_context_set_target "$cxt" "string:$tgt"
@@ -809,6 +811,42 @@ apply_patch() {
     rm -f -- "$marker"
 }
 
+# A build phase (MAKE, CHECK, INSTALL) sees only its BUILD_NEEDS under /sw,
+# not swctl's own tools (ON's packages, mounted for PREPARE and SQUASHFS and
+# by the chroot's setup).  clear_sw unmounts every package under /sw except
+# /sw/.build, deepest last-mounted first, lazily: swctl's own bash, ctypes.sh
+# and libffi stay mapped in this process.  Nothing after it may run an
+# external command the phase's BUILD_NEEDS might not provide.
+clear_sw() {
+    local line
+    local -a fields mps=()
+    while read -r line
+    do
+        read -ra fields <<< "$line"
+        case "${fields[4]}" in
+            /sw/.build|/sw/.build/*) ;;
+            /sw/*) mps+=("${fields[4]}") ;;
+        esac
+    done < /proc/self/mountinfo
+    local i
+    for (( i = ${#mps[@]} - 1; i >= 0; i-- ))
+    do
+        call umount2 "string:${mps[i]}" "int:$MNT_DETACH"
+    done
+}
+
+# mkdir -p through the C library, for after clear_sw.
+make_dirs() {
+    local path="" part
+    local -a parts
+    IFS=/ read -ra parts <<< "${1#/}"
+    for part in "${parts[@]}"
+    do
+        path="$path/$part"
+        test -d "$path" || call mkdir "string:$path" "int:493"
+    done
+}
+
 lockdown_exec() {
     (
         wd="$(pwd)"
@@ -841,6 +879,13 @@ lockdown_exec() {
 
         call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
 
+        local nproc_val
+        nproc_val="$(nproc)"
+        if test "$1" != SQUASHFS
+        then
+            clear_sw
+        fi
+
         if test "$ON" == host-build
         then
             mkdir -p /sw/bash/bin
@@ -848,13 +893,16 @@ lockdown_exec() {
             call mount /bin/bash /sw/bash/bin/bash $NULL $MS_BIND $NULL
         fi
 
+        # SQUASHFS is swctl's own work, with its own tools; a build phase gets
+        # exactly its BUILD_NEEDS.
         local -a mount_targets=()
-        if test "$ON" != host-build
+        if test "$1" == SQUASHFS
         then
-            mount_targets+=("$ON")
-        fi
-        if test "$1" != SQUASHFS
-        then
+            if test "$ON" != host-build
+            then
+                mount_targets+=("$ON")
+            fi
+        else
             mount_targets+=("${BUILD_NEEDS[@]}")
         fi
 
@@ -900,7 +948,7 @@ lockdown_exec() {
                 mount_work "$1"
                 ;;
             INSTALL)
-                mkdir -p "/sw/.build/destdir/sw/$mount_pkg"
+                make_dirs "/sw/.build/destdir/sw/$mount_pkg"
                 call mount "$work_dir/installed" "/sw/.build/destdir/sw/$mount_pkg" $NULL $(( MS_BIND | MS_REC )) $NULL
                 if test -d /sw/.build
                 then
@@ -947,8 +995,7 @@ lockdown_exec() {
         set +h
         umask 022
 
-        local saved_term="${TERM:-dumb}" saved_fluffy="${FLUFFY:-}" nproc_val
-        nproc_val="$(nproc)"
+        local saved_term="${TERM:-dumb}" saved_fluffy="${FLUFFY:-}"
 
         for var in $(compgen -e)
         do
