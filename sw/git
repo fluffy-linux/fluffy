@@ -7,10 +7,11 @@ fi
 
 VERSION=2.56.1
 
-# Built from Fluffy's branch (our commits on upstream's v2.56.1 tag), no
-# patch: GitHub's tarball of the branch until it is released.
+# Built straight from Fluffy's branch (our commits on upstream's v2.56.1
+# tag): swctl fetches the pinned commit with git, the host's for git-pass1
+# (host-build), git-pass1's (or a previous git's) for git.
 ARCHIVES=(
-    4a7c41570f3c239c0c8b67320b1244357c4b4864830c2ed50d5337e35f15abdb https://github.com/fluffy-linux/git/archive/refs/heads/fluffy/v$VERSION.tar.gz
+    4e7175c57ef1c310077b9052a8dd7ed3d893b887 https://github.com/fluffy-linux/git.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
