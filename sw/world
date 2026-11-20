@@ -35,6 +35,7 @@ NEEDS=(
     gcc
     gdbm
     gettext
+    git
     glibc
     gmp
     gperf

@@ -173,6 +173,64 @@ verify_sha256() {
     fi
 }
 
+# An ARCHIVES URL https://<host>/<path>.git#refs/{heads,tags}/<name> is a git
+# repository and the ref to fetch from it; its checksum is the object that
+# ref must point at: a commit, or for an annotated tag the tag object, so the
+# tag's message and signature are pinned too.  It is fetched at depth 1 into
+# work/git, a bare store swctl owns as it owns work/archives, under
+# refs/fluffy/<host>/<path>.git/<ref>, and never fetched again while that ref
+# matches.  A branch may move on, so a stale branch ref is refetched; a tag
+# never moves, so a tag ref is fetched only once.  (git's own refusal to
+# clobber tags covers only refs/tags/*, not this namespace.)  A branch that
+# has moved past its pin fails the build on purpose: drift is to be seen and
+# the pin updated, never worked around by fetching the old commit by id.
+is_git_url() {
+    [[ "${1%%#*}" == *.git ]]
+}
+
+store_git() {
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git -C "$work_dir/git" "$@"
+}
+
+fetch_git() {
+    local want="$1" url="$2" repo ref local_ref got
+    if [[ ! "$url" =~ ^https://[a-zA-Z0-9.-]+/[^#:]+\.git#refs/(heads|tags)/[^#]+$ ]]
+    then
+        fatal "invalid git URL (want https://<host>/<path>.git#refs/{heads,tags}/<name>): $url"
+    fi
+    if [[ ! "$want" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+    then
+        fatal "invalid object id for $url: $want"
+    fi
+    repo="${url%%#*}"
+    ref="${url#*#}"
+    local_ref="refs/fluffy/${repo#https://}/$ref"
+    git check-ref-format "$local_ref" || fatal "invalid ref name: $local_ref"
+
+    if test ! -d "$work_dir/git"
+    then
+        GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git init --quiet --bare "$work_dir/git"
+    fi
+
+    got="$(store_git rev-parse --quiet --verify "$local_ref" || true)"
+    if test "$got" == "$want"
+    then
+        return
+    fi
+    if [[ "$ref" == refs/tags/* && -n "$got" ]]
+    then
+        fatal "$url was fetched as $got, but the recipe pins $want: tags never move"
+    fi
+    store_git fetch --quiet --no-tags --depth=1 -- "$repo" "+$ref:$local_ref"
+    got="$(store_git rev-parse --quiet --verify "$local_ref" || true)"
+    if test "$got" != "$want"
+    then
+        store_git update-ref -d "$local_ref"
+        fatal "$url is at $got, but the recipe pins $want"
+    fi
+    store_git rev-parse --quiet --verify "$want^{commit}" > /dev/null || fatal "$url: $want is not a commit or a tag of one"
+}
+
 bring_up_lo() {
     local ptr ptr16 sock fd
     local -a arr=(short)
@@ -995,10 +1053,27 @@ build_single_pkg() {
 
         mkdir -p "$work_dir/archives"
 
+        # A git repository is placed as <repo>.tar, from its URL's last part.
         for ((i=0; i<${#ARCHIVES[@]}; i+=2))
         do
-            archives+=("${ARCHIVES[i+1]##*/}")
+            url="${ARCHIVES[i+1]}"
+            if is_git_url "$url"
+            then
+                url="${url%%#*}"
+                url="${url##*/}"
+                archives+=("${url%.git}.tar")
+            else
+                archives+=("${url##*/}")
+            fi
         done
+
+        # ARCHIVES[0] becomes the source directory if it is a tarball or a
+        # git repository.
+        src_unpacked=0
+        if (( ${#ARCHIVES[@]} > 0 )) && { is_git_url "${ARCHIVES[1]}" || [[ "${archives[0]}" == *.tar.* ]]; }
+        then
+            src_unpacked=1
+        fi
 
         log -n "$pkg${FLUFFY_PROGRESS:+ $FLUFFY_PROGRESS}:"
         prepare_exec() {
@@ -1019,6 +1094,12 @@ build_single_pkg() {
                 do
                     sha256="${ARCHIVES[i]}"
                     url="${ARCHIVES[i+1]}"
+                    if is_git_url "$url"
+                    then
+                        validate_pkg_name "${archives[i/2]}"
+                        fetch_git "$sha256" "$url"
+                        continue
+                    fi
                     filename="${url##*/}"
                     validate_pkg_name "$filename"
                     cached_file="$work_dir/archives/$filename"
@@ -1036,19 +1117,32 @@ build_single_pkg() {
                     fi
                 done
 
-                # ARCHIVES[0], if a tarball, becomes the source directory the
-                # recipe runs in, named <recipe>-<version> whatever the file
-                # is called (a GitHub branch archive is named after the
-                # branch's last part, such as v1.5.7.tar.gz).  Its single
-                # top-level directory is stripped, whatever it is called (a
-                # branch archive's is <repo>-<branch>).  Everything else is
-                # placed beside it, never unpacked: the recipe uses it as
-                # ../<file>.
+                # ARCHIVES[0], if a tarball or a git repository, becomes the
+                # source directory the recipe runs in, named
+                # <recipe>-<version> whatever the file is called (a GitHub
+                # branch archive is named after the branch's last part, such
+                # as v1.5.7.tar.gz).  A tarball's single top-level directory
+                # is stripped, whatever it is called (a branch archive's is
+                # <repo>-<branch>).  Everything else is placed beside it,
+                # never unpacked: the recipe uses it as ../<file>, and a git
+                # repository as ../<repo>.tar holding <repo>/.  git archive
+                # gives every file the commit's time, so make sees no
+                # generated file as stale.
                 cd "$work_dir/src"
                 for idx in "${!archives[@]}"
                 do
                     archive="${archives[idx]}"
-                    if (( idx == 0 )) && [[ "$archive" == *.tar.* ]]
+                    if is_git_url "${ARCHIVES[2*idx+1]}"
+                    then
+                        if (( idx == 0 ))
+                        then
+                            mkdir "$pkg-$VERSION"
+                            store_git archive --format=tar "${ARCHIVES[2*idx]}" |
+                                tar --no-same-owner --no-same-permissions -C "$pkg-$VERSION" -xf -
+                        else
+                            store_git archive --format=tar --prefix="${archive%.tar}/" "${ARCHIVES[2*idx]}" > "$archive"
+                        fi
+                    elif (( idx == 0 )) && [[ "$archive" == *.tar.* ]]
                     then
                         mkdir "$pkg-$VERSION"
                         tar --no-same-owner --no-same-permissions --strip-components=1 -C "$pkg-$VERSION" -xf "$work_dir/archives/$archive"
@@ -1060,7 +1154,7 @@ build_single_pkg() {
         }
         run_phase PREPARE prepare_exec
 
-        if (( ${#archives[@]} > 0 )) && [[ "${archives[0]}" == *.tar.* ]]
+        if (( src_unpacked ))
         then
             cd "$work_dir/src/$pkg-$VERSION"
         else
