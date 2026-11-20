@@ -9,7 +9,6 @@ NEEDS=(
     curl
     git
     gzip
-    signify
     squashfs-tools
     tar
     util-linux

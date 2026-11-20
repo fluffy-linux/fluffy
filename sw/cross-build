@@ -9,7 +9,6 @@ NEEDS=(
     curl-pass1
     git-pass1
     gzip-pass1
-    signify-pass1
     squashfs-tools-pass1
     tar-pass1
     util-linux-pass1
