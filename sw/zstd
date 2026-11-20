@@ -31,6 +31,7 @@ then
         gcc-pass2
         glibc
         grep-pass1
+        gzip-pass1
         libgcc
         linux-headers
         lz4
@@ -51,6 +52,7 @@ else
         gcc
         glibc
         grep
+        gzip
         libgcc
         linux-headers
         lz4
