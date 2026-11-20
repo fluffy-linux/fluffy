@@ -1,12 +1,12 @@
 ON=host-build
 
-VERSION=2.56.1
+VERSION=2.55.0
 
-# Built straight from Fluffy's branch (our commits on upstream's v2.56.1
+# Built straight from Fluffy's branch (our commits on upstream's v2.55.0
 # tag): swctl fetches the pinned commit with git, the host's for git-pass1
 # (host-build), git-pass1's (or a previous git's) for git.
 ARCHIVES=(
-    4e7175c57ef1c310077b9052a8dd7ed3d893b887 https://github.com/fluffy-linux/git.git#refs/heads/fluffy/v$VERSION
+    6f5e9a33ee9f82fe3e466da8d45fd42709dc4d26 https://github.com/fluffy-linux/git.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
