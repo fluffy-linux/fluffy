@@ -6,7 +6,7 @@ VERSION=8.21.0
 # tag): swctl fetches the pinned commit with git.  The tag has no configure
 # or Makefile.in, so MAKE regenerates them with autoreconf.
 ARCHIVES=(
-    9f43e798f75b411aaa1c615b864c2d9cc19f62a1 https://github.com/fluffy-linux/curl.git#refs/heads/fluffy/curl-${VERSION//./_}
+    a7d85d2fe87a066f7ad214ea37827a0e04af2e73 https://github.com/fluffy-linux/curl.git#refs/heads/fluffy/curl-${VERSION//./_}
 )
 
 NEEDS=(
