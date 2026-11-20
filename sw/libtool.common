@@ -11,6 +11,7 @@
 if test "$ON" != host-build
 then
     BUILD_NEEDS+=(
+        patch
         xz
     )
 fi
