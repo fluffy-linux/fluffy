@@ -73,6 +73,7 @@ NEEDS=(
     mpdecimal
     mpfr
     ncurses
+    nghttp2
     ninja
     openssl
     p11-kit

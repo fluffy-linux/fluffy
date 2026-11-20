@@ -17,6 +17,7 @@ ARCHIVES=(
 NEEDS=(
     ca-certificates
     glibc
+    nghttp2
     openssl
     zlib
     zstd
@@ -43,6 +44,7 @@ then
         linux-headers
         m4
         make-pass1
+        nghttp2
         openssl
         perl
         pkgconf
@@ -73,6 +75,7 @@ else
         linux-headers
         m4
         make
+        nghttp2
         openssl
         perl
         pkgconf
