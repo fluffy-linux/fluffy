@@ -7,10 +7,10 @@ fi
 
 VERSION=1.13.2
 
+# Built straight from Fluffy's branch (our commits on upstream's v1.13.2
+# tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    974d6b2f4eeefa25625d34da3cb36bdcebe7fbce40f4c16ac0835fd1c0cbae17 https://github.com/fluffy-linux/ninja/releases/download/v$VERSION/ninja-$VERSION.tar.gz
-    ff4060421cd7fb940f8ec19a1b96db43e9b55dbd19ab2ebe391c5663ce627a61 file://ninja-$VERSION-fluffy-source.patch
-    01a41f7c67d1423242948e896f5c8623c42f65c23bbeea9c44b55b119ca0cc9e file://ninja-$VERSION-fluffy-test.patch
+    7ca08d87a7659fcf660add79a232cb7b78b7a73f https://github.com/fluffy-linux/ninja.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -31,7 +31,6 @@ then
         libgcc
         libstdcpp-pass1
         linux-headers
-        patch-pass1
         python-pass1
         sed-pass1
         util-linux-pass1
@@ -46,7 +45,6 @@ else
         libgcc
         libstdcpp
         linux-headers
-        patch
         python-pass1
         sed
         util-linux-pass1
@@ -54,8 +52,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../ninja-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../ninja-$VERSION-fluffy-test.patch
 
     sed -i '/int Guess/a \
   int   j = 0;\

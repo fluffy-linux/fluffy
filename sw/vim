@@ -7,9 +7,10 @@ fi
 
 VERSION=9.2.1025
 
+# Built straight from Fluffy's branch (our commits on upstream's v9.2.1025
+# tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    cb0dbf701f8550bb54940304fa4d8b875e078db84967e5b36a0eb7ebe8a6d0cc https://github.com/fluffy-linux/vim/releases/download/v$VERSION/vim-$VERSION.tar.gz
-    3dfdc739404f5fb3dacaff6e7fa2f484197059c1f5e3c5ca6835f06114966508 file://vim-$VERSION-fluffy-source.patch
+    37e2c7c6acddb2d690cedbb7a468d0959bfc2cfe https://github.com/fluffy-linux/vim.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -36,7 +37,6 @@ then
         linux-headers
         make
         ncurses
-        patch
         sed
         tar
     )
@@ -58,14 +58,12 @@ else
         linux-headers
         make
         ncurses
-        patch
         sed
         tar
     )
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../vim-$VERSION-fluffy-source.patch
 
     echo '#define SYS_VIMRC_FILE "/sw/vim/etc/vimrc"' >> src/feature.h
 

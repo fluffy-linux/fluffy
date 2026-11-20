@@ -7,9 +7,10 @@ fi
 
 VERSION=1.10.0
 
+# Built straight from Fluffy's branch (our commits on upstream's v1.10.0
+# tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b https://github.com/fluffy-linux/lz4/releases/download/v$VERSION/lz4-$VERSION.tar.gz
-    65c03362297ef58fdec56cce67b39d99784775c90a22cf76abe5107cec325195 file://lz4-$VERSION-fluffy-test.patch
+    f8cbaf927aa7b1f29c2d0e9aba0919d15eea5ddc https://github.com/fluffy-linux/lz4.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -30,7 +31,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         sed-pass1
         tar-pass1
     )
@@ -47,14 +47,12 @@ else
         libgcc
         linux-headers
         make
-        patch
         sed
         tar
     )
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../lz4-$VERSION-fluffy-test.patch
     make BUILD_STATIC=no PREFIX=/sw/lz4
 }
 

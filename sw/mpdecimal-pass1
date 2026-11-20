@@ -2,8 +2,10 @@ ON=cross-build
 
 VERSION=4.0.1
 
+# Built straight from Fluffy's branch (our commits on upstream's 4.0.1
+# tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8 https://github.com/fluffy-linux/mpdecimal/releases/download/$VERSION/mpdecimal-$VERSION.tar.gz
+    a72f1fab4cdf679e2f4bdf2e63128222b23f282d https://github.com/fluffy-linux/mpdecimal.git#refs/heads/fluffy/$VERSION
 )
 
 NEEDS=(
@@ -27,7 +29,6 @@ BUILD_NEEDS=(
     libstdcpp-pass1
     linux-headers
     make-pass1
-    patch-pass1
     sed-pass1
     tar-pass1
     xz-pass1
