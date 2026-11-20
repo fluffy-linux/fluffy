@@ -31,11 +31,13 @@ then
         gcc-pass2
         glibc
         libgcc
+        gzip-pass1
         linux-headers
         ninja
         patch-pass1
         python-pass1
         sed-pass1
+        tar-pass1
     )
 else
     BUILD_NEEDS=(
@@ -47,11 +49,13 @@ else
         gcc
         glibc
         libgcc
+        gzip
         linux-headers
         ninja
         patch
         python-pass1
         sed
+        tar
     )
 fi
 
