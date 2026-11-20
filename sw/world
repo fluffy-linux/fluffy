@@ -88,6 +88,7 @@ NEEDS=(
     sed
     setuptools
     shadow
+    signify
     sqlite
     systemd
     tar
