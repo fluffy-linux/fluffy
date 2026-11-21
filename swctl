@@ -879,12 +879,15 @@ lockdown_exec() {
 
         call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
 
+        # Every phase, SQUASHFS too, starts from an empty /sw and mounts
+        # exactly its own toolset: what it would inherit from the outer
+        # namespace can't be recognised reliably (a loop device's backing
+        # file reads /<image> when it was set up through a mount this
+        # namespace can't see), and mounting an image again where it is
+        # already mounted fails with -EBUSY.
         local nproc_val
         nproc_val="$(nproc)"
-        if test "$1" != SQUASHFS
-        then
-            clear_sw
-        fi
+        clear_sw
 
         if test "$ON" == host-build
         then
