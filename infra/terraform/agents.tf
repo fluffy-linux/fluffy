@@ -5,10 +5,16 @@
 # deletes its own VM.  Terraform therefore ignores the instance count.
 
 variable "agent_queues" {
-  description = "Buildkite queue name to its agents' VM size and the most VMs at once."
+  description = <<-EOT
+    One scale set per entry: its VM size, the most VMs at once, and the
+    Buildkite queue its agents join (buildkite_queue).  Without
+    buildkite_queue, agents join the cluster's default queue, as an agent
+    with no queue tag does.
+  EOT
   type = map(object({
-    vm_size       = string
-    max_instances = number
+    vm_size         = string
+    max_instances   = number
+    buildkite_queue = optional(string)
   }))
   default = {
     default = {
@@ -78,7 +84,7 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "agents" {
 
   os_profile {
     custom_data = base64encode(templatefile("${path.module}/agent-cloud-init.yaml", {
-      queue              = each.key
+      queue              = each.value.buildkite_queue
       key_vault          = azurerm_key_vault.ci.name
       identity_client_id = azurerm_user_assigned_identity.agent.client_id
     }))

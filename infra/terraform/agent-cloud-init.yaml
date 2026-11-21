@@ -4,7 +4,9 @@ write_files:
   - path: /etc/fluffy-ci/agent.env
     permissions: "0644"
     content: |
+%{ if queue != null ~}
       BUILDKITE_AGENT_QUEUE=${queue}
+%{ endif ~}
       FLUFFY_CI_KEY_VAULT=${key_vault}
       FLUFFY_CI_IDENTITY_CLIENT_ID=${identity_client_id}
 
