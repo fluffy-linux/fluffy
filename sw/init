@@ -17,6 +17,7 @@ if test -v CROSS
 then
     BUILD_NEEDS=(
         binutils
+        coreutils-pass1
         gcc
         glibc
         linux-headers
@@ -24,6 +25,7 @@ then
 else
     BUILD_NEEDS=(
         binutils
+        coreutils
         gcc
         glibc
         linux-headers
