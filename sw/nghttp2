@@ -36,6 +36,7 @@ then
         perl
         pkgconf
         sed
+        tar-pass1
     )
 else
     BUILD_NEEDS=(
@@ -54,6 +55,7 @@ else
         perl
         pkgconf
         sed
+        tar
     )
 fi
 
