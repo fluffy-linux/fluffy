@@ -13,8 +13,11 @@ identity, reading the Buildkite agent token from Key Vault.
   alerts.  The subscription is pay-as-you-go, so the budget alerts; it
   cannot stop spending.
 - `packer/` (next): the agent VM image.
-- The agent VM itself (after that): one spot VM, started per build and
-  deallocated after.
+- After that: a spot VM scale set, normally at size 0, and a small Azure
+  Function that polls Buildkite's agent metrics every minute and sets the
+  scale set's size from the jobs waiting.  Each agent runs one job and
+  deletes its own VM.  Nothing persists between builds except Blob: swctl
+  downloads the images whose recipes are unchanged and uploads new ones.
 
 ## Once
 
