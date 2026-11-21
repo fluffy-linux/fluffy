@@ -15,6 +15,13 @@ then
     BUILD_NEEDS+=(
         perl
     )
+    # The helper unpacks its sources with tar.
+    if test -v CROSS
+    then
+        BUILD_NEEDS+=(tar-pass1)
+    else
+        BUILD_NEEDS+=(tar)
+    fi
 fi
 
 automake_build() {
