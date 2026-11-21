@@ -86,3 +86,23 @@ itself: a VM becomes an agent only when its custom data writes
 `BUILDKITE_AGENT_QUEUE`, `FLUFFY_CI_KEY_VAULT` and
 `FLUFFY_CI_IDENTITY_CLIENT_ID`.  `FLUFFY_CI_SELF_DELETE=0` keeps a VM after
 its agent exits, for debugging.
+
+## The scaler
+
+`infra/scaler` is a timer function, run every minute, that raises each
+agent scale set's size to meet its Buildkite queue (busy agents plus
+scheduled jobs, never above `max_instances`) and never lowers it: agents
+delete their own VMs after 10 idle minutes.  `terraform apply` creates the
+function app; deploy its code with
+
+```
+(cd infra/scaler && zip -qr ../../scaler.zip function_app.py host.json requirements.txt)
+az functionapp deployment source config-zip --resource-group fluffy-ci \
+    --name "$(terraform -chdir=infra/terraform output -raw scaler_function_app)" \
+    --src scaler.zip --build-remote true
+rm scaler.zip
+```
+
+and see what it did each minute in the function's log stream (portal) or
+with `az webapp log tail`.  A scale set's queue must be named
+(`buildkite_queue` in `agent_queues`) for the scaler to manage it.

@@ -16,10 +16,14 @@ variable "agent_queues" {
     max_instances   = number
     buildkite_queue = optional(string)
   }))
+  # mufasa is the Buildkite cluster's default queue.  The scaler only
+  # scales queues it knows by name, and parallel agents wait for swctl's
+  # Blob binary cache, so one VM for now.
   default = {
     default = {
-      vm_size       = "Standard_D8as_v4"
-      max_instances = 1
+      vm_size         = "Standard_D8as_v4"
+      max_instances   = 1
+      buildkite_queue = "mufasa"
     }
   }
 }
