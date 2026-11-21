@@ -12,7 +12,10 @@ identity, reading the Buildkite agent token from Key Vault.
   image gallery Packer publishes to, and a monthly budget with email
   alerts.  The subscription is pay-as-you-go, so the budget alerts; it
   cannot stop spending.
-- `packer/` (next): the agent VM image.
+- `packer/`: the agent VM image, published to the gallery: Ubuntu 24.04
+  with Fluffy's host tools, `/sw/bash`, ctypes.sh (from Fluffy's fork) and
+  the Buildkite agent, which fetches its token from Key Vault at boot,
+  exits after 10 idle minutes, and then deletes its VM.
 - After that: a spot VM scale set, normally at size 0, and a small Azure
   Function that polls Buildkite's agent metrics every minute and sets the
   scale set's size from the jobs waiting.  Each agent runs one job and
@@ -59,3 +62,20 @@ az keyvault secret set \
     --vault-name "$(terraform -chdir=infra/terraform output -raw key_vault_name)" \
     --name buildkite-agent-token --file <file-holding-the-token>
 ```
+
+## The agent image
+
+```
+packer init infra/packer
+packer build \
+    -var subscription_id="$(az account show --query id -o tsv)" \
+    -var image_version=1.0.0 \
+    infra/packer
+```
+
+Bump `image_version` for each new image.  The image starts no agent by
+itself: a VM becomes an agent only when its custom data writes
+`/etc/fluffy-ci/agent.env` (the scale sets, next step), with
+`BUILDKITE_AGENT_QUEUE`, `FLUFFY_CI_KEY_VAULT` and
+`FLUFFY_CI_IDENTITY_CLIENT_ID`.  `FLUFFY_CI_SELF_DELETE=0` keeps a VM after
+its agent exits, for debugging.

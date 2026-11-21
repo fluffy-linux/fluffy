@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Run after buildkite-agent stops.  When the agent exited cleanly (it was
+# idle for disconnect-after-idle-timeout), delete this VM, through Azure's
+# API with the VM's managed identity; its NIC, public IP and OS disk go
+# with it.  Any other stop (a crash, a shutdown, a spot eviction) leaves
+# the VM alone: Azure, or a person debugging it, deals with those.
+set -euo pipefail
+
+if test "${SERVICE_RESULT:-}" != success || test "${EXIT_STATUS:-}" != 0
+then
+    echo "fluffy-ci-self-delete: agent stopped with ${SERVICE_RESULT:-?}/${EXIT_STATUS:-?}; keeping this VM"
+    exit 0
+fi
+if test "${FLUFFY_CI_SELF_DELETE:-1}" = 0
+then
+    echo "fluffy-ci-self-delete: FLUFFY_CI_SELF_DELETE=0; keeping this VM"
+    exit 0
+fi
+
+: "${FLUFFY_CI_IDENTITY_CLIENT_ID:?}"
+
+imds=http://169.254.169.254/metadata
+vm_id=$(curl -fsS -H Metadata:true \
+    "$imds/instance/compute/resourceId?api-version=2021-02-01&format=text")
+access_token=$(
+    curl -fsS -H Metadata:true \
+        "$imds/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F&client_id=$FLUFFY_CI_IDENTITY_CLIENT_ID" \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])'
+)
+
+echo "fluffy-ci-self-delete: deleting $vm_id"
+curl -fsS -X DELETE -H "Authorization: Bearer $access_token" \
+    "https://management.azure.com$vm_id?api-version=2024-07-01"

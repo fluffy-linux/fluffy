@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Writes the Buildkite agent token to /run/fluffy-ci/agent-token, read from
+# Key Vault with the VM's managed identity.  Needs, from
+# /etc/fluffy-ci/agent.env: FLUFFY_CI_KEY_VAULT (vault name) and
+# FLUFFY_CI_IDENTITY_CLIENT_ID (the user-assigned identity's client ID).
+set -euo pipefail
+
+: "${FLUFFY_CI_KEY_VAULT:?}" "${FLUFFY_CI_IDENTITY_CLIENT_ID:?}"
+
+imds=http://169.254.169.254/metadata/identity/oauth2/token
+access_token=$(
+    curl -fsS --retry 10 --retry-connrefused --retry-delay 3 -H Metadata:true \
+        "$imds?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net&client_id=$FLUFFY_CI_IDENTITY_CLIENT_ID" \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])'
+)
+
+install -d -m 700 -o buildkite-agent -g buildkite-agent /run/fluffy-ci
+umask 077
+curl -fsS --retry 5 -H "Authorization: Bearer $access_token" \
+    "https://$FLUFFY_CI_KEY_VAULT.vault.azure.net/secrets/buildkite-agent-token?api-version=7.4" \
+| python3 -c 'import json, sys; sys.stdout.write(json.load(sys.stdin)["value"])' \
+    > /run/fluffy-ci/agent-token
+chown buildkite-agent:buildkite-agent /run/fluffy-ci/agent-token
