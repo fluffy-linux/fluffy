@@ -1472,7 +1472,7 @@ plan_pkgs() {
                 continue
             fi
             pkg="${node#build:}"
-            printf '%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}"
+            printf '%s\x1f%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}" "${pkg_needs[$pkg]:-}"
         done
     ) > "$tmp_plan"
     then
@@ -1485,13 +1485,15 @@ plan_pkgs() {
     pkg_bneeds=()
     pkg_img_chk=()
     pkg_includes=()
-    local p v b inc
-    while IFS=$'\x1f' read -r p v b inc
+    pkg_needs=()
+    local p v b inc n
+    while IFS=$'\x1f' read -r p v b inc n
     do
         order+=("$p")
         pkg_ver["$p"]="$v"
         pkg_bneeds["$p"]="$b"
         pkg_includes["$p"]="$inc"
+        pkg_needs["$p"]="$n"
     done < "$tmp_plan"
     rm -f "$tmp_plan"
 }
@@ -1533,7 +1535,7 @@ build_pkgs() {
     fi
 
     local -a order=()
-    local -A pkg_ver=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=()
     plan_pkgs "$plan_mode" "$@"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1589,6 +1591,97 @@ build_pkgs() {
     done
 }
 
+# Print the build of the given packages as a Buildkite pipeline, to be fed to
+# `buildkite-agent pipeline upload`: one step per package, in plan order,
+# running `swctl build <pkg>` with this run's FLUFFY and CROSS.  A step
+# depends on the steps of everything its build mounts: each BUILD_NEEDS
+# package (its ON target included) and, as install_targets mounts them, all
+# that those NEEDS in turn.  Every step's dependencies are then already
+# built, so its `swctl build` finds them up to date and builds only its own
+# package.  The steps share this machine's /sw and fstab, so they run one at
+# a time (a concurrency group per FLUFFY root); a step whose agent is lost
+# is retried.
+buildkite_pipeline() {
+    if test $# -lt 1
+    then
+        fatal "Usage: $0 buildkite <package...>"
+    fi
+
+    local -a order=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=()
+    plan_pkgs build "$@"
+
+    local -A reach=()
+    reach_run() {
+        local p="${1##*/}" n
+        local -a ns=()
+        if test -n "${reach[$p]:-}"
+        then
+            return 0
+        fi
+        reach["$p"]=1
+        read -ra ns <<< "${pkg_needs[$p]:-}"
+        for n in "${ns[@]}"
+        do
+            reach_run "$n"
+        done
+    }
+
+    # Buildkite interpolates $ in commands; YAML single quotes double '.
+    yaml_str() {
+        local s="${1//\$/\$\$}"
+        printf "'%s'" "${s//\'/\'\'}"
+    }
+    step_key() {
+        printf '%s' "${1//[^a-zA-Z0-9_-]/_}"
+    }
+
+    local env_prefix="" group="fluffy:${FLUFFY:-/}"
+    if test -n "${FLUFFY:-}"
+    then
+        env_prefix+=" FLUFFY=$(printf '%q' "$FLUFFY")"
+    fi
+    if test -v CROSS
+    then
+        env_prefix+=" CROSS=$(printf '%q' "$CROSS")"
+    fi
+
+    echo "steps:"
+    local pkg dep b
+    local -a bs=()
+    for pkg in "${order[@]}"
+    do
+        reach=()
+        read -ra bs <<< "${pkg_bneeds[$pkg]:-}"
+        for b in "${bs[@]}"
+        do
+            reach_run "$b"
+        done
+
+        echo "  - label: $(yaml_str "$pkg")"
+        echo "    key: $(yaml_str "$(step_key "$pkg")")"
+        echo "    command: $(yaml_str "sudo$env_prefix ./swctl build $(printf '%q' "$pkg")")"
+        echo "    timeout_in_minutes: 720"
+        echo "    concurrency: 1"
+        echo "    concurrency_group: $(yaml_str "$group")"
+        echo "    retry:"
+        echo "      automatic:"
+        echo "        - exit_status: -1"
+        echo "          limit: 2"
+        if (( ${#reach[@]} > 0 ))
+        then
+            echo "    depends_on:"
+            for dep in "${order[@]}"
+            do
+                if test -n "${reach[$dep]:-}"
+                then
+                    echo "      - $(yaml_str "$(step_key "$dep")")"
+                fi
+            done
+        fi
+    done
+}
+
 refresh_recipe_checksums() {
     if test -z "${SUDO_UID:-}" || test -z "${SUDO_GID:-}"
     then
@@ -1634,7 +1727,7 @@ refresh_recipe_checksums() {
     fi
 
     local -a order=()
-    local -A pkg_ver=() pkg_bneeds=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=()
     plan_pkgs build "${target_pkgs[@]}"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1686,6 +1779,10 @@ build)
 refresh-checksums)
     shift
     refresh_recipe_checksums "$@"
+    ;;
+buildkite)
+    shift
+    buildkite_pipeline "$@"
     ;;
 install)
     shift
