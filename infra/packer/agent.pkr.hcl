@@ -92,6 +92,12 @@ source "azure-arm" "agent" {
 build {
   sources = ["source.azure-arm.agent"]
 
+  # The file provisioner uploads a directory's contents ("files/") into a
+  # destination directory that must already exist.
+  provisioner "shell" {
+    inline = ["mkdir -p /tmp/fluffy-ci"]
+  }
+
   provisioner "file" {
     source      = "${path.root}/files/"
     destination = "/tmp/fluffy-ci"

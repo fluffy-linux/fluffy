@@ -14,7 +14,7 @@ apt-get -y upgrade
 # packaged with the host's mksquashfs), and ctypes.sh's build dependencies.
 apt-get -y install --no-install-recommends \
     autoconf automake bison build-essential bzip2 ca-certificates curl \
-    gawk git gnupg gzip libdw-dev libelf-dev libffi-dev libtool m4 patch \
+    gawk git gnupg gzip libdw-dev libelf-dev libffi-dev libltdl-dev libtool m4 patch \
     perl pkg-config python3 squashfs-tools texinfo xz-utils zlib1g-dev
 
 # swctl runs with /sw/bash/bin/bash, and Fluffy has no /bin/sh: on the host
@@ -28,7 +28,9 @@ git init -q /tmp/ctypes.sh
 git -C /tmp/ctypes.sh fetch -q --depth 1 \
     https://github.com/fluffy-linux/ctypes.sh.git "$CTYPES_SH_COMMIT"
 git -C /tmp/ctypes.sh checkout -q FETCH_HEAD
-(cd /tmp/ctypes.sh && ./configure && make && make install)
+# In git, configure is a placeholder: regenerate it (its autogen.sh), with
+# the image's autotools.
+(cd /tmp/ctypes.sh && autoreconf -vif && ./configure && make && make install)
 ldconfig
 rm -rf /tmp/ctypes.sh
 
