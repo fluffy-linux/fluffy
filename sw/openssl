@@ -8,10 +8,7 @@ fi
 VERSION=4.0.1
 
 ARCHIVES=(
-    2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09 https://github.com/fluffy-linux/openssl/releases/download/openssl-$VERSION/openssl-$VERSION.tar.gz
-    3327a2e133ba3204da818d5b546175fe8196276664942f6b02770f660dedee35 file://openssl-$VERSION-fluffy-ch8.patch
-    9f04bdece1eaed057c2bb5c78414d0f954a8324bd9a6881bf6d2573ee8991bba file://openssl-$VERSION-fluffy-source.patch
-    9398f6e944392e2ca225f11f9ea188aff8d19d6ae02f7c5f526e00497c036d04 file://openssl-$VERSION-fluffy-test.patch
+    ac9e41bcf242c6f862337c5cb88d6cc5eb9c9f1a https://github.com/fluffy-linux/openssl.git#refs/heads/fluffy/openssl-$VERSION
 )
 
 NEEDS=(
@@ -36,7 +33,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         perl
         sed
         tar-pass1
@@ -58,7 +54,6 @@ else
         libgcc
         linux-headers
         make
-        patch
         perl
         sed
         tar
@@ -68,9 +63,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../openssl-$VERSION-fluffy-ch8.patch
-    patch -Z -Np1 -i ../openssl-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../openssl-$VERSION-fluffy-test.patch
 
     ./config \
         --prefix=/sw/openssl \

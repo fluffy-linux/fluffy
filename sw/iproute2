@@ -8,9 +8,7 @@ fi
 VERSION=7.1.0
 
 ARCHIVES=(
-    fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c https://github.com/fluffy-linux/iproute2/releases/download/v$VERSION/iproute2-$VERSION.tar.xz
-    b5868b22f31d231dd8667c9d27caf483adeb1377ffd1ded2c0fd133b57e833ad file://iproute2-$VERSION-fluffy-source.patch
-    359ef28f1926e3f105e4d80fb0dc0c608e38ed11470a0c23622a4c59e73413b8 file://iproute2-$VERSION-fluffy-test.patch
+    05167cc5bb37f13900bccf69289cc22c1a4d256d https://github.com/fluffy-linux/iproute2.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -39,7 +37,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         pkgconf
         python
         sed
@@ -64,7 +61,6 @@ else
         libgcc
         linux-headers
         make
-        patch
         pkgconf
         python
         sed
@@ -73,8 +69,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../iproute2-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../iproute2-$VERSION-fluffy-test.patch
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     $CONFIG_SHELL ./configure --prefix /sw/iproute2

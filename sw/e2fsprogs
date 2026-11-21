@@ -8,9 +8,7 @@ fi
 VERSION=1.47.4
 
 ARCHIVES=(
-    da274408bebbfd13a5a2fc3cfc66e3ffff17c48534673aa67f88d49b99123b96 https://github.com/fluffy-linux/e2fsprogs/releases/download/v$VERSION/e2fsprogs-$VERSION.tar.gz
-    965ec981050922af929e6291d4240fc5c680bd5b6dc17d3faa7761205c98ecd2 file://e2fsprogs-$VERSION-fluffy-source.patch
-    d1719856af3fe94eb70b2a5b0fca923a1eba85dd705a690e538caf0a56801705 file://e2fsprogs-$VERSION-fluffy-test.patch
+    e47092d617a4245a2df847ac3da806654f95f239 https://github.com/fluffy-linux/e2fsprogs.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -36,7 +34,6 @@ then
         libgcc
         linux-headers
         make
-        patch
         pkgconf
         sed
         tar
@@ -59,7 +56,6 @@ else
         libgcc
         linux-headers
         make
-        patch
         pkgconf
         sed
         tar
@@ -69,8 +65,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../e2fsprogs-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../e2fsprogs-$VERSION-fluffy-test.patch
 
     mkdir -p build
     cd build
