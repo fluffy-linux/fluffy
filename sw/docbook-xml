@@ -1,0 +1,91 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=4.5
+
+# DocBook XML 4.5's DTD, as BLFS 13.1-systemd installs it.  Upstream (now
+# on Codeberg) keeps it at src/main/schemas/docbook/4.5/dtd, byte for byte
+# the docbook-xml-4.5.zip BLFS downloads, so it is taken from the newest
+# release tag, 5.2.1, fetched with git.  BLFS's /etc/xml/catalog entries go
+# into this package's own catalog, /sw/docbook-xml/etc/xml/catalog, which
+# Fluffy's libxml2 reads with every other package's.
+ARCHIVES=(
+    bd1fc9894bf87eaeaa18dba188c6872c1fd3fb54 https://github.com/fluffy-linux/docbook.git#refs/heads/fluffy/5.2.1
+)
+
+NEEDS=()
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        coreutils-pass1
+        libxml2
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        coreutils
+        libxml2
+    )
+fi
+
+INSTALL() {
+    local dtd=/sw/docbook-xml/share/xml/docbook/xml-dtd-$VERSION
+    local catalog=$DESTDIR/sw/docbook-xml/etc/xml/catalog
+
+    cd src/main/schemas/docbook/$VERSION/dtd
+    install -v -d -m755 $DESTDIR$dtd
+    install -v -d -m755 $DESTDIR/sw/docbook-xml/etc/xml
+    cp -v -af --no-preserve=ownership \
+        catalog.xml docbook.cat *.dtd ent/ *.mod \
+        $DESTDIR$dtd
+
+    xmlcatalog --noout --add "rewriteSystem" \
+        "http://www.oasis-open.org/docbook/xml/$VERSION" \
+        "file://$dtd" \
+        $DESTDIR$dtd/catalog.xml
+    xmlcatalog --noout --add "rewriteURI" \
+        "http://www.oasis-open.org/docbook/xml/$VERSION" \
+        "file://$dtd" \
+        $DESTDIR$dtd/catalog.xml
+
+    xmlcatalog --noout --create $catalog
+    xmlcatalog --noout --add "delegatePublic" \
+        "-//OASIS//ENTITIES DocBook XML" \
+        "file://$dtd/catalog.xml" \
+        $catalog
+    xmlcatalog --noout --add "delegatePublic" \
+        "-//OASIS//DTD DocBook XML" \
+        "file://$dtd/catalog.xml" \
+        $catalog
+    xmlcatalog --noout --add "delegateSystem" \
+        "http://www.oasis-open.org/docbook/" \
+        "file://$dtd/catalog.xml" \
+        $catalog
+    xmlcatalog --noout --add "delegateURI" \
+        "http://www.oasis-open.org/docbook/" \
+        "file://$dtd/catalog.xml" \
+        $catalog
+
+    local DTDVERSION
+    for DTDVERSION in 4.1.2 4.2 4.3 4.4
+    do
+        xmlcatalog --noout --add "public" \
+            "-//OASIS//DTD DocBook XML V$DTDVERSION//EN" \
+            "http://www.oasis-open.org/docbook/xml/$DTDVERSION/docbookx.dtd" \
+            $DESTDIR$dtd/catalog.xml
+        xmlcatalog --noout --add "rewriteSystem" \
+            "http://www.oasis-open.org/docbook/xml/$DTDVERSION" \
+            "file://$dtd" \
+            $DESTDIR$dtd/catalog.xml
+        xmlcatalog --noout --add "rewriteURI" \
+            "http://www.oasis-open.org/docbook/xml/$DTDVERSION" \
+            "file://$dtd" \
+            $DESTDIR$dtd/catalog.xml
+    done
+}

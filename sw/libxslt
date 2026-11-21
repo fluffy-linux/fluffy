@@ -1,0 +1,87 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.1.45
+
+# Built straight from Fluffy's branch (our commits on upstream's v1.1.45
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure or Makefile.in, so MAKE regenerates them; otherwise it matches
+# the release tarball, docs included.  As BLFS 13.1-systemd builds it.
+ARCHIVES=(
+    05a49752f10d942a55cbd0a02fa87d975f7ba846 https://github.com/fluffy-linux/libxslt.git#refs/heads/fluffy/v$VERSION
+)
+
+NEEDS=(
+    glibc
+    libxml2
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        libgcc
+        libxml2
+        linux-headers
+        make-pass1
+        pkgconf
+        sed
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        libxml2
+        linux-headers
+        make
+        pkgconf
+        sed
+    )
+fi
+
+# Regenerated with the autotools libxslt's release tarball was made with.
+source sw/autoconf-2.71.common
+source sw/automake-1.16.5.common
+source sw/libtool-2.4.7.common
+
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    autoreconf -fi
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+        --prefix=/sw/libxslt \
+        --disable-static \
+        --without-python \
+        --docdir=/sw/libxslt/share/doc/libxslt-$VERSION
+    make
+}
+
+CHECK() {
+    make check
+}
+
+INSTALL() {
+    make install
+}

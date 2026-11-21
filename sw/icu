@@ -1,0 +1,79 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=78.3
+
+# Built straight from Fluffy's branch (our commits on upstream's
+# release-78.3 tag): swctl fetches the pinned commit with git.  BLFS
+# 13.1-systemd builds ICU from icu4c/source.  The tag has no prebuilt
+# icudt78l.dat, so the build generates ICU's data from the sources in
+# icu4c/source/data, with python.
+ARCHIVES=(
+    b016ed3e127ab94a4799e876e3c07e3499fbf9ca https://github.com/fluffy-linux/icu.git#refs/heads/fluffy/release-$VERSION
+)
+
+NEEDS=(
+    glibc
+    libgcc
+    libstdcpp
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        findutils-pass1
+        gawk-pass1
+        gcc
+        glibc
+        grep
+        libgcc
+        libstdcpp
+        linux-headers
+        make-pass1
+        python
+        sed
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        findutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        libstdcpp
+        linux-headers
+        make
+        python
+        sed
+    )
+fi
+
+MAKE() {
+    cd icu4c/source
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+        --prefix=/sw/icu
+    make
+}
+
+CHECK() {
+    cd icu4c/source
+    make check
+}
+
+INSTALL() {
+    cd icu4c/source
+    make install
+}

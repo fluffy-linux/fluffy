@@ -1,0 +1,92 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=2.15.3
+
+# Built straight from Fluffy's branch (our commits on upstream's v2.15.3
+# tag): swctl fetches the pinned commit with git.  As BLFS 13.1-systemd
+# builds it, with meson, history and ICU.  Fluffy's commits expand
+# wildcards in the default catalog list, which is every package's
+# /sw/<pkg>/etc/xml/catalog, then /etc/xml/catalog.
+ARCHIVES=(
+    ab6b6b65a60da2d93724558e152e2c6bc8281e9a https://github.com/fluffy-linux/libxml2.git#refs/heads/fluffy/v$VERSION
+)
+
+NEEDS=(
+    glibc
+    icu
+    readline
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils-pass1
+        diffutils-pass1
+        gcc
+        glibc
+        grep
+        icu
+        libgcc
+        libstdcpp
+        linux-headers
+        meson
+        ncurses
+        ninja
+        pkgconf
+        python
+        readline
+        sed
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        gcc
+        glibc
+        grep
+        icu
+        libgcc
+        libstdcpp
+        linux-headers
+        meson
+        ncurses
+        ninja
+        pkgconf
+        python
+        readline
+        sed
+    )
+fi
+
+MAKE() {
+    sed -i "/'git'/,+3d" meson.build
+
+    mkdir -p build
+    cd build
+    CFLAGS="-DXML_XML_DEFAULT_CATALOG='\"file:///sw/*/etc/xml/catalog file:///etc/xml/catalog\"' ${CFLAGS:-}" \
+    meson setup .. \
+        --prefix=/sw/libxml2 \
+        --sysconfdir=/etc \
+        --buildtype=release \
+        -D history=enabled \
+        -D icu=enabled
+    ninja
+}
+
+CHECK() {
+    meson test -C build --print-errorlogs
+}
+
+INSTALL() {
+    DESTDIR=$DESTDIR ninja -C build install
+    sed "s/--static/--shared/" -i $DESTDIR/sw/libxml2/bin/xml2-config
+}

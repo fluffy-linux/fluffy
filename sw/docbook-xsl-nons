@@ -1,0 +1,138 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.79.2
+
+# The DocBook XSL stylesheets without namespaces, as BLFS 13.1-systemd
+# installs them.  Built straight from Fluffy's branch (our commits on
+# upstream's release/1.79.2 tag), fetched with git: the tag holds the
+# namespaced sources, so MAKE builds them (make base) and derives the
+# non-namespaced set from them as the release does (xslnons-build and the
+# fix-ups in releasetools/xslnons.mk).  BLFS's stack-overflow patch is
+# upstream's own fix from after 1.79.2 (1c41ae5ae), cherry-picked onto the
+# branch.  BLFS's /etc/xml/catalog entries go into this
+# package's own catalog, /sw/docbook-xsl-nons/etc/xml/catalog.
+ARCHIVES=(
+    7c93fae0d37793f914657416f87f9a8f6c82716c https://github.com/fluffy-linux/xslt10-stylesheets.git#refs/heads/fluffy/release/$VERSION
+)
+
+NEEDS=()
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        coreutils-pass1
+        diffutils-pass1
+        docbook-xml
+        findutils-pass1
+        gawk-pass1
+        grep
+        libxml2
+        libxslt
+        make-pass1
+        perl
+        sed
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        coreutils
+        diffutils
+        docbook-xml
+        findutils
+        gawk
+        grep
+        libxml2
+        libxslt
+        make
+        perl
+        sed
+    )
+fi
+
+MAKE() {
+    local xslt=$PWD/buildtools/xsltproc-plain
+
+    # xsl/Makefile's base target, one directory at a time, so that a
+    # directory's failure stops the build (base's shell loop ignores it).
+    # extensions is left out: its jars (saxon65, xalan27, webhelpindexer)
+    # are Java, built with ant, for the Java XSLT processors; Fluffy has
+    # none, so extensions installs without them.
+    local d
+    for d in common lib html fo manpages htmlhelp javahelp eclipse roundtrip \
+             slides website xhtml xhtml-1_1 webhelp xhtml5 epub3
+    do
+        make -C xsl/$d repo_dir=$PWD XSLT=$xslt
+    done
+    # extensions' targets that need no Java: the libxslt python helpers, and
+    # the indexer's third-party jars and notices, which are in git.
+    make -C xsl/extensions repo_dir=$PWD xslt.py docbook.py README.LIBXSLT
+    cp -p xsl-webhelpindexer/lib/*.jar xsl-webhelpindexer/*.txt xsl/extensions/
+    # tests is filled by the release's distrib step, not base.
+    make -C xsl/tests repo_dir=$PWD
+    perl releasetools/xslnons-build xsl nons
+
+    # What the release leaves out (DISTRIB_EXCLUDES in xsl/Makefile,
+    # ZIP_EXCLUDES in releasetools/Variables.mk): build files, literate
+    # sources and intermediates.
+    find nons \( -name .gitignore -o -name .cvsignore -o -name 'Makefile' \
+        -o -name Makefile.common -o -name Makefile.incl -o -name Makefile.param \
+        -o -name Makefile.tests -o -name README.BUILD -o -name param.ent \
+        -o -name '*.xweb' -o -name '.param.*' -o -name '.lib.*' \
+        -o -name .make-catalog.xsl -o -name '*~' -o -name '*.pyc' \) -delete
+    rm -f nons/xhtml/html2xhtml.xsl nons/xhtml-1_1/html2xhtml.xsl
+    rm -rf nons/epub/bin/spec nons/tools/xsl
+
+    # releasetools/xslnons.mk's fix-ups of the non-namespaced set.
+    $xslt xsl/webhelp/docsrc/readme.xml xsl/tools/xsl/build/db4-upgrade.xsl \
+        nons/webhelp/docsrc/readme.xml
+    $xslt xsl/webhelp/docsrc/xinclude-test.xml xsl/tools/xsl/build/db4-upgrade.xsl \
+        nons/webhelp/docsrc/xinclude-test.xml
+    sed -i "s/validate-against-dtd=true/validate-against-dtd=false/" \
+        nons/webhelp/build.properties
+    sed -i "s/^\(.*\)<fm:Branch>XSL Stylesheets<\/fm:Branch>$/\1<fm:Branch>XSL-NS Stylesheets<\/fm:Branch>/" \
+        nons/VERSION
+    sed -i "s/^\(.*\)<xsl:param name=\"DistroName\">docbook-xsl<\/xsl:param>$/\1<xsl:param name=\"DistroName\">docbook-xsl-nons<\/xsl:param>/" \
+        nons/VERSION
+}
+
+INSTALL() {
+    local xsl=/sw/docbook-xsl-nons/share/xml/docbook/xsl-stylesheets-nons-$VERSION
+    local doc=$DESTDIR/sw/docbook-xsl-nons/share/doc/docbook-xsl-nons-$VERSION
+    local catalog=$DESTDIR/sw/docbook-xsl-nons/etc/xml/catalog
+
+    cd nons
+    install -v -m755 -d $DESTDIR$xsl
+    cp -v -R VERSION assembly common eclipse epub epub3 extensions fo \
+             highlighting html htmlhelp images javahelp lib manpages params \
+             profiling roundtrip slides template tests tools webhelp website \
+             xhtml xhtml-1_1 xhtml5 \
+        $DESTDIR$xsl
+    ln -svf VERSION $DESTDIR$xsl/VERSION.xsl
+    install -v -m644 -D README $doc/README.txt
+    # The release's NEWS and its RELEASE-NOTES .html, .txt and .pdf are made
+    # from the project's change history (releasetools/changelog.py reads git
+    # log) and with a text browser and FO; a git archive has neither, so the
+    # release notes are installed as their source, RELEASE-NOTES.xml.
+    install -v -m644 RELEASE-NOTES.xml $doc
+
+    install -v -d -m755 $DESTDIR/sw/docbook-xsl-nons/etc/xml
+    xmlcatalog --noout --create $catalog
+    local uri rewrite
+    for uri in http{,s}://cdn.docbook.org/release/xsl-nons/{$VERSION,current} \
+               http://docbook.sourceforge.net/release/xsl/current
+    do
+        for rewrite in System URI
+        do
+            xmlcatalog --noout --add "rewrite$rewrite" \
+                "$uri" \
+                "$xsl" \
+                $catalog
+        done
+    done
+}

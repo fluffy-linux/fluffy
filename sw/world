@@ -24,6 +24,8 @@ NEEDS=(
     dbus
     dejagnu
     diffutils
+    docbook-xml
+    docbook-xsl-nons
     e2fsprogs
     expat
     expect
@@ -44,6 +46,7 @@ NEEDS=(
     grub
     gzip
     iana-etc
+    icu
     inetutils
     init
     iproute2
@@ -60,6 +63,8 @@ NEEDS=(
     libtasn1
     libtool
     libxcrypt
+    libxml2
+    libxslt
     linux
     linux-headers
     lz4
