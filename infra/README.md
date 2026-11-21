@@ -65,6 +65,13 @@ az keyvault secret set \
 
 ## The agent image
 
+Needs `infra/terraform` applied first: Packer publishes into its gallery,
+and the Key Vault secret above needs its vault.  New pay-as-you-go
+subscriptions start with small vCPU quotas (none at all for the v5
+families): the build VM is a `Standard_D4as_v4` for that reason, and spot
+agents need "Total Regional Low-priority vCPUs" raised (Quotas, Compute,
+East US) to at least an agent's size.
+
 ```
 packer init infra/packer
 packer build \

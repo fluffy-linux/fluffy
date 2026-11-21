@@ -47,10 +47,13 @@ variable "image_name" {
   default = "fluffy-ci-agent"
 }
 
+# A family with quota on the subscription (new pay-as-you-go subscriptions
+# start with none for the v5 families) and SCSI disks, as the Ubuntu image
+# expects.
 variable "build_vm_size" {
   description = "Size of the temporary VM Packer provisions the image on."
   type        = string
-  default     = "Standard_D4as_v5"
+  default     = "Standard_D4as_v4"
 }
 
 # Fluffy's ctypes.sh fork (fluffy/v1.3), which swctl loads on the host.
