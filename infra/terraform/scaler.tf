@@ -1,7 +1,7 @@
 # The scaler: a timer-triggered function (infra/scaler) that raises each
 # agent scale set's size to meet its Buildkite queue, every minute.  Flex
-# Consumption, within its free grant at this volume.  Its code is deployed
-# separately (infra/README.md).
+# Consumption, within its free grant at this volume.  terraform apply also
+# deploys its code, whenever the code changes (scaler_code below).
 
 resource "azurerm_user_assigned_identity" "scaler" {
   name                = "fluffy-ci-scaler"
@@ -109,6 +109,33 @@ resource "azurerm_function_app_flex_consumption" "scaler" {
     azurerm_role_assignment.scaler_vault,
     azurerm_role_assignment.scaler_scale_sets,
   ]
+}
+
+# The scaler's code, zipped by Terraform and deployed with the Azure CLI
+# (az login's session), again whenever its checksum changes.  Azure builds
+# it remotely: pip installs requirements.txt for the runtime's Python.
+data "archive_file" "scaler" {
+  type        = "zip"
+  source_dir  = "${path.module}/../scaler"
+  output_path = "${path.module}/.terraform/scaler.zip"
+  excludes    = ["__pycache__", "__pycache__/*"]
+}
+
+resource "terraform_data" "scaler_code" {
+  triggers_replace = [
+    data.archive_file.scaler.output_base64sha256,
+    azurerm_function_app_flex_consumption.scaler.id,
+  ]
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      az functionapp deployment source config-zip \
+          --resource-group "${azurerm_resource_group.ci.name}" \
+          --name "${azurerm_function_app_flex_consumption.scaler.name}" \
+          --src "${data.archive_file.scaler.output_path}" \
+          --build-remote true
+    EOT
+  }
 }
 
 output "scaler_function_app" {

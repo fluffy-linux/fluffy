@@ -93,16 +93,9 @@ its agent exits, for debugging.
 agent scale set's size to meet its Buildkite queue (busy agents plus
 scheduled jobs, never above `max_instances`) and never lowers it: agents
 delete their own VMs after 10 idle minutes.  `terraform apply` creates the
-function app; deploy its code with
-
-```
-(cd infra/scaler && zip -qr ../../scaler.zip function_app.py host.json requirements.txt)
-az functionapp deployment source config-zip --resource-group fluffy-ci \
-    --name "$(terraform -chdir=infra/terraform output -raw scaler_function_app)" \
-    --src scaler.zip --build-remote true
-rm scaler.zip
-```
-
-and see what it did each minute in the function's log stream (portal) or
-with `az webapp log tail`.  A scale set's queue must be named
+function app and deploys its code, again whenever the code changes: it
+zips `infra/scaler` and runs `az functionapp deployment source config-zip`
+with your `az login` session, and Azure pip-installs `requirements.txt`
+itself.  See what it did each minute in the function's log stream (portal)
+or with `az webapp log tail`.  A scale set's queue must be named
 (`buildkite_queue` in `agent_queues`) for the scaler to manage it.
