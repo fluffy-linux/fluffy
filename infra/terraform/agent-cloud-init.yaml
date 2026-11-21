@@ -10,15 +10,15 @@ write_files:
       FLUFFY_CI_KEY_VAULT=${key_vault}
       FLUFFY_CI_IDENTITY_CLIENT_ID=${identity_client_id}
 
-# The pipeline's FLUFFY root.  bootstrap.sh mounts $FLUFFY from /etc/fstab
-# when it is not already a mount point, so it is a bind mount of itself,
-# on the OS disk.
-bootcmd:
+# The pipeline's FLUFFY root, /mnt/ci.  bootstrap.sh mounts $FLUFFY from
+# /etc/fstab when it is not already a mount point, so it is a bind mount
+# of itself.  runcmd runs after cloud-init has mounted the VM's local temp
+# disk on /mnt (sizes with one have it; it is free and fast, and a world
+# fits easily), so /mnt/ci lands on it; without a temp disk it is on the
+# OS disk.  Then start the agent: its unit only starts once agent.env
+# exists, which write_files creates after systemd has already skipped it.
+runcmd:
   - mkdir -p /mnt/ci
   - grep -q ' /mnt/ci ' /etc/fstab || echo '/mnt/ci /mnt/ci none bind 0 0' >> /etc/fstab
   - mountpoint -q /mnt/ci || mount /mnt/ci
-
-# The agent's unit only starts once agent.env exists, which write_files
-# runs after systemd has already skipped it at boot.
-runcmd:
   - systemctl start buildkite-agent
