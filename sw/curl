@@ -46,7 +46,6 @@ then
         pkgconf
         python
         sed
-        tar-pass1
         xz
         zlib
         zstd
@@ -73,7 +72,6 @@ else
         pkgconf
         python
         sed
-        tar
         xz
         zlib
         zstd
