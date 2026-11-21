@@ -26,6 +26,7 @@ then
         libgcc
         linux-headers
         make-pass1
+        sed
     )
 else
     BUILD_NEEDS=(
@@ -37,6 +38,7 @@ else
         libgcc
         linux-headers
         make
+        sed
     )
 fi
 
