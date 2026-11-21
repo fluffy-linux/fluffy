@@ -8,3 +8,7 @@ infra/**/.terraform/
 *.tfvars
 !*.example.tfvars
 crash.log
+# Secrets never belong in the repository (keep them outside it entirely).
+*token*.txt
+*.token
+*.secret
