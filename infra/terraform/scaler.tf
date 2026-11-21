@@ -88,6 +88,10 @@ resource "azurerm_function_app_flex_consumption" "scaler" {
   site_config {}
 
   app_settings = {
+    # The host's storage, as the managed identity.  The provider would set
+    # AzureWebJobsStorage to a connection string with an empty account key,
+    # which takes precedence over the __ settings; empty, it doesn't.
+    AzureWebJobsStorage              = ""
     AzureWebJobsStorage__accountName = azurerm_storage_account.scaler.name
     AzureWebJobsStorage__credential  = "managedidentity"
     AzureWebJobsStorage__clientId    = azurerm_user_assigned_identity.scaler.client_id
