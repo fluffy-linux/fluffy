@@ -1,10 +1,18 @@
+env:
+  FLUFFY: /mnt/ci
+  CROSS: "1"
+
 steps:
-  - label: "world"
-    timeout_in_minutes: 720
-    env:
-      FLUFFY: /mnt/ci
-      CROSS: "1"
+  - label: "plan"
     command: |
+      set -euo pipefail
       sudo FLUFFY="$$FLUFFY" ./bootstrap.sh
-      sudo FLUFFY="$$FLUFFY" CROSS="$$CROSS" ./swctl build world
-      sudo FLUFFY="$$FLUFFY" ./bootstrap.sh
+      plan="$$(mktemp)"
+      sudo FLUFFY="$$FLUFFY" CROSS="$$CROSS" ./swctl buildkite world > "$$plan"
+      buildkite-agent pipeline upload "$$plan"
+      rm -f "$$plan"
+
+  - wait
+
+  - label: "bootstrap"
+    command: sudo FLUFFY="$$FLUFFY" ./bootstrap.sh
