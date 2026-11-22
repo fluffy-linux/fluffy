@@ -7,8 +7,12 @@ fi
 
 VERSION=84.0.0
 
+# Built straight from Fluffy's branch (upstream's v84.0.0 tag; Fluffy has
+# no commits on it): swctl fetches the pinned commit with git.  The tag has
+# no setuptools.egg-info, which the release tarball carries, so MAKE
+# generates it first (see there).
 ARCHIVES=(
-    f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73 https://github.com/fluffy-linux/setuptools/releases/download/v$VERSION/setuptools-$VERSION.tar.gz
+    72e919a8b10aaafc041205d4e3ae0e6a2e1e5f87 https://github.com/fluffy-linux/setuptools.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -35,6 +39,19 @@ else
 fi
 
 MAKE() {
+    # setuptools builds itself.  The release tarball carries the
+    # setuptools.egg-info its build generates; git has bootstrap.egg-info
+    # instead, which names just the commands that write that (egg_info and
+    # its writers).  pip without build isolation goes straight to the
+    # dist_info command, so first run the get_requires_for_build_wheel
+    # hook, as an isolated build would: it runs egg_info.  Then remove
+    # bootstrap.egg-info, which the tarball doesn't ship either: pip's
+    # backend-path finder answers a lookup of setuptools' metadata with
+    # every distribution in the source tree, so whichever the directory
+    # lists first wins, and bootstrap's (version 1.0) would make setuptools
+    # think it is 1.0 (bdist_wheel decides on that how to find licenses).
+    python3 -c 'import setuptools.build_meta as b; b.get_requires_for_build_wheel()'
+    rm -r bootstrap.egg-info
     pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 }
 

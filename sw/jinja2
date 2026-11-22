@@ -7,8 +7,10 @@ fi
 
 VERSION=3.1.6
 
+# Built straight from Fluffy's branch (upstream's 3.1.6 tag; Fluffy has no
+# commits on it): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d https://github.com/fluffy-linux/jinja/releases/download/$VERSION/jinja2-$VERSION.tar.gz
+    15206881c006c79667fe5154fe80c01c65410679 https://github.com/fluffy-linux/jinja.git#refs/heads/fluffy/$VERSION
 )
 
 NEEDS=(

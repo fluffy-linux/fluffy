@@ -7,8 +7,10 @@ fi
 
 VERSION=0.48.0
 
+# Built straight from Fluffy's branch (upstream's 0.48.0 tag; Fluffy has no
+# commits on it): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    94800765601e9171bf5d58d066e640662842bcedcbab982b2c90787a2c987322 https://github.com/fluffy-linux/wheel/releases/download/$VERSION/wheel-$VERSION.tar.gz
+    21c4da4c54c3b354cc22dc7f6f6374ffcd560e84 https://github.com/fluffy-linux/wheel.git#refs/heads/fluffy/$VERSION
 )
 
 NEEDS=(

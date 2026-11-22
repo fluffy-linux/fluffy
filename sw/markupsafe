@@ -7,8 +7,10 @@ fi
 
 VERSION=3.0.3
 
+# Built straight from Fluffy's branch (upstream's 3.0.3 tag; Fluffy has no
+# commits on it): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698 https://github.com/fluffy-linux/markupsafe/releases/download/$VERSION/markupsafe-$VERSION.tar.gz
+    297fc8e356e6836a62087949245d09a28e9f1b13 https://github.com/fluffy-linux/markupsafe.git#refs/heads/fluffy/$VERSION
 )
 
 NEEDS=(
