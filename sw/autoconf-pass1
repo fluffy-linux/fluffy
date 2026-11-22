@@ -15,7 +15,7 @@ VERSION=2.73
 # host's.  The man pages need help2man and the manual makeinfo; neither is
 # built.
 ARCHIVES=(
-    c5692296902658f85dba87828d66b1efb75a29da https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v$VERSION
+    e22e555ccb88ac24a4cbdb20dc6629191bb5d1e8 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(

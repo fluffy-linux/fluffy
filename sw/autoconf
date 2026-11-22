@@ -7,10 +7,16 @@ fi
 
 VERSION=2.73
 
+# Built straight from Fluffy's branch (our commits on upstream's v2.73
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure or Makefile.in, so MAKE regenerates them with autoconf-pass1
+# and automake-pass1 in cross-build, the previous autoconf and automake in
+# fluffy-build.  The man pages are made with help2man, the release's
+# 1.49.3, from its tag (a Perl script that writes itself; Fluffy doesn't
+# package it).
 ARCHIVES=(
-    9fd672b1c8425fac2fa67fa0477b990987268b90ff36d5f016dae57be0d6b52e https://github.com/fluffy-linux/autoconf/releases/download/v$VERSION/autoconf-$VERSION.tar.xz
-    67fb6445f64c2c6e22bfa88b1df327bcfab341ba210ffa73d55478eeb6c71ddf file://autoconf-$VERSION-fluffy-source.patch
-    83e1ba4e9b29b1d4407539d8da5a39993194ce04f301bf34233f005ed414cc5b file://autoconf-$VERSION-fluffy-test.patch
+    e22e555ccb88ac24a4cbdb20dc6629191bb5d1e8 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v$VERSION
+    0503f547e06b5d3fd91533aae86b560e104140d7 https://github.com/fluffy-linux/help2man.git#refs/tags/v1.49.3
 )
 
 if test -v CROSS
@@ -41,6 +47,8 @@ fi
 if test -v CROSS
 then
     BUILD_NEEDS=(
+        autoconf-pass1
+        automake-pass1
         bash
         binutils
         coreutils-pass1
@@ -57,7 +65,6 @@ then
         linux-headers
         m4
         make-pass1
-        patch-pass1
         perl
         sed
         tar-pass1
@@ -83,7 +90,6 @@ else
         linux-headers
         m4
         make
-        patch
         perl
         sed
         tar
@@ -93,19 +99,21 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../autoconf-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../autoconf-$VERSION-fluffy-test.patch
+    mkdir .help2man
+    tar -xf ../help2man.tar -C .help2man
+    perl .help2man/help2man/help2man.PL --stdout > .help2man/help2man.pl
 
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/autoconf
-    make
+    make HELP2MAN="perl $PWD/.help2man/help2man.pl"
 }
 
 CHECK() {
-    make check
+    make HELP2MAN="perl $PWD/.help2man/help2man.pl" check
 }
 
 INSTALL() {
-    make install
+    make HELP2MAN="perl $PWD/.help2man/help2man.pl" install
 }
