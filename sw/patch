@@ -7,8 +7,14 @@ fi
 
 VERSION=2.8
 
+# Built straight from Fluffy's branch (our commits on upstream's v2.8
+# tag): swctl fetches the pinned commit, and the gnulib commit it pins,
+# with git.  The tag has no configure, Makefile.in or gnulib files, so
+# MAKE bootstraps it.
 ARCHIVES=(
-    f87cee69eec2b4fcbf60a396b030ad6aa3415f192aa5f7ee84cad5e11f7f5ae3 https://github.com/fluffy-linux/patch/releases/download/v$VERSION/patch-$VERSION.tar.xz
+    55ad7d62dd7661d31422a91df3c88bc62d8f9900 https://github.com/fluffy-linux/patch.git#refs/heads/fluffy/v$VERSION
+    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )
 
 NEEDS=(
@@ -20,6 +26,7 @@ then
     BUILD_NEEDS=(
         bash
         binutils
+        bison
         coreutils
         diffutils
         findutils
@@ -39,6 +46,7 @@ else
     BUILD_NEEDS=(
         bash
         binutils
+        bison
         coreutils
         diffutils
         findutils
@@ -56,8 +64,15 @@ else
     )
 fi
 
+# Bootstrapped with the autotools patch's release tarball was made with.
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     $CONFIG_SHELL ./configure \
         --prefix=/sw/patch
     make
