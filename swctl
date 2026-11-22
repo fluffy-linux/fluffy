@@ -1513,8 +1513,10 @@ plan_pkgs() {
 # with plain curl, anonymously (a public package) unless
 # FLUFFY_CACHE_TOKEN_FILE names a file holding a token.  With that token
 # file swctl also publishes what it builds, with oras (CI only).  Local
-# builds without these variables never touch it.  A cache problem never
-# fails a build: swctl warns and builds, or keeps what it built.
+# builds without these variables never touch it.  A miss (the registry has
+# no such tag) just means building; any other cache failure (network,
+# HTTP error, token, a manifest without a layer, an image that doesn't
+# match its digest, a failed publish) is fatal.
 cache_enabled() {
     test -n "${FLUFFY_CACHE_REGISTRY:-}"
 }
@@ -1572,8 +1574,13 @@ cache_image_digest() {
 # cache_restore PKG RECIPE_CHECKSUM: register the image a CI build of
 # exactly this recipe produced, downloading it unless it is already here.
 cache_restore() {
-    local pkg="$1" recipe_chk="$2" img_chk="" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}"
-    cache_image_digest "$pkg" "$recipe_chk" img_chk || return 1
+    local pkg="$1" recipe_chk="$2" img_chk="" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" rc=0
+    cache_image_digest "$pkg" "$recipe_chk" img_chk || rc=$?
+    case "$rc" in
+        0) ;;
+        1) return 1 ;;
+        *) fatal "cache: could not look up $(cache_tag "$pkg" "$recipe_chk") in $FLUFFY_CACHE_REGISTRY" ;;
+    esac
 
     local src="/sw/$pkg-${pkg_ver[$pkg]}.squashfs" tgt="/sw/${pkg%-pass*}" code
     if ! check_sha256 "$src" "$img_chk"
@@ -1584,8 +1591,7 @@ cache_restore() {
         if test "$code" != 200 || ! check_sha256 "$src.new" "$img_chk"
         then
             rm -f "$src.new"
-            log "cache: could not fetch a good image for $pkg (HTTP $code)"
-            return 1
+            fatal "cache: could not fetch a good image for $pkg from $FLUFFY_CACHE_REGISTRY (HTTP $code)"
         fi
         mv -f "$src.new" "$src"
     fi
@@ -1630,10 +1636,13 @@ cache_publish() {
     test "$fs" != "$NULL" || return 1
     fs_str "$fs" source src
     tag="$(cache_tag "$pkg" "$recipe_chk")"
-    if cache_image_digest "$pkg" "$recipe_chk" existing
-    then
-        return 0
-    fi
+    local rc=0
+    cache_image_digest "$pkg" "$recipe_chk" existing || rc=$?
+    case "$rc" in
+        0) return 0 ;;
+        1) ;;
+        *) return 1 ;;
+    esac
     (
         cd "${src%/*}"
         oras push --no-tty --password-stdin -u fluffy \
@@ -1714,9 +1723,10 @@ build_pkgs() {
             continue
         fi
 
+        local cache_start=$SECONDS
         if cache_enabled && cache_restore "$pkg" "$current_recipe_chk"
         then
-            log "$pkg [$idx/$total]: FROM CACHE"
+            log "$pkg [$idx/$total]: CACHED($(format_elapsed $(( SECONDS - cache_start ))))"
             reload_fstab
             fs="$NULL"
             find_fs_by_pkg "$pkg" fs 1
@@ -1730,7 +1740,7 @@ build_pkgs() {
         reload_fstab
         if cache_enabled && ! cache_publish "$pkg" "$current_recipe_chk"
         then
-            log "cache: could not publish $pkg; the build goes on"
+            fatal "cache: could not publish $pkg to $FLUFFY_CACHE_REGISTRY"
         fi
 
         fs="$NULL"
