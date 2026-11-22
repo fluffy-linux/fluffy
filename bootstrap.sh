@@ -49,6 +49,67 @@ then
     tr -d '-' < /proc/sys/kernel/random/uuid > "$FLUFFY/etc/machine-id"
 fi
 
+# glibc reads /etc/hosts, /etc/services and /etc/protocols at those paths.
+# A root gets minimal copies, only where it has none: enough for localhost
+# and the common services (libstdc++'s resolver tests look up
+# localhost/http), and the same on a fresh CI root as on a local one.
+if test ! -f "$FLUFFY/etc/hosts"
+then
+    cat << "HOSTS_EOF" > "$FLUFFY/etc/hosts"
+127.0.0.1 localhost
+::1 localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+HOSTS_EOF
+fi
+
+if test ! -f "$FLUFFY/etc/protocols"
+then
+    cat << "PROTOCOLS_EOF" > "$FLUFFY/etc/protocols"
+ip      0       IP
+icmp    1       ICMP
+tcp     6       TCP
+udp     17      UDP
+ipv6    41      IPv6
+PROTOCOLS_EOF
+fi
+
+if test ! -f "$FLUFFY/etc/services"
+then
+    cat << "SERVICES_EOF" > "$FLUFFY/etc/services"
+echo            7/tcp
+echo            7/udp
+discard         9/tcp           sink null
+discard         9/udp           sink null
+daytime         13/tcp
+daytime         13/udp
+qotd            17/tcp          quote
+chargen         19/tcp          ttytst source
+chargen         19/udp          ttytst source
+ftp-data        20/tcp
+ftp             21/tcp
+ssh             22/tcp
+telnet          23/tcp
+smtp            25/tcp          mail
+time            37/tcp          timserver
+time            37/udp          timserver
+domain          53/tcp
+domain          53/udp
+http            80/tcp          www
+http            80/udp
+pop3            110/tcp         pop-3
+sunrpc          111/tcp         portmapper
+sunrpc          111/udp         portmapper
+auth            113/tcp         ident
+nntp            119/tcp         readnews
+ntp             123/udp
+imap            143/tcp         imap4
+snmp            161/udp
+https           443/tcp
+https           443/udp
+SERVICES_EOF
+fi
+
 if ! compgen -G "$FLUFFY/etc/systemd/network/*.network" >/dev/null
 then
     mkdir -pv "$FLUFFY/etc/systemd/network"
