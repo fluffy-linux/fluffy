@@ -2,8 +2,13 @@ ON=host-build
 
 VERSION=3.8.0
 
+# Built straight from Fluffy's branch (upstream's v3.8.0 tag), as libffi
+# is: see there.
 ARCHIVES=(
-    7da3e2d9a171eb0a038f592ecad3ff2bb2550f3496d87b3b29ad0cf4430c0db4 https://github.com/fluffy-linux/libffi/releases/download/v$VERSION/libffi-$VERSION.tar.gz
+    12ffd1f9dc56fcea79d2f742f424301ae668d663 https://github.com/fluffy-linux/libffi.git#refs/heads/fluffy/v$VERSION
+    ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
+    ff57e5acd76a5f28f484b91f1d3787c796a2f94c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )
 
 NEEDS=(
@@ -16,7 +21,16 @@ BUILD_NEEDS=(
     linux-headers
 )
 
+# Regenerated with the autotools libffi's release tarball was made with.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
+    autoconf_build
+    automake_build
+    libtool_build
+    autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/libffi \
         --host=$FLUFFY_TGT \
