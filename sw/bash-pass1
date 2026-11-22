@@ -3,8 +3,7 @@ ON=host-build
 VERSION=5.3
 
 ARCHIVES=(
-    0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba https://github.com/fluffy-linux/bash/releases/download/bash-$VERSION/bash-$VERSION.tar.gz
-    de296e30a85cacb6eaa6c111e7f93326cc54465d6b3fa936e850dee1807a0ecc file://bash-$VERSION-fluffy-source.patch
+    d7705765d4680cae5e243edfe28b8cd146c25f47 https://github.com/fluffy-linux/bash.git#refs/heads/fluffy/bash-$VERSION
 )
 
 NEEDS=(
@@ -20,8 +19,6 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i ../bash-$VERSION-fluffy-source.patch
-
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/bash \
