@@ -1,28 +1,36 @@
 # Automake at the version a package's release tarball was generated with,
 # built from git inside the package's own build to regenerate its
-# Makefile.in files.  A version's file (automake-<ver>.common) appends that
-# version's branch to ARCHIVES, so it is placed as ../automake.tar, and
-# sources this file; MAKE calls automake_build after autoconf_build (its
-# bootstrap runs that autoconf) and before autoreconf.
+# Makefile.in files.  The recipe lists that version's Fluffy branch in its
+# own ARCHIVES, so it is placed as ../automake.tar:
 #
-# Its aclocal searches its own macros, then, through a dirlist, every
-# package's /sw/*/share/aclocal.  The man pages need help2man and the
-# manual makeinfo; neither is built, nor the example tarball.
+#     <commit> https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v<version>
+#
+# and sources this file; MAKE calls automake_build after autoconf_build
+# (its bootstrap runs that autoconf) and before autoreconf.
+#
+# Building automake from git takes only that autoconf and perl: the
+# host's perl in host-build, perl-pass1 in cross-build (a recipe naming
+# the final perl gets that instead), the final perl in fluffy-build.  Its
+# aclocal searches its own macros, then, through a dirlist, every
+# package's /sw/*/share/aclocal.  The man pages, the manual and the
+# example tarball are not built.
 # It installs into the build's own prefix, never into a package's DESTDIR.
 
-if test "$ON" != host-build
-then
-    BUILD_NEEDS+=(
-        perl
-    )
-    # The helper unpacks its sources with tar.
-    if test -v CROSS
-    then
-        BUILD_NEEDS+=(tar-pass1)
-    else
-        BUILD_NEEDS+=(tar)
-    fi
-fi
+case "$ON" in
+    cross-build)
+        BUILD_NEEDS+=(
+            perl-pass1
+            # The helper unpacks its sources with tar.
+            tar-pass1
+        )
+        ;;
+    fluffy-build)
+        BUILD_NEEDS+=(
+            perl
+            tar
+        )
+        ;;
+esac
 
 automake_build() {
     local prefix="$PWD/.autotools"

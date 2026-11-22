@@ -1,27 +1,35 @@
 # Libtool at the version a package's release tarball was generated with,
-# built from git inside the package's own build for libtoolize.  A
-# version's file (libtool-<ver>.common) appends that version's branch to
-# ARCHIVES, so it is placed as ../libtool.tar with its gnulib and
-# gl-mod/bootstrap submodules, and sources this file; MAKE calls
-# libtool_build after autoconf_build and automake_build (its bootstrap runs
-# them) and before autoreconf.  It installs beside them, so their aclocal
-# finds libtool's macros.  The man pages and manual are not built.
+# built from git inside the package's own build for libtoolize.  The
+# recipe lists that version's Fluffy branch in its own ARCHIVES, so it is
+# placed as ../libtool.tar with its gnulib and gl-mod/bootstrap
+# submodules:
+#
+#     <commit> https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v<version>
+#
+# and sources this file; MAKE calls libtool_build after autoconf_build and
+# automake_build (its bootstrap runs them) and before autoreconf.  It
+# installs beside them, so their aclocal finds libtool's macros.  The man
+# pages, the manual and doc/notes.txt (all made with makeinfo) are not
+# built.
 # It installs into the build's own prefix, never into a package's DESTDIR.
 
-if test "$ON" != host-build
-then
-    BUILD_NEEDS+=(
-        patch
-        xz
-    )
-    # The helper unpacks its sources with tar.
-    if test -v CROSS
-    then
-        BUILD_NEEDS+=(tar-pass1)
-    else
-        BUILD_NEEDS+=(tar)
-    fi
-fi
+case "$ON" in
+    cross-build)
+        BUILD_NEEDS+=(
+            patch
+            # The helper unpacks its sources with tar.
+            tar-pass1
+            xz
+        )
+        ;;
+    fluffy-build)
+        BUILD_NEEDS+=(
+            patch
+            tar
+            xz
+        )
+        ;;
+esac
 
 libtool_build() {
     local prefix="$PWD/.autotools"
@@ -31,7 +39,7 @@ libtool_build() {
         cd .autotools-build/libtool
         ${CONFIG_SHELL:-/bin/sh} ./bootstrap --skip-git --skip-po --gnulib-srcdir=gnulib
         ${CONFIG_SHELL:-/bin/sh} ./configure --prefix="$prefix"
-        make man1_MANS= dist_man1_MANS= INFO_DEPS=
-        make man1_MANS= dist_man1_MANS= INFO_DEPS= DESTDIR= install
+        make man1_MANS= dist_man1_MANS= INFO_DEPS= notes_txt=
+        make man1_MANS= dist_man1_MANS= INFO_DEPS= notes_txt= DESTDIR= install
     )
 }

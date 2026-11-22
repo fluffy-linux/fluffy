@@ -9,10 +9,15 @@ VERSION=1.1.45
 
 # Built straight from Fluffy's branch (our commits on upstream's v1.1.45
 # tag): swctl fetches the pinned commit with git.  The tag has no
-# configure or Makefile.in, so MAKE regenerates them; otherwise it matches
-# the release tarball, docs included.  As BLFS 13.1-systemd builds it.
+# configure or Makefile.in, so MAKE regenerates them with the autoconf,
+# automake and libtool the release tarball was made with (2.71, 1.16.5,
+# 2.4.7), from their Fluffy branches; otherwise it matches the release
+# tarball, docs included.  As BLFS 13.1-systemd builds it.
 ARCHIVES=(
     05a49752f10d942a55cbd0a02fa87d975f7ba846 https://github.com/fluffy-linux/libxslt.git#refs/heads/fluffy/v$VERSION
+    e7648086b3e532ccae07faa400570f86aa3e6780 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    18416d641dc5c220ec82283ff43cdaa7cb0d619c https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
+    5e3be7ab26ea416c6c29a3b6536d5e8d778f4142 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )
 
 NEEDS=(
@@ -60,9 +65,9 @@ else
 fi
 
 # Regenerated with the autotools libxslt's release tarball was made with.
-source sw/autoconf-2.71.common
-source sw/automake-1.16.5.common
-source sw/libtool-2.4.7.common
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
 
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash

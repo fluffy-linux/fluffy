@@ -1,31 +1,41 @@
 # Autoconf at the version a package's release tarball was generated with,
 # built from git inside the package's own build to regenerate its
-# configure.  A version's file (autoconf-<ver>.common) appends that
-# version's branch to ARCHIVES, so it is placed as ../autoconf.tar, and
-# sources this file; MAKE calls autoconf_build before autoreconf.
+# configure.  The recipe lists that version's Fluffy branch in its own
+# ARCHIVES, so it is placed as ../autoconf.tar:
+#
+#     <commit> https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v<version>
+#
+# and sources this file; MAKE calls autoconf_build before autoreconf.
 #
 # Building autoconf from git takes an existing autoconf and automake (its
-# own configure is generated): the host's in host-build, Fluffy's packaged
-# ones otherwise.  The man pages need help2man and the manual makeinfo;
-# neither is built.
+# own configure is generated), and m4 and perl: the host's in host-build,
+# autoconf-pass1, automake-pass1, m4-pass1 and perl-pass1 in cross-build
+# (a recipe naming the final m4 or perl gets those instead), the final
+# packages in fluffy-build.  The man pages need help2man and the manual
+# makeinfo; neither is built.
 # It installs into the build's own prefix, never into a package's DESTDIR.
 
-if test "$ON" != host-build
-then
-    BUILD_NEEDS+=(
-        autoconf
-        automake
-        m4
-        perl
-    )
-    # The helper unpacks its sources with tar.
-    if test -v CROSS
-    then
-        BUILD_NEEDS+=(tar-pass1)
-    else
-        BUILD_NEEDS+=(tar)
-    fi
-fi
+case "$ON" in
+    cross-build)
+        BUILD_NEEDS+=(
+            autoconf-pass1
+            automake-pass1
+            m4-pass1
+            perl-pass1
+            # The helper unpacks its sources with tar.
+            tar-pass1
+        )
+        ;;
+    fluffy-build)
+        BUILD_NEEDS+=(
+            autoconf
+            automake
+            m4
+            perl
+            tar
+        )
+        ;;
+esac
 
 autoconf_build() {
     local prefix="$PWD/.autotools"
