@@ -16,7 +16,7 @@ output "gallery_name" {
 }
 
 output "agent_image_definition" {
-  value = azurerm_shared_image.agent.name
+  value = azurerm_shared_image.agent_nvme.name
 }
 
 output "agents_subnet_id" {

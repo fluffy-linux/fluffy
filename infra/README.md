@@ -70,25 +70,24 @@ az keyvault secret set \
 
 Needs `infra/terraform` applied first: Packer publishes into its gallery,
 and the Key Vault secret above needs its vault.  New pay-as-you-go
-subscriptions start with small vCPU quotas (none at all for the v5
-families): the build VM is a `Standard_D4as_v4` for that reason, and spot
-agents need "Total Regional Low-priority vCPUs" raised (Quotas, Compute,
-East US) to at least an agent's size.
+subscriptions start with small vCPU quotas (10 regional vCPUs, none at
+all for the v5 families): the build VM is a 2-vCPU `Standard_D2ads_v6`,
+which fits beside a running 8-vCPU agent, and spot agents need "Total
+Regional Low-priority vCPUs" raised (Quotas, Compute, East US) to at
+least an agent's size.
 
 ```
 packer init infra/packer
 packer build \
     -var subscription_id="$(az account show --query id -o tsv)" \
-    -var image_version=1.1.1 \
+    -var image_version=1.1.2 \
     infra/packer
 ```
 
 The image goes into `fluffy-ci-agent-nvme`, the gallery definition for
 NVMe-only sizes: the agents are `Standard_D8ads_v6` (AMD Zen 4), which
 build on their local NVMe disk, formatted and mounted on `/mnt` at boot,
-rather than on the network-attached OS disk.  While an agent VM runs, the
-subscription's 10-vCPU regional quota leaves room only for a 2-vCPU
-Packer VM (`-var build_vm_size=Standard_D2as_v4`).
+rather than on the network-attached OS disk.
 
 Bump `image_version` for each new image.  The image starts no agent by
 itself: a VM becomes an agent only when its custom data writes

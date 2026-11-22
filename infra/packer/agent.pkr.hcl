@@ -48,13 +48,13 @@ variable "image_name" {
   default = "fluffy-ci-agent-nvme"
 }
 
-# A family with quota on the subscription (new pay-as-you-go subscriptions
-# start with none for the v5 families) and SCSI disks, as the Ubuntu image
-# expects.
+# The agents' family (Dadv6, NVMe disks, as the image is for), and small
+# enough to fit beside a running 8-vCPU agent in the subscription's 10
+# regional vCPUs.  Provisioning is mostly downloads, so 2 vCPUs is enough.
 variable "build_vm_size" {
   description = "Size of the temporary VM Packer provisions the image on."
   type        = string
-  default     = "Standard_D4as_v4"
+  default     = "Standard_D2ads_v6"
 }
 
 # Fluffy's ctypes.sh fork (fluffy/v1.3), which swctl loads on the host.

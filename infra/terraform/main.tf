@@ -107,25 +107,9 @@ resource "azurerm_shared_image_gallery" "ci" {
   location            = azurerm_resource_group.ci.location
 }
 
-resource "azurerm_shared_image" "agent" {
-  name                = "fluffy-ci-agent"
-  gallery_name        = azurerm_shared_image_gallery.ci.name
-  resource_group_name = azurerm_resource_group.ci.name
-  location            = azurerm_resource_group.ci.location
-  os_type             = "Linux"
-  hyper_v_generation  = "V2"
-
-  identifier {
-    publisher = "fluffy-linux"
-    offer     = "ci-agent"
-    sku       = "ubuntu-24.04"
-  }
-}
-
-# The image for NVMe-only sizes (v6 and later: D8ads_v6, with a local NVMe
-# disk), which boot only from images that declare NVMe support.
-# Replaces fluffy-ci-agent once proven; built by infra/packer with
-# -var image_name=fluffy-ci-agent-nvme.
+# The agent image, built by infra/packer.  The agents are an NVMe-only
+# size (v6: D8ads_v6, with a local NVMe disk), and those boot only from
+# images that declare NVMe support.
 resource "azurerm_shared_image" "agent_nvme" {
   name                              = "fluffy-ci-agent-nvme"
   gallery_name                      = azurerm_shared_image_gallery.ci.name
