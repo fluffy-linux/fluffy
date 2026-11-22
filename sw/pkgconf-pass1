@@ -2,9 +2,15 @@ ON=host-build
 
 VERSION=3.0.5
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# pkgconf-3.0.5 tag): swctl fetches the pinned commit with git.  The tag has
+# no configure or Makefile.in, so MAKE regenerates them with autogen.sh, as
+# upstream makes its release tarball.
 ARCHIVES=(
-    3acd3a8a3cce65a8d620321855d92fb602e026cbe8e13ee36bdec58483b59ace https://github.com/fluffy-linux/pkgconf/releases/download/pkgconf-$VERSION/pkgconf-$VERSION.tar.xz
-    ca3dded8953ee2319643466a6f7022ce37432bbc61cd510d6f29a9a04e7ce0bf file://pkgconf-$VERSION-fluffy.patch
+    d5b08696a5ea4413a3f99431617c2ea6deb2314e https://github.com/fluffy-linux/pkgconf.git#refs/heads/fluffy/pkgconf-$VERSION
+    e22e555ccb88ac24a4cbdb20dc6629191bb5d1e8 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73
+    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    143fe4356381cc64148b80e93b5b4c3651971d33 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.6.0
 )
 
 NEEDS=(
@@ -22,13 +28,21 @@ BUILD_NEEDS=(
     linux-headers
 )
 
-MAKE() {
-    apply_patch ../pkgconf-$VERSION-fluffy.patch
+# Regenerated with the autotools pkgconf's release tarball was made with.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    $CONFIG_SHELL ./autogen.sh
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/pkgconf \
         --host=$FLUFFY_TGT \
-        --build=$(./config.guess) \
+        --build=$($CONFIG_SHELL ./config.guess) \
         --disable-static \
         --with-pkg-config-dir='/sw/*/lib/pkgconfig:/sw/*/share/pkgconfig' \
         --with-system-libdir=/sw/glibc/lib \

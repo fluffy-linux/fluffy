@@ -7,17 +7,19 @@ fi
 
 VERSION=3.0.5
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# pkgconf-3.0.5 tag): swctl fetches the pinned commit with git.  Meson
+# comes from git too: Fluffy's meson branch, placed as ../meson.tar.
 ARCHIVES=(
-    3acd3a8a3cce65a8d620321855d92fb602e026cbe8e13ee36bdec58483b59ace https://github.com/fluffy-linux/pkgconf/releases/download/pkgconf-$VERSION/pkgconf-$VERSION.tar.xz
-    88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c https://github.com/fluffy-linux/meson/releases/download/1.12.0/meson-1.12.0.tar.gz
-    ca3dded8953ee2319643466a6f7022ce37432bbc61cd510d6f29a9a04e7ce0bf file://pkgconf-$VERSION-fluffy.patch
+    d5b08696a5ea4413a3f99431617c2ea6deb2314e https://github.com/fluffy-linux/pkgconf.git#refs/heads/fluffy/pkgconf-$VERSION
+    cdafdf57bc3b0ddede7dcd2505e772a08b382bab https://github.com/fluffy-linux/meson.git#refs/heads/fluffy/1.12.0
 )
 
 NEEDS=(
     glibc
 )
 
-# As LFS, pkgconf is built with meson.py from the meson tarball, under the
+# As LFS, pkgconf is built with meson.py from meson's source, under the
 # temporary python: the final python and util-linux use pkgconf, and ninja
 # is built from python-pass1 and util-linux-pass1, so nothing loops.
 if test -v CROSS
@@ -31,10 +33,8 @@ then
         gcc-pass2
         glibc
         libgcc
-        gzip-pass1
         linux-headers
         ninja
-        patch-pass1
         python-pass1
         sed-pass1
         tar-pass1
@@ -49,10 +49,8 @@ else
         gcc
         glibc
         libgcc
-        gzip
         linux-headers
         ninja
-        patch
         python-pass1
         sed
         tar
@@ -60,12 +58,11 @@ else
 fi
 
 MAKE() {
-    apply_patch ../pkgconf-$VERSION-fluffy.patch
-    tar -xf ../meson-1.12.0.tar.gz
+    tar -xf ../meson.tar
 
     mkdir build
     cd build
-    python3 ../meson-1.12.0/meson.py setup \
+    python3 ../meson/meson.py setup \
         --prefix=/sw/pkgconf \
         --libdir=/sw/pkgconf/lib \
         --buildtype=release \
