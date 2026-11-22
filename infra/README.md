@@ -79,9 +79,16 @@ East US) to at least an agent's size.
 packer init infra/packer
 packer build \
     -var subscription_id="$(az account show --query id -o tsv)" \
-    -var image_version=1.0.0 \
+    -var image_version=1.1.1 \
     infra/packer
 ```
+
+The image goes into `fluffy-ci-agent-nvme`, the gallery definition for
+NVMe-only sizes: the agents are `Standard_D8ads_v6` (AMD Zen 4), which
+build on their local NVMe disk, formatted and mounted on `/mnt` at boot,
+rather than on the network-attached OS disk.  While an agent VM runs, the
+subscription's 10-vCPU regional quota leaves room only for a 2-vCPU
+Packer VM (`-var build_vm_size=Standard_D2as_v4`).
 
 Bump `image_version` for each new image.  The image starts no agent by
 itself: a VM becomes an agent only when its custom data writes

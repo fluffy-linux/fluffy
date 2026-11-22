@@ -42,9 +42,10 @@ variable "gallery_name" {
   default = "fluffy_ci"
 }
 
+# The NVMe-capable definition, which v6 sizes (the agents' D8ads_v6) need.
 variable "image_name" {
   type    = string
-  default = "fluffy-ci-agent"
+  default = "fluffy-ci-agent-nvme"
 }
 
 # A family with quota on the subscription (new pay-as-you-go subscriptions
