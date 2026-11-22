@@ -7,9 +7,18 @@ fi
 
 VERSION=2.6.2
 
+# Built straight from Fluffy's branch (our commits on upstream's v2.6.2
+# tag): swctl fetches the pinned commit with git, with its gnulib and
+# gl-mod/bootstrap submodules.  The tag has no configure or Makefile.in;
+# its bootstrap makes them with autoconf-pass1 and automake-pass1 in
+# cross-build, the previous autoconf and automake in fluffy-build (2.73
+# and 1.18.1, the versions the release tarball was made with).  The man
+# pages are made with help2man, the release's 1.49.3, from its tag (a Perl
+# script that writes itself; Fluffy doesn't package it), the manual with
+# makeinfo.
 ARCHIVES=(
-    2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e https://github.com/fluffy-linux/libtool/releases/download/v$VERSION/libtool-$VERSION.tar.xz
-    d48bebaabeb967162767994595d80e20698116e83c6e7c142429fe92882b5d9b file://libtool-$VERSION-fluffy-shell.patch
+    43e42b1c5afb4f167a582f4aa31429a4399d8474 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v$VERSION
+    0503f547e06b5d3fd91533aae86b560e104140d7 https://github.com/fluffy-linux/help2man.git#refs/tags/v1.49.3
 )
 
 NEEDS=(
@@ -21,6 +30,8 @@ NEEDS=(
 if test -v CROSS
 then
     BUILD_NEEDS=(
+        autoconf-pass1
+        automake-pass1
         bash
         binutils
         coreutils-pass1
@@ -39,10 +50,13 @@ then
         perl-pass1
         sed
         tar-pass1
+        texinfo-pass1
         xz
     )
 else
     BUILD_NEEDS=(
+        autoconf
+        automake
         bash
         binutils
         coreutils
@@ -61,23 +75,28 @@ else
         perl
         sed
         tar
+        texinfo
         xz
     )
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../libtool-$VERSION-fluffy-shell.patch
+    mkdir .help2man
+    tar -xf ../help2man.tar -C .help2man
+    perl .help2man/help2man/help2man.PL --stdout > .help2man/help2man.pl
 
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    $CONFIG_SHELL ./bootstrap --skip-git --skip-po --gnulib-srcdir=gnulib
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/libtool
-    make
+    make HELP2MAN="perl $PWD/.help2man/help2man.pl"
 }
 
 CHECK() {
-    make check
+    make HELP2MAN="perl $PWD/.help2man/help2man.pl" check
 }
 
 INSTALL() {
-    make install
+    make HELP2MAN="perl $PWD/.help2man/help2man.pl" install
     rm -fv $DESTDIR/sw/libtool/lib/libltdl.a
 }

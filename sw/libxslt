@@ -17,7 +17,7 @@ ARCHIVES=(
     05a49752f10d942a55cbd0a02fa87d975f7ba846 https://github.com/fluffy-linux/libxslt.git#refs/heads/fluffy/v$VERSION
     ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
     dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
-    5e3be7ab26ea416c6c29a3b6536d5e8d778f4142 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
+    a6ae0fe54d0952d5f7e702b885ed7060bf7c390b https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )
 
 NEEDS=(
