@@ -11,16 +11,44 @@ write_files:
       FLUFFY_CI_IDENTITY_CLIENT_ID=${identity_client_id}
       FLUFFY_CACHE_REGISTRY=${cache_registry}
       FLUFFY_CACHE_TOKEN_FILE=/run/fluffy-ci/ghcr-token
+      BUILDKITE_BUILD_PATH=/mnt/buildkite/builds
+  - path: /usr/local/sbin/fluffy-ci-local-disk
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+      # Mounts the VM's local disk on /mnt.  Sizes with an SCSI temp disk
+      # (v4) have it there from cloud-init already.  A v6 size's local
+      # NVMe disk comes unformatted, and its OS disk is NVMe too, so the
+      # local one is found by its model ("Microsoft NVMe Direct Disk"),
+      # formatted (it is empty: local disks start blank), and mounted.
+      set -eu
+      mountpoint -q /mnt && exit 0
+      for d in /sys/block/nvme*n1
+      do
+          model="$(cat "$d/device/model" 2>/dev/null || true)"
+          case "$model" in
+              "Microsoft NVMe Direct Disk"*)
+                  dev="/dev/$(basename "$d")"
+                  mkfs.ext4 -q -F -L fluffy-local "$dev"
+                  mkdir -p /mnt
+                  mount "$dev" /mnt
+                  exit 0
+                  ;;
+          esac
+      done
+      echo "fluffy-ci-local-disk: no local disk; builds stay on the OS disk"
 
-# The pipeline's FLUFFY root, /mnt/ci.  bootstrap.sh mounts $FLUFFY from
-# /etc/fstab when it is not already a mount point, so it is a bind mount
-# of itself.  runcmd runs after cloud-init has mounted the VM's local temp
-# disk on /mnt (sizes with one have it; it is free and fast, and a world
-# fits easily), so /mnt/ci lands on it; without a temp disk it is on the
-# OS disk.  Then start the agent: its unit only starts once agent.env
+# Builds run on the VM's local disk, physically in its host and much faster
+# than the network-attached OS disk.  On it: the pipeline's FLUFFY root,
+# /mnt/ci (bootstrap.sh mounts $FLUFFY from /etc/fstab when it is not
+# already a mount point, so it is a bind mount of itself), and the
+# Buildkite checkouts, where swctl's work/ lives (BUILDKITE_BUILD_PATH
+# above).  Then start the agent: its unit only starts once agent.env
 # exists, which write_files creates after systemd has already skipped it.
 runcmd:
-  - mkdir -p /mnt/ci
+  - /usr/local/sbin/fluffy-ci-local-disk
+  - mkdir -p /mnt/ci /mnt/buildkite/builds
+  - chown buildkite-agent:buildkite-agent /mnt/buildkite /mnt/buildkite/builds
   - grep -q ' /mnt/ci ' /etc/fstab || echo '/mnt/ci /mnt/ci none bind 0 0' >> /etc/fstab
   - mountpoint -q /mnt/ci || mount /mnt/ci
   - systemctl start buildkite-agent

@@ -21,7 +21,7 @@ variable "agent_queues" {
   # Blob binary cache, so one VM for now.
   default = {
     default = {
-      vm_size         = "Standard_D8as_v4"
+      vm_size         = "Standard_D8ads_v6"
       max_instances   = 1
       buildkite_queue = "mufasa"
     }
@@ -46,9 +46,9 @@ variable "spot_max_price" {
 }
 
 variable "agent_os_disk_gb" {
-  description = "Agents' OS disk, which also holds /mnt/ci and the build trees; deleted with the VM."
+  description = "Agents' OS disk (deleted with the VM).  Builds run on the VM's local disk (/mnt), not here."
   type        = number
-  default     = 128
+  default     = 64
 }
 
 variable "cache_registry" {
@@ -84,8 +84,8 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "agents" {
   eviction_policy = var.agent_priority == "Spot" ? "Delete" : null
   max_bid_price   = var.agent_priority == "Spot" ? var.spot_max_price : null
 
-  # The newest version of the Packer image.
-  source_image_id = azurerm_shared_image.agent.id
+  # The newest version of the Packer image, for NVMe-only sizes (v6).
+  source_image_id = azurerm_shared_image.agent_nvme.id
 
   identity {
     type         = "UserAssigned"

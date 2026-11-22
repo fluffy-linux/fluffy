@@ -122,6 +122,26 @@ resource "azurerm_shared_image" "agent" {
   }
 }
 
+# The image for NVMe-only sizes (v6 and later: D8ads_v6, with a local NVMe
+# disk), which boot only from images that declare NVMe support.
+# Replaces fluffy-ci-agent once proven; built by infra/packer with
+# -var image_name=fluffy-ci-agent-nvme.
+resource "azurerm_shared_image" "agent_nvme" {
+  name                              = "fluffy-ci-agent-nvme"
+  gallery_name                      = azurerm_shared_image_gallery.ci.name
+  resource_group_name               = azurerm_resource_group.ci.name
+  location                          = azurerm_resource_group.ci.location
+  os_type                           = "Linux"
+  hyper_v_generation                = "V2"
+  disk_controller_type_nvme_enabled = true
+
+  identifier {
+    publisher = "fluffy-linux"
+    offer     = "ci-agent"
+    sku       = "ubuntu-24.04-nvme"
+  }
+}
+
 # --- Spending --------------------------------------------------------------
 
 # Pay-as-you-go has no hard cap, so this alerts: at 50%, 80% and 100% of
