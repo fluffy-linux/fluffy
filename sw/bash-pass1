@@ -20,11 +20,20 @@ BUILD_NEEDS=(
 
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    # Cross-compiling, configure can't run its test of getcwd(NULL, 0) and
+    # assumes it doesn't allocate, so bash would use its own getcwd from
+    # lib/sh instead of glibc's.  That one only sees a mount point where
+    # the device changes, so inside a bind mount from the same filesystem
+    # it can't find the directory: every bash started without a usable
+    # PWD then fails "shell-init: ... getcwd", and glibc's tst-spawn3 fails
+    # (CI builds with the checkout and the root on one disk).  glibc's
+    # getcwd does allocate.
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/bash \
         --build=$($CONFIG_SHELL support/config.guess) \
         --host=$FLUFFY_TGT \
         --without-bash-malloc \
+        bash_cv_getcwd_malloc=yes \
         CPPFLAGS='-I/sw/ncurses/include -DSYS_PROFILE="\"/sw/*/etc/profile:/etc/profile\"" -DSYS_INPUTRC="\"/sw/*/etc/inputrc:/etc/inputrc\""'
     make
 }
