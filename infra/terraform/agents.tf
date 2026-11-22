@@ -91,6 +91,7 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "agents" {
       queue              = each.value.buildkite_queue
       key_vault          = azurerm_key_vault.ci.name
       identity_client_id = azurerm_user_assigned_identity.agent.client_id
+      cache_url          = "${azurerm_storage_account.images.primary_blob_endpoint}${azurerm_storage_container.images.name}"
     }))
 
     linux_configuration {

@@ -1501,6 +1501,140 @@ plan_pkgs() {
     rm -f "$tmp_plan"
 }
 
+# The binary cache (CI): a Blob container holding images, by image
+# checksum, and the fstab line each recipe produced, by recipe checksum:
+#
+#   images/<image-checksum>.squashfs   written once, never overwritten
+#   recipes/<recipe-checksum>          one fstab line
+#
+# It is on only when the environment names it: FLUFFY_CACHE_URL (the
+# container's URL) and FLUFFY_CACHE_CLIENT_ID (the managed identity that
+# reaches it, through the Azure instance metadata service).  CI's agents
+# set both; local builds have neither and never touch it.  A cache problem
+# never fails a build: swctl warns and builds, or keeps what it built.
+cache_enabled() {
+    test -n "${FLUFFY_CACHE_URL:-}" && test -n "${FLUFFY_CACHE_CLIENT_ID:-}"
+}
+
+cache_token=""
+cache_auth() {
+    if test -z "$cache_token"
+    then
+        local json
+        json="$(curl -fsS --retry 5 --retry-connrefused -H Metadata:true \
+            "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fstorage.azure.com%2F&client_id=$FLUFFY_CACHE_CLIENT_ID")" || return 1
+        [[ "$json" =~ \"access_token\":\"([^\"]+)\" ]] || return 1
+        cache_token="${BASH_REMATCH[1]}"
+    fi
+}
+
+# cache_get NAME FILE: 0 when fetched, 1 when the cache doesn't have it,
+# 2 on any other failure.
+cache_get() {
+    local name="$1" file="$2" code
+    cache_auth || return 2
+    code="$(curl -sS --retry 3 -o "$file" -w '%{http_code}' \
+        -H "Authorization: Bearer $cache_token" -H "x-ms-version: 2023-11-03" \
+        "$FLUFFY_CACHE_URL/$name")" || code=000
+    case "$code" in
+        200) return 0 ;;
+        404) rm -f "$file"; return 1 ;;
+        *) rm -f "$file"; log "cache: GET $name: HTTP $code"; return 2 ;;
+    esac
+}
+
+# cache_put NAME FILE: upload unless the cache already has NAME.
+cache_put() {
+    local name="$1" file="$2" code
+    cache_auth || return 1
+    code="$(curl -sS --retry 3 -o /dev/null -w '%{http_code}' -X PUT \
+        -H "Authorization: Bearer $cache_token" -H "x-ms-version: 2023-11-03" \
+        -H "x-ms-blob-type: BlockBlob" -H "If-None-Match: *" \
+        --data-binary @"$file" "$FLUFFY_CACHE_URL/$name")" || code=000
+    case "$code" in
+        201|409|412) return 0 ;;
+        *) log "cache: PUT $name: HTTP $code"; return 1 ;;
+    esac
+}
+
+# cache_restore PKG RECIPE_CHECKSUM: register the image a previous build of
+# exactly this recipe produced, downloading it unless it is already here.
+cache_restore() {
+    local pkg="$1" recipe_chk="$2" tmp line src tgt fstype opts img_chk rc
+    tmp="$(mktemp)"
+    cache_get "recipes/$recipe_chk" "$tmp"
+    rc=$?
+    if (( rc != 0 ))
+    then
+        rm -f "$tmp"
+        return 1
+    fi
+    read -r line < "$tmp" || true
+    rm -f "$tmp"
+    read -r src tgt fstype opts <<< "$line"
+    img_chk=",$opts,"
+    img_chk="${img_chk#*,X-fluffy.image-checksum=}"
+    img_chk="${img_chk%%,*}"
+    if ! src_matches_pkg "$src" "$pkg" || test "$fstype" != squashfs ||
+        [[ ! "$img_chk" =~ ^[0-9a-f]{64}$ ]] || [[ ",$opts," != *",X-fluffy.recipe-checksum=$recipe_chk,"* ]]
+    then
+        log "cache: recipes/$recipe_chk is not a line for $pkg; ignoring it"
+        return 1
+    fi
+
+    if ! check_sha256 "$src" "$img_chk"
+    then
+        cache_get "images/$img_chk.squashfs" "$src.new" || return 1
+        if ! check_sha256 "$src.new" "$img_chk"
+        then
+            rm -f "$src.new"
+            log "cache: images/$img_chk.squashfs does not match its checksum; ignoring it"
+            return 1
+        fi
+        mv -f "$src.new" "$src"
+    fi
+
+    local mnt_fs="$NULL" old_src=""
+    reload_fstab
+    find_fs_by_pkg "$pkg" mnt_fs 1
+    if test "$mnt_fs" == "$NULL"
+    then
+        call_ptr mnt_fs mnt_new_fs
+        call mnt_table_add_fs "$mnt_table" "$mnt_fs"
+        dlcall mnt_unref_fs "$mnt_fs"
+    else
+        fs_str "$mnt_fs" source old_src
+    fi
+    call mnt_fs_set_source "$mnt_fs" "string:$src"
+    call mnt_fs_set_target "$mnt_fs" "string:$tgt"
+    call mnt_fs_set_fstype "$mnt_fs" "string:squashfs"
+    call mnt_fs_set_options "$mnt_fs" "string:$opts"
+    save_fstab
+    if test -n "$old_src" && test "$old_src" != "$src"
+    then
+        rm -f "$old_src"
+    fi
+}
+
+# cache_publish PKG RECIPE_CHECKSUM: after a build, upload its image, then
+# its fstab line, so a line never names an image the cache lacks.
+cache_publish() {
+    local pkg="$1" recipe_chk="$2" fs="$NULL" src tgt opts img_chk tmp
+    find_fs_by_pkg "$pkg" fs 1
+    test "$fs" != "$NULL" || return 1
+    fs_str "$fs" source src
+    fs_str "$fs" target tgt
+    fs_str "$fs" options opts
+    get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || return 1
+    cache_put "images/$img_chk.squashfs" "$src" || return 1
+    tmp="$(mktemp)"
+    printf '%s %s squashfs %s\n' "$src" "$tgt" "$opts" > "$tmp"
+    cache_put "recipes/$recipe_chk" "$tmp"
+    local rc=$?
+    rm -f "$tmp"
+    return $rc
+}
+
 build_pkgs() {
     local plan_mode=build
     if test "${1:-}" == "--run"
@@ -1571,9 +1705,24 @@ build_pkgs() {
             continue
         fi
 
+        if cache_enabled && cache_restore "$pkg" "$current_recipe_chk"
+        then
+            log "$pkg [$idx/$total]: FROM CACHE"
+            reload_fstab
+            fs="$NULL"
+            find_fs_by_pkg "$pkg" fs 1
+            get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || true
+            pkg_img_chk["$pkg"]="$img_chk"
+            continue
+        fi
+
         export FLUFFY_PROGRESS="[$idx/$total]" FLUFFY_RECIPE_CHECKSUM="$current_recipe_chk"
         build_single_pkg "$pkg"
         reload_fstab
+        if cache_enabled && ! cache_publish "$pkg" "$current_recipe_chk"
+        then
+            log "cache: could not publish $pkg; the build goes on"
+        fi
 
         fs="$NULL"
         dlcall -r pointer -n fs mnt_table_find_source "$mnt_table" "string:$sq" "int:$MNT_ITER_FORWARD"
@@ -1649,6 +1798,10 @@ buildkite_pipeline() {
         env_prefix+=" CROSS=$(printf '%q' "$CROSS")"
     fi
 
+    # The binary cache, when the agent's environment names one (CI's do;
+    # empty elsewhere, which leaves it off).  Expanded by the step's shell.
+    local cache_env=' FLUFFY_CACHE_URL="${FLUFFY_CACHE_URL:-}" FLUFFY_CACHE_CLIENT_ID="${FLUFFY_CACHE_CLIENT_ID:-}"'
+
     echo "steps:"
     local pkg dep b
     local -a bs=()
@@ -1663,7 +1816,7 @@ buildkite_pipeline() {
 
         echo "  - label: $(yaml_str "$pkg")"
         echo "    key: $(yaml_str "$(step_key "$pkg")")"
-        echo "    command: $(yaml_str "sudo$env_prefix ./swctl build $(printf '%q' "$pkg")")"
+        echo "    command: $(yaml_str "sudo$env_prefix$cache_env ./swctl build $(printf '%q' "$pkg")")"
         echo "    timeout_in_minutes: 720"
         echo "    concurrency: 1"
         echo "    concurrency_group: $(yaml_str "$group")"
