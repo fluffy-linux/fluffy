@@ -1,0 +1,45 @@
+ON=host-build
+
+VERSION=2.73
+
+# Not in LFS, whose packages all ship a generated configure.  Fluffy builds
+# packages straight from their git tags, which have none, so a package
+# regenerates it with the autoconf its release tarball was made with
+# (sw/autoconf.common), built from git in its own build.  Building that
+# autoconf, and the final autoconf from git, takes an autoconf already:
+# this one, built from Fluffy's branch with the host's autotools, as the
+# seed every cross-build regeneration starts from.  It is the version the
+# final autoconf is.  It runs inside the Fluffy root: its scripts name
+# /sw/bash/bin/bash, /sw/perl/bin/perl and /sw/m4/bin/m4 (m4-pass1's and
+# perl-pass1's here, which configure finds first on PATH), never the
+# host's.  The man pages need help2man and the manual makeinfo; neither is
+# built.
+ARCHIVES=(
+    c5692296902658f85dba87828d66b1efb75a29da https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v$VERSION
+)
+
+NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    grep-pass1
+    m4-pass1
+    perl-pass1
+    sed-pass1
+)
+
+BUILD_NEEDS=(
+    glibc-pass1
+    m4-pass1
+    perl-pass1
+)
+
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoreconf -fi
+    $CONFIG_SHELL ./configure --prefix=/sw/autoconf
+    make dist_man_MANS= INFO_DEPS=
+}
+
+INSTALL() {
+    make dist_man_MANS= INFO_DEPS= install
+}

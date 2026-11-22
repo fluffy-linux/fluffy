@@ -1,0 +1,48 @@
+ON=host-build
+
+VERSION=1.18.1
+
+# Not in LFS, whose packages all ship generated Makefile.in files.  Fluffy
+# builds packages straight from their git tags, which have none, so a
+# package regenerates them with the automake its release tarball was made
+# with (sw/automake.common), built from git in its own build.  Building
+# that automake, and the final automake from git, takes an autoconf and an
+# automake already: this one, with autoconf-pass1, built from Fluffy's
+# branch with the host's autotools, is the seed every cross-build
+# regeneration starts from.  It is the version the final automake is.  It
+# runs inside the Fluffy root: its scripts name /sw/bash/bin/bash and
+# /sw/perl/bin/perl (perl-pass1's here, which configure finds first on
+# PATH), never the host's, and run autoconf by name.  The man pages need
+# help2man and the manual makeinfo; neither is built, nor the example
+# tarball.
+ARCHIVES=(
+    153298e27fa9414b25453440a2f36e1bb7bedfc1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v$VERSION
+)
+
+NEEDS=(
+    autoconf-pass1
+    bash-pass1
+    coreutils-pass1
+    grep-pass1
+    perl-pass1
+    sed-pass1
+)
+
+BUILD_NEEDS=(
+    glibc-pass1
+    perl-pass1
+)
+
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    $CONFIG_SHELL ./bootstrap
+    $CONFIG_SHELL ./configure --prefix=/sw/automake
+    make man1_MANS= INFO_DEPS= dist_doc_DATA=
+}
+
+# aclocal finds other packages' macros (libtool's, pkgconf's, gettext's)
+# through a dirlist in its own macro directory; its lines may be globs.
+INSTALL() {
+    make man1_MANS= INFO_DEPS= dist_doc_DATA= install
+    echo '/sw/*/share/aclocal' > $DESTDIR/sw/automake/share/aclocal/dirlist
+}
