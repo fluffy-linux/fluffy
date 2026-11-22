@@ -7,9 +7,13 @@ fi
 
 VERSION=1.18.1
 
+# Built straight from Fluffy's branch (our commits on upstream's v1.18.1
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure or Makefile.in; its bootstrap makes them with autoconf-pass1
+# in cross-build, the previous autoconf in fluffy-build.  The man pages
+# come from the help2man automake carries.
 ARCHIVES=(
-    168aa363278351b89af56684448f525a5bce5079d0b6842bd910fdd3f1646887 https://github.com/fluffy-linux/automake/releases/download/v$VERSION/automake-$VERSION.tar.xz
-    30a7d776810643b45feb4a3345dc0384ab37ca0b208a2ea273a94333859d75f4 file://automake-$VERSION-fluffy-shell.patch
+    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v$VERSION
 )
 
 if test -v CROSS
@@ -40,7 +44,7 @@ fi
 if test -v CROSS
 then
     BUILD_NEEDS=(
-        autoconf
+        autoconf-pass1
         bash
         binutils
         bison
@@ -63,7 +67,6 @@ then
         linux-headers
         m4
         make-pass1
-        patch-pass1
         perl
         sed
         tar-pass1
@@ -95,7 +98,6 @@ else
         linux-headers
         m4
         make
-        patch
         perl
         sed
         tar
@@ -105,9 +107,9 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../automake-$VERSION-fluffy-shell.patch
-
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    $CONFIG_SHELL ./bootstrap
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/automake \
         --docdir=/sw/automake/share/doc/automake-$VERSION
     make

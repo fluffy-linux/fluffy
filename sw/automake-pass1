@@ -12,11 +12,11 @@ VERSION=1.18.1
 # regeneration starts from.  It is the version the final automake is.  It
 # runs inside the Fluffy root: its scripts name /sw/bash/bin/bash and
 # /sw/perl/bin/perl (perl-pass1's here, which configure finds first on
-# PATH), never the host's, and run autoconf by name.  The man pages need
-# help2man and the manual makeinfo; neither is built, nor the example
-# tarball.
+# PATH), never the host's, and run autoconf by name.  The man pages come
+# from the help2man automake carries; the manual (makeinfo) and the example
+# tarball are not built.
 ARCHIVES=(
-    153298e27fa9414b25453440a2f36e1bb7bedfc1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v$VERSION
+    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -37,12 +37,12 @@ MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
     $CONFIG_SHELL ./bootstrap
     $CONFIG_SHELL ./configure --prefix=/sw/automake
-    make man1_MANS= INFO_DEPS= dist_doc_DATA=
+    make INFO_DEPS= dist_doc_DATA=
 }
 
 # aclocal finds other packages' macros (libtool's, pkgconf's, gettext's)
 # through a dirlist in its own macro directory; its lines may be globs.
 INSTALL() {
-    make man1_MANS= INFO_DEPS= dist_doc_DATA= install
+    make INFO_DEPS= dist_doc_DATA= install
     echo '/sw/*/share/aclocal' > $DESTDIR/sw/automake/share/aclocal/dirlist
 }
