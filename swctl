@@ -1501,98 +1501,102 @@ plan_pkgs() {
     rm -f "$tmp_plan"
 }
 
-# The binary cache (CI): a Blob container holding images, by image
-# checksum, and the fstab line each recipe produced, by recipe checksum:
+# The binary cache: an OCI registry package (GitHub's container registry,
+# ghcr.io/fluffy-linux/sw) holding each recipe's image under the tag
+# <pkg>.<recipe-checksum>.  The tag's manifest has one layer, the squashfs,
+# whose digest is the image checksum, so nothing else is published: the
+# fstab line's source, target, NEEDS and recipe checksum all come from the
+# recipe.
 #
-#   images/<image-checksum>.squashfs   written once, never overwritten
-#   recipes/<recipe-checksum>          one fstab line
-#
-# It is on only when the environment names it: FLUFFY_CACHE_URL (the
-# container's URL) and FLUFFY_CACHE_CLIENT_ID (the managed identity that
-# reaches it, through the Azure instance metadata service).  CI's agents
-# set both; local builds have neither and never touch it.  A cache problem
-# never fails a build: swctl warns and builds, or keeps what it built.
+# FLUFFY_CACHE_REGISTRY (e.g. ghcr.io/fluffy-linux/sw) turns it on: swctl
+# fetches the image of any recipe the registry has instead of building it,
+# with plain curl, anonymously (a public package) unless
+# FLUFFY_CACHE_TOKEN_FILE names a file holding a token.  With that token
+# file swctl also publishes what it builds, with oras (CI only).  Local
+# builds without these variables never touch it.  A cache problem never
+# fails a build: swctl warns and builds, or keeps what it built.
 cache_enabled() {
-    test -n "${FLUFFY_CACHE_URL:-}" && test -n "${FLUFFY_CACHE_CLIENT_ID:-}"
+    test -n "${FLUFFY_CACHE_REGISTRY:-}"
 }
 
-cache_token=""
+cache_publishing() {
+    cache_enabled && test -n "${FLUFFY_CACHE_TOKEN_FILE:-}" && test -r "$FLUFFY_CACHE_TOKEN_FILE"
+}
+
+cache_tag() {
+    printf '%s.%s' "${1//+/_}" "$2"
+}
+
+cache_bearer=""
 cache_auth() {
-    if test -z "$cache_token"
+    test -z "$cache_bearer" || return 0
+    local host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" json
+    # With a token, curl reads the credentials as a config on stdin, so the
+    # token never appears in a command line.
+    local auth=""
+    if cache_publishing
     then
-        local json
-        json="$(curl -fsS --retry 5 --retry-connrefused -H Metadata:true \
-            "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fstorage.azure.com%2F&client_id=$FLUFFY_CACHE_CLIENT_ID")" || return 1
-        [[ "$json" =~ \"access_token\":\"([^\"]+)\" ]] || return 1
-        cache_token="${BASH_REMATCH[1]}"
+        auth="user = \"fluffy:$(< "$FLUFFY_CACHE_TOKEN_FILE")\""
     fi
+    json="$(printf '%s\n' "$auth" | curl -fsS --retry 3 -K - \
+        "https://$host/token?scope=repository:$repo:pull&service=$host")" || return 1
+    [[ "$json" =~ \"token\":\"([^\"]+)\" ]] || return 1
+    cache_bearer="${BASH_REMATCH[1]}"
 }
 
-# cache_get NAME FILE: 0 when fetched, 1 when the cache doesn't have it,
-# 2 on any other failure.
-cache_get() {
-    local name="$1" file="$2" code
-    cache_auth || return 2
-    code="$(curl -sS --retry 3 -o "$file" -w '%{http_code}' \
-        -H "Authorization: Bearer $cache_token" -H "x-ms-version: 2023-11-03" \
-        "$FLUFFY_CACHE_URL/$name")" || code=000
+# cache_image_digest PKG RECIPE_CHECKSUM DIGEST_VAR: 0 with the image's
+# checksum when the registry has the tag, 1 when it doesn't, 2 on failure.
+cache_image_digest() {
+    local tag host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" body code
+    local -n __digest_out="$3"
+    tag="$(cache_tag "$1" "$2")"
+    cache_auth || { log "cache: no registry token"; return 2; }
+    body="$(mktemp)"
+    code="$(curl -sS --retry 3 -o "$body" -w '%{http_code}' \
+        -H "Authorization: Bearer $cache_bearer" \
+        -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+        "https://$host/v2/$repo/manifests/$tag")" || code=000
+    local manifest
+    manifest="$(< "$body")"
+    rm -f "$body"
     case "$code" in
-        200) return 0 ;;
-        404) rm -f "$file"; return 1 ;;
-        *) rm -f "$file"; log "cache: GET $name: HTTP $code"; return 2 ;;
+        200) ;;
+        404) return 1 ;;
+        *) log "cache: GET manifest $tag: HTTP $code"; return 2 ;;
     esac
+    manifest="${manifest#*\"layers\"}"
+    [[ "$manifest" =~ \"digest\":\"sha256:([0-9a-f]{64})\" ]] || { log "cache: $tag has no layer"; return 2; }
+    __digest_out="${BASH_REMATCH[1]}"
 }
 
-# cache_put NAME FILE: upload unless the cache already has NAME.
-cache_put() {
-    local name="$1" file="$2" code
-    cache_auth || return 1
-    code="$(curl -sS --retry 3 -o /dev/null -w '%{http_code}' -X PUT \
-        -H "Authorization: Bearer $cache_token" -H "x-ms-version: 2023-11-03" \
-        -H "x-ms-blob-type: BlockBlob" -H "If-None-Match: *" \
-        --data-binary @"$file" "$FLUFFY_CACHE_URL/$name")" || code=000
-    case "$code" in
-        201|409|412) return 0 ;;
-        *) log "cache: PUT $name: HTTP $code"; return 1 ;;
-    esac
-}
-
-# cache_restore PKG RECIPE_CHECKSUM: register the image a previous build of
+# cache_restore PKG RECIPE_CHECKSUM: register the image a CI build of
 # exactly this recipe produced, downloading it unless it is already here.
 cache_restore() {
-    local pkg="$1" recipe_chk="$2" tmp line src tgt fstype opts img_chk rc
-    tmp="$(mktemp)"
-    cache_get "recipes/$recipe_chk" "$tmp"
-    rc=$?
-    if (( rc != 0 ))
-    then
-        rm -f "$tmp"
-        return 1
-    fi
-    read -r line < "$tmp" || true
-    rm -f "$tmp"
-    read -r src tgt fstype opts <<< "$line"
-    img_chk=",$opts,"
-    img_chk="${img_chk#*,X-fluffy.image-checksum=}"
-    img_chk="${img_chk%%,*}"
-    if ! src_matches_pkg "$src" "$pkg" || test "$fstype" != squashfs ||
-        [[ ! "$img_chk" =~ ^[0-9a-f]{64}$ ]] || [[ ",$opts," != *",X-fluffy.recipe-checksum=$recipe_chk,"* ]]
-    then
-        log "cache: recipes/$recipe_chk is not a line for $pkg; ignoring it"
-        return 1
-    fi
+    local pkg="$1" recipe_chk="$2" img_chk="" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}"
+    cache_image_digest "$pkg" "$recipe_chk" img_chk || return 1
 
+    local src="/sw/$pkg-${pkg_ver[$pkg]}.squashfs" tgt="/sw/${pkg%-pass*}" code
     if ! check_sha256 "$src" "$img_chk"
     then
-        cache_get "images/$img_chk.squashfs" "$src.new" || return 1
-        if ! check_sha256 "$src.new" "$img_chk"
+        code="$(curl -sS -L --retry 3 -o "$src.new" -w '%{http_code}' \
+            -H "Authorization: Bearer $cache_bearer" \
+            "https://$host/v2/$repo/blobs/sha256:$img_chk")" || code=000
+        if test "$code" != 200 || ! check_sha256 "$src.new" "$img_chk"
         then
             rm -f "$src.new"
-            log "cache: images/$img_chk.squashfs does not match its checksum; ignoring it"
+            log "cache: could not fetch a good image for $pkg (HTTP $code)"
             return 1
         fi
         mv -f "$src.new" "$src"
     fi
+
+    # The fstab line exactly as register_entry writes it after a build.
+    local needs="${pkg_needs[$pkg]:-}" options="X-fluffy.image-checksum=$img_chk"
+    if test -n "$needs"
+    then
+        options="$options,X-fluffy.needs=\"${needs// /,}\""
+    fi
+    options="$options,X-fluffy.recipe-checksum=$recipe_chk"
 
     local mnt_fs="$NULL" old_src=""
     reload_fstab
@@ -1608,7 +1612,7 @@ cache_restore() {
     call mnt_fs_set_source "$mnt_fs" "string:$src"
     call mnt_fs_set_target "$mnt_fs" "string:$tgt"
     call mnt_fs_set_fstype "$mnt_fs" "string:squashfs"
-    call mnt_fs_set_options "$mnt_fs" "string:$opts"
+    call mnt_fs_set_options "$mnt_fs" "string:$options"
     save_fstab
     if test -n "$old_src" && test "$old_src" != "$src"
     then
@@ -1616,23 +1620,28 @@ cache_restore() {
     fi
 }
 
-# cache_publish PKG RECIPE_CHECKSUM: after a build, upload its image, then
-# its fstab line, so a line never names an image the cache lacks.
+# cache_publish PKG RECIPE_CHECKSUM: after a build, push its image as the
+# tag's single layer, unless the tag exists already (tags can be moved;
+# Fluffy never moves one).
 cache_publish() {
-    local pkg="$1" recipe_chk="$2" fs="$NULL" src tgt opts img_chk tmp
+    local pkg="$1" recipe_chk="$2" fs="$NULL" src existing="" tag
+    cache_publishing || return 0
     find_fs_by_pkg "$pkg" fs 1
     test "$fs" != "$NULL" || return 1
     fs_str "$fs" source src
-    fs_str "$fs" target tgt
-    fs_str "$fs" options opts
-    get_fs_opt "$fs" "X-fluffy.image-checksum" img_chk || return 1
-    cache_put "images/$img_chk.squashfs" "$src" || return 1
-    tmp="$(mktemp)"
-    printf '%s %s squashfs %s\n' "$src" "$tgt" "$opts" > "$tmp"
-    cache_put "recipes/$recipe_chk" "$tmp"
-    local rc=$?
-    rm -f "$tmp"
-    return $rc
+    tag="$(cache_tag "$pkg" "$recipe_chk")"
+    if cache_image_digest "$pkg" "$recipe_chk" existing
+    then
+        return 0
+    fi
+    (
+        cd "${src%/*}"
+        oras push --no-tty --password-stdin -u fluffy \
+            --artifact-type application/vnd.fluffy.image.v1 \
+            "$FLUFFY_CACHE_REGISTRY:$tag" \
+            "${src##*/}:application/vnd.fluffy.squashfs" \
+            < "$FLUFFY_CACHE_TOKEN_FILE" > /dev/null
+    )
 }
 
 build_pkgs() {
@@ -1800,7 +1809,7 @@ buildkite_pipeline() {
 
     # The binary cache, when the agent's environment names one (CI's do;
     # empty elsewhere, which leaves it off).  Expanded by the step's shell.
-    local cache_env=' FLUFFY_CACHE_URL="${FLUFFY_CACHE_URL:-}" FLUFFY_CACHE_CLIENT_ID="${FLUFFY_CACHE_CLIENT_ID:-}"'
+    local cache_env=' FLUFFY_CACHE_REGISTRY="${FLUFFY_CACHE_REGISTRY:-}" FLUFFY_CACHE_TOKEN_FILE="${FLUFFY_CACHE_TOKEN_FILE:-}"'
 
     echo "steps:"
     local pkg dep b

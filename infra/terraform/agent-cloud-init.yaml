@@ -9,8 +9,8 @@ write_files:
 %{ endif ~}
       FLUFFY_CI_KEY_VAULT=${key_vault}
       FLUFFY_CI_IDENTITY_CLIENT_ID=${identity_client_id}
-      FLUFFY_CACHE_URL=${cache_url}
-      FLUFFY_CACHE_CLIENT_ID=${identity_client_id}
+      FLUFFY_CACHE_REGISTRY=${cache_registry}
+      FLUFFY_CACHE_TOKEN_FILE=/run/fluffy-ci/ghcr-token
 
 # The pipeline's FLUFFY root, /mnt/ci.  bootstrap.sh mounts $FLUFFY from
 # /etc/fstab when it is not already a mount point, so it is a bind mount

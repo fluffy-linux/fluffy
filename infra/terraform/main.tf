@@ -17,8 +17,8 @@ resource "azurerm_resource_group" "ci" {
 }
 
 # The identity the agent VMs run as: it reads the Buildkite agent token
-# from Key Vault and reads and writes the image store, so no credentials
-# are baked into the VM image.
+# (and the registry token) from Key Vault, so no credentials are baked into
+# the VM image.
 resource "azurerm_user_assigned_identity" "agent" {
   name                = "fluffy-ci-agent"
   resource_group_name = azurerm_resource_group.ci.name
@@ -27,8 +27,8 @@ resource "azurerm_user_assigned_identity" "agent" {
 
 # --- Network ---------------------------------------------------------------
 
-# Agents only make outbound connections (GitHub, Buildkite, the image
-# store).  The subnet has no default outbound access, which Azure is
+# Agents only make outbound connections (GitHub and its container
+# registry, Buildkite).  The subnet has no default outbound access, which Azure is
 # retiring; each agent VM gets its own public IP for that, cheaper than a
 # NAT gateway for one or a few VMs.  Nothing is allowed in.
 resource "azurerm_virtual_network" "ci" {
@@ -67,40 +67,6 @@ resource "azurerm_network_security_group" "agents" {
 resource "azurerm_subnet_network_security_group_association" "agents" {
   subnet_id                 = azurerm_subnet.agents.id
   network_security_group_id = azurerm_network_security_group.agents.id
-}
-
-# --- Image store -----------------------------------------------------------
-
-# Built squashfs images, content-addressed: images/<image-checksum>.squashfs
-# (written once, never overwritten) and recipes/<recipe-checksum> (the fstab
-# line that recipe produced).  See NOTES.md, "a parallel world on Buildkite".
-resource "azurerm_storage_account" "images" {
-  name                            = "fluffyimages${random_string.suffix.result}"
-  resource_group_name             = azurerm_resource_group.ci.name
-  location                        = azurerm_resource_group.ci.location
-  account_tier                    = "Standard"
-  account_replication_type        = "LRS"
-  min_tls_version                 = "TLS1_2"
-  allow_nested_items_to_be_public = false
-  shared_access_key_enabled       = false
-}
-
-resource "azurerm_storage_container" "images" {
-  name                  = "images"
-  storage_account_id    = azurerm_storage_account.images.id
-  container_access_type = "private"
-}
-
-resource "azurerm_role_assignment" "images_agent" {
-  scope                = azurerm_storage_account.images.id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_user_assigned_identity.agent.principal_id
-}
-
-resource "azurerm_role_assignment" "images_admin" {
-  scope                = azurerm_storage_account.images.id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 # --- Secrets ---------------------------------------------------------------

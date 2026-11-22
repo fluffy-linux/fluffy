@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Writes the Buildkite agent token to /run/fluffy-ci/agent-token, read from
-# Key Vault with the VM's managed identity, without surrounding whitespace
-# (a token stored from a file often ends in a newline).  Needs, from
+# Writes the Buildkite agent token to /run/fluffy-ci/agent-token, and the
+# GitHub container registry token (binary cache publishing), when the vault
+# has one, to /run/fluffy-ci/ghcr-token (root only), read from Key Vault
+# with the VM's managed identity, without surrounding whitespace (a token
+# stored from a file often ends in a newline).  Needs, from
 # /etc/fluffy-ci/agent.env: FLUFFY_CI_KEY_VAULT (vault name) and
 # FLUFFY_CI_IDENTITY_CLIENT_ID (the user-assigned identity's client ID).
 set -euo pipefail
@@ -22,3 +24,17 @@ curl -fsS --retry 5 -H "Authorization: Bearer $access_token" \
 | python3 -c 'import json, sys; sys.stdout.write(json.load(sys.stdin)["value"].strip())' \
     > /run/fluffy-ci/agent-token
 chown buildkite-agent:buildkite-agent /run/fluffy-ci/agent-token
+
+# The registry token is optional: without it the agent still builds, and
+# swctl only reads the cache.
+if curl -fsS --retry 5 -H "Authorization: Bearer $access_token" \
+    "https://$FLUFFY_CI_KEY_VAULT.vault.azure.net/secrets/ghcr-token?api-version=7.4" \
+    | python3 -c 'import json, sys; sys.stdout.write(json.load(sys.stdin)["value"].strip())' \
+    > /run/fluffy-ci/ghcr-token.new && test -s /run/fluffy-ci/ghcr-token.new
+then
+    chmod 600 /run/fluffy-ci/ghcr-token.new
+    mv /run/fluffy-ci/ghcr-token.new /run/fluffy-ci/ghcr-token
+else
+    rm -f /run/fluffy-ci/ghcr-token.new
+    echo "fluffy-ci-agent-token: no ghcr-token in the vault; the cache is read-only"
+fi

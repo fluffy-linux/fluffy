@@ -11,10 +11,6 @@ output "key_vault_name" {
   value = azurerm_key_vault.ci.name
 }
 
-output "images_storage_account" {
-  value = azurerm_storage_account.images.name
-}
-
 output "gallery_name" {
   value = azurerm_shared_image_gallery.ci.name
 }

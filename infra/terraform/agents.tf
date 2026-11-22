@@ -51,6 +51,12 @@ variable "agent_os_disk_gb" {
   default     = 128
 }
 
+variable "cache_registry" {
+  description = "The binary cache: an OCI registry package, public, holding each recipe's image as <pkg>.<recipe-checksum>."
+  type        = string
+  default     = "ghcr.io/fluffy-linux/sw"
+}
+
 variable "admin_ssh_public_key" {
   description = "SSH public key for the agents' admin user (Azure requires one; no inbound traffic is allowed, so it serves only for console debugging).  Set in terraform.tfvars."
   type        = string
@@ -91,7 +97,7 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "agents" {
       queue              = each.value.buildkite_queue
       key_vault          = azurerm_key_vault.ci.name
       identity_client_id = azurerm_user_assigned_identity.agent.client_id
-      cache_url          = "${azurerm_storage_account.images.primary_blob_endpoint}${azurerm_storage_container.images.name}"
+      cache_registry     = var.cache_registry
     }))
 
     linux_configuration {
@@ -138,7 +144,6 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "agents" {
 
   depends_on = [
     azurerm_role_assignment.vault_agent,
-    azurerm_role_assignment.images_agent,
     azurerm_role_assignment.agent_self_delete,
   ]
 }

@@ -8,7 +8,7 @@ identity, reading the Buildkite agent token from Key Vault.
 - `bootstrap/`: the storage account that holds `terraform/`'s state.  Run
   once.
 - `terraform/`: the resource group and what every agent shares: network,
-  the image store (Blob), Key Vault, the agents' managed identity, the
+  Key Vault, the agents' managed identity, the
   image gallery Packer publishes to, and a monthly budget with email
   alerts.  The subscription is pay-as-you-go, so the budget alerts; it
   cannot stop spending.
@@ -19,8 +19,10 @@ identity, reading the Buildkite agent token from Key Vault.
 - After that: a spot VM scale set, normally at size 0, and a small Azure
   Function that polls Buildkite's agent metrics every minute and sets the
   scale set's size from the jobs waiting.  Each agent runs one job and
-  deletes its own VM.  Nothing persists between builds except Blob: swctl
-  downloads the images whose recipes are unchanged and uploads new ones.
+  deletes its own VM.  Nothing persists on the agents: swctl fetches the
+  images whose recipes are unchanged from the binary cache, the public
+  package `ghcr.io/fluffy-linux/sw`, and publishes new ones there (with
+  the classic token `ghcr-token` in Key Vault, `write:packages`).
 
 ## Once
 
@@ -54,8 +56,9 @@ terraform -chdir=infra/terraform plan
 terraform -chdir=infra/terraform apply
 ```
 
-Then store the Buildkite agent token (Terraform does not, so it never
-reaches the state):
+Then store the Buildkite agent token, and for publishing to the binary
+cache a GitHub personal access token (classic) with `write:packages` as
+`ghcr-token` (Terraform does not, so neither reaches the state):
 
 ```
 az keyvault secret set \

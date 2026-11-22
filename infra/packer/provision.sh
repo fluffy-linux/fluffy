@@ -34,6 +34,16 @@ git -C /tmp/ctypes.sh checkout -q FETCH_HEAD
 ldconfig
 rm -rf /tmp/ctypes.sh
 
+# ORAS, which swctl publishes the binary cache's images with (pinned
+# release, checked against its published checksum; mirrored as
+# fluffy-linux/oras).
+curl -fsSL -o /tmp/oras.tar.gz \
+    "https://github.com/oras-project/oras/releases/download/v$ORAS_VERSION/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+echo "$ORAS_SHA256  /tmp/oras.tar.gz" | sha256sum -c -
+tar -xzf /tmp/oras.tar.gz -C /usr/local/bin oras
+rm -f /tmp/oras.tar.gz
+oras version
+
 # The Buildkite agent, from Buildkite's apt repository (its Ubuntu install
 # instructions).
 curl -fsSL https://keys.openpgp.org/vks/v1/by-fingerprint/32A37959C2FA5C3C99EFBC32A79206696452D198 \
