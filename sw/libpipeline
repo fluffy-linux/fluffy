@@ -7,8 +7,17 @@ fi
 
 VERSION=1.5.8
 
+# Built straight from Fluffy's branch (our commits on upstream's 1.5.8
+# tag): swctl fetches the pinned commit, and the gnulib commit it pins,
+# with git.  The tag has no configure, Makefile.in or gnulib files, so
+# MAKE bootstraps it with the autoconf, automake and libtool the release
+# tarball was made with (2.72, 1.16.5, 2.4.7), from their Fluffy
+# branches.
 ARCHIVES=(
-    1b1203ca152ccd63983c3f2112f7fe6fa5afd453218ede5153d1b31e11bb8405 https://github.com/fluffy-linux/libpipeline/releases/download/$VERSION/libpipeline-$VERSION.tar.gz
+    ba241d28516a85eff8abf80d1b891d3e2eaacebc https://github.com/fluffy-linux/libpipeline.git#refs/heads/fluffy/$VERSION
+    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
+    ff57e5acd76a5f28f484b91f1d3787c796a2f94c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )
 
 NEEDS=(
@@ -32,6 +41,8 @@ then
         linux-headers
         make-pass1
         patch-pass1
+        # pkg.m4, for PKG_CHECK_MODULES in the configure bootstrap makes.
+        pkgconf
         sed
         tar-pass1
     )
@@ -51,13 +62,25 @@ else
         linux-headers
         make
         patch
+        # pkg.m4, for PKG_CHECK_MODULES in the configure bootstrap makes.
+        pkgconf
         sed
         tar
     )
 fi
 
+# Bootstrapped with the autotools libpipeline's release tarball was made
+# with.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     $CONFIG_SHELL ./configure \
         --prefix=/sw/libpipeline
     make
