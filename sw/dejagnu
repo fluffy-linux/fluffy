@@ -7,10 +7,10 @@ fi
 
 VERSION=1.6.3
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# dejagnu-1.6.3-release tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    87daefacd7958b4a69f88c6856dbd1634261963c414079d0c371f589cd66a2e3 https://github.com/fluffy-linux/dejagnu/releases/download/dejagnu-$VERSION-release/dejagnu-$VERSION.tar.gz
-    9f39bfd22753e0e2f0c4c7b30c335842c768a2e982bcbe5b8150e1c1ed0ddc12 file://dejagnu-$VERSION-fluffy-source.patch
-    4bfe7bdb2c90092ebed5a5d26a42124b3fa71cd0f1817c6e4a9763a4ecce141d file://dejagnu-$VERSION-fluffy-test.patch
+    3c3d69df20d57d273d00023188243b72c6ce3f6f https://github.com/fluffy-linux/dejagnu.git#refs/heads/fluffy/dejagnu-$VERSION-release
 )
 
 if test -v CROSS
@@ -53,7 +53,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         sed-pass1
         tar-pass1
         tcl
@@ -75,7 +74,6 @@ else
         libgcc
         linux-headers
         make
-        patch
         sed
         tar
         tcl
@@ -84,15 +82,15 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../dejagnu-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../dejagnu-$VERSION-fluffy-test.patch
-
     mkdir -v build
     cd build
 
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ../configure \
         --prefix=/sw/dejagnu
+    # The release tarball ships doc/dejagnu.info; git has only the
+    # Texinfo source, so build it here.
+    make
     makeinfo --html --no-split -o doc/dejagnu.html ../doc/dejagnu.texi
     makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi
 }
