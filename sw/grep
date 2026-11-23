@@ -7,9 +7,16 @@ fi
 
 VERSION=3.12
 
+# Built straight from Fluffy's branch (our commits on upstream's v3.12
+# tag): swctl fetches the pinned commit, and the gnulib and
+# translationproject commits it pins, with git.  The tag has no
+# configure, Makefile.in or gnulib files, so MAKE bootstraps it, and its
+# translations come from the Translation Project's files, merged as the
+# release's make dist did.
 ARCHIVES=(
-    2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9 https://github.com/fluffy-linux/grep/releases/download/v$VERSION/grep-$VERSION.tar.xz
-    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 file://grep-$VERSION-fluffy-source.patch
+    10099f47ab61637b8a63040b565c4e5b67d974ab https://github.com/fluffy-linux/grep.git#refs/heads/fluffy/v$VERSION
+    18bfebd5367050afd0f2f5b8eb1c2acc93c26c3a https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.76-2f64
+    df341d9c2ff367a0b177cb998c08ade9c03c0e3f https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17.0.91
 )
 
 NEEDS=(
@@ -27,6 +34,7 @@ then
         findutils-pass1
         gawk-pass1
         gcc
+        gettext
         glibc
         grep-pass1
         gzip-pass1
@@ -39,6 +47,7 @@ then
         pkgconf
         sed-pass1
         tar-pass1
+        texinfo-pass1
         xz
     )
 else
@@ -50,6 +59,7 @@ else
         findutils
         gawk
         gcc
+        gettext
         glibc
         grep
         gzip
@@ -62,17 +72,28 @@ else
         pkgconf
         sed
         tar
+        texinfo
         xz
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../grep-$VERSION-fluffy-source.patch
+# Bootstrapped with the autotools grep's release tarball was made with:
+# development snapshots of autoconf and automake.  gettext gives
+# bootstrap autopoint, and the build xgettext, msgmerge and msgfmt.
+source sw/autoconf.common
+source sw/automake.common
 
-    sed -i "s/echo/#echo/" src/egrep.sh
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/grep
+    # The translations as make dist merges them with grep.pot.
+    make -C po update-po
     make
 }
 
