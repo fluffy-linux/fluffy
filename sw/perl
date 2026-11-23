@@ -10,7 +10,7 @@ VERSION=5.44.0
 # Built straight from Fluffy's branch (our commits on upstream's v5.44.0
 # tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    09d9f963c6439cecdd47b97b127629818d514b65 https://github.com/fluffy-linux/perl5.git#refs/heads/fluffy/v$VERSION
+    40d6bf8e2be17416be5a43f62c7c33af22cb6ef7 https://github.com/fluffy-linux/perl5.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
