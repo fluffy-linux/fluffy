@@ -3,7 +3,7 @@ ON=host-build
 VERSION=1.0.8
 
 ARCHIVES=(
-    4435604aa824f4e8808c9888f902cbac14c97236 https://github.com/fluffy-linux/bzip2.git#refs/heads/fluffy/bzip2-$VERSION
+    fac5ebc87baeb09beec56d8fd820f73e56fd7210 https://github.com/fluffy-linux/bzip2.git#refs/heads/fluffy/bzip2-$VERSION
 )
 
 NEEDS=(
