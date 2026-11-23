@@ -2,8 +2,16 @@ ON=host-build
 
 VERSION=5.48
 
+# Built straight from Fluffy's branch (upstream's FILE5_48 tag): swctl
+# fetches the pinned commit with git.  The tag has no configure or
+# Makefile.in, so MAKE regenerates them with the autoconf, automake and
+# libtool the release tarball was made with (2.72, 1.18, 2.4.7), from
+# their Fluffy branches.
 ARCHIVES=(
-    ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283 https://github.com/fluffy-linux/file/releases/download/FILE${VERSION//./_}/file-$VERSION.tar.gz
+    eb754ace19fed5481d8142426543100a2d6bae4e https://github.com/fluffy-linux/file.git#refs/heads/fluffy/FILE${VERSION//./_}
+    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    b237614a7d902f3cfdafab7e34229b4fb34549c6 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18
+    ff57e5acd76a5f28f484b91f1d3787c796a2f94c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )
 
 NEEDS=(
@@ -16,7 +24,17 @@ BUILD_NEEDS=(
     linux-headers
 )
 
+# Regenerated with the autotools file's release tarball was made with.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    autoreconf -fi
     mkdir build
     pushd build
         CONFIG_SITE=/sw/glibc/share/config.site ../configure \
