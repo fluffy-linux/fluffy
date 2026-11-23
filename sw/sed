@@ -7,8 +7,16 @@ fi
 
 VERSION=4.10
 
+# Built straight from Fluffy's branch (our commits on upstream's v4.10
+# tag): swctl fetches the pinned commit, and the gnulib and
+# translationproject commits it pins, with git.  The tag has no
+# configure, Makefile.in or gnulib files, so MAKE bootstraps it, and its
+# translations come from the Translation Project's files, merged as the
+# release's make dist did.
 ARCHIVES=(
-    b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7 https://github.com/fluffy-linux/sed/releases/download/v$VERSION/sed-$VERSION.tar.xz
+    1041359ee65f5160841dae26e0b781a111027df6 https://github.com/fluffy-linux/sed.git#refs/heads/fluffy/v$VERSION
+    b3d3778291f117f8420d4871f32b4d7c4caf23d1 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73.1-b400b
+    8445536d2be6795ae581c4886293baf70af8da79 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1.91
 )
 
 NEEDS=(
@@ -29,8 +37,10 @@ then
         findutils-pass1
         gawk-pass1
         gcc
+        gettext
         glibc
         grep-pass1
+        gzip-pass1
         libgcc
         linux-headers
         make-pass1
@@ -38,6 +48,7 @@ then
         perl-pass1
         sed-pass1
         texinfo-pass1
+        xz
     )
 else
     BUILD_NEEDS=(
@@ -50,8 +61,10 @@ else
         findutils
         gawk
         gcc
+        gettext
         glibc
         grep
+        gzip
         libgcc
         linux-headers
         make
@@ -59,14 +72,28 @@ else
         perl
         sed
         texinfo
+        xz
     )
 fi
 
+# Bootstrapped with the autotools sed's release tarball was made with:
+# development snapshots of autoconf and automake.  gettext gives
+# bootstrap autopoint, and the build xgettext, msgmerge and msgfmt.
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/sed \
         --docdir=/sw/sed/share/doc/sed-$VERSION
+    # The translations as make dist merges them with sed.pot.
+    make -C po update-po
     make
     make html
 }
