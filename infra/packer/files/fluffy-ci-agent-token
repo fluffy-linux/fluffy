@@ -11,11 +11,24 @@ set -euo pipefail
 : "${FLUFFY_CI_KEY_VAULT:?}" "${FLUFFY_CI_IDENTITY_CLIENT_ID:?}"
 
 imds=http://169.254.169.254/metadata/identity/oauth2/token
-access_token=$(
-    curl -fsS --retry 10 --retry-connrefused --retry-delay 3 -H Metadata:true \
-        "$imds?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net&client_id=$FLUFFY_CI_IDENTITY_CLIENT_ID" \
-    | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])'
-)
+# Early in a VM's first boot the metadata service can answer 400 for a
+# while, until the user-assigned identity is attached; curl's --retry
+# doesn't retry a 400, so wait for the token here, for up to 2 minutes.
+access_token=
+for attempt in $(seq 1 40)
+do
+    if reply=$(curl -fsS -H Metadata:true \
+        "$imds?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net&client_id=$FLUFFY_CI_IDENTITY_CLIENT_ID")
+    then
+        access_token=$(printf '%s' "$reply" | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])') && break
+    fi
+    sleep 3
+done
+if test -z "$access_token"
+then
+    echo "fluffy-ci-agent-token: no identity token from the metadata service" >&2
+    exit 1
+fi
 
 install -d -m 700 -o buildkite-agent -g buildkite-agent /run/fluffy-ci
 umask 077
