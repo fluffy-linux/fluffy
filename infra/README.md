@@ -80,7 +80,7 @@ least an agent's size.
 packer init infra/packer
 packer build \
     -var subscription_id="$(az account show --query id -o tsv)" \
-    -var image_version=1.1.4 \
+    -var image_version=1.1.5 \
     infra/packer
 ```
 
