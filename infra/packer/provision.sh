@@ -11,12 +11,13 @@ apt-get -y upgrade
 # python3, sed, tar, texinfo, xz), and what Fluffy's host-build recipes and
 # swctl use besides: the autotools (host-build regenerates with them), git
 # (swctl fetches sources), flex (binutils-pass1 and -pass2, built from git,
-# generate ld's and binutils' lexers), curl, squashfs-tools (host-build
-# packages are packaged with the host's mksquashfs), and ctypes.sh's build
-# dependencies.
+# generate ld's and binutils' lexers), gettext and autopoint (the pass1
+# builds of packages from git run autopoint in autoreconf, before Fluffy's
+# own gettext is built), curl, squashfs-tools (host-build packages are
+# packaged with the host's mksquashfs), and ctypes.sh's build dependencies.
 apt-get -y install --no-install-recommends \
-    autoconf automake bison build-essential bzip2 ca-certificates curl \
-    flex gawk git gnupg gzip libdw-dev libelf-dev libffi-dev libltdl-dev libtool m4 patch \
+    autoconf automake autopoint bison build-essential bzip2 ca-certificates curl \
+    flex gawk gettext git gnupg gzip libdw-dev libelf-dev libffi-dev libltdl-dev libtool m4 patch \
     perl pkg-config python3 squashfs-tools texinfo xz-utils zlib1g-dev
 
 # swctl runs with /sw/bash/bin/bash, and Fluffy has no /bin/sh: on the host
