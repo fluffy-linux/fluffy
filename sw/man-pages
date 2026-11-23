@@ -7,10 +7,11 @@ fi
 
 VERSION=6.18
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# man-pages-6.18 tag, the first of them dating the pages as the release
+# does): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    c934fadc8b59748c68227a34f6581d2ddf8282b73cdcd52546c8cd88b74b24d1 https://github.com/fluffy-linux/man-pages/releases/download/man-pages-$VERSION/man-pages-$VERSION.tar.xz
-    a833f7f585791611f1c25814a1c429406af0a3f03f81f01cf1f1f538e51a60c6 file://man-pages-$VERSION-fluffy-source.patch
-    0d84d157288e440c1f6602472f57d27de6315be13d0c442e1bc3110664aec4a1 file://man-pages-$VERSION-fluffy-test.patch
+    c8ca3c3c1c7d776714dcd6be38b485235498b8de https://github.com/fluffy-linux/man-pages.git#refs/heads/fluffy/man-pages-$VERSION
 )
 
 if test -v CROSS
@@ -21,7 +22,6 @@ then
         findutils-pass1
         grep-pass1
         make-pass1
-        patch-pass1
         sed-pass1
     )
 else
@@ -31,14 +31,11 @@ else
         findutils
         grep
         make
-        patch
         sed
     )
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../man-pages-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../man-pages-$VERSION-fluffy-test.patch
     rm -vf man/man3/crypt*
 }
 

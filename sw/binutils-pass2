@@ -2,10 +2,12 @@ ON=host-build
 
 VERSION=2.47
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# binutils-2_47 tag): swctl fetches the pinned commit with git.  What the
+# release tarball ships prebuilt (the bison and flex parsers, the info
+# and man pages, the message catalogs) the build makes.
 ARCHIVES=(
-    154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff https://github.com/fluffy-linux/binutils-gdb/releases/download/binutils-${VERSION//./_}/binutils-$VERSION.tar.xz
-    4602feb91bec5a8053b8683a5032a835d35940f0d1e3aa17a28c6db42adfbd9a file://binutils-$VERSION-fluffy-shell.patch
-    4b5e142aeb2d78cc4ab7f4a3621267313a142dbd89340cb486dcf97a03c77f60 file://binutils-$VERSION-fluffy-source.patch
+    75f0ca41735d89fe7bda30cc6dd2317e18457922 https://github.com/fluffy-linux/binutils-gdb.git#refs/heads/fluffy/binutils-${VERSION//./_}
 )
 
 NEEDS=(
@@ -19,10 +21,11 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i ../binutils-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i ../binutils-$VERSION-fluffy-source.patch
     sed '6031s/$add_dir//' -i ltmain.sh
 
+    # The repository also holds gdb, gdbserver, the simulators and the
+    # libraries only they use, which the release leaves out: the last
+    # configure options leave them out of the build too.
     mkdir -v build
     cd build
     CONFIG_SITE=/sw/glibc/share/config.site ../configure \
@@ -36,7 +39,13 @@ MAKE() {
         --disable-werror \
         --enable-64-bit-bfd \
         --enable-new-dtags \
-        --enable-default-hash-style=gnu
+        --enable-default-hash-style=gnu \
+        --disable-gdb \
+        --disable-gdbserver \
+        --disable-sim \
+        --disable-readline \
+        --disable-libdecnumber \
+        --disable-libbacktrace
     CONFIG_SITE=/sw/glibc/share/config.site make
 }
 
