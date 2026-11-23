@@ -17,7 +17,7 @@ VERSION=2.6.2
 # script that writes itself; Fluffy doesn't package it), the manual with
 # makeinfo.
 ARCHIVES=(
-    43e42b1c5afb4f167a582f4aa31429a4399d8474 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v$VERSION
+    953e00179d334140614d9899c4aceeea7c74dc29 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v$VERSION
     0503f547e06b5d3fd91533aae86b560e104140d7 https://github.com/fluffy-linux/help2man.git#refs/tags/v1.49.3
 )
 
