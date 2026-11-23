@@ -3,7 +3,10 @@
 # one queue.  GCP's Ubuntu images run cloud-init from the user-data
 # metadata key, which the instance template sets to this file.
 write_files:
-  - path: /etc/fluffy-ci/agent.env
+  # Written under another name and renamed at the end of runcmd: on GCP,
+  # write_files runs before systemd starts the agent unit, which would then
+  # start (its condition, agent.env, met) before /mnt is ready.
+  - path: /etc/fluffy-ci/agent.env.new
     permissions: "0644"
     content: |
       BUILDKITE_AGENT_QUEUE=${queue}
@@ -36,12 +39,13 @@ write_files:
 # $FLUFFY from /etc/fstab when it is not already a mount point, so it is a
 # bind mount of itself), and the Buildkite checkouts, where swctl's work/
 # lives (BUILDKITE_BUILD_PATH above).  Then start the agent: its unit only
-# starts once agent.env exists, which write_files creates after systemd
-# has already skipped it.
+# starts once agent.env exists, put in place here, after systemd has
+# already skipped it at boot.
 runcmd:
   - /usr/local/sbin/fluffy-ci-local-disk
   - mkdir -p /mnt/ci /mnt/buildkite/builds
   - chown buildkite-agent:buildkite-agent /mnt/buildkite /mnt/buildkite/builds
   - grep -q ' /mnt/ci ' /etc/fstab || echo '/mnt/ci /mnt/ci none bind 0 0' >> /etc/fstab
   - mountpoint -q /mnt/ci || mount /mnt/ci
+  - mv /etc/fluffy-ci/agent.env.new /etc/fluffy-ci/agent.env
   - systemctl start buildkite-agent
