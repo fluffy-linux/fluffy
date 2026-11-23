@@ -7,10 +7,11 @@ fi
 
 VERSION=5.45.4
 
+# Built straight from Fluffy's branch (our commits, LFS's gcc15 patch
+# first, on upstream's expect-5-45-4 tag): swctl fetches the pinned
+# commit with git.  configure is committed upstream.
 ARCHIVES=(
-    49a7da83b0bdd9f46d04a04deec19c7767bb9a323e40c4781f89caf760b92c34 https://github.com/fluffy-linux/expect/releases/download/expect_${VERSION//./_}/expect$VERSION.tar.gz
-    ab5fc0af9e2e0f80d7623c1a3a3dbeb1da3d8c9134276792199df401f9eb2cec file://expect-$VERSION-gcc15-1.patch
-    a6d16fcc0e066e8216d2d822a89ff95359de03ad0614383fa5285c3f0fbebba6 file://expect$VERSION-fluffy-source.patch
+    3414e50618cb610a13624197d9354dd37ec4c777 https://github.com/fluffy-linux/expect.git#refs/heads/fluffy/expect-${VERSION//./-}
 )
 
 if test -v CROSS
@@ -46,7 +47,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         sed-pass1
         tar-pass1
         tcl
@@ -66,7 +66,6 @@ else
         libgcc
         linux-headers
         make
-        patch
         sed
         tar
         tcl
@@ -74,9 +73,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../expect-$VERSION-gcc15-1.patch
-    patch -Z -Np1 -i ../expect$VERSION-fluffy-source.patch
-
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/expect \
