@@ -7,8 +7,19 @@ fi
 
 VERSION=1.26
 
+# Built straight from Fluffy's branch (our commits on upstream's v1.26
+# tag): swctl fetches the pinned commit, and the translationproject
+# commit it pins, with git.  The tag has no configure, Makefile.in,
+# gettext files, gdbmtool parser and scanner or gdbm.info, so MAKE
+# regenerates them: with the autoconf, automake and libtool the release
+# tarball was made with (2.71, 1.16.5, 2.5.4), from their Fluffy
+# branches, and with Fluffy's autopoint, bison, flex and makeinfo.  The
+# translations are the Translation Project's files the release took.
 ARCHIVES=(
-    6a24504a14de4a744103dcb936be976df6fbe88ccff26065e54c1c47946f4a5e https://github.com/fluffy-linux/gdbm/releases/download/v$VERSION/gdbm-$VERSION.tar.gz
+    9930d3f11712e3a58a43a8f604fa4c3f869ffcc4 https://github.com/fluffy-linux/gdbm.git#refs/heads/fluffy/v$VERSION
+    ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
+    e40d38aa32f35a8e1dd43a58de66596eaccbb245 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(
@@ -22,11 +33,14 @@ then
     BUILD_NEEDS=(
         bash
         binutils
+        bison
         coreutils-pass1
         diffutils-pass1
         findutils-pass1
+        flex
         gawk-pass1
         gcc
+        gettext
         glibc
         grep
         gzip-pass1
@@ -34,21 +48,24 @@ then
         linux-headers
         make-pass1
         ncurses
-        patch-pass1
         readline
         sed
         tar-pass1
+        texinfo-pass1
         xz
     )
 else
     BUILD_NEEDS=(
         bash
         binutils
+        bison
         coreutils
         diffutils
         findutils
+        flex
         gawk
         gcc
+        gettext
         glibc
         grep
         gzip
@@ -56,21 +73,35 @@ else
         linux-headers
         make
         ncurses
-        patch
         readline
         sed
         tar
+        texinfo
         xz
     )
 fi
 
+# Regenerated with the autotools gdbm's release tarball was made with.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gdbm \
         --disable-static \
         --enable-libgdbm-compat
     make
+    # The test suite, generated with that autoconf's autom4te, as the
+    # release's was.
+    make -C tests testsuite
 }
 
 CHECK() {
