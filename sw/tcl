@@ -7,11 +7,12 @@ fi
 
 VERSION=8.6.18
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# core-8-6-18 tag, with the packages the release bundles as submodules
+# under pkgs/): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-src.tar.gz
+    50515a62f8b4526d7501ed2fc2372575a26cd8d4 https://github.com/fluffy-linux/tcl.git#refs/heads/fluffy/core-${VERSION//./-}
     bee2d83a19ce50624eeae951be29fe5f654b171357a6391123caf18107cec543 https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-html.tar.gz
-    249bb1ed70e4e044cca3f8ac170719dfe126c815984e5e360be04fa9a132a3f8 file://tcl$VERSION-fluffy-source.patch
-    833aa25b18242a467874e96f30da3a6e1da0b05caaf51a885f05ac091d2a02b7 file://tcl$VERSION-fluffy-test.patch
 )
 
 NEEDS=(
@@ -35,7 +36,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         sed-pass1
         tar-pass1
         zlib
@@ -55,7 +55,6 @@ else
         libgcc
         linux-headers
         make
-        patch
         sed
         tar
         zlib
@@ -63,8 +62,12 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../tcl$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../tcl$VERSION-fluffy-test.patch
+    # The release's packages each carry a copy of TEA's tclconfig (their
+    # "make dist" adds it); from git they share pkgs/tclconfig.
+    for pkg in pkgs/*/
+    do
+        test -e ${pkg}tclconfig || ln -s ../tclconfig ${pkg}tclconfig
+    done
 
     SRCDIR=$(pwd)
     cd unix
