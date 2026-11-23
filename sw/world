@@ -45,6 +45,7 @@ NEEDS=(
     groff
     grub
     gzip
+    help2man
     iana-etc
     icu
     inetutils

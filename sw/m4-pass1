@@ -17,10 +17,15 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
+    # syscmd and esyscmd run the shell configure finds, the host's /bin/sh
+    # here, but this m4 runs inside the root, which has none: autoconf's
+    # m4_esyscmd (help2man's version in AC_INIT) failed.  Name the shell
+    # the final m4 finds.
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/m4 \
         --host=$FLUFFY_TGT \
-        --build=$(build-aux/config.guess)
+        --build=$(build-aux/config.guess) \
+        --with-syscmd-shell=/sw/bash/bin/sh
     make
 }
 

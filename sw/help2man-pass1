@@ -1,0 +1,60 @@
+ON=cross-build
+
+VERSION=1.49.3
+
+# help2man for the packages built before perl: m4's man page is
+# help2man's output, and m4 comes before perl (gcc, which perl needs,
+# needs gmp, which needs m4), so m4 can't use help2man, which needs perl.
+# This pass runs with perl-pass1.  Beyond LFS, which has no help2man.
+ARCHIVES=(
+    5a3e6339654f62ad59d697f3360cdbcc4974ac20 https://github.com/fluffy-linux/help2man.git#refs/heads/fluffy/v$VERSION
+    ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
+)
+
+NEEDS=(
+    perl-pass1
+)
+
+BUILD_NEEDS=(
+    bash-pass1
+    coreutils-pass1
+    diffutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc
+    grep-pass1
+    libgcc
+    linux-headers
+    make-pass1
+    perl-pass1
+    sed-pass1
+    tar-pass1
+    texinfo-pass1
+)
+
+source sw/autoconf.common
+source sw/automake.common
+
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    autoreconf -fi
+    cp .autotools/share/automake-1.16/{missing,mkinstalldirs} build-aux/
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+        --prefix=/sw/help2man
+    # The release's man page is dated by the release (its v1.49.3 tag,
+    # December 2022); help2man dates it by SOURCE_DATE_EPOCH.
+    SOURCE_DATE_EPOCH=1670892811 make
+}
+
+CHECK() {
+    SOURCE_DATE_EPOCH=1670892811 ./help2man --include=help2man.h2m \
+        --output=help2man.1.check ./help2man
+    cmp help2man.1 help2man.1.check
+}
+
+INSTALL() {
+    make install
+}

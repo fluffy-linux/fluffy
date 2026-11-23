@@ -1,0 +1,93 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+# help2man is in neither LFS nor BLFS 13.1-systemd.  1.49.3 is the
+# version that made m4 1.4.21's man page, the package that needs it.
+VERSION=1.49.3
+
+# Built straight from Fluffy's branch (our commits on upstream's v1.49.3
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure, so MAKE regenerates it with autoconf 2.71, as the release
+# tarball was, and takes build-aux/missing and mkinstalldirs from
+# automake 1.16.5, whose install-sh, missing and mkinstalldirs the
+# tarball ships.
+ARCHIVES=(
+    5a3e6339654f62ad59d697f3360cdbcc4974ac20 https://github.com/fluffy-linux/help2man.git#refs/heads/fluffy/v$VERSION
+    ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
+)
+
+NEEDS=(
+    perl
+)
+
+if test -v CROSS
+then
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        perl
+        sed
+        tar-pass1
+        texinfo
+    )
+else
+    BUILD_NEEDS=(
+        bash
+        binutils
+        coreutils
+        diffutils
+        gawk
+        gcc
+        glibc
+        grep
+        libgcc
+        linux-headers
+        make
+        perl
+        sed
+        tar
+        texinfo
+    )
+fi
+
+source sw/autoconf.common
+source sw/automake.common
+
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    autoreconf -fi
+    cp .autotools/share/automake-1.16/{missing,mkinstalldirs} build-aux/
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+        --prefix=/sw/help2man
+    # The release's man page is dated by the release (its v1.49.3 tag,
+    # December 2022); help2man dates it by SOURCE_DATE_EPOCH.
+    SOURCE_DATE_EPOCH=1670892811 make
+}
+
+# help2man has no test suite.  It writes its own man page when it is
+# built; write it again with the built script and check both agree.
+CHECK() {
+    SOURCE_DATE_EPOCH=1670892811 ./help2man --include=help2man.h2m \
+        --output=help2man.1.check ./help2man
+    cmp help2man.1 help2man.1.check
+}
+
+INSTALL() {
+    make install
+}
