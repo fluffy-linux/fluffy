@@ -7,8 +7,20 @@ fi
 
 VERSION=2.8.3
 
+# Built straight from Fluffy's branch (our commits on upstream's R_2_8_3
+# tag): swctl fetches the pinned commit with git.  The sources are in the
+# repository's expat directory, so each phase starts there.  The tag has
+# no configure or Makefile.in, so MAKE regenerates them with the
+# autoconf, automake and libtool the release tarball was made with (2.72,
+# 1.18.1, 2.5.4), from their Fluffy branches.  The tag has no
+# doc/xmlwf.1 either, so this installs no xmlwf man page (the user's
+# decision, 2026-11-23): making it needs the DocBook tools, which need
+# expat, a cycle.
 ARCHIVES=(
-    f6256df90c906773d344da084402b7d3e4f22ed41b1a59c989098a83d3ea0c85 https://github.com/fluffy-linux/libexpat/releases/download/R_${VERSION//./_}/expat-$VERSION.tar.xz
+    58df5f0cbd1e640d39f0c95fb6fc448a2b681d02 https://github.com/fluffy-linux/libexpat.git#refs/heads/fluffy/R_${VERSION//./_}
+    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    e40d38aa32f35a8e1dd43a58de66596eaccbb245 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(
@@ -31,7 +43,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         sed
         tar-pass1
         xz
@@ -51,15 +62,24 @@ else
         libgcc
         linux-headers
         make
-        patch
         sed
         tar
         xz
     )
 fi
 
+# Regenerated with the autotools expat's release tarball was made with.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    cd expat
+    autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/expat \
         --disable-static \
@@ -68,10 +88,12 @@ MAKE() {
 }
 
 CHECK() {
+    cd expat
     make LOG_DRIVER='$(SHELL) $(top_srcdir)/conftools/test-driver' check
 }
 
 INSTALL() {
+    cd expat
     make install
     install -v -m644 doc/*.{html,css} $DESTDIR/sw/expat/share/doc/expat-$VERSION
 }
