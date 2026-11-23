@@ -7,10 +7,10 @@ fi
 
 VERSION=5.44.0
 
+# Built straight from Fluffy's branch (our commits on upstream's v5.44.0
+# tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://github.com/fluffy-linux/perl5/releases/download/v$VERSION/perl-$VERSION.tar.xz
-    e471c1213eeb00d07e1e3fe234e594c5d287c648e71c14e7ad5acfe3547d11e4 file://perl-$VERSION-fluffy-source.patch
-    7af2262fb9665be711858a7c0eb9e3bf70380d57b719e5814c265d25ff85fe99 file://perl-$VERSION-fluffy-test.patch
+    09d9f963c6439cecdd47b97b127629818d514b65 https://github.com/fluffy-linux/perl5.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -43,7 +43,6 @@ then
         libxcrypt
         linux-headers
         make-pass1
-        patch-pass1
         sed
         tar-pass1
         xz
@@ -69,7 +68,6 @@ else
         libxcrypt
         linux-headers
         make
-        patch
         sed
         tar
         xz
@@ -78,9 +76,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../perl-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../perl-$VERSION-fluffy-test.patch
-
     export BUILD_ZLIB=False
     export BUILD_BZIP2=0
 

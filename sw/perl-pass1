@@ -2,9 +2,10 @@ ON=cross-build
 
 VERSION=5.44.0
 
+# Built straight from Fluffy's branch (our commits on upstream's v5.44.0
+# tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91 https://github.com/fluffy-linux/perl5/releases/download/v$VERSION/perl-$VERSION.tar.xz
-    e471c1213eeb00d07e1e3fe234e594c5d287c648e71c14e7ad5acfe3547d11e4 file://perl-$VERSION-fluffy-source.patch
+    09d9f963c6439cecdd47b97b127629818d514b65 https://github.com/fluffy-linux/perl5.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -23,14 +24,12 @@ BUILD_NEEDS=(
     gzip-pass1
     linux-headers
     make-pass1
-    patch-pass1
     sed-pass1
     tar-pass1
     xz-pass1
 )
 
 MAKE() {
-    patch -Z -Np1 -i ../perl-$VERSION-fluffy-source.patch
     sh Configure -des \
         -D prefix=/sw/perl \
         -D vendorprefix=/sw/perl \
