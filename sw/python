@@ -7,11 +7,12 @@ fi
 
 VERSION=3.14.7
 
+# Built straight from Fluffy's branch (our commits on upstream's v3.14.7
+# tag): swctl fetches the pinned commit with git.  The HTML
+# documentation stays on the release's tarball.
 ARCHIVES=(
-    3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/Python-$VERSION.tar.xz
+    7ce248af148e74dcab04dfc17ded24922ed2ddca https://github.com/fluffy-linux/cpython.git#refs/heads/fluffy/v$VERSION
     d484b784ec35c5776c5ff55f81fa984b5251a38b532b24bb00e43148bd73ffe9 https://github.com/fluffy-linux/cpython/releases/download/v$VERSION/python-$VERSION-docs-html.tar.bz2
-    b1b9929b2260e4dd55b5afd8b3b9c291a8e5373738611714b75b3b9f995ead49 file://Python-$VERSION-fluffy-source.patch
-    14b832e85ea0dd2915caccc0cd904858cc4f0a94344bd5f9e95a3b52f974c012 file://Python-$VERSION-fluffy-test.patch
 )
 
 if test -v CROSS
@@ -78,7 +79,6 @@ then
         mpdecimal
         ncurses
         openssl
-        patch-pass1
         pkgconf
         readline
         sed
@@ -113,7 +113,6 @@ else
         mpdecimal
         ncurses
         openssl
-        patch
         pkgconf
         readline
         sed
@@ -127,10 +126,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../Python-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../Python-$VERSION-fluffy-test.patch
-    touch Modules/getpath.py
-
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/python \
