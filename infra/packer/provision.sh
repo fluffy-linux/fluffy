@@ -8,16 +8,18 @@ apt-get -y upgrade
 
 # Host tools.  LFS's host requirements (bash, binutils, bison, coreutils,
 # diffutils, findutils, gawk, gcc, grep, gzip, m4, make, patch, perl,
-# python3, sed, tar, texinfo, xz), and what Fluffy's host-build recipes and
-# swctl use besides: the autotools (host-build regenerates with them), git
-# (swctl fetches sources), flex (binutils-pass1 and -pass2, built from git,
-# generate ld's and binutils' lexers), gettext and autopoint (the pass1
-# builds of packages from git run autopoint in autoreconf, before Fluffy's
-# own gettext is built), curl, squashfs-tools (host-build packages are
-# packaged with the host's mksquashfs), and ctypes.sh's build dependencies.
+# python3, sed, tar, texinfo, xz), and what Fluffy's host-build recipes
+# and swctl use besides: the autotools (host-build regenerates with them),
+# git (swctl fetches sources), flex (binutils-pass1 and -pass2, built from
+# git, generate ld's and binutils' lexers), gettext and autopoint (the
+# pass1 builds of packages from git run autopoint in autoreconf, before
+# Fluffy's own gettext is built), gperf (they generate gnulib's iconv_open
+# tables, which release tarballs ship ready-made), curl, squashfs-tools
+# (host-build packages are packaged with the host's mksquashfs), and
+# ctypes.sh's build dependencies.
 apt-get -y install --no-install-recommends \
     autoconf automake autopoint bison build-essential bzip2 ca-certificates curl \
-    flex gawk gettext git gnupg gzip libdw-dev libelf-dev libffi-dev libltdl-dev libtool m4 patch \
+    flex gawk gettext git gnupg gperf gzip libdw-dev libelf-dev libffi-dev libltdl-dev libtool m4 patch \
     perl pkg-config python3 squashfs-tools texinfo xz-utils zlib1g-dev
 
 # swctl runs with /sw/bash/bin/bash, and Fluffy has no /bin/sh: on the host
