@@ -3,7 +3,7 @@ ON=host-build
 VERSION=5.3
 
 ARCHIVES=(
-    d7705765d4680cae5e243edfe28b8cd146c25f47 https://github.com/fluffy-linux/bash.git#refs/heads/fluffy/bash-$VERSION
+    335af4bb8849aede28879dc398c76f655da16c7b https://github.com/fluffy-linux/bash.git#refs/heads/fluffy/bash-$VERSION
 )
 
 NEEDS=(

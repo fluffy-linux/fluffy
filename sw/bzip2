@@ -14,7 +14,7 @@ VERSION=1.0.8
 # DocBook tools, which need bash, perl and python, which need bzip2, a
 # cycle that only a separate bzip2-doc package would break.
 ARCHIVES=(
-    fac5ebc87baeb09beec56d8fd820f73e56fd7210 https://github.com/fluffy-linux/bzip2.git#refs/heads/fluffy/bzip2-$VERSION
+    5b0957b5b0f7ac28620750fed604d210d93cb080 https://github.com/fluffy-linux/bzip2.git#refs/heads/fluffy/bzip2-$VERSION
 )
 
 NEEDS=(

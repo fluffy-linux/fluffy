@@ -10,7 +10,7 @@ VERSION=8.3
 # Built straight from Fluffy's branch (our commits on upstream's
 # readline-8.3 tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    f00145c52badd84e3f4418da9a748eb11de1d85d https://github.com/fluffy-linux/readline.git#refs/heads/fluffy/readline-$VERSION
+    d10cb036a45cacc36233664e02e67af71836a7a7 https://github.com/fluffy-linux/readline.git#refs/heads/fluffy/readline-$VERSION
 )
 
 if test -v CROSS
