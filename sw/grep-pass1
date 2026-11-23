@@ -17,7 +17,12 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+    # egrep and fgrep are scripts whose #! line is configure's shell, the
+    # host's /bin/bash otherwise, which doesn't exist inside the root (and
+    # then binutils' configure, testing makeinfo through egrep, decides
+    # it is missing).
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/grep \
         --host=$FLUFFY_TGT \
         --build=$(./build-aux/config.guess)
