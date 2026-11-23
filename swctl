@@ -762,6 +762,19 @@ report_phase_err() {
     local rc=$?
     log ""
     cat "$phase_log" >&2 || true
+    # CHECK's overlay leaves its workdir's "work" directory owned by root
+    # with mode 000.  A successful build removes it; after a failure it
+    # would stay in the checkout, and on a CI agent the next job's checkout
+    # (run as the agent's user) could not clean it and fail before
+    # starting.  test-results stays, for looking at the failure.
+    if test -n "${work_dir:-}" && test -d "$work_dir/test-work"
+    then
+        (
+            call setresuid 0 0 0
+            call setresgid 0 0 0
+            rm -rf "$work_dir/test-work"
+        ) || true
+    fi
     fatal "$phase_name ($pkg) failed with exit code $rc"
 }
 
