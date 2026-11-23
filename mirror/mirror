@@ -10,10 +10,11 @@
 #                       push to the fork (UPSTREAM-URL instead of the
 #                       repository's properties: for testing)
 #
-# Each repository's upstream is in its GitHub custom properties:
-# upstream-url, and upstream-kind (git, or cvs, svn, fossil, tarball,
-# translationproject: those need their own importers and are reported as
-# skipped for now).
+# Each repository's upstream git URL is its organization custom property
+# "upstream" ("URL of upstream Git repository, if any").  A repository
+# without one comes from something other than git (CVS, Fossil, release
+# tarballs, the Translation Project; its description names the source):
+# those need their own importers and are reported as skipped for now.
 #
 # A sync never touches fluffy/* branches (Fluffy's own work, which may
 # have drifted on purpose), never overwrites a tag (ours, such as
@@ -96,19 +97,16 @@ cmd_dag() {
 }
 
 cmd_sync() {
-    local repo=$1 url=${2:-} kind=git
+    local repo=$1 url=${2:-}
     : "${FLUFFY_MIRROR_DIR:?}" "${FLUFFY_MIRROR_TOKEN_FILE:?}"
     if test -z "$url"
     then
-        local props
-        props=$(github "/repos/$org/$repo/properties/values")
-        url=$(printf '%s' "$props" | python3 -c 'import json, sys; print(next((p["value"] or "" for p in json.load(sys.stdin) if p["property_name"] == "upstream-url"), ""))')
-        kind=$(printf '%s' "$props" | python3 -c 'import json, sys; print(next((p["value"] or "" for p in json.load(sys.stdin) if p["property_name"] == "upstream-kind"), ""))')
+        url=$(github "/repos/$org/$repo/properties/values" |
+            python3 -c 'import json, sys; print(next((p["value"] or "" for p in json.load(sys.stdin) if p["property_name"] == "upstream"), ""))')
     fi
-    test -n "$url" || fatal "$repo: no upstream-url property"
-    if test "${kind:-git}" != git
+    if test -z "$url"
     then
-        echo "mirror: $repo: upstream-kind is $kind; manual: skipped (no importer yet)"
+        echo "mirror: $repo: no upstream git repository; manual: skipped (no importer yet)"
         return 0
     fi
 
