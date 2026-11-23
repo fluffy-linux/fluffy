@@ -1,0 +1,9 @@
+# The mirror pipeline (NOTES.md, "Mirror sync"): its first step prints one
+# sync step per fluffy-linux repository and uploads them.  Runs on the
+# mirror agent, whose environment names the repositories disk and the push
+# token (infra/terraform/mirror-cloud-init.yaml).  Scheduled in Buildkite.
+steps:
+  - label: "plan"
+    command: "./mirror/mirror dag | buildkite-agent pipeline upload"
+    agents:
+      queue: "mirror"

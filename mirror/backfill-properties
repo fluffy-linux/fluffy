@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Sets every fluffy-linux repository's upstream-url and upstream-kind
+# custom properties (read by `mirror sync`), from the bare mirrors that
+# mkmirror.sh keeps on the user's PC: a mirror's origin remote is its
+# upstream.  Mirrors without one (imports from CVS, tarballs, the
+# Translation Project, Fossil) take their kind from KINDS below and their
+# URL from the GitHub description mkmirror.sh wrote ("Modified version of
+# <url>").
+#
+#   backfill-properties            show what it would set
+#   backfill-properties --apply    create the property definitions if
+#                                  missing, then set the values
+#
+# Runs with the user's gh login (an organization owner).
+set -euo pipefail
+
+org=fluffy-linux
+base=$HOME/Source/github.com/fluffy-linux
+apply=0
+test "${1:-}" = --apply && apply=1
+
+# Upstreams that aren't a git origin: repository and kind.
+KINDS=(
+    "expect cvs"
+    "mpdecimal tarball"
+    "translationproject translationproject"
+    "tdbc fossil"
+    "tdbcmysql fossil"
+    "tdbcodbc fossil"
+    "tdbcpostgres fossil"
+    "tdbcsqlite3 fossil"
+)
+
+declare -A kind url
+for m in "$base"/*.git
+do
+    r=$(basename "$m" .git)
+    u=$(git -C "$m" remote get-url origin 2>/dev/null || true)
+    case "$u" in
+        "") continue ;;
+        /*|file://*) continue ;;  # a local import: see KINDS
+    esac
+    kind[$r]=git
+    url[$r]=$u
+done
+for k in "${KINDS[@]}"
+do
+    read -r r kd <<< "$k"
+    kind[$r]=$kd
+    url[$r]=$(gh repo view "$org/$r" --json description --jq .description 2>/dev/null |
+        sed -n 's/^Modified version of //p')
+done
+
+if (( apply ))
+then
+    for p in upstream-url upstream-kind
+    do
+        gh api -X PUT "/orgs/$org/properties/schema/$p" \
+            -f value_type=string -F required=false \
+            -f description="Mirror sync: the repository's upstream ($p)" > /dev/null
+    done
+fi
+
+missing=0
+for r in $(gh repo list "$org" --limit 1000 --json name --jq '.[].name' | sort)
+do
+    test "$r" != fluffy || continue
+    if test -z "${kind[$r]:-}"
+    then
+        echo "NO UPSTREAM KNOWN: $r"
+        missing=1
+        continue
+    fi
+    echo "$r: ${kind[$r]} ${url[$r]}"
+    if (( apply ))
+    then
+        gh api -X PATCH "/repos/$org/$r/properties/values" --input - > /dev/null <<EOF
+{"properties": [{"property_name": "upstream-url", "value": "${url[$r]}"},
+                {"property_name": "upstream-kind", "value": "${kind[$r]}"}]}
+EOF
+    fi
+done
+exit $missing

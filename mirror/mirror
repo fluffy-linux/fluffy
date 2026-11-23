@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+# Keeps the fluffy-linux forks current with their upstreams (NOTES.md,
+# "Mirror sync").  It never creates a repository: mkmirror.sh does that.
+#
+#   mirror dag          print a Buildkite pipeline: one sync step per
+#                       fluffy-linux repository (fork), then a join
+#   mirror sync REPO [UPSTREAM-URL]
+#                       sync one repository: fetch its upstream into the
+#                       bare repository kept on the mirror agent's disk,
+#                       push to the fork (UPSTREAM-URL instead of the
+#                       repository's properties: for testing)
+#
+# Each repository's upstream is in its GitHub custom properties:
+# upstream-url, and upstream-kind (git, or cvs, svn, fossil, tarball,
+# translationproject: those need their own importers and are reported as
+# skipped for now).
+#
+# A sync never touches fluffy/* branches (Fluffy's own work, which may
+# have drifted on purpose), never overwrites a tag (ours, such as
+# v2.72.76-2f64, or one recreated because upstream's was malformed: a tag
+# upstream changed is reported, not taken), and never deletes anything.
+#
+# Environment: FLUFFY_MIRROR_DIR (where the bare repositories live),
+# FLUFFY_MIRROR_TOKEN_FILE (a GitHub token that can push to the forks and
+# read their properties), FLUFFY_MIRROR_ORG (default fluffy-linux); for
+# testing, FLUFFY_MIRROR_FORKS (where the forks are, default
+# https://github.com/<org>) and FLUFFY_MIRROR_RETRY_DELAY (seconds before
+# the first retry, default 30).
+set -euo pipefail
+
+org=${FLUFFY_MIRROR_ORG:-fluffy-linux}
+api=https://api.github.com
+
+log() {
+    echo "$@" >&2
+}
+
+fatal() {
+    log "mirror: $*"
+    exit 1
+}
+
+# github PATH: GET from GitHub's API with the token, read from its file on
+# stdin (never on the command line).
+github() {
+    printf 'header = "Authorization: Bearer %s"\n' "$(tr -d '[:space:]' < "$FLUFFY_MIRROR_TOKEN_FILE")" |
+        curl -fsS --retry 5 -K - -H 'Accept: application/vnd.github+json' "$api$1"
+}
+
+# retry N CMD...: run CMD up to N times, waiting 30 s, 60 s, 120 s, ...
+# between tries (Savannah and other upstreams often fail for a while).
+retry() {
+    local tries=$1 delay=${FLUFFY_MIRROR_RETRY_DELAY:-30} i
+    shift
+    for (( i = 1; ; i++ ))
+    do
+        "$@" && return 0
+        (( i < tries )) || return 1
+        log "mirror: attempt $i of $tries failed; retrying in ${delay}s"
+        sleep "$delay"
+        (( delay *= 2 ))
+    done
+}
+
+# only_refused_tags OUTPUT: did a failed fetch fail only because tags
+# would have been overwritten?  (Its rejected lines are all tag clobbers.)
+only_refused_tags() {
+    local rejected
+    rejected=$(printf '%s\n' "$1" | grep -E '^ ! ' || true)
+    test -n "$rejected" || return 1
+    ! printf '%s\n' "$rejected" | grep -qv 'would clobber existing tag'
+}
+
+cmd_dag() {
+    local page=1 repos=() batch
+    while :
+    do
+        batch=$(github "/orgs/$org/repos?type=all&per_page=100&page=$page" |
+            python3 -c 'import json, sys; print("\n".join(r["name"] for r in json.load(sys.stdin) if not r["archived"]))')
+        test -n "$batch" || break
+        mapfile -t -O "${#repos[@]}" repos <<< "$batch"
+        (( page++ ))
+    done
+    echo "steps:"
+    local r
+    for r in "${repos[@]}"
+    do
+        # The fluffy repository itself isn't a mirror.
+        test "$r" != fluffy || continue
+        printf '  - label: "%s"\n' "$r"
+        printf '    key: "sync-%s"\n' "$(printf '%s' "$r" | tr -c 'A-Za-z0-9_-' '_')"
+        printf '    command: "./mirror/mirror sync %s"\n' "$r"
+        printf '    agents:\n      queue: "mirror"\n'
+        printf '    retry:\n      automatic:\n        limit: 2\n'
+    done
+}
+
+cmd_sync() {
+    local repo=$1 url=${2:-} kind=git
+    : "${FLUFFY_MIRROR_DIR:?}" "${FLUFFY_MIRROR_TOKEN_FILE:?}"
+    if test -z "$url"
+    then
+        local props
+        props=$(github "/repos/$org/$repo/properties/values")
+        url=$(printf '%s' "$props" | python3 -c 'import json, sys; print(next((p["value"] or "" for p in json.load(sys.stdin) if p["property_name"] == "upstream-url"), ""))')
+        kind=$(printf '%s' "$props" | python3 -c 'import json, sys; print(next((p["value"] or "" for p in json.load(sys.stdin) if p["property_name"] == "upstream-kind"), ""))')
+    fi
+    test -n "$url" || fatal "$repo: no upstream-url property"
+    if test "${kind:-git}" != git
+    then
+        echo "mirror: $repo: upstream-kind is $kind; manual: skipped (no importer yet)"
+        return 0
+    fi
+
+    local dir="$FLUFFY_MIRROR_DIR/$repo.git"
+    local fork="${FLUFFY_MIRROR_FORKS:-https://github.com/$org}/$repo.git"
+    # The token reaches git through a credential helper reading its file,
+    # never through the command line or the remote URL.
+    local auth=(-c credential.helper=
+                -c "credential.helper=!f() { echo username=x-access-token; printf 'password='; tr -d '[:space:]' < '$FLUFFY_MIRROR_TOKEN_FILE'; echo; }; f")
+    # Never gc or repack on its own: big repositories (linux) would stall
+    # a sync for a long time; it can be done deliberately.
+    local quiet=(-c gc.auto=0 -c maintenance.auto=false)
+
+    if test ! -d "$dir"
+    then
+        # First sync of this repository on this disk: start from the fork,
+        # without its fluffy/* branches.
+        log "mirror: $repo: first sync, cloning the fork"
+        git init -q --bare "$dir"
+        retry 3 git "${quiet[@]}" "${auth[@]}" -C "$dir" fetch -q "$fork" \
+            '+refs/heads/*:refs/heads/*' '^refs/heads/fluffy/*' 'refs/tags/*:refs/tags/*'
+    fi
+
+    # Upstream: branches forced (upstream may rewrite them), never fluffy/*;
+    # tags never overwritten.  A tag upstream changed is refused by git
+    # (non-zero exit); that is reported as a warning, not a failure.
+    # Retried only for real failures: a refused tag fails every attempt
+    # the same way, so it ends the loop at once.
+    local out rc attempt delay=${FLUFFY_MIRROR_RETRY_DELAY:-30}
+    for (( attempt = 1; ; attempt++ ))
+    do
+        rc=0
+        out=$(git "${quiet[@]}" -C "$dir" fetch "$url" \
+            '+refs/heads/*:refs/heads/*' '^refs/heads/fluffy/*' 'refs/tags/*:refs/tags/*' 2>&1) || rc=$?
+        if (( rc == 0 )) || only_refused_tags "$out"
+        then
+            break
+        fi
+        if (( attempt == 5 ))
+        then
+            printf '%s\n' "$out" >&2
+            fatal "$repo: fetching $url failed"
+        fi
+        log "mirror: $repo: fetch attempt $attempt of 5 failed; retrying in ${delay}s"
+        sleep "$delay"
+        (( delay *= 2 ))
+    done
+    printf '%s\n' "$out" | grep 'would clobber existing tag' | sed "s/^/mirror: $repo: warning: upstream changed tag, kept ours: /" >&2 || true
+
+    # The fork: branches forced (fluffy/* excluded: Fluffy's own work), new
+    # tags only.  Nothing is deleted.
+    retry 3 git "${quiet[@]}" "${auth[@]}" -C "$dir" push -q "$fork" \
+        '+refs/heads/*:refs/heads/*' '^refs/heads/fluffy/*' 'refs/tags/*:refs/tags/*'
+    echo "mirror: $repo: synced from $url"
+}
+
+case "${1:-}" in
+    dag)
+        cmd_dag
+        ;;
+    sync)
+        test $# -eq 2 || test $# -eq 3 || fatal "usage: $0 sync REPO [UPSTREAM-URL]"
+        cmd_sync "$2" "${3:-}"
+        ;;
+    *)
+        fatal "usage: $0 dag | sync REPO"
+        ;;
+esac
