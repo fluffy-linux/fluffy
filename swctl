@@ -1788,9 +1788,12 @@ build_pkgs() {
 # package (its ON target included) and, as install_targets mounts them, all
 # that those NEEDS in turn.  Every step's dependencies are then already
 # built, so its `swctl build` finds them up to date and builds only its own
-# package.  The steps share this machine's /sw and fstab, so they run one at
-# a time (a concurrency group per FLUFFY root); a step whose agent is lost
-# is retried.
+# package.  Without the binary cache, the steps share one machine's /sw and
+# fstab, so they run one at a time (a concurrency group per FLUFFY root).
+# When steps publish to the cache (CI), each step's agent restores what it
+# needs from it, published by the steps it depends on, so steps run in
+# parallel on as many agents as there are.  A step whose agent is lost is
+# retried.
 buildkite_pipeline() {
     if test $# -lt 1
     then
@@ -1854,10 +1857,20 @@ buildkite_pipeline() {
 
         echo "  - label: $(yaml_str "$pkg")"
         echo "    key: $(yaml_str "$(step_key "$pkg")")"
-        echo "    command: $(yaml_str "sudo$env_prefix$cache_env ./swctl build $(printf '%q' "$pkg")")"
+        # In parallel, a step can land on a fresh agent: bootstrap its root
+        # first (bootstrap.sh does only what is not done yet).
+        local boot=""
+        if cache_publishing
+        then
+            boot="sudo$env_prefix ./bootstrap.sh && "
+        fi
+        echo "    command: $(yaml_str "${boot}sudo$env_prefix$cache_env ./swctl build $(printf '%q' "$pkg")")"
         echo "    timeout_in_minutes: 720"
-        echo "    concurrency: 1"
-        echo "    concurrency_group: $(yaml_str "$group")"
+        if ! cache_publishing
+        then
+            echo "    concurrency: 1"
+            echo "    concurrency_group: $(yaml_str "$group")"
+        fi
         echo "    retry:"
         echo "      automatic:"
         echo "        - exit_status: -1"
