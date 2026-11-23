@@ -1,4 +1,8 @@
-# Fluffy's CI on Azure
+# Fluffy's CI on Azure (retired)
+
+CI now runs on GCP: see `gcp/README.md`.  What follows describes the
+Azure setup, no longer used; `packer/provision.sh` and `packer/files/`
+are still shared by the GCP image.
 
 Infrastructure for running Fluffy's Buildkite CI on Azure spot VMs, in
 East US.  No credentials live in this repository: Terraform and Packer

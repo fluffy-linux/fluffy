@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Run after buildkite-agent stops.  When the agent exited cleanly (it was
+# idle for disconnect-after-idle-timeout), delete this VM through the
+# Compute Engine API, with the VM's service account; its boot disk and
+# local SSD go with it.  Any other stop (a crash, a shutdown, a spot
+# preemption) leaves the VM alone: GCP (spot VMs are deleted when
+# preempted, and every agent at its maximum run duration), or a person
+# debugging it, deals with those.
+set -euo pipefail
+
+if test "${SERVICE_RESULT:-}" != success || test "${EXIT_STATUS:-}" != 0
+then
+    echo "fluffy-ci-self-delete: agent stopped with ${SERVICE_RESULT:-?}/${EXIT_STATUS:-?}; keeping this VM"
+    exit 0
+fi
+if test "${FLUFFY_CI_SELF_DELETE:-1}" = 0
+then
+    echo "fluffy-ci-self-delete: FLUFFY_CI_SELF_DELETE=0; keeping this VM"
+    exit 0
+fi
+
+metadata=http://metadata.google.internal/computeMetadata/v1
+md() {
+    curl -fsS -H Metadata-Flavor:Google "$metadata/$1"
+}
+project=$(md project/project-id)
+zone=$(md instance/zone)        # projects/<number>/zones/<zone>
+zone=${zone##*/}
+name=$(md instance/name)
+access_token=$(md instance/service-accounts/default/token |
+    python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])')
+
+echo "fluffy-ci-self-delete: deleting $project/$zone/$name"
+printf 'header = "Authorization: Bearer %s"\n' "$access_token" |
+    curl -fsS -K - -X DELETE \
+        "https://compute.googleapis.com/compute/v1/projects/$project/zones/$zone/instances/$name"
