@@ -7,8 +7,16 @@ fi
 
 VERSION=1.4.1
 
+# Built straight from Fluffy's branch (upstream's 1.4.1 tag): swctl
+# fetches the pinned commit with git.  The tag has no configure,
+# Makefile.in or mpc.info, so MAKE regenerates them with the autoconf,
+# automake and libtool the release tarball was made with (2.72, 1.17,
+# 2.4.7), from their Fluffy branches.
 ARCHIVES=(
-    91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://github.com/fluffy-linux/mpc/releases/download/$VERSION/mpc-$VERSION.tar.xz
+    532a18ae8222f928c58f7ffd1b4f0122062172bd https://github.com/fluffy-linux/mpc.git#refs/heads/fluffy/$VERSION
+    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    956b73ebd63a37d0d5b1d60db0804297070d62d7 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17
+    ff57e5acd76a5f28f484b91f1d3787c796a2f94c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )
 
 NEEDS=(
@@ -62,8 +70,17 @@ else
     )
 fi
 
+# Regenerated with the autotools mpc's release tarball was made with.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/mpc \
         --disable-static \
