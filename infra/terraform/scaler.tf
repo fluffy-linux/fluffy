@@ -100,12 +100,17 @@ resource "azurerm_function_app_flex_consumption" "scaler" {
     KEY_VAULT                 = azurerm_key_vault.ci.name
     SUBSCRIPTION_ID           = data.azurerm_client_config.current.subscription_id
     RESOURCE_GROUP            = azurerm_resource_group.ci.name
-    SCALE_SETS = jsonencode({
+    SCALE_SETS = jsonencode(merge({
       for k, q in var.agent_queues : q.buildkite_queue => {
         vmss = azurerm_orchestrated_virtual_machine_scale_set.agents[k].name
         max  = q.max_instances
       } if q.buildkite_queue != null
-    })
+      }, {
+      (var.mirror_buildkite_queue) = {
+        vmss = azurerm_orchestrated_virtual_machine_scale_set.mirror.name
+        max  = 1
+      }
+    }))
   }
 
   depends_on = [

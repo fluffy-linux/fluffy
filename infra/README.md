@@ -108,3 +108,29 @@ with your `az login` session, and Azure pip-installs `requirements.txt`
 itself.  See what it did each minute in the function's log stream (portal)
 or with `az webapp log tail`.  A scale set's queue must be named
 (`buildkite_queue` in `agent_queues`) for the scaler to manage it.
+
+## The mirror agent
+
+Keeps the fluffy-linux forks current with upstream (NOTES.md, "Mirror
+sync").  `mirror.tf` makes a small scale set (`fluffy-ci-mirror`, at most
+one VM, started on demand by the scaler for the `mirror` queue and deleted
+by the idle self-delete) and a persistent Standard HDD,
+`fluffy-ci-mirror-repos`, which each VM attaches to itself at boot and
+mounts on `/srv/mirror`: the bare repositories of the last sync live
+there, so a run never re-clones.  Terraform refuses to destroy the disk.
+
+The mirror VM has its own identity, `fluffy-ci-mirror`, which reads the
+whole vault.  The build agents' identity reads only `buildkite-agent-token`
+and `ghcr-token`, because builds run upstream code that must not see the
+push token.  Once, by hand:
+
+- In Buildkite, add a queue named `mirror` to the cluster.
+- Store a GitHub token that can push to the fluffy-linux repositories:
+
+  ```
+  az keyvault secret set --vault-name <vault> --name github-mirror-token \
+      --file token.txt
+  ```
+
+  (no trailing newline needed: the VM strips whitespace, as for the agent
+  token).

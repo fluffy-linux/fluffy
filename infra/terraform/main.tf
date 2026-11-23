@@ -86,8 +86,12 @@ resource "azurerm_key_vault" "ci" {
   soft_delete_retention_days = 7
 }
 
+# The build agents read only their own secrets: they run upstream build
+# scripts, so they must not see the mirror's GitHub push token.  The
+# secrets are created by hand (README), before Terraform needs them here.
 resource "azurerm_role_assignment" "vault_agent" {
-  scope                = azurerm_key_vault.ci.id
+  for_each             = toset(["buildkite-agent-token", "ghcr-token"])
+  scope                = "${azurerm_key_vault.ci.id}/secrets/${each.key}"
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_user_assigned_identity.agent.principal_id
 }
