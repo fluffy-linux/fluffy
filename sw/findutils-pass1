@@ -2,8 +2,13 @@ ON=host-build
 
 VERSION=4.11.0
 
+# Built straight from Fluffy's branch, as findutils is: the host's autotools
+# build the ones findutils's release tarball was made with, and bootstrap
+# runs the host's autopoint.
 ARCHIVES=(
-    bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd https://github.com/fluffy-linux/findutils/releases/download/v$VERSION/findutils-$VERSION.tar.xz
+    7c2e65a3d54ec2fba2cdb6cb4ff3553daa1f21ad https://github.com/fluffy-linux/findutils.git#refs/heads/fluffy/v$VERSION
+    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    956b73ebd63a37d0d5b1d60db0804297070d62d7 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17
 )
 
 NEEDS=(
@@ -16,12 +21,20 @@ BUILD_NEEDS=(
     linux-headers
 )
 
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
+    autoconf_build
+    automake_build
+    ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/findutils \
         --localstatedir=/var/locate \
         --host=$FLUFFY_TGT \
         --build=$(build-aux/config.guess)
+    # The translations as make dist merges them.
+    make -C po update-po
     make
 }
 
