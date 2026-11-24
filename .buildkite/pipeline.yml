@@ -6,12 +6,12 @@ steps:
   - label: "plan"
     command: |
       set -euo pipefail
-      sudo FLUFFY="$$FLUFFY" BUILDKITE="$${BUILDKITE:-}" ./bootstrap.sh
+      sudo --preserve-env=BUILDKITE FLUFFY="$$FLUFFY" ./bootstrap.sh
       plan="$$(mktemp)"
       # With the cache settings, so swctl knows the steps publish to the
       # cache and can run in parallel, with each package's checks in a
       # check step of its own (build-<pkg>, check-<pkg>, world-check).
-      sudo FLUFFY="$$FLUFFY" CROSS="$$CROSS" FLUFFY_CACHE_REGISTRY="$${FLUFFY_CACHE_REGISTRY:-}" FLUFFY_CACHE_TOKEN_FILE="$${FLUFFY_CACHE_TOKEN_FILE:-}" ./swctl buildkite world > "$$plan"
+      sudo --preserve-env=BUILDKITE,FLUFFY_CACHE_REGISTRY,FLUFFY_CACHE_TOKEN_FILE FLUFFY="$$FLUFFY" CROSS="$$CROSS" ./swctl buildkite world > "$$plan"
       buildkite-agent pipeline upload "$$plan"
       rm -f "$$plan"
 
@@ -20,4 +20,4 @@ steps:
   - wait
 
   - label: "bootstrap"
-    command: sudo FLUFFY="$$FLUFFY" BUILDKITE="$${BUILDKITE:-}" ./bootstrap.sh
+    command: sudo --preserve-env=BUILDKITE FLUFFY="$$FLUFFY" ./bootstrap.sh

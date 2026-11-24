@@ -38,6 +38,8 @@ bk_log=0
 test "${BUILDKITE:-}" != true || bk_log=1
 
 fatal() {
+    # On Buildkite, open the section the failure is in (see bk_log).
+    test "${bk_log:-0}" != 1 || log "^^^ +++"
     log "$@"
     exit 1
 }
@@ -769,11 +771,10 @@ install_targets() {
 
 report_phase_err() {
     local rc=$?
-    if (( bk_log ))
+    # On Buildkite the output is in the phase's section already, which
+    # fatal opens.
+    if (( ! bk_log ))
     then
-        # The output is in the phase's section already: open it.
-        log "^^^ +++"
-    else
         log ""
         cat "$phase_log" >&2 || true
     fi
@@ -1976,6 +1977,10 @@ build_pkgs() {
         export FLUFFY_PROGRESS="[$idx/$total]" FLUFFY_RECIPE_CHECKSUM="$current_recipe_chk"
         build_single_pkg "$pkg"
         reload_fstab
+        if cache_enabled && (( bk_log ))
+        then
+            log "--- $pkg: PUBLISH"
+        fi
         if cache_enabled && ! cache_publish "$pkg" "$current_recipe_chk"
         then
             fatal "cache: could not publish $pkg to $FLUFFY_CACHE_REGISTRY"
@@ -2142,6 +2147,7 @@ ci_step() {
         export FLUFFY_RECIPE_CHECKSUM="$chk"
         build_single_pkg "$pkg"
         reload_fstab
+        (( ! bk_log )) || log "--- $pkg: PUBLISH"
         if test -f "$tree_file"
         then
             local existing="" rc=0
@@ -2209,6 +2215,7 @@ ci_step() {
         build_single_pkg "$pkg"
         rm -f "$tree_file"
     fi
+    (( ! bk_log )) || log "--- $pkg: PUBLISH"
     cache_promote "$pkg" "$chk" || fatal "cache: could not promote $tag to $vetted"
     log "$pkg: VETTED($vetted)"
 }
@@ -2263,13 +2270,11 @@ buildkite_pipeline() {
     then
         env_prefix+=" CROSS=$(printf '%q' "$CROSS")"
     fi
-    # Buildkite's own variable, which sudo would drop: with it, swctl and
-    # bootstrap.sh log in Buildkite's sections.  Expanded by the step's shell.
-    env_prefix+=' BUILDKITE="${BUILDKITE:-}"'
-
-    # The binary cache, when the agent's environment names one (CI's do;
-    # empty elsewhere, which leaves it off).  Expanded by the step's shell.
-    local cache_env=' FLUFFY_CACHE_REGISTRY="${FLUFFY_CACHE_REGISTRY:-}" FLUFFY_CACHE_TOKEN_FILE="${FLUFFY_CACHE_TOKEN_FILE:-}"'
+    # The agent's own variables that sudo would drop, kept with
+    # --preserve-env (passed only when set): BUILDKITE, so swctl and
+    # bootstrap.sh log in Buildkite's sections, and the binary cache's
+    # settings, when the agent's environment names a cache (CI's do).
+    local keep="BUILDKITE" cache_keep=",FLUFFY_CACHE_REGISTRY,FLUFFY_CACHE_TOKEN_FILE"
 
     # In parallel, a step can land on a fresh agent: bootstrap its root
     # first (bootstrap.sh does only what is not done yet).
@@ -2277,8 +2282,8 @@ buildkite_pipeline() {
     if cache_publishing
     then
         ci=1
-        boot="sudo$env_prefix ./bootstrap.sh && "
-        cache_env+=' BUILDKITE_BUILD_ID="${BUILDKITE_BUILD_ID:-}"'
+        boot="sudo --preserve-env=$keep$env_prefix ./bootstrap.sh && "
+        cache_keep+=",BUILDKITE_BUILD_ID"
         plan_check_steps
     fi
 
@@ -2315,7 +2320,7 @@ buildkite_pipeline() {
     for pkg in "${order[@]}"
     do
         reach_of "$pkg"
-        swctl="sudo$env_prefix$cache_env ./swctl"
+        swctl="sudo --preserve-env=$keep$cache_keep$env_prefix ./swctl"
         if test -z "$ci"
         then
             builds=()
