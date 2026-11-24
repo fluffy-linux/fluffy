@@ -2,8 +2,15 @@ ON=host-build
 
 VERSION=3.12
 
+# Built straight from Fluffy's branch, as grep is: the host's autotools
+# build the ones grep's release tarball was made with, and bootstrap runs
+# the host's autopoint.  bootstrap copies pkg-config's pkg.m4 into m4/
+# and refuses the host's (serial 12): it takes pkgconf-pass1's, as grep
+# takes pkgconf's.
 ARCHIVES=(
-    2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9 https://github.com/fluffy-linux/grep/releases/download/v$VERSION/grep-$VERSION.tar.xz
+    10099f47ab61637b8a63040b565c4e5b67d974ab https://github.com/fluffy-linux/grep.git#refs/heads/fluffy/v$VERSION
+    18bfebd5367050afd0f2f5b8eb1c2acc93c26c3a https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.76-2f64
+    df341d9c2ff367a0b177cb998c08ade9c03c0e3f https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17.0.91
 )
 
 NEEDS=(
@@ -14,9 +21,16 @@ BUILD_NEEDS=(
     gcc-pass1
     glibc-pass1
     linux-headers
+    pkgconf-pass1
 )
 
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
+    autoconf_build
+    automake_build
+    ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     # egrep and fgrep are scripts whose #! line is configure's shell, the
     # host's /bin/bash otherwise, which doesn't exist inside the root (and
     # then binutils' configure, testing makeinfo through egrep, decides
@@ -26,6 +40,8 @@ MAKE() {
         --prefix=/sw/grep \
         --host=$FLUFFY_TGT \
         --build=$(./build-aux/config.guess)
+    # The translations as make dist merges them with grep.pot.
+    make -C po update-po
     make
 }
 

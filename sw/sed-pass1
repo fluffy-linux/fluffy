@@ -2,8 +2,13 @@ ON=host-build
 
 VERSION=4.10
 
+# Built straight from Fluffy's branch, as sed is: the host's autotools
+# build the ones sed's release tarball was made with, and bootstrap runs
+# the host's autopoint.
 ARCHIVES=(
-    b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7 https://github.com/fluffy-linux/sed/releases/download/v$VERSION/sed-$VERSION.tar.xz
+    1041359ee65f5160841dae26e0b781a111027df6 https://github.com/fluffy-linux/sed.git#refs/heads/fluffy/v$VERSION
+    b3d3778291f117f8420d4871f32b4d7c4caf23d1 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73.1-b400b
+    8445536d2be6795ae581c4886293baf70af8da79 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1.91
 )
 
 NEEDS=(
@@ -16,11 +21,19 @@ BUILD_NEEDS=(
     linux-headers
 )
 
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
+    autoconf_build
+    automake_build
+    ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/sed \
         --host=$FLUFFY_TGT \
         --build=$(./build-aux/config.guess)
+    # The translations as make dist merges them with sed.pot.
+    make -C po update-po
     make
 }
 
