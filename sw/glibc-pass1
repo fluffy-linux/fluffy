@@ -2,12 +2,15 @@ ON=host-build
 
 VERSION=2.44
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# glibc-2.44 tag): swctl fetches the pinned commit with git.  The branch
+# carries LFS's glibc-fhs-1 patch, its glibc-2.44-upstream_fixes-1 patch
+# as the upstream commits it is made of, and the book's nsswitch.conf and
+# hosts, which make install installs.  The book's sed edit to ldd's
+# RTLDLIST changes nothing with the /sw/glibc prefix (it only acts on
+# /usr), so it is left out.
 ARCHIVES=(
-    37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667 https://github.com/fluffy-linux/glibc/releases/download/glibc-$VERSION/glibc-$VERSION.tar.xz
-    643552db030e2f2d7ffde4f558e0f5f83d3fabf34a2e0e56ebdb49750ac27b0d file://glibc-fhs-1.patch
-    500567ff0a22e295bfe3b55e9b397796f71a19f01e1ff7fb29c9189482ee1809 file://glibc-$VERSION-upstream_fixes-1.patch
-    aa7dc37d87cd1c3cd5edd70755415c3cc50c0165752cd519a58df225e9f66bdc file://glibc-$VERSION-fluffy-shell.patch
-    f65fab094a034222beafa716114b66008c17f466a10f6b20d51febe4c5481245 file://glibc-$VERSION-fluffy-source.patch
+    2b454b4ca5fdd4d2d776a47b3470fb3754182613 https://github.com/fluffy-linux/glibc.git#refs/heads/fluffy/glibc-$VERSION
     0d0ebdf6c6a81658e352a96e703815779105a3489a52bc3c74746e07d368dda0 file://glibc.passwd
     b2b74131611f9116dfbae38c97575816812fe6273ccf795582bb12a5c21e2fea file://glibc.group
 )
@@ -18,11 +21,6 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i ../glibc-fhs-1.patch
-    patch -Z -Np1 -i ../glibc-$VERSION-upstream_fixes-1.patch
-    patch -Z -Np1 -i ../glibc-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i ../glibc-$VERSION-fluffy-source.patch
-
     mkdir -v build
     cd build
     cat > configparms << "EOF"
@@ -43,7 +41,6 @@ EOF
 INSTALL() {
     cd build
     make install
-    sed '/RTLDLIST/s@/usr@@g' -i $DESTDIR/sw/glibc/bin/ldd
 
     mkdir -p $DESTDIR/sw/glibc/etc
     install -m 644 ../../glibc.passwd $DESTDIR/sw/glibc/etc/passwd
@@ -51,27 +48,6 @@ INSTALL() {
 
     cat > $DESTDIR/sw/glibc/etc/host.conf << "EOF"
 multi on
-EOF
-
-    cat > $DESTDIR/sw/glibc/etc/hosts << "EOF"
-127.0.0.1 localhost
-::1       localhost ip6-localhost ip6-loopback
-ff02::1   ip6-allnodes
-ff02::2   ip6-allrouters
-EOF
-
-    cat > $DESTDIR/sw/glibc/etc/nsswitch.conf << "EOF"
-passwd: files systemd
-group: files systemd
-shadow: files systemd
-
-hosts: mymachines resolve [!UNAVAIL=return] files myhostname dns
-networks: files
-
-protocols: files
-services: files
-ethers: files
-rpc: files
 EOF
 
     mkdir -p $DESTDIR/sw/glibc/share
