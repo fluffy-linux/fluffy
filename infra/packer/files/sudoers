@@ -1,3 +1,0 @@
-# The pipeline runs bootstrap.sh and swctl as root, as today's agent does.
-# The VM exists only for CI and is deleted after.
-buildkite-agent ALL=(ALL) NOPASSWD: ALL

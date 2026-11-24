@@ -2,7 +2,6 @@ work/
 .envrc
 GEMINI.md
 __pycache__/
-infra/**/.terraform/
 *.tfstate
 *.tfstate.*
 *.tfvars
