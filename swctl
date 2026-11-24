@@ -48,6 +48,17 @@ bk_section() {
     bk_current="$1"
 }
 
+# pkg_log MESSAGE: a CI step's line about its package ($pkg), "pkg: MESSAGE";
+# on Buildkite just MESSAGE, since the step already names the package.
+pkg_log() {
+    if (( bk_log ))
+    then
+        log "$1"
+    else
+        log "$pkg: $1"
+    fi
+}
+
 fatal() {
     # On Buildkite, open the section the failure is in (see bk_log).
     test "${bk_log:-0}" != 1 || log "^^^ +++"
@@ -2146,7 +2157,7 @@ ci_step() {
     then
         if test -n "$tag"
         then
-            log "$pkg: CACHED($tag)"
+            pkg_log "CACHED($tag)"
             return 0
         fi
         for d in "${order[@]}"
@@ -2167,11 +2178,11 @@ ci_step() {
             cache_image_digest "$tree" existing || rc=$?
             case "$rc" in
                 0)
-                    log "$pkg: $tree is published already"
+                    pkg_log "$tree is published already"
                     ;;
                 1)
                     cache_push "$tree_file" "$tree" application/vnd.fluffy.tree.v1 || fatal "cache: could not publish $tree"
-                    log "$pkg: published $tree"
+                    pkg_log "published $tree"
                     ;;
                 *)
                     fatal "cache: could not look up $tree in $FLUFFY_CACHE_REGISTRY"
@@ -2187,13 +2198,13 @@ ci_step() {
         else
             cache_publish "$pkg" "$chk" || fatal "cache: could not publish $tag"
         fi
-        log "$pkg: published $tag"
+        pkg_log "published $tag"
         return 0
     fi
 
     if test "$tag" == "$vetted"
     then
-        log "$pkg: VETTED($vetted)"
+        pkg_log "VETTED($vetted)"
         return 0
     fi
     if test -z "$tag"
@@ -2230,7 +2241,7 @@ ci_step() {
     fi
     bk_section PUBLISH
     cache_promote "$pkg" "$chk" || fatal "cache: could not promote $tag to $vetted"
-    log "$pkg: VETTED($vetted)"
+    pkg_log "VETTED($vetted)"
 }
 
 # Print the build of the given packages as a Buildkite pipeline, to be fed to
