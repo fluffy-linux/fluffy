@@ -29,11 +29,11 @@ log() {
 }
 
 # On Buildkite (BUILDKITE=true), phases log as Buildkite expects: each
-# phase's output in full, under a collapsed section of its own ("--- pkg:
-# PHASE"), which opens when the phase fails ("^^^ +++"); Buildkite times
-# sections itself, so no elapsed times.  Elsewhere, quietly as before: one
-# line per package with each phase's time, the output in a phase log shown
-# only when the phase fails.
+# phase's output in full, under a collapsed section named after the phase
+# ("--- MAKE"; the step names the package), which opens when anything
+# fails ("^^^ +++"); Buildkite times sections itself, so no elapsed
+# times.  Elsewhere, quietly as before: one line per package with each
+# phase's time, the output in a phase log shown only when the phase fails.
 bk_log=0
 test "${BUILDKITE:-}" != true || bk_log=1
 
@@ -813,7 +813,7 @@ run_phase() {
     shift
     if (( bk_log ))
     then
-        log "--- ${pkg:-}: $phase_name"
+        log "--- $phase_name"
         trap report_phase_err ERR
         (
             "$@"
@@ -1979,7 +1979,7 @@ build_pkgs() {
         reload_fstab
         if cache_enabled && (( bk_log ))
         then
-            log "--- $pkg: PUBLISH"
+            log "--- PUBLISH"
         fi
         if cache_enabled && ! cache_publish "$pkg" "$current_recipe_chk"
         then
@@ -2147,7 +2147,7 @@ ci_step() {
         export FLUFFY_RECIPE_CHECKSUM="$chk"
         build_single_pkg "$pkg"
         reload_fstab
-        (( ! bk_log )) || log "--- $pkg: PUBLISH"
+        (( ! bk_log )) || log "--- PUBLISH"
         if test -f "$tree_file"
         then
             local existing="" rc=0
@@ -2215,7 +2215,7 @@ ci_step() {
         build_single_pkg "$pkg"
         rm -f "$tree_file"
     fi
-    (( ! bk_log )) || log "--- $pkg: PUBLISH"
+    (( ! bk_log )) || log "--- PUBLISH"
     cache_promote "$pkg" "$chk" || fatal "cache: could not promote $tag to $vetted"
     log "$pkg: VETTED($vetted)"
 }
