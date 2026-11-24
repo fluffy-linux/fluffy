@@ -20,10 +20,23 @@ do
     esac
 done
 
-# On Buildkite, its output goes in a collapsed section of its own.
-if test "${BUILDKITE:-}" = true
+# On Buildkite (every CI step runs this first), its output goes in a
+# collapsed section of its own, and only when there is any: run again with
+# the output captured, then print the section, opened if this failed.
+if test "${BUILDKITE:-}" = true && test -z "${FLUFFY_BOOTSTRAP_CAPTURED:-}"
 then
-    echo "--- bootstrap"
+    rc=0
+    out="$(FLUFFY_BOOTSTRAP_CAPTURED=1 "$0" "$@" 2>&1)" || rc=$?
+    if test -n "$out"
+    then
+        echo "--- bootstrap"
+        printf '%s\n' "$out"
+    fi
+    if test "$rc" != 0
+    then
+        echo "^^^ +++"
+    fi
+    exit "$rc"
 fi
 
 "$DIR/mkuid.sh" --check
@@ -202,7 +215,11 @@ if ! awk -F: '$1 == "root" && $2 != "" && $2 != "!" && $2 != "*" { found=1 } END
 then
     if test "$set_root_password" = 0
     then
-        echo "bootstrap: root has no password; run $0 --root-password to set one" >&2
+        # A note for a person; a CI root never gets a password.
+        if test "${BUILDKITE:-}" != true
+        then
+            echo "bootstrap: root has no password; run $0 --root-password to set one" >&2
+        fi
     elif test -s "$FLUFFY/etc/fluffy/fstab" && grep -q '^/sw/shadow-[0-9]' "$FLUFFY/etc/fluffy/fstab"
     then
         FLUFFY="$FLUFFY" unshare -m bash -euo pipefail -c '
@@ -228,7 +245,7 @@ then
     fi
 fi
 
-if test -f "$DIR/boot/grub/grub.cfg"
+if test -f "$DIR/boot/grub/grub.cfg" && ! cmp -s "$DIR/boot/grub/grub.cfg" "$FLUFFY/boot/grub/grub.cfg"
 then
     mkdir -pv "$FLUFFY/boot/grub"
     cp -fv "$DIR/boot/grub/grub.cfg" "$FLUFFY/boot/grub/grub.cfg"

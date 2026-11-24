@@ -37,6 +37,17 @@ log() {
 bk_log=0
 test "${BUILDKITE:-}" != true || bk_log=1
 
+# bk_section NAME: on Buildkite, start section NAME unless it is the
+# current one.  A step starts PREPARE before it looks its dependencies up
+# and fetches them, so their lines (CACHED, VETTED) are part of PREPARE.
+bk_current=""
+bk_section() {
+    (( bk_log )) || return 0
+    test "$bk_current" != "$1" || return 0
+    log "--- $1"
+    bk_current="$1"
+}
+
 fatal() {
     # On Buildkite, open the section the failure is in (see bk_log).
     test "${bk_log:-0}" != 1 || log "^^^ +++"
@@ -813,7 +824,7 @@ run_phase() {
     shift
     if (( bk_log ))
     then
-        log "--- $phase_name"
+        bk_section "$phase_name"
         trap report_phase_err ERR
         (
             "$@"
@@ -1930,6 +1941,7 @@ build_pkgs() {
 
     local -a order=()
     local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=() pkg_has_check=()
+    bk_section PREPARE
     plan_pkgs "$plan_mode" "$@"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1979,7 +1991,7 @@ build_pkgs() {
         reload_fstab
         if cache_enabled && (( bk_log ))
         then
-            log "--- PUBLISH"
+            bk_section PUBLISH
         fi
         if cache_enabled && ! cache_publish "$pkg" "$current_recipe_chk"
         then
@@ -2110,6 +2122,7 @@ ci_resolve() {
 ci_step() {
     local pkg="${1##*/}"
     validate_pkg_name "$pkg"
+    bk_section PREPARE
     if test "$ci_mode" == defer
     then
         cache_build_scope "build --defer-check"
@@ -2147,7 +2160,7 @@ ci_step() {
         export FLUFFY_RECIPE_CHECKSUM="$chk"
         build_single_pkg "$pkg"
         reload_fstab
-        (( ! bk_log )) || log "--- PUBLISH"
+        bk_section PUBLISH
         if test -f "$tree_file"
         then
             local existing="" rc=0
@@ -2215,7 +2228,7 @@ ci_step() {
         build_single_pkg "$pkg"
         rm -f "$tree_file"
     fi
-    (( ! bk_log )) || log "--- PUBLISH"
+    bk_section PUBLISH
     cache_promote "$pkg" "$chk" || fatal "cache: could not promote $tag to $vetted"
     log "$pkg: VETTED($vetted)"
 }
