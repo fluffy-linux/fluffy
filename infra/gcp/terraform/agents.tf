@@ -36,8 +36,10 @@ resource "google_project_iam_member" "agent_self_delete" {
   }
 }
 
+# One template per region: a template's subnet is regional.
 resource "google_compute_instance_template" "agent" {
-  name_prefix      = "fluffy-ci-agent-"
+  for_each         = var.agent_zones
+  name_prefix      = "fluffy-ci-agent-${each.key}-"
   machine_type     = var.agent_machine_type
   min_cpu_platform = var.agent_min_cpu_platform
 
@@ -59,7 +61,7 @@ resource "google_compute_instance_template" "agent" {
     boot         = true
     auto_delete  = true
     source_image = "projects/${var.project}/global/images/family/fluffy-ci-agent"
-    disk_type    = "pd-balanced"
+    disk_type    = var.agent_boot_disk_type
     disk_size_gb = var.agent_boot_disk_gb
   }
 
@@ -75,7 +77,7 @@ resource "google_compute_instance_template" "agent" {
   }
 
   network_interface {
-    subnetwork = google_compute_subnetwork.agents.id
+    subnetwork = google_compute_subnetwork.agents[each.key].id
     access_config {}
   }
 

@@ -1,7 +1,8 @@
 # Fluffy's CI on GCP
 
 Fluffy's Buildkite CI agents run here, on spot VMs in project
-`fluffy-linux`, region `us-east4`.  It replaces the Azure setup
+`fluffy-linux`, regions `us-east4` and `us-east1` (the scaler and the
+rest are in `us-east4`).  It replaces the Azure setup
 (`infra/README.md`, `infra/terraform`, `infra/packer`'s Azure template),
 which is no longer used.  The agent image still uses `infra/packer`'s
 `provision.sh` and its shared files.
@@ -21,12 +22,16 @@ service accounts, and read their secrets from Secret Manager.
   - the agents' service account: it can read two secrets
     (`buildkite-agent-token`, `ghcr-token`) and delete agent VMs, nothing
     else, because builds run upstream code;
-  - the spot instance template;
+  - a subnet and a spot instance template per agent region;
   - the scaler.
 - `scaler/`: a Cloud Function, called every minute by Cloud Scheduler. It
   reads Buildkite's agent metrics and starts agent VMs until the queue
-  `mufasa` has one per busy or waiting job, up to `agent_max_instances` (4
-  `n2d-standard-4`, the region's N2D quota). It never deletes VMs: agents
+  `mufasa` has one per busy or waiting job, up to `agent_max_instances`.
+  That is 2 `c4d-standard-16-lssd`: the project has 32 vCPUs and C4D 24
+  per region, so in practice one per region. A world is mostly one long
+  chain of steps, so fast agents matter more than many. It tries zones in
+  turn, and waits for each create to finish, because quota and spot
+  capacity failures show up in the operation. It never deletes VMs: agents
   leave on their own. Spot VMs are also deleted when preempted, and every
   VM at `agent_max_run_hours`.
 

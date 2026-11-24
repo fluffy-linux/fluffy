@@ -57,8 +57,9 @@ resource "google_compute_network" "ci" {
 }
 
 resource "google_compute_subnetwork" "agents" {
-  name          = "fluffy-ci-agents"
+  for_each      = var.agent_zones
+  name          = "fluffy-ci-agents-${each.key}"
   network       = google_compute_network.ci.id
-  region        = var.region
-  ip_cidr_range = "10.20.0.0/20"
+  region        = each.key
+  ip_cidr_range = var.agent_subnets[each.key]
 }

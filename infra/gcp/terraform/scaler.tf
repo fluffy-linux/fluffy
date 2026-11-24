@@ -92,14 +92,18 @@ resource "google_cloudfunctions2_function" "scaler" {
 
   service_config {
     available_memory      = "256M"
-    timeout_seconds       = 120
+    timeout_seconds       = 540
     max_instance_count    = 1
     service_account_email = google_service_account.scaler.email
     ingress_settings      = "ALLOW_ALL"
     environment_variables = {
-      PROJECT       = var.project
-      ZONES         = join(",", var.zones)
-      TEMPLATE      = google_compute_instance_template.agent.name
+      PROJECT = var.project
+      ZONES   = join(",", flatten(values(var.agent_zones)))
+      TEMPLATES = jsonencode(merge([
+        for region, zones in var.agent_zones : {
+          for z in zones : z => google_compute_instance_template.agent[region].name
+        }
+      ]...))
       QUEUE         = var.buildkite_queue
       MAX_INSTANCES = tostring(var.agent_max_instances)
     }
@@ -131,7 +135,7 @@ resource "google_cloud_scheduler_job" "scaler" {
   name             = "fluffy-ci-scaler"
   region           = var.region
   schedule         = "* * * * *"
-  attempt_deadline = "120s"
+  attempt_deadline = "540s"
   retry_config {
     retry_count = 0
   }

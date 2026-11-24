@@ -8,8 +8,9 @@ and deletes its VM; spot VMs are also deleted when preempted, and every
 agent at its maximum run duration.
 
 Settings (environment, from infra/gcp/terraform/scaler.tf):
-  PROJECT, ZONES (comma-separated, tried in turn), TEMPLATE (the instance
-  template's name), QUEUE, MAX_INSTANCES
+  PROJECT, ZONES (comma-separated, tried in turn), TEMPLATES (JSON: each
+  zone's instance template name; one template per region, for its
+  subnet), QUEUE, MAX_INSTANCES
 """
 
 import base64
@@ -66,19 +67,31 @@ def _live_agents(google, project, queue):
 
 
 def _start_agent(google, settings):
-    """Create one agent VM, in the first zone that takes it."""
+    """Create one agent VM, in the first zone that takes it.
+
+    A zone can refuse at once (an HTTP error) or later, in the operation:
+    quota and spot capacity are usually reported there.  So wait for each
+    create to finish before trying the next zone.
+    """
     name = "fluffy-ci-agent-" + secrets.token_hex(4)
+    project = settings["project"]
     errors = []
     for zone in settings["zones"]:
         template = urllib.parse.quote(
-            f"projects/{settings['project']}/global/instanceTemplates/{settings['template']}", safe="")
-        url = (f"{COMPUTE}/projects/{settings['project']}/zones/{zone}/instances"
-               f"?sourceInstanceTemplate={template}")
+            f"projects/{project}/global/instanceTemplates/{settings['templates'][zone]}", safe="")
+        url = f"{COMPUTE}/projects/{project}/zones/{zone}/instances?sourceInstanceTemplate={template}"
         try:
-            _request("POST", url, google, {"name": name})
-            return f"{zone}/{name}"
+            op = _request("POST", url, google, {"name": name})
+            # operations/wait returns when the operation is done, or after
+            # about 2 minutes; creates finish well within that.
+            op = _request("POST", f"{COMPUTE}/projects/{project}/zones/{zone}/operations/{op['name']}/wait",
+                          google)
         except urllib.error.HTTPError as e:
             errors.append(f"{zone}: {e.code} {e.read().decode()[:300]}")
+            continue
+        if op.get("status") == "DONE" and "error" not in op:
+            return f"{zone}/{name}"
+        errors.append(f"{zone}: {json.dumps(op.get('error', op.get('status')))[:300]}")
     raise RuntimeError("no zone took an agent: " + "; ".join(errors))
 
 
@@ -102,7 +115,7 @@ def settings_from_env():
     return {
         "project": os.environ["PROJECT"],
         "zones": os.environ["ZONES"].split(","),
-        "template": os.environ["TEMPLATE"],
+        "templates": json.loads(os.environ["TEMPLATES"]),
         "queue": os.environ["QUEUE"],
         "max": int(os.environ["MAX_INSTANCES"]),
     }

@@ -5,15 +5,31 @@ variable "project" {
 }
 
 variable "region" {
-  description = "Region for CI: its agents, network and scaler."
+  description = "Region for CI's scaler and its other regional parts."
   type        = string
   default     = "us-east4"
 }
 
-variable "zones" {
-  description = "Zones the scaler starts agents in, tried in turn (spot capacity differs by zone)."
-  type        = list(string)
-  default     = ["us-east4-a", "us-east4-b", "us-east4-c"]
+variable "agent_zones" {
+  description = <<-EOT
+    The zones the scaler starts agents in, by region, tried in turn: spot
+    capacity differs by zone, and quotas (C4D: 24 vCPUs) by region.  Each
+    region gets a subnet and an instance template.
+  EOT
+  type        = map(list(string))
+  default = {
+    "us-east4" = ["us-east4-a", "us-east4-b", "us-east4-c"]
+    "us-east1" = ["us-east1-b", "us-east1-c", "us-east1-d"]
+  }
+}
+
+variable "agent_subnets" {
+  description = "Each agent region's subnet range."
+  type        = map(string)
+  default = {
+    "us-east4" = "10.20.0.0/20"
+    "us-east1" = "10.20.16.0/20"
+  }
 }
 
 variable "buildkite_queue" {
@@ -23,33 +39,39 @@ variable "buildkite_queue" {
 }
 
 variable "agent_max_instances" {
-  description = "The most agent VMs at once.  4 x n2d-standard-4 is the region's N2D quota (16 vCPUs)."
+  description = "The most agent VMs at once.  2 x c4d-standard-16-lssd fit the project's 32 vCPUs, one per region (C4D: 24 per region)."
   type        = number
-  default     = 4
+  default     = 2
 }
 
 variable "agent_machine_type" {
   description = "Agent VM type.  An -lssd type brings its own local SSDs: set agent_local_ssds to 0 for one."
   type        = string
-  default     = "n2d-standard-4"
+  default     = "c4d-standard-16-lssd"
 }
 
 variable "agent_min_cpu_platform" {
   description = "Minimum CPU platform for the agents, or null for the type's default."
   type        = string
-  default     = "AMD Milan"
+  default     = null
 }
 
 variable "agent_local_ssds" {
-  description = "Local NVMe SSDs (375 GB each) added to each agent; builds run on the first, on /mnt."
+  description = "Local NVMe SSDs (375 GB each) added to each agent; builds run on the first, on /mnt.  0 for an -lssd type, which has its own."
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "agent_boot_disk_gb" {
   description = "Agents' boot disk (deleted with the VM).  Builds run on the local SSD, not here."
   type        = number
   default     = 30
+}
+
+variable "agent_boot_disk_type" {
+  description = "Agents' boot disk type: C4D takes only Hyperdisk; N2D takes pd-balanced."
+  type        = string
+  default     = "hyperdisk-balanced"
 }
 
 variable "agent_max_run_hours" {

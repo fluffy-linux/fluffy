@@ -2,8 +2,8 @@ output "agent_service_account" {
   value = google_service_account.agent.email
 }
 
-output "agent_template" {
-  value = google_compute_instance_template.agent.name
+output "agent_templates" {
+  value = { for r, t in google_compute_instance_template.agent : r => t.name }
 }
 
 output "scaler_uri" {
