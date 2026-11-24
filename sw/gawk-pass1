@@ -2,9 +2,12 @@ ON=host-build
 
 VERSION=5.4.1
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# gawk-5.4.1 tag): swctl fetches the pinned commit with git.  The tag
+# carries configure and the Makefile.in files; make builds the info
+# manuals the release tarball ships, with the host's makeinfo.
 ARCHIVES=(
-    07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://github.com/fluffy-linux/gawk/releases/download/gawk-$VERSION/gawk-$VERSION.tar.xz
-    1c803aa39dca0607d70be7290fee8ba52afdf3f16f02b2c07c6aab342f6df38a file://gawk-$VERSION-fluffy-source.patch
+    5c137f95a170ffc7abc62c061bd0abeefda17f23 https://github.com/fluffy-linux/gawk.git#refs/heads/fluffy/gawk-$VERSION
 )
 
 NEEDS=(
@@ -18,8 +21,6 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i ../gawk-$VERSION-fluffy-source.patch
-    sed -i 's/extras//' Makefile.in
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/gawk \
         --host=$FLUFFY_TGT \

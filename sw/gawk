@@ -7,10 +7,12 @@ fi
 
 VERSION=5.4.1
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# gawk-5.4.1 tag): swctl fetches the pinned commit with git.  The tag
+# carries configure and the Makefile.in files; make builds the info
+# manuals the release tarball ships.
 ARCHIVES=(
-    07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37 https://github.com/fluffy-linux/gawk/releases/download/gawk-$VERSION/gawk-$VERSION.tar.xz
-    1c803aa39dca0607d70be7290fee8ba52afdf3f16f02b2c07c6aab342f6df38a file://gawk-$VERSION-fluffy-source.patch
-    e53b14e1924322ad37dd8c106b89fe119c04137b677a7817f6524be59568e3a9 file://gawk-$VERSION-fluffy-test.patch
+    5c137f95a170ffc7abc62c061bd0abeefda17f23 https://github.com/fluffy-linux/gawk.git#refs/heads/fluffy/gawk-$VERSION
 )
 
 NEEDS=(
@@ -41,10 +43,10 @@ then
         make-pass1
         mpfr
         ncurses
-        patch-pass1
         readline
         sed
         tar-pass1
+        texinfo-pass1
         xz
     )
 else
@@ -66,19 +68,15 @@ else
         make
         mpfr
         ncurses
-        patch
         readline
         sed
         tar
+        texinfo
         xz
     )
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../gawk-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../gawk-$VERSION-fluffy-test.patch
-
-    sed -i 's/extras//' Makefile.in
     export CONFIG_SHELL=/sw/bash/bin/bash
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gawk
