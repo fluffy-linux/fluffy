@@ -2,9 +2,14 @@ ON=host-build
 
 VERSION=4.4.1
 
+# Built straight from Fluffy's branch, as make is: the host's autotools
+# build the ones make's release tarball was made with, and bootstrap
+# runs the host's autopoint.  configure.ac checks for guile with
+# pkg-config's macros: aclocal takes pkg.m4 from pkgconf-pass1.
 ARCHIVES=(
-    dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3 https://github.com/fluffy-linux/make/releases/download/$VERSION/make-$VERSION.tar.gz
-    e0af2f05d59bf8989d97706bd78f5a9342d895faa70b245c292df273e617a876 file://make-$VERSION-fluffy-source.patch
+    95a4535ef305c0351ee7f6a76a853940229a1fd3 https://github.com/fluffy-linux/make.git#refs/heads/fluffy/$VERSION
+    ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )
 
 NEEDS=(
@@ -15,17 +20,29 @@ BUILD_NEEDS=(
     gcc-pass1
     glibc-pass1
     linux-headers
+    pkgconf-pass1
 )
 
 # make runs a command with no shell syntax itself, searching PATH, and
-# Fluffy's PATH is a glob(GLOB_PATHS) list (/sw/*/bin): without the patch
-# such a command (automake's bootstrap runs "echo") is never found.
+# Fluffy's PATH is a glob(GLOB_PATHS) list (/sw/*/bin): without the
+# branch's gnulib findprog-in fix such a command (automake's bootstrap
+# runs "echo") is never found.
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
-    patch -Z -Np1 -i ../make-$VERSION-fluffy-source.patch
+    autoconf_build
+    automake_build
+    ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
+    # maintMakefile, which git has and the release tarball does not, is
+    # the maintainer's: configure would add its -Werror and checks.
+    rm maintMakefile
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/make \
         --host=$FLUFFY_TGT \
         --build=$(build-aux/config.guess)
+    # The translations as make dist merges them.
+    make -C po update-po
     make
 }
 
