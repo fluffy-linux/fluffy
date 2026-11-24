@@ -17,8 +17,8 @@ variable "scaler_region" {
     this project (PERMISSION_DENIED even for the owner; builds elsewhere
     work), and the function's Cloud Run address there answered 404.
   EOT
-  type    = string
-  default = "us-central1"
+  type        = string
+  default     = "us-central1"
 }
 
 variable "agent_zones" {
