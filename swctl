@@ -1654,9 +1654,25 @@ cache_auth() {
 # cache_image_digest TAG DIGEST_VAR: 0 with the checksum of the tag's
 # single layer when the registry has the tag, 1 when it doesn't, 2 on
 # failure.
+#
+# In CI steps, tags found are remembered for the agent's life (a CI agent
+# runs one step after another, each resolving much the same plan; each
+# lookup is a request): a vetted tag, or this build's, always names the
+# same image here, and every image fetched is checked against its digest
+# anyway.  A tag not found is never remembered: it may appear later.
+cache_seen=/sw/.build/cache-seen
 cache_image_digest() {
-    local tag="$1" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" body code
+    local tag="$1" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" body code seen
     local -n __digest_out="$2"
+    if test -n "${ci_mode:-}" && test -f "$cache_seen"
+    then
+        seen="$(awk -v t="$tag" '$1 == t { print $2; exit }' "$cache_seen")"
+        if [[ "$seen" =~ ^[0-9a-f]{64}$ ]]
+        then
+            __digest_out="$seen"
+            return 0
+        fi
+    fi
     cache_auth || { log "cache: no registry token"; return 2; }
     body="$(mktemp)"
     code="$(curl -sS --retry 3 -o "$body" -w '%{http_code}' \
@@ -1674,6 +1690,10 @@ cache_image_digest() {
     manifest="${manifest#*\"layers\"}"
     [[ "$manifest" =~ \"digest\":\"sha256:([0-9a-f]{64})\" ]] || { log "cache: $tag has no layer"; return 2; }
     __digest_out="${BASH_REMATCH[1]}"
+    if test -n "${ci_mode:-}"
+    then
+        printf '%s %s\n' "$tag" "$__digest_out" >> "$cache_seen" || true
+    fi
 }
 
 # The build scope (CI only): set by `build --defer-check` and `check`, the
