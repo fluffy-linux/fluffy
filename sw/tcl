@@ -11,7 +11,7 @@ VERSION=8.6.18
 # core-8-6-18 tag, with the packages the release bundles as submodules
 # under pkgs/): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    50515a62f8b4526d7501ed2fc2372575a26cd8d4 https://github.com/fluffy-linux/tcl.git#refs/heads/fluffy/core-${VERSION//./-}
+    5280584a65f8f2c28c1c12aa1bfb47f3085d58c3 https://github.com/fluffy-linux/tcl.git#refs/heads/fluffy/core-${VERSION//./-}
     bee2d83a19ce50624eeae951be29fe5f654b171357a6391123caf18107cec543 https://github.com/fluffy-linux/tcl/releases/download/core-${VERSION//./-}/tcl$VERSION-html.tar.gz
 )
 
