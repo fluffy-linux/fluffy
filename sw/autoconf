@@ -11,12 +11,11 @@ VERSION=2.73
 # tag): swctl fetches the pinned commit with git.  The tag has no
 # configure or Makefile.in, so MAKE regenerates them with autoconf-pass1
 # and automake-pass1 in cross-build, the previous autoconf and automake in
-# fluffy-build.  The man pages are made with help2man, the release's
-# 1.49.3, from its tag (a Perl script that writes itself; Fluffy doesn't
-# package it).
+# fluffy-build.  The man pages are made with help2man 1.49.3, the
+# release's: help2man-pass1 in cross-build, since help2man's own build
+# needs coreutils, whose build needs autoconf.
 ARCHIVES=(
     e22e555ccb88ac24a4cbdb20dc6629191bb5d1e8 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v$VERSION
-    0503f547e06b5d3fd91533aae86b560e104140d7 https://github.com/fluffy-linux/help2man.git#refs/tags/v1.49.3
 )
 
 if test -v CROSS
@@ -59,6 +58,7 @@ then
         glibc
         grep
         gzip-pass1
+        help2man-pass1
         libgcc
         libstdcpp
         libtool
@@ -84,6 +84,7 @@ else
         glibc
         grep
         gzip
+        help2man
         libgcc
         libstdcpp
         libtool
@@ -99,21 +100,17 @@ else
 fi
 
 MAKE() {
-    mkdir .help2man
-    tar -xf ../help2man.tar -C .help2man
-    perl .help2man/help2man/help2man.PL --stdout > .help2man/help2man.pl
-
     export CONFIG_SHELL=/sw/bash/bin/bash
     autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/autoconf
-    make HELP2MAN="perl $PWD/.help2man/help2man.pl"
+    make
 }
 
 CHECK() {
-    make HELP2MAN="perl $PWD/.help2man/help2man.pl" check
+    make check
 }
 
 INSTALL() {
-    make HELP2MAN="perl $PWD/.help2man/help2man.pl" install
+    make install
 }
