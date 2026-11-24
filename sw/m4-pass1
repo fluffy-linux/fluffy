@@ -11,7 +11,7 @@ VERSION=1.4.21
 ARCHIVES=(
     1aacd7d16f14942662042f9a84f9aa0bf09a30f2 https://github.com/fluffy-linux/m4.git#refs/heads/fluffy/v$VERSION
     45060b3d15334d96350b677ccc0b4e91a4e60fd1 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.90
-    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
 )
 
 NEEDS=(

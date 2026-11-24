@@ -17,7 +17,7 @@ VERSION=9.11
 ARCHIVES=(
     73b280fb5e222f019ed67a26c49ff68f1ea73484 https://github.com/fluffy-linux/coreutils.git#refs/heads/fluffy/v$VERSION
     b3d3778291f117f8420d4871f32b4d7c4caf23d1 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73.1-b400b
-    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
 )
 
 NEEDS=(

@@ -18,8 +18,8 @@ VERSION=1.26
 ARCHIVES=(
     9930d3f11712e3a58a43a8f604fa4c3f869ffcc4 https://github.com/fluffy-linux/gdbm.git#refs/heads/fluffy/v$VERSION
     ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
-    dc8bbd04db8f65af58d764d70f1c4a168621ffb1 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
-    e40d38aa32f35a8e1dd43a58de66596eaccbb245 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
+    fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
+    2b62947fd566e11dedf3c2c7e252f05a8937d54c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(

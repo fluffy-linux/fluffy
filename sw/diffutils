@@ -17,7 +17,7 @@ VERSION=3.12
 ARCHIVES=(
     ccbabc3eef9e170ac2176764dc7a12aa0e33a1ba https://github.com/fluffy-linux/diffutils.git#refs/heads/fluffy/v$VERSION
     18bfebd5367050afd0f2f5b8eb1c2acc93c26c3a https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.76-2f64
-    df341d9c2ff367a0b177cb998c08ade9c03c0e3f https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17.0.91
+    a88a8c2541f3fcb0137de63799a80e31e5435ae4 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17.0.91
 )
 
 NEEDS=(

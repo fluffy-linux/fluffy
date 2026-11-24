@@ -13,7 +13,7 @@ VERSION=1.18.1
 # in cross-build, the previous autoconf in fluffy-build.  The man pages
 # come from the help2man automake carries.
 ARCHIVES=(
-    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v$VERSION
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v$VERSION
 )
 
 if test -v CROSS
