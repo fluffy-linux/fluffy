@@ -1082,6 +1082,7 @@ build_single_pkg() {
         work_dir="$root/work"
         phase_log="$work_dir/phase.log"
         rm -f "$phase_log"
+        tree_file=/sw/.build/tree.squashfs
 
         # Temporarily drop euid to SUDO_UID while keeping saved-uid=0 only for
         # outer orchestration; PREPARE drops saved-uid=0 permanently in its own subshell.
@@ -1170,7 +1171,12 @@ build_single_pkg() {
 
                 unset FLUFFY
                 export PATH='/sw/*/bin' FLUFFY_BUILD_SINGLE=1
-                /sw/bash/bin/bash "$root/swctl" build "$pkg"
+                local -a cmd=(build)
+                case "$ci_mode" in
+                    defer) cmd=(build --defer-check) ;;
+                    check) cmd=(check) ;;
+                esac
+                /sw/bash/bin/bash "$root/swctl" "${cmd[@]}" "$pkg"
             )
             exit 0
         fi
@@ -1200,6 +1206,47 @@ build_single_pkg() {
         fi
 
         log -n "$pkg${FLUFFY_PROGRESS:+ $FLUFFY_PROGRESS}:"
+
+        # `swctl check` (CI): no sources and no build; the tree a deferred
+        # build left after MAKE, fetched by the outer swctl, is mounted where
+        # PREPARE would have unpacked the sources, so CHECK's overlay has it
+        # as its lower layer, read-only, and its upper layer starts empty.
+        if test "$ci_mode" == check
+        then
+            tree_mount_exec() {
+                call setresuid 0 0 0
+                call setresgid 0 0 0
+                rm -rf "$work_dir"/{src,installed,test-results,test-work}
+                mkdir -p "$work_dir/src"
+                call_ptr cxt mnt_new_context
+                call mnt_context_set_source "$cxt" "string:$tree_file"
+                call mnt_context_set_target "$cxt" "string:$work_dir/src"
+                call mnt_context_set_fstype "$cxt" "string:squashfs"
+                call mnt_context_set_options "$cxt" "string:ro,nodev,nosuid"
+                dlcall -r int -n ret mnt_context_mount "$cxt"
+                test "$ret" == "int:0" || fatal "failed to mount $tree_file on $work_dir/src: rc=${ret#*:}"
+                dlcall mnt_free_context "$cxt"
+            }
+            run_phase TREE tree_mount_exec
+            if (( src_unpacked ))
+            then
+                cd "$work_dir/src/$pkg-$VERSION"
+            else
+                cd "$work_dir/src"
+            fi
+            lockdown CHECK
+            cd "$root"
+            (
+                call setresuid 0 0 0
+                call setresgid 0 0 0
+                call umount2 "string:$work_dir/src" "int:$MNT_DETACH"
+                rm -rf "$work_dir"/{src,installed,test-results,test-work}
+            )
+            rm -f "$phase_log"
+            log ""
+            exit 0
+        fi
+
         prepare_exec() {
             (
                 call setresuid 0 0 0
@@ -1288,7 +1335,28 @@ build_single_pkg() {
         squashfs_file="/sw/$pkg-$VERSION.squashfs"
 
         lockdown MAKE
-        lockdown CHECK
+        # `build --defer-check` (CI): CHECK runs in its own step, `swctl
+        # check`, on a snapshot of the tree as MAKE left it, taken before
+        # INSTALL, which can touch it: all of $work_dir/src, so CHECK sees
+        # ARCHIVES[1..N] beside the source directory too.  Not -all-root:
+        # CHECK runs as the build user and writes through its overlay.
+        # Without SOURCE_DATE_EPOCH, to which mksquashfs would clamp every
+        # file's time: the tree keeps its times, to the second.
+        if test "$ci_mode" != defer
+        then
+            lockdown CHECK
+        elif test "$(type -t CHECK)" == function
+        then
+            tree_exec() {
+                SQUASHFS() {
+                    unset SOURCE_DATE_EPOCH
+                    rm -f "$tree_file"
+                    mksquashfs "$work_dir/src" "$tree_file" -noappend -comp zstd -quiet -no-progress
+                }
+                lockdown_exec SQUASHFS
+            }
+            run_phase TREE tree_exec
+        fi
         lockdown INSTALL
 
         package_exec() {
@@ -1374,7 +1442,7 @@ plan_pkgs() {
     tmp_plan="$(mktemp)"
     if ! (
         declare -a order=() root_nodes=()
-        declare -A pkg_loaded=() pkg_ver=() pkg_needs=() pkg_bneeds=() pkg_includes=()
+        declare -A pkg_loaded=() pkg_ver=() pkg_needs=() pkg_bneeds=() pkg_includes=() pkg_has_check=()
 
         load_pkg_meta() {
             local pkg_name="$1"
@@ -1405,6 +1473,11 @@ plan_pkgs() {
             # shellcheck disable=SC1090
             source "$recipe_file"
             unset current_eval_pkg
+            local has_check=""
+            if test "$(type -t CHECK)" == function
+            then
+                has_check=1
+            fi
             unset -f MAKE CHECK INSTALL
 
             local need_pkg
@@ -1432,6 +1505,7 @@ plan_pkgs() {
             pkg_loaded["$pkg_name"]=1
             pkg_ver["$pkg_name"]="$VERSION"
             pkg_needs["$pkg_name"]="${NEEDS[*]}"
+            pkg_has_check["$pkg_name"]="$has_check"
 
             local -a direct_bneeds=()
             if test "$ON" != host-build && test "$ON" != "$pkg_name"
@@ -1494,7 +1568,7 @@ plan_pkgs() {
                 continue
             fi
             pkg="${node#build:}"
-            printf '%s\x1f%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}" "${pkg_needs[$pkg]:-}"
+            printf '%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\n' "$pkg" "${pkg_ver[$pkg]}" "${pkg_bneeds[$pkg]:-}" "${pkg_includes[$pkg]:-}" "${pkg_needs[$pkg]:-}" "${pkg_has_check[$pkg]:-}"
         done
     ) > "$tmp_plan"
     then
@@ -1508,14 +1582,16 @@ plan_pkgs() {
     pkg_img_chk=()
     pkg_includes=()
     pkg_needs=()
-    local p v b inc n
-    while IFS=$'\x1f' read -r p v b inc n
+    pkg_has_check=()
+    local p v b inc n c
+    while IFS=$'\x1f' read -r p v b inc n c
     do
         order+=("$p")
         pkg_ver["$p"]="$v"
         pkg_bneeds["$p"]="$b"
         pkg_includes["$p"]="$inc"
         pkg_needs["$p"]="$n"
+        pkg_has_check["$p"]="$c"
     done < "$tmp_plan"
     rm -f "$tmp_plan"
 }
@@ -1544,8 +1620,10 @@ cache_publishing() {
     cache_enabled && test -n "${FLUFFY_CACHE_TOKEN_FILE:-}" && test -r "$FLUFFY_CACHE_TOKEN_FILE"
 }
 
+# A tag is <pkg>.<recipe-checksum>, with a suffix for CI's other tags:
+# .b<build-id> (an image not yet vetted) and .tree (deferred checks).
 cache_tag() {
-    printf '%s.%s' "${1//+/_}" "$2"
+    printf '%s.%s%s' "${1//+/_}" "$2" "${3:+.$3}"
 }
 
 cache_bearer=""
@@ -1565,12 +1643,12 @@ cache_auth() {
     cache_bearer="${BASH_REMATCH[1]}"
 }
 
-# cache_image_digest PKG RECIPE_CHECKSUM DIGEST_VAR: 0 with the image's
-# checksum when the registry has the tag, 1 when it doesn't, 2 on failure.
+# cache_image_digest TAG DIGEST_VAR: 0 with the checksum of the tag's
+# single layer when the registry has the tag, 1 when it doesn't, 2 on
+# failure.
 cache_image_digest() {
-    local tag host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" body code
-    local -n __digest_out="$3"
-    tag="$(cache_tag "$1" "$2")"
+    local tag="$1" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" body code
+    local -n __digest_out="$2"
     cache_auth || { log "cache: no registry token"; return 2; }
     body="$(mktemp)"
     code="$(curl -sS --retry 3 -o "$body" -w '%{http_code}' \
@@ -1590,30 +1668,77 @@ cache_image_digest() {
     __digest_out="${BASH_REMATCH[1]}"
 }
 
+# The build scope (CI only): set by `build --defer-check` and `check`, the
+# commands of the steps `swctl buildkite` generates when they publish.  An
+# image that still has to pass its checks, or whose dependencies do, is
+# published as <pkg>.<recipe-checksum>.b<BUILDKITE_BUILD_ID>, which only
+# steps of the same Buildkite build look up; its check step promotes it to
+# the vetted <pkg>.<recipe-checksum>, the only tag anyone else (other
+# builds, local builds) asks for.
+cache_build="" ci_mode=""
+cache_build_scope() {
+    cache_publishing || fatal "$1 is for CI steps: it needs FLUFFY_CACHE_REGISTRY and a readable FLUFFY_CACHE_TOKEN_FILE"
+    [[ "${BUILDKITE_BUILD_ID:-}" =~ ^[a-zA-Z0-9-]+$ ]] || fatal "$1 is for CI steps: it needs BUILDKITE_BUILD_ID"
+    cache_build="b$BUILDKITE_BUILD_ID"
+}
+
+# cache_lookup PKG RECIPE_CHECKSUM DIGEST_VAR TAG_VAR: as
+# cache_image_digest, for the vetted tag and then, in the build scope,
+# this build's tag; TAG_VAR names the tag found.
+cache_lookup() {
+    local __lk_tag_name __lk_rc=0
+    local -n __lk_tag_out="$4"
+    __lk_tag_name="$(cache_tag "$1" "$2")"
+    cache_image_digest "$__lk_tag_name" "$3" || __lk_rc=$?
+    if (( __lk_rc == 1 )) && test -n "$cache_build"
+    then
+        __lk_rc=0
+        __lk_tag_name="$(cache_tag "$1" "$2" "$cache_build")"
+        cache_image_digest "$__lk_tag_name" "$3" || __lk_rc=$?
+    fi
+    if (( __lk_rc == 0 ))
+    then
+        __lk_tag_out="$__lk_tag_name"
+    fi
+    return "$__lk_rc"
+}
+
+# cache_blob DIGEST FILE NAME: download the blob DIGEST, NAME in messages,
+# as FILE, unless FILE already holds it.
+cache_blob() {
+    local digest="$1" file="$2" name="$3" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" code
+    check_sha256 "$file" "$digest" && return 0
+    cache_auth || fatal "cache: no registry token"
+    code="$(curl -sS -L --retry 3 -o "$file.new" -w '%{http_code}' \
+        -H "Authorization: Bearer $cache_bearer" \
+        "https://$host/v2/$repo/blobs/sha256:$digest")" || code=000
+    if test "$code" != 200 || ! check_sha256 "$file.new" "$digest"
+    then
+        rm -f "$file.new"
+        fatal "cache: could not fetch a good $name from $FLUFFY_CACHE_REGISTRY (HTTP $code)"
+    fi
+    mv -f "$file.new" "$file"
+}
+
 # cache_restore PKG RECIPE_CHECKSUM: register the image a CI build of
 # exactly this recipe produced, downloading it unless it is already here.
 cache_restore() {
-    local pkg="$1" recipe_chk="$2" img_chk="" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" rc=0
-    cache_image_digest "$pkg" "$recipe_chk" img_chk || rc=$?
+    local pkg="$1" recipe_chk="$2" img_chk="" tag="" rc=0
+    cache_lookup "$pkg" "$recipe_chk" img_chk tag || rc=$?
     case "$rc" in
         0) ;;
         1) return 1 ;;
         *) fatal "cache: could not look up $(cache_tag "$pkg" "$recipe_chk") in $FLUFFY_CACHE_REGISTRY" ;;
     esac
+    cache_fetch "$pkg" "$recipe_chk" "$img_chk"
+}
 
-    local src="/sw/$pkg-${pkg_ver[$pkg]}.squashfs" tgt="/sw/${pkg%-pass*}" code
-    if ! check_sha256 "$src" "$img_chk"
-    then
-        code="$(curl -sS -L --retry 3 -o "$src.new" -w '%{http_code}' \
-            -H "Authorization: Bearer $cache_bearer" \
-            "https://$host/v2/$repo/blobs/sha256:$img_chk")" || code=000
-        if test "$code" != 200 || ! check_sha256 "$src.new" "$img_chk"
-        then
-            rm -f "$src.new"
-            fatal "cache: could not fetch a good image for $pkg from $FLUFFY_CACHE_REGISTRY (HTTP $code)"
-        fi
-        mv -f "$src.new" "$src"
-    fi
+# cache_fetch PKG RECIPE_CHECKSUM IMAGE_CHECKSUM: register the image
+# IMAGE_CHECKSUM as PKG's, downloading it unless it is already here.
+cache_fetch() {
+    local pkg="$1" recipe_chk="$2" img_chk="$3"
+    local src="/sw/$pkg-${pkg_ver[$pkg]}.squashfs" tgt="/sw/${pkg%-pass*}"
+    cache_blob "$img_chk" "$src" "image for $pkg"
 
     # The fstab line exactly as register_entry writes it after a build.
     local needs="${pkg_needs[$pkg]:-}" options="X-fluffy.image-checksum=$img_chk"
@@ -1645,45 +1770,78 @@ cache_restore() {
     fi
 }
 
-# cache_publish PKG RECIPE_CHECKSUM: after a build, push its image as the
-# tag's single layer, unless the tag exists already (tags can be moved;
-# Fluffy never moves one).
+# cache_push FILE TAG ARTIFACT_TYPE: push FILE as the tag's single layer.
+cache_push() {
+    (
+        cd "${1%/*}"
+        oras push --no-tty --password-stdin -u fluffy \
+            --artifact-type "$3" \
+            "$FLUFFY_CACHE_REGISTRY:$2" \
+            "${1##*/}:application/vnd.fluffy.squashfs" \
+            < "$FLUFFY_CACHE_TOKEN_FILE" > /dev/null
+    )
+}
+
+# cache_publish PKG RECIPE_CHECKSUM [SUFFIX]: after a build, push its image
+# as the tag's single layer, unless the tag exists already (tags can be
+# moved; Fluffy never moves one).
 cache_publish() {
     local pkg="$1" recipe_chk="$2" fs="$NULL" src existing="" tag
     cache_publishing || return 0
     find_fs_by_pkg "$pkg" fs 1
     test "$fs" != "$NULL" || return 1
     fs_str "$fs" source src
-    tag="$(cache_tag "$pkg" "$recipe_chk")"
+    tag="$(cache_tag "$pkg" "$recipe_chk" "${3:-}")"
     local rc=0
-    cache_image_digest "$pkg" "$recipe_chk" existing || rc=$?
+    cache_image_digest "$tag" existing || rc=$?
     case "$rc" in
         0) return 0 ;;
         1) ;;
         *) return 1 ;;
     esac
-    (
-        cd "${src%/*}"
-        oras push --no-tty --password-stdin -u fluffy \
-            --artifact-type application/vnd.fluffy.image.v1 \
-            "$FLUFFY_CACHE_REGISTRY:$tag" \
-            "${src##*/}:application/vnd.fluffy.squashfs" \
-            < "$FLUFFY_CACHE_TOKEN_FILE" > /dev/null
-    )
+    cache_push "$src" "$tag" application/vnd.fluffy.image.v1
+}
+
+# cache_promote PKG RECIPE_CHECKSUM: tag this build's image of the recipe
+# as vetted: the same manifest under the vetted tag, nothing uploaded.
+cache_promote() {
+    local src dst existing="" rc=0
+    src="$(cache_tag "$1" "$2" "$cache_build")"
+    dst="$(cache_tag "$1" "$2")"
+    cache_image_digest "$dst" existing || rc=$?
+    case "$rc" in
+        0) return 0 ;;
+        1) ;;
+        *) return 1 ;;
+    esac
+    oras tag --password-stdin -u fluffy "$FLUFFY_CACHE_REGISTRY:$src" "$dst" \
+        < "$FLUFFY_CACHE_TOKEN_FILE" > /dev/null
 }
 
 build_pkgs() {
     local plan_mode=build
-    if test "${1:-}" == "--run"
-    then
-        plan_mode=run
-        shift
-    fi
+    case "${1:-}" in
+        --run)
+            plan_mode=run
+            shift
+            ;;
+        --defer-check)
+            ci_mode=defer
+            shift
+            ;;
+    esac
 
-    if test $# -lt 1
-    then
-        fatal "Usage: $0 build <package...>"
-    fi
+    case "$ci_mode" in
+        defer)
+            test $# -eq 1 || fatal "Usage: $0 build --defer-check <package>"
+            ;;
+        check)
+            test $# -eq 1 || fatal "Usage: $0 check <package>"
+            ;;
+        *)
+            test $# -ge 1 || fatal "Usage: $0 build <package...>"
+            ;;
+    esac
 
     if test -z "${SUDO_UID:-}" || test -z "${SUDO_GID:-}"
     then
@@ -1708,8 +1866,14 @@ build_pkgs() {
         return 0
     fi
 
+    if test -n "$ci_mode"
+    then
+        ci_step "$1"
+        return 0
+    fi
+
     local -a order=()
-    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=() pkg_has_check=()
     plan_pkgs "$plan_mode" "$@"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1781,15 +1945,227 @@ build_pkgs() {
     done
 }
 
+# reach_of PKG: set reach[] to what PKG's build mounts: each BUILD_NEEDS
+# package (its ON target included) and, as install_targets mounts them, all
+# that those NEEDS in turn.
+reach_of() {
+    local b
+    local -a bs=()
+    reach=()
+    read -ra bs <<< "${pkg_bneeds[$1]:-}"
+    for b in "${bs[@]}"
+    do
+        reach_run "$b"
+    done
+}
+
+reach_run() {
+    local p="${1##*/}" n
+    local -a ns=()
+    if test -n "${reach[$p]:-}"
+    then
+        return 0
+    fi
+    reach["$p"]=1
+    read -ra ns <<< "${pkg_needs[$p]:-}"
+    for n in "${ns[@]}"
+    do
+        reach_run "$n"
+    done
+}
+
+# plan_check_steps: pkg_check_step[PKG] is 1 when PKG's image needs a check
+# step before it is vetted: its recipe has a CHECK, or something its build
+# mounts needs a check step itself (an image is vetted only once every image
+# it was built against is).  Any other image is vetted as it is built.
+plan_check_steps() {
+    local pkg d
+    for pkg in "${order[@]}"
+    do
+        pkg_check_step["$pkg"]="${pkg_has_check[$pkg]:-}"
+        if test -n "${pkg_check_step[$pkg]}"
+        then
+            continue
+        fi
+        reach_of "$pkg"
+        for d in "${!reach[@]}"
+        do
+            if test -n "${pkg_check_step[$d]:-}"
+            then
+                pkg_check_step["$pkg"]=1
+                break
+            fi
+        done
+    done
+}
+
+# ci_resolve TARGET: the recipe checksum of every package of the plan, in
+# order, and the tag its image is under (vetted, else this build's; see
+# cache_lookup), from the registry alone: nothing is downloaded.  Only
+# TARGET may be missing: every other package's own step built it.
+ci_resolve() {
+    local target="$1" pkg chk __rs_digest __rs_tag rc
+    for pkg in "${order[@]}"
+    do
+        chk="$(format_recipe_mime "$pkg" | sha256sum)"
+        chk="${chk%% *}"
+        pkg_recipe_chk["$pkg"]="$chk"
+        __rs_digest="" __rs_tag="" rc=0
+        cache_lookup "$pkg" "$chk" __rs_digest __rs_tag || rc=$?
+        case "$rc" in
+            0)
+                pkg_img_chk["$pkg"]="$__rs_digest"
+                pkg_tag["$pkg"]="$__rs_tag"
+                ;;
+            1)
+                if test "$pkg" != "$target"
+                then
+                    fatal "cache: $pkg ($(cache_tag "$pkg" "$chk")) is neither vetted nor built by this build: its own step builds it"
+                fi
+                pkg_tag["$pkg"]=""
+                ;;
+            *)
+                fatal "cache: could not look up $(cache_tag "$pkg" "$chk") in $FLUFFY_CACHE_REGISTRY"
+                ;;
+        esac
+    done
+}
+
+# A step of a CI build with deferred checks (see buildkite_pipeline), for
+# one package, its dependencies coming from the cache: its own steps
+# published them.
+#
+# `build --defer-check PKG`: unless the cache has PKG's image already
+# (vetted, or from this build: a retried step), build it with CHECK
+# deferred: after MAKE, the tree is saved as a squashfs and published as
+# <pkg>.<recipe-checksum>.tree, before the image.  The image is published
+# under this build's tag if it needs a check step (plan_check_steps), else
+# as vetted.
+#
+# `check PKG`: once PKG's image is vetted, nothing.  Otherwise this build
+# must have built it, and every image its build mounted must be vetted;
+# CHECK, if the recipe has one, runs on the published tree, and the image
+# is promoted to vetted.  A retried check mounts the tree again; nothing is
+# ever rebuilt.
+ci_step() {
+    local pkg="${1##*/}"
+    validate_pkg_name "$pkg"
+    if test "$ci_mode" == defer
+    then
+        cache_build_scope "build --defer-check"
+    else
+        cache_build_scope check
+    fi
+
+    local -a order=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=() pkg_has_check=()
+    local -A pkg_recipe_chk=() pkg_tag=() pkg_check_step=() reach=()
+    plan_pkgs build "$pkg"
+    ci_resolve "$pkg"
+    plan_check_steps
+
+    local chk="${pkg_recipe_chk[$pkg]}" tag="${pkg_tag[$pkg]}" vetted tree tree_file=/sw/.build/tree.squashfs d
+    vetted="$(cache_tag "$pkg" "$chk")"
+    tree="$(cache_tag "$pkg" "$chk" tree)"
+    reach_of "$pkg"
+
+    if test "$ci_mode" == defer
+    then
+        if test -n "$tag"
+        then
+            log "$pkg: CACHED($tag)"
+            return 0
+        fi
+        for d in "${order[@]}"
+        do
+            if test -n "${reach[$d]:-}"
+            then
+                cache_fetch "$d" "${pkg_recipe_chk[$d]}" "${pkg_img_chk[$d]}"
+            fi
+        done
+        rm -f "$tree_file"
+        export FLUFFY_RECIPE_CHECKSUM="$chk"
+        build_single_pkg "$pkg"
+        reload_fstab
+        if test -f "$tree_file"
+        then
+            local existing="" rc=0
+            cache_image_digest "$tree" existing || rc=$?
+            case "$rc" in
+                0)
+                    log "$pkg: $tree is published already"
+                    ;;
+                1)
+                    cache_push "$tree_file" "$tree" application/vnd.fluffy.tree.v1 || fatal "cache: could not publish $tree"
+                    log "$pkg: published $tree"
+                    ;;
+                *)
+                    fatal "cache: could not look up $tree in $FLUFFY_CACHE_REGISTRY"
+                    ;;
+            esac
+            rm -f "$tree_file"
+        fi
+        tag="$vetted"
+        if test -n "${pkg_check_step[$pkg]}"
+        then
+            tag="$(cache_tag "$pkg" "$chk" "$cache_build")"
+            cache_publish "$pkg" "$chk" "$cache_build" || fatal "cache: could not publish $tag"
+        else
+            cache_publish "$pkg" "$chk" || fatal "cache: could not publish $tag"
+        fi
+        log "$pkg: published $tag"
+        return 0
+    fi
+
+    if test "$tag" == "$vetted"
+    then
+        log "$pkg: VETTED($vetted)"
+        return 0
+    fi
+    if test -z "$tag"
+    then
+        fatal "check $pkg: this build has no image of $vetted (build-$pkg publishes it)"
+    fi
+    for d in "${order[@]}"
+    do
+        if test -n "${reach[$d]:-}" && test "${pkg_tag[$d]}" != "$(cache_tag "$d" "${pkg_recipe_chk[$d]}")"
+        then
+            fatal "check $pkg: $d, which $pkg was built against, is not vetted"
+        fi
+    done
+
+    if test -n "${pkg_has_check[$pkg]}"
+    then
+        local tree_chk="" rc=0
+        cache_image_digest "$tree" tree_chk || rc=$?
+        case "$rc" in
+            0) ;;
+            1) fatal "check $pkg: the cache has no $tree" ;;
+            *) fatal "cache: could not look up $tree in $FLUFFY_CACHE_REGISTRY" ;;
+        esac
+        cache_blob "$tree_chk" "$tree_file" "$tree"
+        for d in "${order[@]}"
+        do
+            if test -n "${reach[$d]:-}"
+            then
+                cache_fetch "$d" "${pkg_recipe_chk[$d]}" "${pkg_img_chk[$d]}"
+            fi
+        done
+        build_single_pkg "$pkg"
+        rm -f "$tree_file"
+    fi
+    cache_promote "$pkg" "$chk" || fatal "cache: could not promote $tag to $vetted"
+    log "$pkg: VETTED($vetted)"
+}
+
 # Print the build of the given packages as a Buildkite pipeline, to be fed to
 # `buildkite-agent pipeline upload`: one step per package, in plan order,
 # running `swctl build <pkg>` with this run's FLUFFY and CROSS.  A step
-# depends on the steps of everything its build mounts: each BUILD_NEEDS
-# package (its ON target included) and, as install_targets mounts them, all
-# that those NEEDS in turn.  Every step's dependencies are then already
-# built, so its `swctl build` finds them up to date and builds only its own
-# package.  Without the binary cache, the steps share one machine's /sw and
-# fstab, so they run one at a time (a concurrency group per FLUFFY root).
+# depends on the steps of everything its build mounts (reach_of).  Every
+# step's dependencies are then already built, so its `swctl build` finds
+# them up to date and builds only its own package.  Without the binary
+# cache, the steps share one machine's /sw and fstab, so they run one at a
+# time (a concurrency group per FLUFFY root).
 # When steps publish to the cache (CI), each step's agent restores what it
 # needs from it, published by the steps it depends on, so steps run in
 # parallel on as many agents as there are.  A step whose agent is lost is
@@ -1801,24 +2177,10 @@ buildkite_pipeline() {
     fi
 
     local -a order=()
-    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=() pkg_has_check=()
     plan_pkgs build "$@"
 
     local -A reach=()
-    reach_run() {
-        local p="${1##*/}" n
-        local -a ns=()
-        if test -n "${reach[$p]:-}"
-        then
-            return 0
-        fi
-        reach["$p"]=1
-        read -ra ns <<< "${pkg_needs[$p]:-}"
-        for n in "${ns[@]}"
-        do
-            reach_run "$n"
-        done
-    }
 
     # Buildkite interpolates $ in commands; YAML single quotes double '.
     yaml_str() {
@@ -1844,16 +2206,10 @@ buildkite_pipeline() {
     local cache_env=' FLUFFY_CACHE_REGISTRY="${FLUFFY_CACHE_REGISTRY:-}" FLUFFY_CACHE_TOKEN_FILE="${FLUFFY_CACHE_TOKEN_FILE:-}"'
 
     echo "steps:"
-    local pkg dep b
-    local -a bs=()
+    local pkg dep
     for pkg in "${order[@]}"
     do
-        reach=()
-        read -ra bs <<< "${pkg_bneeds[$pkg]:-}"
-        for b in "${bs[@]}"
-        do
-            reach_run "$b"
-        done
+        reach_of "$pkg"
 
         echo "  - label: $(yaml_str "$pkg")"
         echo "    key: $(yaml_str "$(step_key "$pkg")")"
@@ -1934,7 +2290,7 @@ refresh_recipe_checksums() {
     fi
 
     local -a order=()
-    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=() pkg_has_check=()
     plan_pkgs build "${target_pkgs[@]}"
 
     local total="${#order[@]}" idx=0 pkg
@@ -1981,6 +2337,11 @@ refresh_recipe_checksums() {
 case "$1" in
 build)
     shift
+    build_pkgs "$@"
+    ;;
+check)
+    shift
+    ci_mode=check
     build_pkgs "$@"
     ;;
 refresh-checksums)
