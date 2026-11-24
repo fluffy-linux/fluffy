@@ -1,6 +1,21 @@
 # This file is maintained automatically by "terraform init".
 # Manual edits may be lost in future updates.
 
+provider "registry.terraform.io/buildkite/buildkite" {
+  version     = "1.48.0"
+  constraints = "~> 1.0"
+  hashes = [
+    "h1:9/WmxGmmSqinvMaGAj4PXfLY4H5CbxaN75nL01yo10M=",
+    "zh:4517cdd3551b2c3c892eb91edb3af3b77237aebedf07e7145f0c57537eb31b46",
+    "zh:4f34bd6bac263031654cfe75db1e7b370f88e31e3fac68e378d145b4b9985847",
+    "zh:541d4532c875b2ee7ecb98da9a1461e76788893b623b0adf7c634d9fff7770e3",
+    "zh:8c313494b958953eb95115304b983d0c8d207db033b046cc7edc2dd8026c5689",
+    "zh:a13e2ed806cf19d02bd6959a1b823d5dd1fc9933c749c5534e2fa7f82c6793c6",
+    "zh:a2132e841b2c93b193d309cc6459944d6eaa828d31041c5a70cca3a323739fcb",
+    "zh:fb24f39228793cad1a793138177c674200945eb86819f4b3eb17e7e0eed7bbb1",
+  ]
+}
+
 provider "registry.terraform.io/hashicorp/archive" {
   version     = "2.8.1"
   constraints = "~> 2.4"

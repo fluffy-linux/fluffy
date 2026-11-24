@@ -32,8 +32,10 @@ resource "google_project_service" "services" {
 #   buildkite-api-token    read-only REST API token, for people's tools
 #   ghcr-token             publishes the binary cache (agents)
 #   github-mirror-token    pushes the forks (the mirror agent, later)
+#   buildkite-terraform-token  Terraform's own token for buildkite.tf
+#                          (pipelines and clusters, read and write)
 locals {
-  secrets = ["buildkite-agent-token", "buildkite-api-token", "ghcr-token", "github-mirror-token"]
+  secrets = ["buildkite-agent-token", "buildkite-api-token", "buildkite-terraform-token", "ghcr-token", "github-mirror-token"]
 }
 
 resource "google_secret_manager_secret" "secrets" {

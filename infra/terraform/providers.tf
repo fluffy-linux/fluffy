@@ -21,6 +21,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    buildkite = {
+      source  = "buildkite/buildkite"
+      version = "~> 1.0"
+    }
   }
 }
 
@@ -29,4 +33,11 @@ terraform {
 provider "google" {
   project = var.project
   region  = var.region
+}
+
+# Buildkite, with an API token that can write pipelines and clusters
+# (Secret Manager: buildkite-terraform-token), in the environment:
+#   BUILDKITE_API_TOKEN="$(gcloud secrets versions access latest --secret buildkite-terraform-token)"
+provider "buildkite" {
+  organization = "fluffy-linux"
 }

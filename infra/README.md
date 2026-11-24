@@ -21,7 +21,11 @@ service accounts, and read their secrets from Secret Manager.
     (`buildkite-agent-token`, `ghcr-token`) and delete agent VMs, nothing
     else, because builds run upstream code;
   - a subnet and a spot instance template per agent region;
-  - the scaler.
+  - the scaler;
+  - Buildkite (`buildkite.tf`): the cluster, the queues `mufasa` and
+    `mirror`, the pipelines `fluffy` and `mirror`, and the mirror's
+    schedule. The agent token isn't managed here, so its value never
+    enters Terraform's state.
 - `scaler/`: a Cloud Function, called every minute by Cloud Scheduler. It
   reads Buildkite's agent metrics and starts agent VMs until the queue
   `mufasa` has one per busy or waiting job, up to `agent_max_instances`.
@@ -58,6 +62,7 @@ steps. First, everything but the template and the scaler:
 
 ```
 export GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)"
+export BUILDKITE_API_TOKEN="$(gcloud secrets versions access latest --secret buildkite-terraform-token)"
 terraform -chdir=infra/terraform init
 terraform -chdir=infra/terraform apply \
     -target=google_project_service.services \
@@ -77,6 +82,9 @@ line or in Terraform's state:
 The secrets are:
 - `buildkite-agent-token`: the agent token for the cluster.
 - `buildkite-api-token`: a read-only REST API token.
+- `buildkite-terraform-token`: Terraform's API token for `buildkite.tf`,
+  with GraphQL access and `read_organizations`, `read_pipelines`,
+  `write_pipelines`, `read_clusters`, `write_clusters`, `read_teams`.
 - `ghcr-token`: a classic token with `write:packages`.
 - `github-mirror-token`: a classic token with `public_repo` and `workflow`.
 
