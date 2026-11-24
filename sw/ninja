@@ -8,9 +8,10 @@ fi
 VERSION=1.13.2
 
 # Built straight from Fluffy's branch (our commits on upstream's v1.13.2
-# tag): swctl fetches the pinned commit with git.
+# tag, then LFS's NINJAJOBS edit as its own commit): swctl fetches the
+# pinned commit with git.
 ARCHIVES=(
-    7ca08d87a7659fcf660add79a232cb7b78b7a73f https://github.com/fluffy-linux/ninja.git#refs/heads/fluffy/v$VERSION
+    5a829ff7ef375f4950a52380d5a20f888762d6b6 https://github.com/fluffy-linux/ninja.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -52,14 +53,6 @@ else
 fi
 
 MAKE() {
-
-    sed -i '/int Guess/a \
-  int   j = 0;\
-  char* jobs = getenv( "NINJAJOBS" );\
-  if ( jobs != NULL ) j = atoi( jobs );\
-  if ( j > 0 ) return j;\
-' src/ninja.cc
-
     python3 configure.py --bootstrap --verbose
 }
 
