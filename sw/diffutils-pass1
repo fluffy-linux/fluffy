@@ -2,8 +2,13 @@ ON=host-build
 
 VERSION=3.12
 
+# Built straight from Fluffy's branch, as diffutils is: the host's autotools
+# build the ones diffutils's release tarball was made with, and bootstrap
+# runs the host's autopoint.
 ARCHIVES=(
-    7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd https://github.com/fluffy-linux/diffutils/releases/download/v$VERSION/diffutils-$VERSION.tar.xz
+    ccbabc3eef9e170ac2176764dc7a12aa0e33a1ba https://github.com/fluffy-linux/diffutils.git#refs/heads/fluffy/v$VERSION
+    18bfebd5367050afd0f2f5b8eb1c2acc93c26c3a https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.76-2f64
+    df341d9c2ff367a0b177cb998c08ade9c03c0e3f https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17.0.91
 )
 
 NEEDS=(
@@ -16,12 +21,20 @@ BUILD_NEEDS=(
     linux-headers
 )
 
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
+    autoconf_build
+    automake_build
+    ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/diffutils \
         --host=$FLUFFY_TGT \
         gl_cv_func_strcasecmp_works=yes \
         --build=$(./build-aux/config.guess)
+    # The translations as make dist merges them.
+    make -C po update-po
     make
 }
 
