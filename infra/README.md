@@ -1,140 +1,117 @@
-# Fluffy's CI on Azure (retired)
+# Fluffy's CI on GCP
 
-CI now runs on GCP: see `gcp/README.md`.  What follows describes the
-Azure setup, no longer used; `packer/provision.sh` and `packer/files/`
-are still shared by the GCP image.
+Fluffy's Buildkite CI agents run on GCP spot VMs, in project
+`fluffy-linux`, regions `us-east4` and `us-east1` (the scaler and the
+rest are in `us-east4`).  CI ran on Azure until 2026-11-23; that setup is
+in the git history.
 
-Infrastructure for running Fluffy's Buildkite CI on Azure spot VMs, in
-East US.  No credentials live in this repository: Terraform and Packer
-authenticate as your `az login` session, and the agent VMs as a managed
-identity, reading the Buildkite agent token from Key Vault.
+No credentials live in this repository.  Terraform and Packer use your
+`gcloud` login's access token, passed in the environment.  The VMs use
+service accounts, and read their secrets from Secret Manager.
 
-- `bootstrap/`: the storage account that holds `terraform/`'s state.  Run
-  once.
-- `terraform/`: the resource group and what every agent shares: network,
-  Key Vault, the agents' managed identity, the
-  image gallery Packer publishes to, and a monthly budget with email
-  alerts.  The subscription is pay-as-you-go, so the budget alerts; it
-  cannot stop spending.
-- `packer/`: the agent VM image, published to the gallery: Ubuntu 24.04
-  with Fluffy's host tools, `/sw/bash`, ctypes.sh (from Fluffy's fork) and
-  the Buildkite agent, which fetches its token from Key Vault at boot,
-  exits after 10 idle minutes, and then deletes its VM.
-- After that: a spot VM scale set, normally at size 0, and a small Azure
-  Function that polls Buildkite's agent metrics every minute and sets the
-  scale set's size from the jobs waiting.  Each agent runs one job and
-  deletes its own VM.  Nothing persists on the agents: swctl fetches the
-  images whose recipes are unchanged from the binary cache, the public
-  package `ghcr.io/fluffy-linux/sw`, and publishes new ones there (with
-  the classic token `ghcr-token` in Key Vault, `write:packages`).
+- `packer/`: the agent image, in family `fluffy-ci-agent`. It is Ubuntu
+  24.04 with Fluffy's host tools, `/sw/bash`, ctypes.sh and the Buildkite
+  agent. At boot the agent reads its token from Secret Manager. After 10
+  idle minutes it exits, and the VM deletes itself.
+- `terraform/`:
+  - the project's APIs;
+  - the secrets (values are added separately, below);
+  - a network with no firewall rules, so nothing reaches the agents;
+  - the agents' service account: it can read two secrets
+    (`buildkite-agent-token`, `ghcr-token`) and delete agent VMs, nothing
+    else, because builds run upstream code;
+  - a subnet and a spot instance template per agent region;
+  - the scaler.
+- `scaler/`: a Cloud Function, called every minute by Cloud Scheduler. It
+  reads Buildkite's agent metrics and starts agent VMs until the queue
+  `mufasa` has one per busy or waiting job, up to `agent_max_instances`.
+  That is 2 `c4d-standard-16-lssd`: the project has 32 vCPUs and C4D 24
+  per region, so in practice one per region. A world is mostly one long
+  chain of steps, so fast agents matter more than many. It tries zones in
+  turn, and waits for each create to finish, because quota and spot
+  capacity failures show up in the operation. It never deletes VMs: agents
+  leave on their own. Spot VMs are also deleted when preempted, and every
+  VM at `agent_max_run_hours`.
+
+Nothing persists on the agents. swctl fetches unchanged recipes' images
+from the binary cache, the public package `ghcr.io/fluffy-linux/sw`, and
+publishes new ones there (with `ghcr-token`, a classic token with
+`write:packages`).
 
 ## Once
 
-Install the Azure CLI and log in; Terraform and Packer use that session.
+Log in with gcloud as the CI account, then create the bucket that holds
+Terraform's state:
 
 ```
-az login
-az account set --subscription <subscription-id>
+gcloud auth login
+gcloud config set project fluffy-linux
+gcloud storage buckets create gs://fluffy-linux-tfstate --location us-east4 \
+    --uniform-bucket-level-access --public-access-prevention
+gcloud storage buckets update gs://fluffy-linux-tfstate --versioning
 ```
 
-Create the state storage, keeping the bootstrap's own (small) state outside
-the repository, then record where the main state goes:
+## Apply
+
+The instance template needs the image, so a new project goes in three
+steps. First, everything but the template and the scaler:
 
 ```
-mkdir -p ~/.local/state/fluffy-infra
-terraform -chdir=infra/bootstrap init \
-    -backend-config=path=$HOME/.local/state/fluffy-infra/bootstrap.tfstate
-terraform -chdir=infra/bootstrap apply
-terraform -chdir=infra/bootstrap output -raw backend_hcl > infra/terraform/backend.hcl
+export GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)"
+terraform -chdir=infra/terraform init
+terraform -chdir=infra/terraform apply \
+    -target=google_project_service.services \
+    -target=google_secret_manager_secret.secrets \
+    -target=google_secret_manager_secret_iam_member.agent \
+    -target=google_service_account.agent \
+    -target=google_compute_subnetwork.agents
 ```
 
-`backend.hcl` holds only resource names, no secrets.
-
-## Shared infrastructure
-
-```
-cp infra/terraform/terraform.example.tfvars infra/terraform/terraform.tfvars
-$EDITOR infra/terraform/terraform.tfvars      # your alert address; not committed
-terraform -chdir=infra/terraform init -backend-config=backend.hcl
-terraform -chdir=infra/terraform plan
-terraform -chdir=infra/terraform apply
-```
-
-Then store the Buildkite agent token, and for publishing to the binary
-cache a GitHub personal access token (classic) with `write:packages` as
-`ghcr-token` (Terraform does not, so neither reaches the state):
+Then add each secret's value. Pipe it in, so it never appears on a command
+line or in Terraform's state:
 
 ```
-az keyvault secret set \
-    --vault-name "$(terraform -chdir=infra/terraform output -raw key_vault_name)" \
-    --name buildkite-agent-token --file <file-holding-the-token>
+<command printing the token> | gcloud secrets versions add buildkite-agent-token --data-file=-
 ```
 
-## The agent image
+The secrets are:
+- `buildkite-agent-token`: the agent token for the cluster.
+- `buildkite-api-token`: a read-only REST API token.
+- `ghcr-token`: a classic token with `write:packages`.
+- `github-mirror-token`: a classic token with `public_repo` and `workflow`.
 
-Needs `infra/terraform` applied first: Packer publishes into its gallery,
-and the Key Vault secret above needs its vault.  New pay-as-you-go
-subscriptions start with small vCPU quotas (10 regional vCPUs, none at
-all for the v5 families): the build VM is a 2-vCPU `Standard_D2ads_v6`,
-which fits beside a running 8-vCPU agent, and spot agents need "Total
-Regional Low-priority vCPUs" raised (Quotas, Compute, East US) to at
-least an agent's size.
+Then the image, then everything else:
 
 ```
 packer init infra/packer
-packer build \
-    -var subscription_id="$(az account show --query id -o tsv)" \
-    -var image_version=1.1.5 \
-    infra/packer
+PKR_VAR_access_token="$(gcloud auth print-access-token)" packer build infra/packer
+terraform -chdir=infra/terraform apply
 ```
 
-The image goes into `fluffy-ci-agent-nvme`, the gallery definition for
-NVMe-only sizes: the agents are `Standard_D8ads_v6` (AMD Zen 4), which
-build on their local NVMe disk, formatted and mounted on `/mnt` at boot,
-rather than on the network-attached OS disk.
+A new image needs no apply: each VM boots the family's newest image when
+it is created. A reused agent keeps the image it booted with, though, so
+after an image change delete any live agents before pushing:
 
-Bump `image_version` for each new image.  The image starts no agent by
-itself: a VM becomes an agent only when its custom data writes
-`/etc/fluffy-ci/agent.env` (the scale sets, next step), with
-`BUILDKITE_AGENT_QUEUE`, `FLUFFY_CI_KEY_VAULT` and
-`FLUFFY_CI_IDENTITY_CLIENT_ID`.  `FLUFFY_CI_SELF_DELETE=0` keeps a VM after
-its agent exits, for debugging.
+```
+gcloud compute instances list --filter=labels.fluffy-ci=agent
+gcloud compute instances delete <name> --zone <zone>
+```
 
-## The scaler
+## Debugging
 
-`infra/scaler` is a timer function, run every minute, that raises each
-agent scale set's size to meet its Buildkite queue (busy agents plus
-scheduled jobs, never above `max_instances`) and never lowers it: agents
-delete their own VMs after 10 idle minutes.  `terraform apply` creates the
-function app and deploys its code, again whenever the code changes: it
-zips `infra/scaler` and runs `az functionapp deployment source config-zip`
-with your `az login` session, and Azure pip-installs `requirements.txt`
-itself.  See what it did each minute in the function's log stream (portal)
-or with `az webapp log tail`.  A scale set's queue must be named
-(`buildkite_queue` in `agent_queues`) for the scaler to manage it.
+The scaler's log:
 
-## The mirror agent
+```
+gcloud functions logs read fluffy-ci-scaler --region us-east4
+```
 
-Keeps the fluffy-linux forks current with upstream (NOTES.md, "Mirror
-sync").  `mirror.tf` makes a small scale set (`fluffy-ci-mirror`, at most
-one VM, started on demand by the scaler for the `mirror` queue and deleted
-by the idle self-delete) and a persistent Standard HDD,
-`fluffy-ci-mirror-repos`, which each VM attaches to itself at boot and
-mounts on `/srv/mirror`: the bare repositories of the last sync live
-there, so a run never re-clones.  Terraform refuses to destroy the disk.
+An agent's serial console shows its boot and cloud-init:
 
-The mirror VM has its own identity, `fluffy-ci-mirror`, which reads the
-whole vault.  The build agents' identity reads only `buildkite-agent-token`
-and `ghcr-token`, because builds run upstream code that must not see the
-push token.  Once, by hand:
+```
+gcloud compute instances get-serial-port-output <name> --zone <zone>
+```
 
-- In Buildkite, add a queue named `mirror` to the cluster.
-- Store a GitHub token that can push to the fluffy-linux repositories:
-
-  ```
-  az keyvault secret set --vault-name <vault> --name github-mirror-token \
-      --file token.txt
-  ```
-
-  (no trailing newline needed: the VM strips whitespace, as for the agent
-  token).
+To keep a VM after its agent exits, set `FLUFFY_CI_SELF_DELETE=0` in its
+`/etc/fluffy-ci/agent.env`. Nothing can SSH in, by design. To look inside
+a VM, add a firewall rule and a key for that one VM, and remove both
+afterwards.

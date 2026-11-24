@@ -1,128 +1,66 @@
-# The scaler: a timer-triggered function (infra/scaler) that raises each
-# agent scale set's size to meet its Buildkite queue, every minute.  Flex
-# Consumption, within its free grant at this volume.  terraform apply also
-# deploys its code, whenever the code changes (scaler_code below).
+# The scaler: a Cloud Function (infra/scaler) that starts agent VMs for
+# waiting jobs, called every minute by Cloud Scheduler.  terraform apply
+# deploys its code whenever it changes (the source archive's checksum names
+# the uploaded object).
 
-resource "azurerm_user_assigned_identity" "scaler" {
-  name                = "fluffy-ci-scaler"
-  resource_group_name = azurerm_resource_group.ci.name
-  location            = azurerm_resource_group.ci.location
-}
-
-# The function's own storage: its deployment package and the host's
-# bookkeeping (the timer's lock).  No account keys: the function reaches
-# it as its managed identity.
-resource "azurerm_storage_account" "scaler" {
-  name                            = "fluffyscaler${random_string.suffix.result}"
-  resource_group_name             = azurerm_resource_group.ci.name
-  location                        = azurerm_resource_group.ci.location
-  account_tier                    = "Standard"
-  account_replication_type        = "LRS"
-  min_tls_version                 = "TLS1_2"
-  allow_nested_items_to_be_public = false
-  shared_access_key_enabled       = false
-}
-
-resource "azurerm_storage_container" "scaler" {
-  name                  = "deployment"
-  storage_account_id    = azurerm_storage_account.scaler.id
-  container_access_type = "private"
-}
-
-resource "azurerm_role_assignment" "scaler_storage" {
-  scope                = azurerm_storage_account.scaler.id
-  role_definition_name = "Storage Blob Data Owner"
-  principal_id         = azurerm_user_assigned_identity.scaler.principal_id
-}
-
-resource "azurerm_role_assignment" "scaler_deploy" {
-  scope                = azurerm_storage_account.scaler.id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = data.azurerm_client_config.current.object_id
+resource "google_service_account" "scaler" {
+  account_id   = "fluffy-ci-scaler"
+  display_name = "Fluffy CI scaler"
 }
 
 # The agent token, for Buildkite's agent metrics API.
-resource "azurerm_role_assignment" "scaler_vault" {
-  scope                = azurerm_key_vault.ci.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.scaler.principal_id
+resource "google_secret_manager_secret_iam_member" "scaler" {
+  secret_id = google_secret_manager_secret.secrets["buildkite-agent-token"].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.scaler.email}"
 }
 
-# Reading and resizing the agent scale sets, and nothing else.
-resource "azurerm_role_assignment" "scaler_scale_sets" {
-  for_each             = azurerm_orchestrated_virtual_machine_scale_set.agents
-  scope                = each.value.id
-  role_definition_name = "Virtual Machine Contributor"
-  principal_id         = azurerm_user_assigned_identity.scaler.principal_id
+# Listing and creating agent VMs, and attaching the agent's service account
+# to them.
+resource "google_project_iam_member" "scaler_compute" {
+  project = var.project
+  role    = "roles/compute.instanceAdmin.v1"
+  member  = "serviceAccount:${google_service_account.scaler.email}"
 }
 
-resource "azurerm_service_plan" "scaler" {
-  name                = "fluffy-ci-scaler"
-  resource_group_name = azurerm_resource_group.ci.name
-  location            = azurerm_resource_group.ci.location
-  os_type             = "Linux"
-  sku_name            = "FC1"
+resource "google_service_account_iam_member" "scaler_uses_agent" {
+  service_account_id = google_service_account.agent.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.scaler.email}"
 }
 
-resource "azurerm_function_app_flex_consumption" "scaler" {
-  name                = "fluffy-ci-scaler-${random_string.suffix.result}"
-  resource_group_name = azurerm_resource_group.ci.name
-  location            = azurerm_resource_group.ci.location
-  service_plan_id     = azurerm_service_plan.scaler.id
-
-  storage_container_type            = "blobContainer"
-  storage_container_endpoint        = "${azurerm_storage_account.scaler.primary_blob_endpoint}${azurerm_storage_container.scaler.name}"
-  storage_authentication_type       = "UserAssignedIdentity"
-  storage_user_assigned_identity_id = azurerm_user_assigned_identity.scaler.id
-
-  runtime_name           = "python"
-  runtime_version        = "3.12"
-  instance_memory_in_mb  = 512
-  maximum_instance_count = 40
-
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.scaler.id]
-  }
-
-  site_config {}
-
-  app_settings = {
-    # The host's storage, as the managed identity.  The provider would set
-    # AzureWebJobsStorage to a connection string with an empty account key,
-    # which takes precedence over the __ settings; empty, it doesn't.
-    AzureWebJobsStorage              = ""
-    AzureWebJobsStorage__accountName = azurerm_storage_account.scaler.name
-    AzureWebJobsStorage__credential  = "managedidentity"
-    AzureWebJobsStorage__clientId    = azurerm_user_assigned_identity.scaler.client_id
-
-    SCALER_IDENTITY_CLIENT_ID = azurerm_user_assigned_identity.scaler.client_id
-    KEY_VAULT                 = azurerm_key_vault.ci.name
-    SUBSCRIPTION_ID           = data.azurerm_client_config.current.subscription_id
-    RESOURCE_GROUP            = azurerm_resource_group.ci.name
-    SCALE_SETS = jsonencode(merge({
-      for k, q in var.agent_queues : q.buildkite_queue => {
-        vmss = azurerm_orchestrated_virtual_machine_scale_set.agents[k].name
-        max  = q.max_instances
-      } if q.buildkite_queue != null
-      }, {
-      (var.mirror_buildkite_queue) = {
-        vmss = azurerm_orchestrated_virtual_machine_scale_set.mirror.name
-        max  = 1
-      }
-    }))
-  }
-
-  depends_on = [
-    azurerm_role_assignment.scaler_storage,
-    azurerm_role_assignment.scaler_vault,
-    azurerm_role_assignment.scaler_scale_sets,
-  ]
+# Cloud Build builds the function's code as this account (newer projects'
+# default build account has no permissions).
+resource "google_service_account" "scaler_build" {
+  account_id   = "fluffy-ci-scaler-build"
+  display_name = "Fluffy CI scaler build"
 }
 
-# The scaler's code, zipped by Terraform and deployed with the Azure CLI
-# (az login's session), again whenever its checksum changes.  Azure builds
-# it remotely: pip installs requirements.txt for the runtime's Python.
+resource "google_project_iam_member" "scaler_build" {
+  for_each = toset([
+    "roles/cloudbuild.builds.builder",
+    "roles/logging.logWriter",
+    "roles/artifactregistry.writer",
+    "roles/storage.objectViewer",
+  ])
+  project = var.project
+  role    = each.key
+  member  = "serviceAccount:${google_service_account.scaler_build.email}"
+}
+
+resource "random_id" "source_bucket" {
+  byte_length = 3
+}
+
+resource "google_storage_bucket" "scaler_source" {
+  name                        = "fluffy-ci-scaler-src-${random_id.source_bucket.hex}"
+  location                    = var.region
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+  force_destroy               = true
+  depends_on                  = [google_project_service.services]
+}
+
 data "archive_file" "scaler" {
   type        = "zip"
   source_dir  = "${path.module}/../scaler"
@@ -130,23 +68,84 @@ data "archive_file" "scaler" {
   excludes    = ["__pycache__", "__pycache__/*"]
 }
 
-resource "terraform_data" "scaler_code" {
-  triggers_replace = [
-    data.archive_file.scaler.output_base64sha256,
-    azurerm_function_app_flex_consumption.scaler.id,
-  ]
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      az functionapp deployment source config-zip \
-          --resource-group "${azurerm_resource_group.ci.name}" \
-          --name "${azurerm_function_app_flex_consumption.scaler.name}" \
-          --src "${data.archive_file.scaler.output_path}" \
-          --build-remote true
-    EOT
-  }
+resource "google_storage_bucket_object" "scaler" {
+  name   = "scaler-${data.archive_file.scaler.output_md5}.zip"
+  bucket = google_storage_bucket.scaler_source.name
+  source = data.archive_file.scaler.output_path
 }
 
-output "scaler_function_app" {
-  value = azurerm_function_app_flex_consumption.scaler.name
+resource "google_cloudfunctions2_function" "scaler" {
+  name     = "fluffy-ci-scaler"
+  location = var.region
+
+  build_config {
+    runtime         = "python312"
+    entry_point     = "scale_agents"
+    service_account = google_service_account.scaler_build.id
+    source {
+      storage_source {
+        bucket = google_storage_bucket.scaler_source.name
+        object = google_storage_bucket_object.scaler.name
+      }
+    }
+  }
+
+  service_config {
+    available_memory      = "256M"
+    timeout_seconds       = 540
+    max_instance_count    = 1
+    service_account_email = google_service_account.scaler.email
+    ingress_settings      = "ALLOW_ALL"
+    environment_variables = {
+      PROJECT = var.project
+      ZONES   = join(",", flatten(values(var.agent_zones)))
+      TEMPLATES = jsonencode(merge([
+        for region, zones in var.agent_zones : {
+          for z in zones : z => google_compute_instance_template.agent[region].name
+        }
+      ]...))
+      QUEUE         = var.buildkite_queue
+      MAX_INSTANCES = tostring(var.agent_max_instances)
+    }
+  }
+
+  depends_on = [
+    google_project_iam_member.scaler_build,
+    google_secret_manager_secret_iam_member.scaler,
+    google_project_iam_member.scaler_compute,
+    google_service_account_iam_member.scaler_uses_agent,
+  ]
+}
+
+# Cloud Scheduler calls the function every minute, as its own account,
+# the only one allowed to invoke it.
+resource "google_service_account" "scheduler" {
+  account_id   = "fluffy-ci-scheduler"
+  display_name = "Fluffy CI scheduler"
+}
+
+resource "google_cloud_run_service_iam_member" "scheduler_invokes" {
+  location = var.region
+  service  = google_cloudfunctions2_function.scaler.service_config[0].service
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.scheduler.email}"
+}
+
+resource "google_cloud_scheduler_job" "scaler" {
+  name             = "fluffy-ci-scaler"
+  region           = var.region
+  schedule         = "* * * * *"
+  attempt_deadline = "540s"
+  retry_config {
+    retry_count = 0
+  }
+  http_target {
+    http_method = "POST"
+    uri         = google_cloudfunctions2_function.scaler.service_config[0].uri
+    oidc_token {
+      service_account_email = google_service_account.scheduler.email
+      audience              = google_cloudfunctions2_function.scaler.service_config[0].uri
+    }
+  }
+  depends_on = [google_cloud_run_service_iam_member.scheduler_invokes]
 }

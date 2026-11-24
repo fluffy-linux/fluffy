@@ -1,169 +1,65 @@
-# Fluffy's CI on Azure: the parts every agent shares.  The agent VM itself
-# (a spot VM booted from the Packer image) comes in a later step.
+# Fluffy's CI on GCP: the project's APIs, its secrets, and the network the
+# agents run in.  agents.tf has the agents, scaler.tf what starts them.
 
-data "azurerm_client_config" "current" {}
-
-# Storage account and Key Vault names are global: a random suffix keeps
-# Fluffy's unique.
-resource "random_string" "suffix" {
-  length  = 6
-  upper   = false
-  special = false
+locals {
+  services = [
+    "artifactregistry",
+    "cloudbuild",
+    "cloudfunctions",
+    "cloudscheduler",
+    "compute",
+    "iam",
+    "logging",
+    "run",
+    "secretmanager",
+    "storage",
+  ]
 }
 
-resource "azurerm_resource_group" "ci" {
-  name     = "fluffy-ci"
-  location = var.location
-}
-
-# The identity the agent VMs run as: it reads the Buildkite agent token
-# (and the registry token) from Key Vault, so no credentials are baked into
-# the VM image.
-resource "azurerm_user_assigned_identity" "agent" {
-  name                = "fluffy-ci-agent"
-  resource_group_name = azurerm_resource_group.ci.name
-  location            = azurerm_resource_group.ci.location
-}
-
-# --- Network ---------------------------------------------------------------
-
-# Agents only make outbound connections (GitHub and its container
-# registry, Buildkite).  The subnet has no default outbound access, which Azure is
-# retiring; each agent VM gets its own public IP for that, cheaper than a
-# NAT gateway for one or a few VMs.  Nothing is allowed in.
-resource "azurerm_virtual_network" "ci" {
-  name                = "fluffy-ci"
-  resource_group_name = azurerm_resource_group.ci.name
-  location            = azurerm_resource_group.ci.location
-  address_space       = ["10.42.0.0/16"]
-}
-
-resource "azurerm_subnet" "agents" {
-  name                            = "agents"
-  resource_group_name             = azurerm_resource_group.ci.name
-  virtual_network_name            = azurerm_virtual_network.ci.name
-  address_prefixes                = ["10.42.1.0/24"]
-  default_outbound_access_enabled = false
-}
-
-resource "azurerm_network_security_group" "agents" {
-  name                = "fluffy-ci-agents"
-  resource_group_name = azurerm_resource_group.ci.name
-  location            = azurerm_resource_group.ci.location
-
-  security_rule {
-    name                       = "deny-all-inbound"
-    priority                   = 4096
-    direction                  = "Inbound"
-    access                     = "Deny"
-    protocol                   = "*"
-    source_port_range          = "*"
-    destination_port_range     = "*"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-}
-
-resource "azurerm_subnet_network_security_group_association" "agents" {
-  subnet_id                 = azurerm_subnet.agents.id
-  network_security_group_id = azurerm_network_security_group.agents.id
+resource "google_project_service" "services" {
+  for_each           = toset(local.services)
+  service            = "${each.key}.googleapis.com"
+  disable_on_destroy = false
 }
 
 # --- Secrets ---------------------------------------------------------------
 
-# Holds the Buildkite agent token as the secret "buildkite-agent-token".
-# Terraform does not set it (it would land in the state); set it once with
-#   az keyvault secret set --vault-name <key_vault_name> \
-#       --name buildkite-agent-token --file <file-with-token>
-resource "azurerm_key_vault" "ci" {
-  name                       = "fluffy-ci-${random_string.suffix.result}"
-  resource_group_name        = azurerm_resource_group.ci.name
-  location                   = azurerm_resource_group.ci.location
-  tenant_id                  = data.azurerm_client_config.current.tenant_id
-  sku_name                   = "standard"
-  rbac_authorization_enabled = true
-  purge_protection_enabled   = false
-  soft_delete_retention_days = 7
+# The secrets themselves; their values are added out of band, piped into
+# `gcloud secrets versions add NAME --data-file=-` (infra/README.md), so
+# they never appear in Terraform's state or on a command line.
+#   buildkite-agent-token  agents register with it; the scaler reads
+#                          Buildkite's agent metrics with it
+#   buildkite-api-token    read-only REST API token, for people's tools
+#   ghcr-token             publishes the binary cache (agents)
+#   github-mirror-token    pushes the forks (the mirror agent, later)
+locals {
+  secrets = ["buildkite-agent-token", "buildkite-api-token", "ghcr-token", "github-mirror-token"]
 }
 
-# The build agents read only their own secrets: they run upstream build
-# scripts, so they must not see the mirror's GitHub push token.  The
-# secrets are created by hand (README), before Terraform needs them here.
-resource "azurerm_role_assignment" "vault_agent" {
-  for_each             = toset(["buildkite-agent-token", "ghcr-token"])
-  scope                = "${azurerm_key_vault.ci.id}/secrets/${each.key}"
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.agent.principal_id
+resource "google_secret_manager_secret" "secrets" {
+  for_each  = toset(local.secrets)
+  secret_id = each.key
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.services]
 }
 
-resource "azurerm_role_assignment" "vault_admin" {
-  scope                = azurerm_key_vault.ci.id
-  role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = data.azurerm_client_config.current.object_id
+# --- Network ---------------------------------------------------------------
+
+# Its own network, with no firewall rules: nothing can reach the agents
+# (GCP denies all ingress without a rule); they reach out, each with its
+# own ephemeral public IP.
+resource "google_compute_network" "ci" {
+  name                    = "fluffy-ci"
+  auto_create_subnetworks = false
+  depends_on              = [google_project_service.services]
 }
 
-# --- VM images -------------------------------------------------------------
-
-# infra/packer publishes the agent image here, one version per build.
-resource "azurerm_shared_image_gallery" "ci" {
-  name                = "fluffy_ci"
-  resource_group_name = azurerm_resource_group.ci.name
-  location            = azurerm_resource_group.ci.location
-}
-
-# The agent image, built by infra/packer.  The agents are an NVMe-only
-# size (v6: D8ads_v6, with a local NVMe disk), and those boot only from
-# images that declare NVMe support.
-resource "azurerm_shared_image" "agent_nvme" {
-  name                              = "fluffy-ci-agent-nvme"
-  gallery_name                      = azurerm_shared_image_gallery.ci.name
-  resource_group_name               = azurerm_resource_group.ci.name
-  location                          = azurerm_resource_group.ci.location
-  os_type                           = "Linux"
-  hyper_v_generation                = "V2"
-  disk_controller_type_nvme_enabled = true
-
-  identifier {
-    publisher = "fluffy-linux"
-    offer     = "ci-agent"
-    sku       = "ubuntu-24.04-nvme"
-  }
-}
-
-# --- Spending --------------------------------------------------------------
-
-# Pay-as-you-go has no hard cap, so this alerts: at 50%, 80% and 100% of
-# the month's budget, and when the forecast passes 100%.
-resource "azurerm_consumption_budget_resource_group" "ci" {
-  name              = "fluffy-ci-monthly"
-  resource_group_id = azurerm_resource_group.ci.id
-  amount            = var.budget_amount
-  time_grain        = "Monthly"
-
-  time_period {
-    start_date = var.budget_start
-  }
-
-  dynamic "notification" {
-    for_each = [50, 80, 100]
-    content {
-      enabled        = true
-      threshold      = notification.value
-      operator       = "GreaterThanOrEqualTo"
-      threshold_type = "Actual"
-      contact_emails = var.alert_emails
-    }
-  }
-
-  notification {
-    enabled        = true
-    threshold      = 100
-    operator       = "GreaterThanOrEqualTo"
-    threshold_type = "Forecasted"
-    contact_emails = var.alert_emails
-  }
-
-  lifecycle {
-    ignore_changes = [time_period]
-  }
+resource "google_compute_subnetwork" "agents" {
+  for_each      = var.agent_zones
+  name          = "fluffy-ci-agents-${each.key}"
+  network       = google_compute_network.ci.id
+  region        = each.key
+  ip_cidr_range = var.agent_subnets[each.key]
 }

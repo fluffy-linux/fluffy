@@ -1,149 +1,109 @@
-# The CI agents: one VM scale set per Buildkite queue, booted from the
-# Packer image.  A scale set sits at 0 instances; the scaler (a function,
-# next) raises its size when jobs wait on its queue, and only ever raises
-# it: each agent takes jobs back to back, exits after 10 idle minutes and
-# deletes its own VM.  Terraform therefore ignores the instance count.
+# The CI agents: spot VMs made from one instance template, booted from the
+# Packer image (infra/packer).  Nothing runs until the scaler
+# (scaler.tf) creates VMs for waiting jobs; each agent takes jobs back to
+# back, exits after 10 idle minutes and deletes its own VM.
 
-variable "agent_queues" {
-  description = <<-EOT
-    One scale set per entry: its VM size, the most VMs at once, and the
-    Buildkite queue its agents join (buildkite_queue).  Without
-    buildkite_queue, agents join the cluster's default queue, as an agent
-    with no queue tag does.
-  EOT
-  type = map(object({
-    vm_size         = string
-    max_instances   = number
-    buildkite_queue = optional(string)
-  }))
-  # mufasa is the Buildkite cluster's default queue.  The scaler only
-  # scales queues it knows by name, and parallel agents wait for swctl's
-  # Blob binary cache, so one VM for now.
-  default = {
-    default = {
-      vm_size         = "Standard_D8ads_v6"
-      max_instances   = 1
-      buildkite_queue = "mufasa"
-    }
+resource "google_service_account" "agent" {
+  account_id   = "fluffy-ci-agent"
+  display_name = "Fluffy CI agent"
+  description  = "CI agent VMs: run builds (upstream code), so they get only their own two secrets and the right to delete themselves."
+}
+
+# The agent's two secrets, and no others: builds run upstream code, which
+# must not reach the mirror's push token or the API token.
+resource "google_secret_manager_secret_iam_member" "agent" {
+  for_each  = toset(["buildkite-agent-token", "ghcr-token"])
+  secret_id = google_secret_manager_secret.secrets[each.key].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.agent.email}"
+}
+
+# Deleting an agent VM (and its boot disk, deleted with it): what the agent
+# needs to delete itself, limited to agent VMs by name.
+resource "google_project_iam_custom_role" "agent_self_delete" {
+  role_id     = "fluffyCiAgentSelfDelete"
+  title       = "Fluffy CI agent self-delete"
+  permissions = ["compute.instances.delete", "compute.instances.get", "compute.disks.delete"]
+}
+
+resource "google_project_iam_member" "agent_self_delete" {
+  project = var.project
+  role    = google_project_iam_custom_role.agent_self_delete.id
+  member  = "serviceAccount:${google_service_account.agent.email}"
+  condition {
+    title      = "fluffy-ci agent VMs only"
+    expression = "resource.name.extract('/instances/{name}').startsWith('fluffy-ci-agent-') || resource.name.extract('/disks/{name}').startsWith('fluffy-ci-agent-')"
   }
 }
 
-variable "agent_priority" {
-  description = "Regular (on-demand) or Spot.  Regular until the subscription's spot vCPU quota is raised."
-  type        = string
-  default     = "Regular"
+# One template per region: a template's subnet is regional.
+resource "google_compute_instance_template" "agent" {
+  for_each         = var.agent_zones
+  name_prefix      = "fluffy-ci-agent-${each.key}-"
+  machine_type     = var.agent_machine_type
+  min_cpu_platform = var.agent_min_cpu_platform
 
-  validation {
-    condition     = contains(["Regular", "Spot"], var.agent_priority)
-    error_message = "agent_priority must be Regular or Spot."
-  }
-}
-
-variable "spot_max_price" {
-  description = "Most to pay per hour for a spot VM, in US dollars; -1 means up to the on-demand price (evicted only for capacity)."
-  type        = number
-  default     = -1
-}
-
-variable "agent_os_disk_gb" {
-  description = "Agents' OS disk (deleted with the VM).  Builds run on the VM's local disk (/mnt), not here."
-  type        = number
-  default     = 64
-}
-
-variable "cache_registry" {
-  description = "The binary cache: an OCI registry package, public, holding each recipe's image as <pkg>.<recipe-checksum>."
-  type        = string
-  default     = "ghcr.io/fluffy-linux/sw"
-}
-
-variable "admin_ssh_public_key" {
-  description = "SSH public key for the agents' admin user (Azure requires one; no inbound traffic is allowed, so it serves only for console debugging).  Set in terraform.tfvars."
-  type        = string
-}
-
-# The agent deletes its own VM when it has been idle long enough (its
-# NIC, public IP and OS disk go with it).
-resource "azurerm_role_assignment" "agent_self_delete" {
-  scope                = azurerm_resource_group.ci.id
-  role_definition_name = "Virtual Machine Contributor"
-  principal_id         = azurerm_user_assigned_identity.agent.principal_id
-}
-
-resource "azurerm_orchestrated_virtual_machine_scale_set" "agents" {
-  for_each = var.agent_queues
-
-  name                        = "fluffy-ci-${each.key}"
-  resource_group_name         = azurerm_resource_group.ci.name
-  location                    = azurerm_resource_group.ci.location
-  sku_name                    = each.value.vm_size
-  instances                   = 0
-  platform_fault_domain_count = 1
-
-  priority        = var.agent_priority
-  eviction_policy = var.agent_priority == "Spot" ? "Delete" : null
-  max_bid_price   = var.agent_priority == "Spot" ? var.spot_max_price : null
-
-  # The newest version of the Packer image, for NVMe-only sizes (v6).
-  source_image_id = azurerm_shared_image.agent_nvme.id
-
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.agent.id]
-  }
-
-  os_profile {
-    custom_data = base64encode(templatefile("${path.module}/agent-cloud-init.yaml", {
-      queue              = each.value.buildkite_queue
-      key_vault          = azurerm_key_vault.ci.name
-      identity_client_id = azurerm_user_assigned_identity.agent.client_id
-      cache_registry     = var.cache_registry
-    }))
-
-    linux_configuration {
-      admin_username                  = "fluffy"
-      disable_password_authentication = true
-
-      admin_ssh_key {
-        username   = "fluffy"
-        public_key = var.admin_ssh_public_key
-      }
+  # Spot: deleted when GCP takes the capacity back (Buildkite retries the
+  # job elsewhere), and at the latest after agent_max_run_hours.
+  scheduling {
+    provisioning_model          = "SPOT"
+    preemptible                 = true
+    automatic_restart           = false
+    on_host_maintenance         = "TERMINATE"
+    instance_termination_action = "DELETE"
+    max_run_duration {
+      seconds = var.agent_max_run_hours * 3600
     }
   }
 
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "StandardSSD_LRS"
-    disk_size_gb         = var.agent_os_disk_gb
+  # The newest image of the family, when each VM is created.
+  disk {
+    boot         = true
+    auto_delete  = true
+    source_image = "projects/${var.project}/global/images/family/fluffy-ci-agent"
+    disk_type    = var.agent_boot_disk_type
+    disk_size_gb = var.agent_boot_disk_gb
+  }
+
+  dynamic "disk" {
+    for_each = range(var.agent_local_ssds)
+    content {
+      type         = "SCRATCH"
+      disk_type    = "local-ssd"
+      interface    = "NVME"
+      disk_size_gb = 375
+      auto_delete  = true
+    }
   }
 
   network_interface {
-    name                          = "nic"
-    primary                       = true
-    network_security_group_id     = azurerm_network_security_group.agents.id
-    enable_accelerated_networking = false
-
-    ip_configuration {
-      name      = "ip"
-      primary   = true
-      subnet_id = azurerm_subnet.agents.id
-
-      # The subnet has no default outbound access: each VM gets its own
-      # public IP, deleted with it.
-      public_ip_address {
-        name = "pip"
-      }
-    }
+    subnetwork = google_compute_subnetwork.agents[each.key].id
+    access_config {}
   }
 
-  boot_diagnostics {}
+  service_account {
+    email  = google_service_account.agent.email
+    scopes = ["cloud-platform"]
+  }
+
+  metadata = {
+    user-data = templatefile("${path.module}/agent-cloud-init.yaml", {
+      queue          = var.buildkite_queue
+      project        = var.project
+      cache_registry = var.cache_registry
+    })
+    # No SSH keys reach the VMs (and no firewall rule lets SSH in).
+    block-project-ssh-keys = "TRUE"
+  }
+
+  labels = {
+    fluffy-ci = "agent"
+    queue     = var.buildkite_queue
+  }
 
   lifecycle {
-    ignore_changes = [instances]
+    create_before_destroy = true
   }
 
-  depends_on = [
-    azurerm_role_assignment.vault_agent,
-    azurerm_role_assignment.agent_self_delete,
-  ]
+  depends_on = [google_project_service.services]
 }

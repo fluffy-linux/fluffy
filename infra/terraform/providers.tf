@@ -1,29 +1,32 @@
 terraform {
   required_version = ">= 1.6"
 
-  # Settings in backend.hcl, written from infra/bootstrap's output:
-  #   terraform -chdir=infra/terraform init -backend-config=backend.hcl
-  backend "azurerm" {}
+  # State in a GCS bucket made once with gcloud (infra/README.md):
+  #   terraform -chdir=infra/terraform init
+  backend "gcs" {
+    bucket = "fluffy-linux-tfstate"
+    prefix = "ci"
+  }
 
   required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.6"
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 7.0"
     }
     archive = {
       source  = "hashicorp/archive"
       version = "~> 2.4"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 
-# Authenticates as the az login user.  Storage data-plane access uses Entra
-# ID, not account keys, which are disabled.
-provider "azurerm" {
-  features {}
-  storage_use_azuread = true
+# Authenticates with the gcloud login's token, in the environment:
+#   GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)"
+provider "google" {
+  project = var.project
+  region  = var.region
 }

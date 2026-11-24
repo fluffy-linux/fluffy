@@ -1,60 +1,46 @@
-# The CI agent's VM image: Ubuntu 24.04 with Fluffy's host tools, the
-# Buildkite agent and its boot scripts, published to the Compute Gallery
-# that infra/terraform creates.  Build with your az login session:
+# The CI agent's VM image on GCP: Ubuntu 24.04 with Fluffy's host tools,
+# the Buildkite agent and its boot scripts, in image family
+# fluffy-ci-agent; agents boot the family's newest image.  provision.sh
+# installs the tools, and files/ holds the agent's configuration and boot
+# scripts: the token fetch (Secret Manager) and the self-delete (Compute
+# Engine).
+#
+# Build with your gcloud login, its token passed in the environment (never
+# on the command line):
 #
 #   packer init infra/packer
-#   packer build -var subscription_id=<id> -var image_version=1.0.0 infra/packer
-#
-# Each build publishes a new version; agents boot the latest.
+#   PKR_VAR_access_token="$(gcloud auth print-access-token)" packer build infra/packer
 
 packer {
   required_plugins {
-    azure = {
-      source  = "github.com/hashicorp/azure"
-      version = "~> 2"
+    googlecompute = {
+      source  = "github.com/hashicorp/googlecompute"
+      version = "~> 1"
     }
   }
 }
 
-variable "subscription_id" {
-  description = "The Azure subscription."
+variable "access_token" {
+  description = "An OAuth access token for the project (gcloud auth print-access-token)."
   type        = string
+  sensitive   = true
 }
 
-variable "image_version" {
-  description = "Gallery image version to publish, major.minor.patch."
-  type        = string
-}
-
-variable "location" {
+variable "project" {
   type    = string
-  default = "eastus"
+  default = "fluffy-linux"
 }
 
-variable "resource_group" {
-  description = "infra/terraform's resource group, holding the gallery."
-  type        = string
-  default     = "fluffy-ci"
-}
-
-variable "gallery_name" {
+variable "zone" {
   type    = string
-  default = "fluffy_ci"
+  default = "us-east4-a"
 }
 
-# The NVMe-capable definition, which v6 sizes (the agents' D8ads_v6) need.
-variable "image_name" {
-  type    = string
-  default = "fluffy-ci-agent-nvme"
-}
-
-# The agents' family (Dadv6, NVMe disks, as the image is for), and small
-# enough to fit beside a running 8-vCPU agent in the subscription's 10
-# regional vCPUs.  Provisioning is mostly downloads, so 2 vCPUs is enough.
-variable "build_vm_size" {
-  description = "Size of the temporary VM Packer provisions the image on."
+# Provisioning is mostly downloads and one small build (ctypes.sh).
+variable "build_machine_type" {
+  description = "The temporary VM Packer provisions the image on."
   type        = string
-  default     = "Standard_D2ads_v6"
+  default     = "n2d-standard-2"
 }
 
 # Fluffy's ctypes.sh fork (fluffy/v1.3), which swctl loads on the host.
@@ -75,35 +61,32 @@ variable "oras_sha256" {
   default = "66fb0ad7206f3f6fa77ed5b552049d364ccf4b50b1684554f731f76302b52ca0"
 }
 
-source "azure-arm" "agent" {
-  use_azure_cli_auth = true
-  subscription_id    = var.subscription_id
+locals {
+  stamp = formatdate("YYYYMMDD-hhmmss", timestamp())
+}
 
-  os_type         = "Linux"
-  image_publisher = "Canonical"
-  image_offer     = "ubuntu-24_04-lts"
-  image_sku       = "server"
+source "googlecompute" "agent" {
+  project_id   = var.project
+  zone         = var.zone
+  access_token = var.access_token
 
-  location = var.location
-  vm_size  = var.build_vm_size
+  source_image_family     = "ubuntu-2404-lts-amd64"
+  source_image_project_id = ["ubuntu-os-cloud"]
+  machine_type            = var.build_machine_type
+  disk_size               = 20
+  disk_type               = "pd-balanced"
+  ssh_username            = "packer"
 
-  shared_image_gallery_destination {
-    subscription         = var.subscription_id
-    resource_group       = var.resource_group
-    gallery_name         = var.gallery_name
-    image_name           = var.image_name
-    image_version        = var.image_version
-    replication_regions  = [var.location]
-    storage_account_type = "Standard_LRS"
-  }
-
-  azure_tags = {
+  image_name        = "fluffy-ci-agent-${local.stamp}"
+  image_family      = "fluffy-ci-agent"
+  image_description = "Fluffy Linux CI agent (infra/packer)"
+  image_labels = {
     purpose = "fluffy-ci-agent-image"
   }
 }
 
 build {
-  sources = ["source.azure-arm.agent"]
+  sources = ["source.googlecompute.agent"]
 
   # The file provisioner uploads a directory's contents ("files/") into a
   # destination directory that must already exist.
@@ -124,12 +107,5 @@ build {
       "ORAS_SHA256=${var.oras_sha256}",
     ]
     script = "${path.root}/provision.sh"
-  }
-
-  # Generalize, as Azure requires for an image (Packer's azure-arm docs).
-  provisioner "shell" {
-    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
-    inline          = ["/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
-    inline_shebang  = "/bin/sh -x"
   }
 }

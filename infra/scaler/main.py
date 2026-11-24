@@ -7,7 +7,7 @@ deletes a VM: agents leave on their own, after 10 idle minutes each exits
 and deletes its VM; spot VMs are also deleted when preempted, and every
 agent at its maximum run duration.
 
-Settings (environment, from infra/gcp/terraform/scaler.tf):
+Settings (environment, from infra/terraform/scaler.tf):
   PROJECT, ZONES (comma-separated, tried in turn), TEMPLATES (JSON: each
   zone's instance template name; one template per region, for its
   subnet), QUEUE, MAX_INSTANCES

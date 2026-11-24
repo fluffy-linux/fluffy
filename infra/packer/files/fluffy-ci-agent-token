@@ -1,24 +1,23 @@
 #!/usr/bin/env bash
 # Writes the Buildkite agent token to /run/fluffy-ci/agent-token, and the
-# GitHub container registry token (binary cache publishing), when the vault
-# has one, to /run/fluffy-ci/ghcr-token (root only), read from Key Vault
-# with the VM's managed identity, without surrounding whitespace (a token
-# stored from a file often ends in a newline).  Needs, from
-# /etc/fluffy-ci/agent.env: FLUFFY_CI_KEY_VAULT (vault name) and
-# FLUFFY_CI_IDENTITY_CLIENT_ID (the user-assigned identity's client ID).
+# GitHub container registry token (binary cache publishing), when Secret
+# Manager has one, to /run/fluffy-ci/ghcr-token (root only).  Both are read
+# with the VM's service account, from the metadata server, without
+# surrounding whitespace (a token stored from a file often ends in a
+# newline).  Needs, from /etc/fluffy-ci/agent.env: FLUFFY_CI_PROJECT (the
+# GCP project holding the secrets).
 set -euo pipefail
 
-: "${FLUFFY_CI_KEY_VAULT:?}" "${FLUFFY_CI_IDENTITY_CLIENT_ID:?}"
+: "${FLUFFY_CI_PROJECT:?}"
 
-imds=http://169.254.169.254/metadata/identity/oauth2/token
-# Early in a VM's first boot the metadata service can answer 400 for a
-# while, until the user-assigned identity is attached; curl's --retry
-# doesn't retry a 400, so wait for the token here, for up to 2 minutes.
+metadata=http://metadata.google.internal/computeMetadata/v1
+# The metadata server can be slow to answer early in a VM's first boot:
+# wait for the service account's token, for up to 2 minutes.
 access_token=
 for attempt in $(seq 1 40)
 do
-    if reply=$(curl -fsS -H Metadata:true \
-        "$imds?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net&client_id=$FLUFFY_CI_IDENTITY_CLIENT_ID")
+    if reply=$(curl -fsS -H Metadata-Flavor:Google \
+        "$metadata/instance/service-accounts/default/token")
     then
         access_token=$(printf '%s' "$reply" | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])') && break
     fi
@@ -26,28 +25,31 @@ do
 done
 if test -z "$access_token"
 then
-    echo "fluffy-ci-agent-token: no identity token from the metadata service" >&2
+    echo "fluffy-ci-agent-token: no service account token from the metadata server" >&2
     exit 1
 fi
 
+# secret NAME: print the latest version of secret NAME, trimmed.  The access
+# token goes to curl as a config on stdin, never on the command line.
+secret() {
+    printf 'header = "Authorization: Bearer %s"\n' "$access_token" |
+        curl -fsS --retry 5 -K - \
+            "https://secretmanager.googleapis.com/v1/projects/$FLUFFY_CI_PROJECT/secrets/$1/versions/latest:access" |
+        python3 -c 'import base64, json, sys; sys.stdout.write(base64.b64decode(json.load(sys.stdin)["payload"]["data"]).decode().strip())'
+}
+
 install -d -m 700 -o buildkite-agent -g buildkite-agent /run/fluffy-ci
 umask 077
-curl -fsS --retry 5 -H "Authorization: Bearer $access_token" \
-    "https://$FLUFFY_CI_KEY_VAULT.vault.azure.net/secrets/buildkite-agent-token?api-version=7.4" \
-| python3 -c 'import json, sys; sys.stdout.write(json.load(sys.stdin)["value"].strip())' \
-    > /run/fluffy-ci/agent-token
+secret buildkite-agent-token > /run/fluffy-ci/agent-token
 chown buildkite-agent:buildkite-agent /run/fluffy-ci/agent-token
 
 # The registry token is optional: without it the agent still builds, and
 # swctl only reads the cache.
-if curl -fsS --retry 5 -H "Authorization: Bearer $access_token" \
-    "https://$FLUFFY_CI_KEY_VAULT.vault.azure.net/secrets/ghcr-token?api-version=7.4" \
-    | python3 -c 'import json, sys; sys.stdout.write(json.load(sys.stdin)["value"].strip())' \
-    > /run/fluffy-ci/ghcr-token.new && test -s /run/fluffy-ci/ghcr-token.new
+if secret ghcr-token > /run/fluffy-ci/ghcr-token.new && test -s /run/fluffy-ci/ghcr-token.new
 then
     chmod 600 /run/fluffy-ci/ghcr-token.new
     mv /run/fluffy-ci/ghcr-token.new /run/fluffy-ci/ghcr-token
 else
     rm -f /run/fluffy-ci/ghcr-token.new
-    echo "fluffy-ci-agent-token: no ghcr-token in the vault; the cache is read-only"
+    echo "fluffy-ci-agent-token: no ghcr-token in Secret Manager; the cache is read-only"
 fi

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Run after buildkite-agent stops.  When the agent exited cleanly (it was
-# idle for disconnect-after-idle-timeout), delete this VM, through Azure's
-# API with the VM's managed identity; its NIC, public IP and OS disk go
-# with it.  Any other stop (a crash, a shutdown, a spot eviction) leaves
-# the VM alone: Azure, or a person debugging it, deals with those.
+# idle for disconnect-after-idle-timeout), delete this VM through the
+# Compute Engine API, with the VM's service account; its boot disk and
+# local SSD go with it.  Any other stop (a crash, a shutdown, a spot
+# preemption) leaves the VM alone: GCP (spot VMs are deleted when
+# preempted, and every agent at its maximum run duration), or a person
+# debugging it, deals with those.
 set -euo pipefail
 
 if test "${SERVICE_RESULT:-}" != success || test "${EXIT_STATUS:-}" != 0
@@ -17,17 +19,18 @@ then
     exit 0
 fi
 
-: "${FLUFFY_CI_IDENTITY_CLIENT_ID:?}"
+metadata=http://metadata.google.internal/computeMetadata/v1
+md() {
+    curl -fsS -H Metadata-Flavor:Google "$metadata/$1"
+}
+project=$(md project/project-id)
+zone=$(md instance/zone)        # projects/<number>/zones/<zone>
+zone=${zone##*/}
+name=$(md instance/name)
+access_token=$(md instance/service-accounts/default/token |
+    python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])')
 
-imds=http://169.254.169.254/metadata
-vm_id=$(curl -fsS -H Metadata:true \
-    "$imds/instance/compute/resourceId?api-version=2021-02-01&format=text")
-access_token=$(
-    curl -fsS -H Metadata:true \
-        "$imds/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F&client_id=$FLUFFY_CI_IDENTITY_CLIENT_ID" \
-    | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])'
-)
-
-echo "fluffy-ci-self-delete: deleting $vm_id"
-curl -fsS -X DELETE -H "Authorization: Bearer $access_token" \
-    "https://management.azure.com$vm_id?api-version=2024-07-01"
+echo "fluffy-ci-self-delete: deleting $project/$zone/$name"
+printf 'header = "Authorization: Bearer %s"\n' "$access_token" |
+    curl -fsS -K - -X DELETE \
+        "https://compute.googleapis.com/compute/v1/projects/$project/zones/$zone/instances/$name"
