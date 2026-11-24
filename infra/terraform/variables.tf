@@ -10,6 +10,17 @@ variable "region" {
   default     = "us-east4"
 }
 
+variable "scaler_region" {
+  description = <<-EOT
+    Region for the scaler (function, its source bucket, its schedule).  Not
+    us-east4: since 2026-11-24 Cloud Build refuses every build there for
+    this project (PERMISSION_DENIED even for the owner; builds elsewhere
+    work), and the function's Cloud Run address there answered 404.
+  EOT
+  type    = string
+  default = "us-central1"
+}
+
 variable "agent_zones" {
   description = <<-EOT
     The zones the scaler starts agents in, by region, tried in turn: spot

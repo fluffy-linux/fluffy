@@ -54,7 +54,7 @@ resource "random_id" "source_bucket" {
 
 resource "google_storage_bucket" "scaler_source" {
   name                        = "fluffy-ci-scaler-src-${random_id.source_bucket.hex}"
-  location                    = var.region
+  location                    = var.scaler_region
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
   force_destroy               = true
@@ -76,7 +76,7 @@ resource "google_storage_bucket_object" "scaler" {
 
 resource "google_cloudfunctions2_function" "scaler" {
   name     = "fluffy-ci-scaler"
-  location = var.region
+  location = var.scaler_region
 
   build_config {
     runtime         = "python312"
@@ -125,7 +125,7 @@ resource "google_service_account" "scheduler" {
 }
 
 resource "google_cloud_run_service_iam_member" "scheduler_invokes" {
-  location = var.region
+  location = var.scaler_region
   service  = google_cloudfunctions2_function.scaler.service_config[0].service
   role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.scheduler.email}"
@@ -133,7 +133,7 @@ resource "google_cloud_run_service_iam_member" "scheduler_invokes" {
 
 resource "google_cloud_scheduler_job" "scaler" {
   name             = "fluffy-ci-scaler"
-  region           = var.region
+  region           = var.scaler_region
   schedule         = "* * * * *"
   attempt_deadline = "540s"
   retry_config {
