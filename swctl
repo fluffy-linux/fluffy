@@ -40,12 +40,15 @@ test "${BUILDKITE:-}" != true || bk_log=1
 # bk_section NAME: on Buildkite, start section NAME unless it is the
 # current one.  A step starts PREPARE before it looks its dependencies up
 # and fetches them, so their lines (CACHED, VETTED) are part of PREPARE.
-bk_current=""
+# The current section is exported, since swctl runs itself again to build
+# a package, which must not start it a second time.
+bk_current="${FLUFFY_BK_SECTION:-}"
 bk_section() {
     (( bk_log )) || return 0
     test "$bk_current" != "$1" || return 0
     log "--- $1"
     bk_current="$1"
+    export FLUFFY_BK_SECTION="$1"
 }
 
 # pkg_log MESSAGE: a CI step's line about its package ($pkg), "pkg: MESSAGE";
