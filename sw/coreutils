@@ -7,12 +7,17 @@ fi
 
 VERSION=9.11
 
+# Built straight from Fluffy's branch (our commits on upstream's v9.11
+# tag, LFS's i18n patch among them): swctl fetches the pinned commit, and
+# the gnulib and translationproject commits it pins, with git.  The tag
+# has no configure, Makefile.in or gnulib files, so MAKE bootstraps it,
+# and its translations come from the Translation Project's files (or the
+# release's own, where TP's no longer give them), merged as the
+# release's make dist did.
 ARCHIVES=(
-    394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3 https://github.com/fluffy-linux/coreutils/releases/download/v$VERSION/coreutils-$VERSION.tar.xz
-    7c2aecf9ae24b87b019595e382b9f41d2c96de7f95abe95ad8cacc7e2ce1bbcc file://coreutils-$VERSION-i18n-1.patch
-    2bc3a5a73b2eba8a3e29554f43baa0c2c8c1e4a75cee059c4fb68785f1b8c29a file://coreutils-$VERSION-fluffy-shell.patch
-    772b05846fb1b22ccf3d7aeb635e8c3aab8f23b3c3f2b8ffb5f570e2e2194e9d file://coreutils-$VERSION-fluffy-source.patch
-    25c8f3ee5260452b82aaef2d3a9bf200077b19fdefaac15169df34760ce6ee22 file://coreutils-$VERSION-fluffy-test.patch
+    73b280fb5e222f019ed67a26c49ff68f1ea73484 https://github.com/fluffy-linux/coreutils.git#refs/heads/fluffy/v$VERSION
+    b3d3778291f117f8420d4871f32b4d7c4caf23d1 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73.1-b400b
+    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
 )
 
 NEEDS=(
@@ -33,6 +38,7 @@ then
         automake
         bash
         binutils
+        bison
         bzip2
         coreutils-pass1
         diffutils-pass1
@@ -42,6 +48,7 @@ then
         gettext
         glibc
         gmp
+        gperf
         grep
         gzip-pass1
         libcap
@@ -66,6 +73,7 @@ else
         automake
         bash
         binutils
+        bison
         bzip2
         coreutils
         diffutils
@@ -75,6 +83,7 @@ else
         gettext
         glibc
         gmp
+        gperf
         grep
         gzip
         libcap
@@ -93,17 +102,28 @@ else
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../coreutils-$VERSION-i18n-1.patch
-    patch -Z -Np1 -i ../coreutils-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i ../coreutils-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../coreutils-$VERSION-fluffy-test.patch
+# Bootstrapped with the autotools coreutils' release tarball was made
+# with: an autoconf development snapshot and automake 1.18.1.  bootstrap
+# also requires bison and gperf, and the build makes with them what the
+# release tarball ships made (gnulib's parse-datetime, lookup tables).
+source sw/autoconf.common
+source sw/automake.common
 
-    autoreconf -fv
-    automake -af
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/coreutils
-    make
+    # The translations as make dist merges them with coreutils.pot.
+    make -C po update-po
+    # The manual is dated by coreutils.texi's time, as the release's is
+    # (git gives every file the commit's).
+    touch -d '2026-04-06 12:00 UTC' doc/coreutils.texi
+    # The release's man pages are dated by the release (its v9.11 tag,
+    # April 2026); man/help2man dates them by SOURCE_DATE_EPOCH.
+    SOURCE_DATE_EPOCH=1776688917 make
 }
 
 CHECK() {
