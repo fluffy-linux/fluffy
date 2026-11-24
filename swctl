@@ -2165,11 +2165,20 @@ ci_step() {
 # step's dependencies are then already built, so its `swctl build` finds
 # them up to date and builds only its own package.  Without the binary
 # cache, the steps share one machine's /sw and fstab, so they run one at a
-# time (a concurrency group per FLUFFY root).
+# time (a concurrency group per FLUFFY root).  A step whose agent is lost is
+# retried.
+#
 # When steps publish to the cache (CI), each step's agent restores what it
 # needs from it, published by the steps it depends on, so steps run in
-# parallel on as many agents as there are.  A step whose agent is lost is
-# retried.
+# parallel on as many agents as there are, and checks are deferred (see
+# ci_step): build-<pkg> runs `swctl build --defer-check <pkg>` and depends
+# on the build steps of what its build mounts, so builds never wait for
+# tests; check-<pkg>, for each package whose image needs a check step
+# (plan_check_steps), runs `swctl check <pkg>` and depends on build-<pkg>
+# and on the check steps of what its build mounts, so an image is vetted
+# only after the images it was built against.  world-check depends on
+# every check step: what must wait for a vetted world (the pipeline's
+# final steps) waits for it.
 buildkite_pipeline() {
     if test $# -lt 1
     then
@@ -2178,9 +2187,8 @@ buildkite_pipeline() {
 
     local -a order=()
     local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=() pkg_has_check=()
+    local -A pkg_check_step=() reach=()
     plan_pkgs build "$@"
-
-    local -A reach=()
 
     # Buildkite interpolates $ in commands; YAML single quotes double '.
     yaml_str() {
@@ -2205,24 +2213,26 @@ buildkite_pipeline() {
     # empty elsewhere, which leaves it off).  Expanded by the step's shell.
     local cache_env=' FLUFFY_CACHE_REGISTRY="${FLUFFY_CACHE_REGISTRY:-}" FLUFFY_CACHE_TOKEN_FILE="${FLUFFY_CACHE_TOKEN_FILE:-}"'
 
-    echo "steps:"
-    local pkg dep
-    for pkg in "${order[@]}"
-    do
-        reach_of "$pkg"
+    # In parallel, a step can land on a fresh agent: bootstrap its root
+    # first (bootstrap.sh does only what is not done yet).
+    local ci="" boot=""
+    if cache_publishing
+    then
+        ci=1
+        boot="sudo$env_prefix ./bootstrap.sh && "
+        cache_env+=' BUILDKITE_BUILD_ID="${BUILDKITE_BUILD_ID:-}"'
+        plan_check_steps
+    fi
 
-        echo "  - label: $(yaml_str "$pkg")"
-        echo "    key: $(yaml_str "$(step_key "$pkg")")"
-        # In parallel, a step can land on a fresh agent: bootstrap its root
-        # first (bootstrap.sh does only what is not done yet).
-        local boot=""
-        if cache_publishing
-        then
-            boot="sudo$env_prefix ./bootstrap.sh && "
-        fi
-        echo "    command: $(yaml_str "${boot}sudo$env_prefix$cache_env ./swctl build $(printf '%q' "$pkg")")"
+    # bk_step LABEL KEY COMMAND [DEPENDENCY_KEY...]
+    bk_step() {
+        local label="$1" key="$2" command="$3" dep
+        shift 3
+        echo "  - label: $(yaml_str "$label")"
+        echo "    key: $(yaml_str "$(step_key "$key")")"
+        echo "    command: $(yaml_str "$command")"
         echo "    timeout_in_minutes: 720"
-        if ! cache_publishing
+        if test -z "$ci"
         then
             echo "    concurrency: 1"
             echo "    concurrency_group: $(yaml_str "$group")"
@@ -2231,18 +2241,60 @@ buildkite_pipeline() {
         echo "      automatic:"
         echo "        - exit_status: -1"
         echo "          limit: 2"
-        if (( ${#reach[@]} > 0 ))
+        if (( $# > 0 ))
         then
             echo "    depends_on:"
+            for dep
+            do
+                echo "      - $(yaml_str "$(step_key "$dep")")"
+            done
+        fi
+    }
+
+    echo "steps:"
+    local pkg dep swctl
+    local -a builds=() checks=() all_checks=()
+    for pkg in "${order[@]}"
+    do
+        reach_of "$pkg"
+        swctl="sudo$env_prefix$cache_env ./swctl"
+        if test -z "$ci"
+        then
+            builds=()
             for dep in "${order[@]}"
             do
                 if test -n "${reach[$dep]:-}"
                 then
-                    echo "      - $(yaml_str "$(step_key "$dep")")"
+                    builds+=("$dep")
                 fi
             done
+            bk_step "$pkg" "$pkg" "$swctl build $(printf '%q' "$pkg")" "${builds[@]}"
+            continue
+        fi
+
+        builds=() checks=("build-$pkg")
+        for dep in "${order[@]}"
+        do
+            if test -n "${reach[$dep]:-}"
+            then
+                builds+=("build-$dep")
+                if test -n "${pkg_check_step[$dep]}"
+                then
+                    checks+=("check-$dep")
+                fi
+            fi
+        done
+        bk_step "build-$pkg" "build-$pkg" "$boot$swctl build --defer-check $(printf '%q' "$pkg")" "${builds[@]}"
+        if test -n "${pkg_check_step[$pkg]}"
+        then
+            bk_step "check-$pkg" "check-$pkg" "$boot$swctl check $(printf '%q' "$pkg")" "${checks[@]}"
+            all_checks+=("check-$pkg")
         fi
     done
+    if test -n "$ci"
+    then
+        bk_step world-check world-check true "${all_checks[@]}"
+    fi
 }
 
 refresh_recipe_checksums() {

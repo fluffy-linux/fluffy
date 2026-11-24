@@ -9,11 +9,14 @@ steps:
       sudo FLUFFY="$$FLUFFY" ./bootstrap.sh
       plan="$$(mktemp)"
       # With the cache settings, so swctl knows the steps publish to the
-      # cache and can run in parallel.
+      # cache and can run in parallel, with each package's checks in a
+      # check step of its own (build-<pkg>, check-<pkg>, world-check).
       sudo FLUFFY="$$FLUFFY" CROSS="$$CROSS" FLUFFY_CACHE_REGISTRY="$${FLUFFY_CACHE_REGISTRY:-}" FLUFFY_CACHE_TOKEN_FILE="$${FLUFFY_CACHE_TOKEN_FILE:-}" ./swctl buildkite world > "$$plan"
       buildkite-agent pipeline upload "$$plan"
       rm -f "$$plan"
 
+  # The uploaded steps go before this wait, so what follows it waits for
+  # all of them, world-check too: only a vetted world gets past it.
   - wait
 
   - label: "bootstrap"
