@@ -28,6 +28,15 @@ log() {
     echo "$@" >&2
 }
 
+# On Buildkite (BUILDKITE=true), phases log as Buildkite expects: each
+# phase's output in full, under a collapsed section of its own ("--- pkg:
+# PHASE"), which opens when the phase fails ("^^^ +++"); Buildkite times
+# sections itself, so no elapsed times.  Elsewhere, quietly as before: one
+# line per package with each phase's time, the output in a phase log shown
+# only when the phase fails.
+bk_log=0
+test "${BUILDKITE:-}" != true || bk_log=1
+
 fatal() {
     log "$@"
     exit 1
@@ -760,8 +769,14 @@ install_targets() {
 
 report_phase_err() {
     local rc=$?
-    log ""
-    cat "$phase_log" >&2 || true
+    if (( bk_log ))
+    then
+        # The output is in the phase's section already: open it.
+        log "^^^ +++"
+    else
+        log ""
+        cat "$phase_log" >&2 || true
+    fi
     # CHECK's overlay leaves its workdir's "work" directory owned by root
     # with mode 000.  A successful build removes it; after a failure it
     # would stay in the checkout, and on a CI agent the next job's checkout
@@ -795,6 +810,16 @@ format_elapsed() {
 run_phase() {
     local phase_name="$1" start_sec=$SECONDS elapsed
     shift
+    if (( bk_log ))
+    then
+        log "--- ${pkg:-}: $phase_name"
+        trap report_phase_err ERR
+        (
+            "$@"
+        ) >&2 2>&1
+        trap - ERR
+        return 0
+    fi
     log -n " $phase_name"
     trap report_phase_err ERR
     (
@@ -1213,7 +1238,9 @@ build_single_pkg() {
             src_unpacked=1
         fi
 
-        log -n "$pkg${FLUFFY_PROGRESS:+ $FLUFFY_PROGRESS}:"
+        # The package's line, which its phases continue; on Buildkite each
+        # phase gets its own section instead (run_phase).
+        (( bk_log )) || log -n "$pkg${FLUFFY_PROGRESS:+ $FLUFFY_PROGRESS}:"
 
         # `swctl check` (CI): no sources and no build; the tree a deferred
         # build left after MAKE, fetched by the outer swctl, is mounted where
@@ -2236,6 +2263,9 @@ buildkite_pipeline() {
     then
         env_prefix+=" CROSS=$(printf '%q' "$CROSS")"
     fi
+    # Buildkite's own variable, which sudo would drop: with it, swctl and
+    # bootstrap.sh log in Buildkite's sections.  Expanded by the step's shell.
+    env_prefix+=' BUILDKITE="${BUILDKITE:-}"'
 
     # The binary cache, when the agent's environment names one (CI's do;
     # empty elsewhere, which leaves it off).  Expanded by the step's shell.

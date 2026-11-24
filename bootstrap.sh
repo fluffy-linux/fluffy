@@ -20,6 +20,12 @@ do
     esac
 done
 
+# On Buildkite, its output goes in a collapsed section of its own.
+if test "${BUILDKITE:-}" = true
+then
+    echo "--- bootstrap"
+fi
+
 "$DIR/mkuid.sh" --check
 
 if ! mountpoint -q "$FLUFFY"
@@ -151,13 +157,19 @@ then
     fi
 fi
 
+# /init, from the init package: only when it changed, like the rest (CI
+# runs this before every step).
 if test -f "$FLUFFY/sw/init/bin/init"
 then
-    cp -fv "$FLUFFY/sw/init/bin/init" "$FLUFFY/init"
+    if ! cmp -s "$FLUFFY/sw/init/bin/init" "$FLUFFY/init"
+    then
+        cp -fv "$FLUFFY/sw/init/bin/init" "$FLUFFY/init"
+    fi
     chmod 0755 "$FLUFFY/init"
 else
     init_squashfs=$(ls "$FLUFFY"/sw/init-*.squashfs 2>/dev/null | head -n 1 || true)
-    if test -n "$init_squashfs" && test -f "$init_squashfs"
+    if test -n "$init_squashfs" && test -f "$init_squashfs" &&
+        { test ! -f "$FLUFFY/init" || test "$init_squashfs" -nt "$FLUFFY/init"; }
     then
         mkdir -p "$FLUFFY/tmp/init-extract"
         unsquashfs -f -d "$FLUFFY/tmp/init-extract" "$init_squashfs" bin/init

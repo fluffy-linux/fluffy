@@ -6,7 +6,7 @@ steps:
   - label: "plan"
     command: |
       set -euo pipefail
-      sudo FLUFFY="$$FLUFFY" ./bootstrap.sh
+      sudo FLUFFY="$$FLUFFY" BUILDKITE="$${BUILDKITE:-}" ./bootstrap.sh
       plan="$$(mktemp)"
       # With the cache settings, so swctl knows the steps publish to the
       # cache and can run in parallel, with each package's checks in a
@@ -20,4 +20,4 @@ steps:
   - wait
 
   - label: "bootstrap"
-    command: sudo FLUFFY="$$FLUFFY" ./bootstrap.sh
+    command: sudo FLUFFY="$$FLUFFY" BUILDKITE="$${BUILDKITE:-}" ./bootstrap.sh
