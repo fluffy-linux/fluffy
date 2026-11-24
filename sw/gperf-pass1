@@ -1,0 +1,51 @@
+ON=cross-build
+
+VERSION=3.3
+
+# gperf for gettext.  gettext's sources from git lack the lookup tables
+# its release tarball ships (gnulib's iconv_open-*.h, unicase's
+# special-casing-table.h, uninorm's composition-table.h), and the build
+# makes them with gperf.  The final gperf comes after gettext and is
+# built with the final bash, grep and sed, which need gettext: this pass
+# breaks that cycle, built with the temporary tools.  Beyond LFS, which
+# builds gettext from its release tarball.
+ARCHIVES=(
+    fd87e0aba7e43ae054837afd6cd4db03a3f2693deb3619085e6ed9d8d9604ad8 https://github.com/fluffy-linux/gperf/releases/download/v$VERSION/gperf-$VERSION.tar.gz
+)
+
+NEEDS=(
+    glibc-pass1
+    libgcc-pass1
+    libstdcpp-pass1
+)
+
+BUILD_NEEDS=(
+    bash-pass1
+    binutils-pass2
+    coreutils-pass1
+    diffutils-pass1
+    findutils-pass1
+    gawk-pass1
+    gcc-pass2
+    glibc-pass1
+    grep-pass1
+    gzip-pass1
+    libgcc-pass1
+    libstdcpp-pass1
+    linux-headers
+    make-pass1
+    sed-pass1
+    tar-pass1
+    xz-pass1
+)
+
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+        --prefix=/sw/gperf
+    make
+}
+
+INSTALL() {
+    make install
+}

@@ -2,9 +2,16 @@ ON=cross-build
 
 VERSION=1.0
 
+# Built straight from Fluffy's branch (our commits on upstream's v1.0
+# tag): swctl fetches the pinned commit, and the gnulib and tree-sitter
+# commits it pins, with git.  The tag has no configure, Makefile.in or
+# gnulib files, so MAKE runs autopull.sh and autogen.sh with the
+# autotools gettext's release tarball was made with.
 ARCHIVES=(
-    71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7 https://github.com/fluffy-linux/gettext/releases/download/v$VERSION/gettext-$VERSION.tar.xz
-    24d2a42e3eb51d0574b51e019e5864f374dc2a26170049ac00f5db849567d0ce file://gettext-$VERSION-fluffy-shell.patch
+    83f7f5a3e73d40559dfce09dcb78cc9ef4bf8f87 https://github.com/fluffy-linux/gettext.git#refs/heads/fluffy/v$VERSION
+    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    143fe4356381cc64148b80e93b5b4c3651971d33 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.6.0
 )
 
 NEEDS=(
@@ -12,32 +19,62 @@ NEEDS=(
     ncurses-pass1
 )
 
+# From git the build also runs bison (the grammars), gperf (gnulib's
+# lookup tables), makeinfo (the manuals) and help2man (the man pages,
+# which it writes by running the programs; spit is a Python script),
+# which the release tarball ships made.  gettext's own copy of help2man
+# needs perl's Locale::gettext, which Fluffy lacks (it is in neither LFS
+# nor BLFS), so MAKE runs Fluffy's help2man instead.
 BUILD_NEEDS=(
     bash-pass1
+    bison-pass1
     coreutils-pass1
     diffutils-pass1
     findutils-pass1
     gawk-pass1
     gcc-pass2
     glibc-pass1
+    gperf-pass1
     grep-pass1
     gzip-pass1
+    help2man-pass1
     linux-headers
     make-pass1
     ncurses-pass1
     patch-pass1
+    perl-pass1
+    python-pass1
     sed-pass1
     tar-pass1
+    texinfo-pass1
     xz-pass1
 )
 
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
-    patch -Z -Np1 -i ../gettext-$VERSION-fluffy-shell.patch
-    CONFIG_SITE=/sw/glibc/share/config.site ./configure --disable-shared
-    make
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    export GNULIB_SRCDIR=$PWD/gnulib
+    $CONFIG_SHELL ./autopull.sh
+    $CONFIG_SHELL ./autogen.sh
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+        --prefix=/sw/gettext \
+        --disable-shared
+    # The man pages' HTML is groff's, and groff comes later; this pass
+    # installs no documentation.
+    make man_HTML= HELP2MAN='$(PERL) -w -- '"$(command -v help2man)"
 }
 
+# As LFS's chapter 7 gettext: msgfmt, msgmerge and xgettext.  Beyond LFS,
+# autopoint and its archive too: m4, which gcc needs through gmp and so
+# comes before gettext, bootstraps from git and runs autopoint.
 INSTALL() {
     mkdir -pv $DESTDIR/sw/gettext/bin
     cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} $DESTDIR/sw/gettext/bin
+    make -C gettext-tools/autotools install
 }
