@@ -7,9 +7,17 @@ fi
 
 VERSION=1.4.21
 
+# Built straight from Fluffy's branch (our commits on upstream's v1.4.21
+# tag): swctl fetches the pinned commit, and the gnulib, bootstrap and
+# translationproject commits it pins, with git.  The tag has no
+# configure, Makefile.in or gnulib files, so MAKE bootstraps it with the
+# autotools m4's release tarball was made with (an autoconf
+# pre-release), and its translations come from the Translation
+# Project's files, merged as the release's make dist did.
 ARCHIVES=(
-    f25c6ab51548a73a75558742fb031e0625d6485fe5f9155949d6486a2408ab66 https://github.com/fluffy-linux/m4/releases/download/v$VERSION/m4-$VERSION.tar.xz
-    bc769803aa7f5825b8152ea8ebae4f7f6c279a8c2c554dd25b9db7527a0d54a5 file://m4-$VERSION-fluffy-test.patch
+    1aacd7d16f14942662042f9a84f9aa0bf09a30f2 https://github.com/fluffy-linux/m4.git#refs/heads/fluffy/v$VERSION
+    45060b3d15334d96350b677ccc0b4e91a4e60fd1 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.90
+    d6fb77e1155d440250377e2da51ba4c3de019560 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
 )
 
 NEEDS=(
@@ -26,14 +34,20 @@ then
         findutils-pass1
         gawk-pass1
         gcc-pass2
+        gettext-pass1
         glibc
+        gperf-pass1
         grep-pass1
+        gzip-pass1
+        help2man-pass1
         libgcc
         linux-headers
         make-pass1
         patch-pass1
+        perl-pass1
         sed-pass1
         tar-pass1
+        texinfo-pass1
         xz
     )
 else
@@ -45,24 +59,48 @@ else
         findutils
         gawk
         gcc
+        gettext
         glibc
+        gperf
         grep
+        gzip
+        help2man
         libgcc
         linux-headers
         make
         patch
+        perl
         sed
         tar
+        texinfo
         xz
     )
 fi
 
+# Bootstrapped with the autotools m4's release tarball was made with.
+# bootstrap runs autopoint and gzip, the build gperf (gnulib's lookup
+# tables), xgettext, msgmerge and msgfmt (the translations), makeinfo
+# (the manual) and help2man, with perl (the man page), which the release
+# tarball ships made.  m4 comes before all of them (gcc needs gmp, which
+# needs m4), so in cross-build their pass1 builds stand in.
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
-    patch -Z -Np1 -i ../m4-$VERSION-fluffy-test.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    $CONFIG_SHELL ./bootstrap --skip-git --skip-po --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/m4
-    make
+    # The translations as make dist merges them with m4.pot.
+    make -C po update-po
+    # The manual is dated by m4.texi's time, as the release's is (git
+    # gives every file the commit's).
+    touch -d '2026-02-06 12:00 UTC' doc/m4.texi
+    # The release's man page is dated by the release (its v1.4.21 tag,
+    # February 2026); help2man dates it by SOURCE_DATE_EPOCH.
+    SOURCE_DATE_EPOCH=1770407720 make
 }
 
 CHECK() {
