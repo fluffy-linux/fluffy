@@ -154,7 +154,23 @@ cmd_sync() {
         sleep "$delay"
         (( delay *= 2 ))
     done
-    printf '%s\n' "$out" | grep 'would clobber existing tag' | sed "s/^/mirror: $repo: warning: upstream changed tag, kept ours: /" >&2 || true
+    # Tags upstream moved: ours stay (tags never move), and the build says
+    # so where it is seen, as an annotation on the build page, without
+    # failing (one per repository; outside Buildkite, the log only).
+    local moved
+    moved=$(printf '%s\n' "$out" | grep 'would clobber existing tag' || true)
+    if test -n "$moved"
+    then
+        printf '%s\n' "$moved" | sed "s/^/mirror: $repo: warning: upstream changed tag, kept ours: /" >&2
+        if test -n "${BUILDKITE:-}" && command -v buildkite-agent > /dev/null
+        then
+            {
+                printf '**%s**: upstream moved these tags; ours were kept.\n\n```\n' "$repo"
+                printf '%s\n' "$moved"
+                printf '```\n'
+            } | buildkite-agent annotate --style warning --context "moved-tags-$repo" || true
+        fi
+    fi
 
     # The fork: branches forced (fluffy/* excluded: Fluffy's own work), new
     # tags only.  Nothing is deleted.
