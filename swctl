@@ -959,7 +959,15 @@ lockdown_exec() {
             fi
             if test "$1" == CHECK
             then
-                call mount overlay "$dir" overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work"
+                # A deferred check's lower layer is the tree's squashfs, on
+                # another filesystem than the upper layer, and then only
+                # xino makes inode numbers agree: without it, readdir's
+                # d_ino and stat's st_ino differ for a new entry in a merged
+                # directory (glibc's posix/tst-dir matches by them).  Inline,
+                # both layers are on one filesystem and need nothing.
+                local xino=""
+                test "${ci_mode:-}" != check || xino=",xino=on"
+                call mount overlay "$dir" overlay 0 "lowerdir=$wd,upperdir=$work_dir/test-results,workdir=$work_dir/test-work$xino"
             else
                 call mount "$wd" "$dir" $NULL $(( MS_BIND | MS_REC )) $NULL
             fi
