@@ -33,6 +33,10 @@ terraform {
 provider "google" {
   project = var.project
   region  = var.region
+  # APIs such as Billing Budgets need a project to bill their quota to
+  # when Terraform runs as a user: this one.
+  user_project_override = true
+  billing_project       = var.project
 }
 
 # Buildkite, with an API token that can write pipelines and clusters

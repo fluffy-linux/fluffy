@@ -4,8 +4,10 @@
 locals {
   services = [
     "artifactregistry",
+    "billingbudgets",
     "cloudbuild",
     "cloudfunctions",
+    "cloudresourcemanager",
     "cloudscheduler",
     "compute",
     "iam",

@@ -136,9 +136,6 @@ resource "google_cloud_scheduler_job" "scaler" {
   region           = var.scaler_region
   schedule         = "* * * * *"
   attempt_deadline = "540s"
-  retry_config {
-    retry_count = 0
-  }
   http_target {
     http_method = "POST"
     uri         = google_cloudfunctions2_function.scaler.service_config[0].uri
