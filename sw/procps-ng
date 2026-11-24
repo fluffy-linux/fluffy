@@ -98,3 +98,6 @@ INSTALL() {
     make install
     find $DESTDIR/sw/procps-ng -name '*.la' -delete
 }
+
+# TEMPORARY (CI test, to be reverted): a comment-only change, so the recipe
+# checksum changes and the package rebuilds; its check step must run CHECK.
