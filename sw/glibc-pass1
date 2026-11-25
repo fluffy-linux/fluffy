@@ -6,11 +6,11 @@ VERSION=2.44
 # glibc-2.44 tag): swctl fetches the pinned commit with git.  The branch
 # carries LFS's glibc-fhs-1 patch, its glibc-2.44-upstream_fixes-1 patch
 # as the upstream commits it is made of, and the book's nsswitch.conf and
-# hosts, which make install installs.  The book's sed edit to ldd's
-# RTLDLIST changes nothing with the /sw/glibc prefix (it only acts on
-# /usr), so it is left out.
+# hosts, which make install installs.  The book's sed on ldd's RTLDLIST
+# is left out: it strips "/usr", which ldd's /sw/glibc paths do not
+# contain.
 ARCHIVES=(
-    2b454b4ca5fdd4d2d776a47b3470fb3754182613 https://github.com/fluffy-linux/glibc.git#refs/heads/fluffy/glibc-$VERSION
+    14921213fafa2dead5254a8585e3890e74b592cc https://github.com/fluffy-linux/glibc.git#refs/heads/fluffy/glibc-$VERSION
     0d0ebdf6c6a81658e352a96e703815779105a3489a52bc3c74746e07d368dda0 file://glibc.passwd
     b2b74131611f9116dfbae38c97575816812fe6273ccf795582bb12a5c21e2fea file://glibc.group
 )
