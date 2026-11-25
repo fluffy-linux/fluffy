@@ -196,8 +196,15 @@ is_git_url() {
 # or archive reads it ("shallow file has changed since we read it", on
 # CI's fresh store filling with openssl's submodules).  swctl owns the
 # store and nothing in it needs collecting.
+#
+# Nor does any git read the user's configuration: no system or global
+# config, and no $XDG_CONFIG_HOME/git/{attributes,ignore} either (git
+# falls back to ~/.config/git for those, and treats /dev/null/git/... as
+# absent).  An attributes file there could change what git archive writes
+# (export-ignore, export-subst), so a build would depend on whose home it
+# ran in; in CI, where PREPARE can't read /root, each lookup also warned.
 store_git() {
-    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null \
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null XDG_CONFIG_HOME=/dev/null \
         git -c gc.auto=0 -c maintenance.auto=false -C "$work_dir/git" "$@"
 }
 
@@ -218,7 +225,8 @@ fetch_git() {
 
     if test ! -d "$work_dir/git"
     then
-        GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git init --quiet --bare "$work_dir/git"
+        GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null XDG_CONFIG_HOME=/dev/null \
+            git init --quiet --bare "$work_dir/git"
     fi
 
     got="$(store_git rev-parse --quiet --verify "$local_ref" || true)"
