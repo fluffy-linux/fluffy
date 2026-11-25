@@ -503,6 +503,21 @@ The question Fluffy asks is "how far can I push squashfs packages using glob() a
 - **Effect:** one package less on the bootstrap path, no signing key on CI or spot machines, and the parallel world's fstab merge needs no key.
 - **Later (user):** swctl will probably need its own package, like any other tool Fluffy installs, rather than living only in the repo; signing and download checks would come with it.
 
+### Native builds and dependency cycles (2026-11-25, plan, not started)
+
+- **Native mode (no `CROSS`: Fluffy building Fluffy) has rotted:** CI only builds cross, and a native plan (`swctl buildkite world` without `CROSS`) stops before any cycle at `recipe file not found: sw/ctypes-sh (in NEEDS of fluffy-build)`. Only `ctypes-sh-pass1` exists.
+- **Cycles are expected once that's fixed.** Cross mode breaks every build cycle with a `-pass1` package built from host tools. Native mode has no host to borrow from: its build tools are the finals, so the cycles come back. Ones already seen:
+  - autoconf → help2man → autoconf;
+  - gettext → help2man → coreutils → gettext;
+  - python with the gettext group, through NEEDS mounting (`spit`, below).
+- **The plan, as real distributions do it:** a native world starts from the previous world, not from nothing.
+  - When a dependency is part of a cycle, native mode may use an image already in the root or cache, any version, said so in the log, rather than insisting it be built first.
+  - A second pass then rebuilds everything with the new tools, and should give identical images. That's also a reproducibility check: same inputs, same outputs, whatever tools built them.
+  - Cross mode stays as it is, for building from scratch.
+- **NEEDS and cycles.** NEEDS means "needed at run time", and two packages may each need the other at run time. swctl, though, also mounts a package's NEEDS whenever something builds against it (gettext's tools need their libraries while building), so a NEEDS becomes a build-order edge. That's why gettext can't NEED python for `spit`: everything that builds with gettext would mount python, and python (indirectly) builds with gettext.
+  - **For now:** split such a program into its own package. `spit` is moving to `gettext-spit`, which NEEDS python and which nothing builds against (user, 2026-11-25).
+  - **If a run-time cycle can't be split one day:** a lighter kind of need, "mounted at run time, not when building against it". Only when there's a real case.
+
 ### CI hosting (2026-11-20, open)
 
 - **Goal:** get CI off the user's PC, for hermeticity and security, cheaply, and ideally under a *true hard* spending limit (spending can't exceed it, not just alerts). Today a Buildkite agent (`buildkite-agent` user) runs `swctl build world` on the same machine (`.buildkite/pipeline.yml`, 720-minute timeout); its persistent `work/` (archives, `work/git`) and previous squashfs images are what keep incremental worlds fast.
