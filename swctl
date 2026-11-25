@@ -1704,7 +1704,7 @@ cache_auth() {
     then
         auth="user = \"fluffy:$(< "$FLUFFY_CACHE_TOKEN_FILE")\""
     fi
-    json="$(printf '%s\n' "$auth" | curl -fsS --retry 3 -K - \
+    json="$(printf '%s\n' "$auth" | curl -fsS --retry 3 --retry-all-errors -K - \
         "https://$host/token?scope=repository:$repo:pull&service=$host")" || return 1
     [[ "$json" =~ \"token\":\"([^\"]+)\" ]] || return 1
     cache_bearer="${BASH_REMATCH[1]}"
@@ -1734,7 +1734,7 @@ cache_image_digest() {
     fi
     cache_auth || { log "cache: no registry token"; return 2; }
     body="$(mktemp)"
-    code="$(curl -sS --retry 3 -o "$body" -w '%{http_code}' \
+    code="$(curl -sS --retry 3 --retry-all-errors -o "$body" -w '%{http_code}' \
         -H "Authorization: Bearer $cache_bearer" \
         -H "Accept: application/vnd.oci.image.manifest.v1+json" \
         "https://$host/v2/$repo/manifests/$tag")" || code=000
@@ -1796,7 +1796,7 @@ cache_blob() {
     local digest="$1" file="$2" name="$3" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" code
     check_sha256 "$file" "$digest" && return 0
     cache_auth || fatal "cache: no registry token"
-    code="$(curl -sS -L --retry 3 -o "$file.new" -w '%{http_code}' \
+    code="$(curl -sS -L --retry 3 --retry-all-errors -o "$file.new" -w '%{http_code}' \
         -H "Authorization: Bearer $cache_bearer" \
         "https://$host/v2/$repo/blobs/sha256:$digest")" || code=000
     if test "$code" != 200 || ! check_sha256 "$file.new" "$digest"
