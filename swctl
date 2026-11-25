@@ -1086,7 +1086,13 @@ lockdown_exec() {
             fi
         done
 
-        export HOME=/tmp TERM="$saved_term" LC_ALL=POSIX TZ=UTC0 SOURCE_DATE_EPOCH=0 MAKEFLAGS="-j$nproc_val" TESTSUITEFLAGS="-j$nproc_val"
+        # SOURCE_DATE_EPOCH is 1, the same for every build of every recipe,
+        # so that a change that doesn't change the result (a test, a
+        # comment) still gives the same image.  Not 0: texinfo's makeinfo
+        # takes 0 as unset and prints today's date for @today, so a manual
+        # differed from day to day.  (Not a commit's date either: every new
+        # commit would change the image.)
+        export HOME=/tmp TERM="$saved_term" LC_ALL=POSIX TZ=UTC0 SOURCE_DATE_EPOCH=1 MAKEFLAGS="-j$nproc_val" TESTSUITEFLAGS="-j$nproc_val"
         if test "$ON" != host-build
         then
             export MAKEFLAGS="$MAKEFLAGS SHELL=/sw/bash/bin/bash"
