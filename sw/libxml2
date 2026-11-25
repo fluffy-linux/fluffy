@@ -8,12 +8,13 @@ fi
 VERSION=2.15.3
 
 # Built straight from Fluffy's branch (our commits on upstream's v2.15.3
-# tag): swctl fetches the pinned commit with git.  As BLFS 13.1-systemd
-# builds it, with meson, history and ICU.  Fluffy's commits expand
-# wildcards in the default catalog list, which is every package's
-# /sw/<pkg>/etc/xml/catalog, then /etc/xml/catalog.
+# tag, then BLFS's two edits as their own commits): swctl fetches the
+# pinned commit with git.  As BLFS 13.1-systemd builds it, with meson,
+# history and ICU.  Fluffy's commits expand wildcards in the default
+# catalog list, which is every package's /sw/<pkg>/etc/xml/catalog, then
+# /etc/xml/catalog.
 ARCHIVES=(
-    ab6b6b65a60da2d93724558e152e2c6bc8281e9a https://github.com/fluffy-linux/libxml2.git#refs/heads/fluffy/v$VERSION
+    d890df4bd6c31e4eab1990529c1f4c1046945aae https://github.com/fluffy-linux/libxml2.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -68,8 +69,6 @@ else
 fi
 
 MAKE() {
-    sed -i "/'git'/,+3d" meson.build
-
     mkdir -p build
     cd build
     CFLAGS="-DXML_XML_DEFAULT_CATALOG='\"file:///sw/*/etc/xml/catalog file:///etc/xml/catalog\"' ${CFLAGS:-}" \
@@ -88,5 +87,4 @@ CHECK() {
 
 INSTALL() {
     DESTDIR=$DESTDIR ninja -C build install
-    sed "s/--static/--shared/" -i $DESTDIR/sw/libxml2/bin/xml2-config
 }
