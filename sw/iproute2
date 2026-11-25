@@ -8,7 +8,7 @@ fi
 VERSION=7.1.0
 
 ARCHIVES=(
-    05167cc5bb37f13900bccf69289cc22c1a4d256d https://github.com/fluffy-linux/iproute2.git#refs/heads/fluffy/v$VERSION
+    183c72faa0266224c60c3eba2fb3b0b915a962e9 https://github.com/fluffy-linux/iproute2.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
