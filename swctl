@@ -1216,6 +1216,13 @@ build_single_pkg() {
 
                 call unshare $CLONE_NEWNS
                 call mount none / $NULL $(( MS_REC | MS_PRIVATE )) $NULL
+                # The chroot's / must be a mount root: each phase makes /
+                # private again (run_phase), and the kernel changes the
+                # propagation only of a mount's root (EINVAL otherwise).
+                # FLUFFY may be a plain directory, so bind it onto itself
+                # first; everything below is mounted on that bind, and
+                # nothing leaves this private namespace.
+                call mount "$FLUFFY" "$FLUFFY" $NULL $(( MS_BIND | MS_REC )) $NULL
 
                 mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp,var/tmp,"$root"}
                 call mount /dev "$FLUFFY/dev" $NULL $MS_BIND $NULL
