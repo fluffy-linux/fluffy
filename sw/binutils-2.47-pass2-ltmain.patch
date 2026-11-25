@@ -1,0 +1,24 @@
+Submitted By: Linux From Scratch <lfs-dev@lists.linuxfromscratch.org>
+Date: 2026-11-24
+Initial Package Version: 2.47
+Upstream Status: Not submitted (a workaround from the book)
+Origin: Linux From Scratch 13.1-systemd, chapter 6, "Binutils-2.47 -
+        Pass 2": sed '6031s/$add_dir//' -i ltmain.sh
+Description: Binutils building system relies on an shipped libtool copy
+to link against internal static libraries, but the libiberty and zlib
+copies shipped in the package do not use libtool. This inconsistency
+may cause produced binaries mistakenly linked against libraries from
+the host distro. (LFS's words.)  The book makes the edit with a sed by
+line number; this patch makes the same edit by context.
+
+--- a/ltmain.sh
++++ b/ltmain.sh
+@@ -6028,7 +6028,7 @@
+ 	      if test -n "$inst_prefix_dir"; then
+ 		case $libdir in
+ 		  [\\/]*)
+-		    add_dir="$add_dir -L$inst_prefix_dir$libdir"
++		    add_dir=" -L$inst_prefix_dir$libdir"
+ 		    ;;
+ 		esac
+ 	      fi

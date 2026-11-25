@@ -8,6 +8,7 @@ VERSION=2.47
 # and man pages, the message catalogs) the build makes.
 ARCHIVES=(
     75f0ca41735d89fe7bda30cc6dd2317e18457922 https://github.com/fluffy-linux/binutils-gdb.git#refs/heads/fluffy/binutils-${VERSION//./_}
+    4c82238e58956b9a72bd94460534a0faa3d388bc9ea1c3a46479b8dd65bb7856 file://binutils-$VERSION-pass2-ltmain.patch
 )
 
 NEEDS=(
@@ -21,7 +22,9 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    sed '6031s/$add_dir//' -i ltmain.sh
+    # LFS's edit to libtool for pass 2 only (its chapter 6 sed, as a
+    # context patch): see the patch's header.
+    patch -Z -Np1 -i ../binutils-$VERSION-pass2-ltmain.patch
 
     # The repository also holds gdb, gdbserver, the simulators and the
     # libraries only they use, which the release leaves out: the last
