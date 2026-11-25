@@ -14,7 +14,7 @@ VERSION=1.4.1
 # 2.4.7), from their Fluffy branches.
 ARCHIVES=(
     532a18ae8222f928c58f7ffd1b4f0122062172bd https://github.com/fluffy-linux/mpc.git#refs/heads/fluffy/$VERSION
-    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
     c47d100eab0ff3b64e16811f6b3925b233085497 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17
     12c01761b8567defd3d8060feb87a216ce91bef7 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )

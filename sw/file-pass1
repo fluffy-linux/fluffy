@@ -9,7 +9,7 @@ VERSION=5.48
 # their Fluffy branches.
 ARCHIVES=(
     eb754ace19fed5481d8142426543100a2d6bae4e https://github.com/fluffy-linux/file.git#refs/heads/fluffy/FILE${VERSION//./_}
-    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
     f07c865d9d7f5f4f595cfa8626e58440695d0f1e https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18
     12c01761b8567defd3d8060feb87a216ce91bef7 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )

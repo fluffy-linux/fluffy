@@ -9,7 +9,7 @@ VERSION=3.12
 # takes pkgconf's.
 ARCHIVES=(
     10099f47ab61637b8a63040b565c4e5b67d974ab https://github.com/fluffy-linux/grep.git#refs/heads/fluffy/v$VERSION
-    18bfebd5367050afd0f2f5b8eb1c2acc93c26c3a https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.76-2f64
+    1996f5b17a22cc4056860b7bc807dc061e1c4368 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.76-2f64
     a88a8c2541f3fcb0137de63799a80e31e5435ae4 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17.0.91
 )
 

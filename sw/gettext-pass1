@@ -9,7 +9,7 @@ VERSION=1.0
 # autotools gettext's release tarball was made with.
 ARCHIVES=(
     83f7f5a3e73d40559dfce09dcb78cc9ef4bf8f87 https://github.com/fluffy-linux/gettext.git#refs/heads/fluffy/v$VERSION
-    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
     cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
     8e25f43f9ecbcfbbc48762662d46fa54164876af https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.6.0
 )

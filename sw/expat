@@ -18,7 +18,7 @@ VERSION=2.8.3
 # expat, a cycle.
 ARCHIVES=(
     58df5f0cbd1e640d39f0c95fb6fc448a2b681d02 https://github.com/fluffy-linux/libexpat.git#refs/heads/fluffy/R_${VERSION//./_}
-    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
     cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
     2b62947fd566e11dedf3c2c7e252f05a8937d54c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )

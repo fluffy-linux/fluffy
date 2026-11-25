@@ -8,7 +8,7 @@ VERSION=4.4.1
 # pkg-config's macros: aclocal takes pkg.m4 from pkgconf-pass1.
 ARCHIVES=(
     95a4535ef305c0351ee7f6a76a853940229a1fd3 https://github.com/fluffy-linux/make.git#refs/heads/fluffy/$VERSION
-    ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
     fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )
 

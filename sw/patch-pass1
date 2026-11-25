@@ -8,7 +8,7 @@ VERSION=2.8
 # MAKE bootstraps it.
 ARCHIVES=(
     55ad7d62dd7661d31422a91df3c88bc62d8f9900 https://github.com/fluffy-linux/patch.git#refs/heads/fluffy/v$VERSION
-    770e5e68703124021d82b15817a2d50718f83676 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
     fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )
 

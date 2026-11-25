@@ -17,7 +17,7 @@ VERSION=1.49.3
 # tarball ships.
 ARCHIVES=(
     5a3e6339654f62ad59d697f3360cdbcc4974ac20 https://github.com/fluffy-linux/help2man.git#refs/heads/fluffy/v$VERSION
-    ba484d1863d991a16e8acc5b414bb73eb0ef73bd https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
     fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )
 

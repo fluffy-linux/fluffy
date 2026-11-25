@@ -15,7 +15,7 @@ VERSION=2.73
 # release's: help2man-pass1 in cross-build, since help2man's own build
 # needs coreutils, whose build needs autoconf.
 ARCHIVES=(
-    e22e555ccb88ac24a4cbdb20dc6629191bb5d1e8 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v$VERSION
+    008e8749cc5ef038ed8dbe86c24c67401af88c36 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v$VERSION
 )
 
 if test -v CROSS
@@ -101,7 +101,9 @@ fi
 
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
-    autoreconf -fi
+    # Without -f, so the config.guess, config.sub and install-sh it
+    # installs are its own, the release's, not automake's older copies.
+    autoreconf -i
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/autoconf
     make
