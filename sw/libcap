@@ -8,9 +8,10 @@ fi
 VERSION=2.78
 
 # Built straight from Fluffy's branch (our commits on upstream's libcap-2.78
-# tag): swctl fetches the pinned commit with git.
+# tag, then LFS's edit that keeps the static libraries uninstalled, as its
+# own commit): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    d68f225c5747fb0e359203281554510a420b5e93 https://github.com/fluffy-linux/libcap.git#refs/heads/fluffy/libcap-$VERSION
+    cf73c3d37268ee46716129aac94d1dfe0f36d6f0 https://github.com/fluffy-linux/libcap.git#refs/heads/fluffy/libcap-$VERSION
 )
 
 NEEDS=(
@@ -55,8 +56,6 @@ else
 fi
 
 MAKE() {
-
-    sed -i '/install -m.*STA/d' libcap/Makefile
     make prefix=/sw/libcap lib=lib sbin=bin
 }
 
