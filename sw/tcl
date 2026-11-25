@@ -79,6 +79,14 @@ MAKE() {
         TCL_PACKAGE_PATH="/sw/*/lib"
     make
 
+    # Linux From Scratch's edits (13.1-systemd, chapter 8, "Tcl-8.6.18"):
+    # configure writes the build and source directories into
+    # tclConfig.sh, tdbcConfig.sh and itclConfig.sh (TCL_BUILD_LIB_SPEC,
+    # TCL_SRC_DIR and the like), for building against this tree, as the
+    # bundled packages just did; the installed copies should name where
+    # Tcl is installed instead.  They stay seds here: the templates mean
+    # the build tree, so the only fix upstream's files allow is the same
+    # rewrite at install time, in three Makefiles.
     sed -e "s|$SRCDIR/unix|/sw/tcl/lib|" \
         -e "s|$SRCDIR|/sw/tcl/include|"  \
         -i tclConfig.sh
