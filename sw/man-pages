@@ -9,9 +9,10 @@ VERSION=6.18
 
 # Built straight from Fluffy's branch (our commits on upstream's
 # man-pages-6.18 tag, the first of them dating the pages as the release
-# does): swctl fetches the pinned commit with git.
+# does, then LFS's removal of the crypt(3) pages, which libxcrypt
+# provides): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    c8ca3c3c1c7d776714dcd6be38b485235498b8de https://github.com/fluffy-linux/man-pages.git#refs/heads/fluffy/man-pages-$VERSION
+    622ec6e009cddb536d8b4cdc2f0db57e62ebbbd0 https://github.com/fluffy-linux/man-pages.git#refs/heads/fluffy/man-pages-$VERSION
 )
 
 if test -v CROSS
@@ -34,10 +35,6 @@ else
         sed
     )
 fi
-
-MAKE() {
-    rm -vf man/man3/crypt*
-}
 
 INSTALL() {
     make -R GIT=false SHELL=/sw/bash/bin/bash prefix=/sw/man-pages install
