@@ -2,9 +2,11 @@ ON=host-build
 
 VERSION=6.6
 
+# Built straight from Fluffy's branch (our commits on upstream's v6_6
+# snapshot tag, which equals the release tarball, LFS's curses.h edit
+# among them): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11 https://github.com/fluffy-linux/ncurses-snapshots/releases/download/v${VERSION//./_}/ncurses-$VERSION.tar.gz
-    cdefcbf2a3aba49744668c4c69d994422f48576a20b1f7ff200efe378d39e8a7 file://ncurses-$VERSION-fluffy-source.patch
+    6ad2db4a4fcf810e9b797b55a7e1af0903579f6c https://github.com/fluffy-linux/ncurses-snapshots.git#refs/heads/fluffy/v${VERSION//./_}
 )
 
 NEEDS=(
@@ -20,8 +22,6 @@ BUILD_NEEDS=(
 )
 
 MAKE() {
-    patch -Z -Np1 -i ../ncurses-$VERSION-fluffy-source.patch
-
     mkdir -pv build
     pushd build
         CONFIG_SITE=/sw/glibc/share/config.site ../configure AWK=gawk
@@ -51,5 +51,4 @@ MAKE() {
 INSTALL() {
     PATH="$PWD/build/progs:$PATH" make install
     ln -sv libncursesw.so $DESTDIR/sw/ncurses/lib/libncurses.so
-    sed -e 's/^#if.*XOPEN.*$/#if 1/' -i $DESTDIR/sw/ncurses/include/curses.h
 }
