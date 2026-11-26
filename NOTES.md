@@ -518,6 +518,19 @@ The question Fluffy asks is "how far can I push squashfs packages using glob() a
   - **For now:** split such a program into its own package. `spit` is moving to `gettext-spit`, which NEEDS python and which nothing builds against (user, 2026-11-25).
   - **If a run-time cycle can't be split one day:** a lighter kind of need, "mounted at run time, not when building against it". Only when there's a real case.
 
+### Idea: boot test and package smoke tests (2026-11-26, open)
+
+- **Boot test (prototype in progress):** after `world-check`, build a disk image from the cache's images and boot it, passing when the serial console shows `login:`.
+  - The image: a 5 GB file, GPT with a FAT ESP and a btrfs root, populated as a real install. Fluffy's own grub, installed with `--target=x86_64-efi --removable`, and a `grub.cfg` with `console=ttyS0`.
+  - The boot: QEMU with OVMF, serial to a file, under a hard timeout; QEMU, loop devices and mounts are always cleaned up.
+- **It needs KVM, so Intel.** On GCP, C4D (AMD, the build agents) accepts `--enable-nested-virtualization` but exposes no `svm` and no `/dev/kvm`. C4 (Intel) has `/dev/kvm`, and QEMU 8.2 + OVMF reaches its first boot attempt in 1.7 s. A CI step would run on a small Intel agent, probably its own queue, and the build agents stay C4D. Without KVM, QEMU's software emulation would still boot, but in minutes.
+- **Dev VM:** `fluffy-dev-1` (c4-standard-8 spot, no service account, agent disabled, deleted after 8 h), reached by `gcloud compute ssh --tunnel-through-iap` through the temporary firewall rule `fluffy-dev-iap-ssh` (IAP's range, port 22, tag `fluffy-dev`). Both were made with gcloud, not Terraform; remove them when done. While the VM exists, CI has one agent (the project's 32 vCPUs); 48 has been requested.
+- **Package smoke tests (idea, undecided):** CHECK tests a build tree; a smoke test would test what got installed. Two tiers:
+  - **Without a VM:** a recipe's `SMOKE()` run against the installed image via `swctl run`, with only its NEEDS mounted (`python3 -c 'import ssl'`, `curl --version`, `spit --help`). Cheap, per package, perhaps its own deferred step like `check-<pkg>`; it would also show a package's run-time NEEDS are complete, which nothing proves today.
+  - **Booted:** checks that need a running system (a service starts, `systemctl is-system-running`, name resolution, a login), collected from the packages and run in the boot test's one boot.
+  - **Open:** whether a failing smoke test blocks promotion like CHECK or only reports; whether the booted tier runs every build or only when a booted package changed; recipes as the home (`SMOKE()` beside `CHECK()`).
+  - **User (2026-11-26):** "I'm not sure yet", so noted here to think about more.
+
 ### CI hosting (2026-11-20, open)
 
 - **Goal:** get CI off the user's PC, for hermeticity and security, cheaply, and ideally under a *true hard* spending limit (spending can't exceed it, not just alerts). Today a Buildkite agent (`buildkite-agent` user) runs `swctl build world` on the same machine (`.buildkite/pipeline.yml`, 720-minute timeout); its persistent `work/` (archives, `work/git`) and previous squashfs images are what keep incremental worlds fast.
