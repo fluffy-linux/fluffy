@@ -1362,7 +1362,10 @@ build_single_pkg() {
                         local tmp_dl="$cached_file.part.$$"
                         rm -f "$tmp_dl"
                         [[ "$url" == file://* && "$url" != file:///* ]] && url="file://$PWD/sw/${url#file://}"
-                        curl --fail --silent --show-error --location --proto '=https,http,file' --output "$tmp_dl" -- "$url"
+                        # Retried as the cache's requests are: a release
+                        # download's 504 failed a CI step (build #74, grub).
+                        curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+                            --proto '=https,http,file' --output "$tmp_dl" -- "$url"
                         verify_sha256 "$tmp_dl" "$sha256" "$filename"
                         mv -f "$tmp_dl" "$cached_file"
                     else
