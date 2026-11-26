@@ -2538,6 +2538,19 @@ run)
     if test -n "${FLUFFY:-}"
     then
         root="$PWD"
+        # The checkout is bind-mounted at its own path in the root, for the
+        # command to run in.  The directories made in the root for that
+        # (root_made: the topmost; none when the root has the path) are
+        # removed after the command, so the root keeps no trace of where
+        # the checkout is.
+        root_made=""
+        d="$root"
+        while test "$d" != / && test ! -e "$FLUFFY$d"
+        do
+            root_made="$d"
+            d="${d%/*}"
+            d="${d:-/}"
+        done
         mkdir -p "$FLUFFY"/{dev/pts,proc,sys,run,dev/shm,etc,tmp,var/tmp,"$root"}
         call mount /dev "$FLUFFY/dev" $NULL $MS_BIND $NULL
         call mount /dev/pts "$FLUFFY/dev/pts" $NULL $MS_BIND $NULL
@@ -2555,7 +2568,27 @@ run)
         call chdir "$root"
         unset FLUFFY
         export PATH='/sw/*/bin'
-        exec /sw/bash/bin/bash -c 'exec "$@"' bash "$@"
+        if test -z "$root_made"
+        then
+            exec /sw/bash/bin/bash -c 'exec "$@"' bash "$@"
+        fi
+        # Not exec, so as to clean up after it, with libc's calls (the
+        # chroot may have no rmdir).  The command's interrupt is its own:
+        # this waits for it, then cleans up.
+        trap : INT
+        rc=0
+        /sw/bash/bin/bash -c 'exec "$@"' bash "$@" || rc=$?
+        # Best effort: the command's status is what counts.
+        dlcall -r int chdir "string:/"
+        dlcall -r int umount2 "string:$root" "int:$MNT_DETACH"
+        d="$root"
+        while :
+        do
+            dlcall -r int rmdir "string:$d"
+            test "$d" != "$root_made" || break
+            d="${d%/*}"
+        done
+        exit "$rc"
     else
         install_targets bash "$target"
         export PATH='/sw/*/bin'
