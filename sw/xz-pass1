@@ -2,8 +2,15 @@ ON=host-build
 
 VERSION=5.8.3
 
+# Built straight from Fluffy's branch, as xz is: the host's autotools
+# build the ones xz's release tarball was made with, autogen.sh runs the
+# host's autopoint, and po4a runs with the host's perl and gettext.
 ARCHIVES=(
-    fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6 https://github.com/fluffy-linux/xz/releases/download/v$VERSION/xz-$VERSION.tar.xz
+    4de66c9dc0976c9f938c62426ab91ac7fb9c137e https://github.com/fluffy-linux/xz.git#refs/heads/fluffy/v$VERSION
+    008e8749cc5ef038ed8dbe86c24c67401af88c36 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    8e25f43f9ecbcfbbc48762662d46fa54164876af https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.6.0
+    5d4c70797ee716aefe259fb57bb9c9c416fd2782 https://github.com/fluffy-linux/po4a.git#refs/heads/fluffy/v0.74
 )
 
 NEEDS=(
@@ -16,7 +23,23 @@ BUILD_NEEDS=(
     linux-headers
 )
 
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
+    autoconf_build
+    automake_build
+    libtool_build
+    ./autogen.sh --no-po4a
+    # The translated man pages, as autogen.sh makes them, with po4a run
+    # from its source tree.
+    mkdir -p .po4a/bin
+    tar -xf ../po4a.tar -C .po4a
+    printf '#!/bin/sh\nexec perl -I %s %s "$@"\n' \
+        "$PWD/.po4a/po4a/lib" "$PWD/.po4a/po4a/po4a" > .po4a/bin/po4a
+    chmod +x .po4a/bin/po4a
+    (cd po4a && PATH="$PWD/../.po4a/bin:$PATH" sh update-po)
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/xz \
         --host=$FLUFFY_TGT \

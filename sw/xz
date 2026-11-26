@@ -7,9 +7,21 @@ fi
 
 VERSION=5.8.3
 
+# Built straight from Fluffy's branch (our commits on upstream's v5.8.3
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure, Makefile.in or gettext files, so MAKE regenerates them with
+# autogen.sh, as upstream makes its release tarball: with the autoconf,
+# automake and libtool the release was made with (2.73, 1.18.1, 2.6.0),
+# from their Fluffy branches, and Fluffy's autopoint (gettext-pass1's in
+# cross builds: the final gettext's closure, through acl, attr and
+# binutils, needs xz).
+# The translated man pages come from po4a, as autogen.sh makes them.
 ARCHIVES=(
-    fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6 https://github.com/fluffy-linux/xz/releases/download/v$VERSION/xz-$VERSION.tar.xz
-    526f289fe73f03d3e96f92709b0859e989738e4d9974968fb94c7375d0fa3092 file://xz-$VERSION-fluffy-test.patch
+    4de66c9dc0976c9f938c62426ab91ac7fb9c137e https://github.com/fluffy-linux/xz.git#refs/heads/fluffy/v$VERSION
+    008e8749cc5ef038ed8dbe86c24c67401af88c36 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    8e25f43f9ecbcfbbc48762662d46fa54164876af https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.6.0
+    5d4c70797ee716aefe259fb57bb9c9c416fd2782 https://github.com/fluffy-linux/po4a.git#refs/heads/fluffy/v0.74
 )
 
 NEEDS=(
@@ -26,6 +38,7 @@ then
         findutils-pass1
         gawk-pass1
         gcc-pass2
+        gettext-pass1
         glibc
         grep-pass1
         libgcc
@@ -45,26 +58,51 @@ else
         findutils
         gawk
         gcc
+        gettext
         glibc
         grep
         libgcc
         linux-headers
         make
         patch
+        perl
         sed
         tar
         xz
     )
 fi
 
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
-    patch -Z -Np1 -i ../xz-$VERSION-fluffy-test.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    $CONFIG_SHELL ./autogen.sh --no-po4a
+    # The translated man pages, as autogen.sh makes them, with po4a run
+    # from its source tree.
+    po4a_build
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/xz \
         --disable-static \
         --docdir=/sw/xz/share/doc/xz-$VERSION
     make
+}
+
+# po4a, run from its git tree by Fluffy's perl: its Man module needs
+# nothing beyond perl's own modules and gettext's msgmerge and msgfmt.
+po4a_build() {
+    mkdir -p .po4a/bin
+    tar -xf ../po4a.tar -C .po4a
+    printf '#!%s\nexec perl -I %s %s "$@"\n' "$CONFIG_SHELL" \
+        "$PWD/.po4a/po4a/lib" "$PWD/.po4a/po4a/po4a" > .po4a/bin/po4a
+    chmod +x .po4a/bin/po4a
+    (cd po4a && PATH="$PWD/../.po4a/bin:$PATH" $CONFIG_SHELL update-po)
 }
 
 CHECK() {

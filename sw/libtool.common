@@ -16,12 +16,13 @@
 case "$ON" in
     cross-build)
         # The helper unpacks its sources with tar, and libtool's bootstrap
-        # applies its gnulib diffs with patch: the pass1 tools here, so that
-        # packages patch and tar depend on can regenerate too.
+        # applies its gnulib diffs with patch and checks that xz is there
+        # (its buildreq): the pass1 tools here, so that packages patch,
+        # tar and xz depend on can regenerate too.
         BUILD_NEEDS+=(
             patch-pass1
             tar-pass1
-            xz
+            xz-pass1
         )
         ;;
     fluffy-build)
