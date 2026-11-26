@@ -63,6 +63,13 @@ mkdir -pv "$FLUFFY/tmp"
 chmod 1777 "$FLUFFY/tmp"
 mkdir -pv "$FLUFFY/var/log"
 
+# Mount points for the virtual kernel file systems, as LFS makes them
+# ("Preparing Virtual Kernel File Systems").  The root has to bring them:
+# the kernel mounts it read-only, its devtmpfs automount needs /dev, and
+# /init mounts devtmpfs, proc, sysfs and /run before it remounts /
+# read-write, so it cannot make them itself.
+mkdir -pv "$FLUFFY"/{dev,proc,sys,run}
+
 if test ! -f "$FLUFFY/etc/machine-id"
 then
     tr -d '-' < /proc/sys/kernel/random/uuid > "$FLUFFY/etc/machine-id"
