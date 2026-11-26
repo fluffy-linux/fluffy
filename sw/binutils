@@ -114,6 +114,10 @@ MAKE() {
     # The repository also holds gdb, gdbserver, the simulators and the
     # libraries only they use, which the release leaves out: the last
     # configure options leave them out of the build too.
+    #
+    # Not LFS's: --enable-deterministic-archives makes ar's D the default,
+    # so static libraries record uid, gid and mtime 0, not the builder's
+    # (glibc's .a files differed only in that between CI and a local build).
     mkdir -v build
     cd build
 
@@ -125,6 +129,7 @@ MAKE() {
         --enable-plugins \
         --enable-shared \
         --disable-werror \
+        --enable-deterministic-archives \
         --enable-64-bit-bfd \
         --enable-new-dtags \
         --with-system-zlib \
