@@ -151,20 +151,27 @@ UseDomains=true
 NET_EOF
 fi
 
+# root_mnt FIELD: FIELD of the file system mounted on $FLUFFY, one line: the
+# topmost mount there, the one $FLUFFY shows.  findmnt can list more than
+# one: under a shared bind mount of a directory on itself (CI's /mnt/ci),
+# a mount below it is listed twice, and an over-mounted $FLUFFY lists the
+# hidden file system first.
+root_mnt() {
+    findmnt -f -d backward -M "$FLUFFY" -no "$1" 2>/dev/null || true
+}
+
+root_uuid="$(root_mnt UUID)"
+root_fstype="$(root_mnt FSTYPE)"
+root_fsroot="$(root_mnt FSROOT)"
+root_src="$(root_mnt SOURCE)"
+root_dev="${root_src%%\[*}"
+if test -z "$root_uuid" && test -n "$root_dev" && test -b "$root_dev"
+then
+    root_uuid="$(blkid -s UUID -o value "$root_dev" 2>/dev/null || true)"
+fi
+
 if test ! -f "$FLUFFY/etc/fstab"
 then
-    root_uuid="$(findmnt -no UUID "$FLUFFY" 2>/dev/null || true)"
-    root_fstype="$(findmnt -no FSTYPE "$FLUFFY" 2>/dev/null || true)"
-    root_fsroot="$(findmnt -no FSROOT "$FLUFFY" 2>/dev/null || true)"
-    if test -z "$root_uuid"
-    then
-        root_src="$(findmnt -no SOURCE "$FLUFFY" 2>/dev/null || true)"
-        root_dev="${root_src%%\[*}"
-        if test -n "$root_dev" && test -b "$root_dev"
-        then
-            root_uuid="$(blkid -s UUID -o value "$root_dev" 2>/dev/null || true)"
-        fi
-    fi
     if test -n "$root_uuid" && test -n "$root_fstype"
     then
         if test "$root_fstype" = "btrfs" && test -n "$root_fsroot" && test "$root_fsroot" != "/"
