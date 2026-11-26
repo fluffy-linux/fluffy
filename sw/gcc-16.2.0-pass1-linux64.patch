@@ -1,0 +1,25 @@
+Submitted By: Toushun <toushun@proton.me>
+Date: 2026-11-26
+Initial Package Version: 16.2.0
+Upstream Status: Not submitted (Fluffy's layout)
+Origin: Fluffy
+Description: gcc-pass1's dynamic loader and startfile prefix: glibc is
+in /sw/glibc, so every 64-bit program it links names
+/sw/glibc/lib/ld-linux-x86-64.so.2 and its startfiles are found in
+/sw/glibc/lib/.  Fluffy's other gccs name every package's lib directory
+with /sw/*/lib/ (commit f484394ce3d5 on fluffy/releases/gcc-16.2.0),
+which needs that branch's driver commits and so GLOB_PATHS; gcc-pass1
+builds upstream's bare releases/gcc-16.2.0 tag and runs against the
+build host's C library, which has no GLOB_PATHS, so it is given glibc's
+absolute paths, as a patch rather than a commit.
+
+--- a/gcc/config/i386/linux64.h
++++ b/gcc/config/i386/linux64.h
+@@ -37,3 +37,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+ #define MUSL_DYNAMIC_LINKER64 "/lib/ld-musl-x86_64.so.1"
+ #undef MUSL_DYNAMIC_LINKERX32
+ #define MUSL_DYNAMIC_LINKERX32 "/lib/ld-musl-x32.so.1"
++#undef GLIBC_DYNAMIC_LINKER64
++#define GLIBC_DYNAMIC_LINKER64 "/sw/glibc/lib/ld-linux-x86-64.so.2"
++#undef STARTFILE_PREFIX_SPEC
++#define STARTFILE_PREFIX_SPEC "/sw/glibc/lib/"

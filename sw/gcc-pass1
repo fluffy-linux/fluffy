@@ -15,6 +15,8 @@ ARCHIVES=(
     b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://github.com/fluffy-linux/mpfr/releases/download/$MPFR_VERSION/mpfr-$MPFR_VERSION.tar.xz
     91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931 https://github.com/fluffy-linux/mpc/releases/download/$MPC_VERSION/mpc-$MPC_VERSION.tar.xz
     a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://github.com/fluffy-linux/gmp/releases/download/gmp-$GMP_VERSION/gmp-$GMP_VERSION.tar.xz
+    d21dab1464de8eed7ffea38261c0cb30876160106de19d4c4a6c58cdb5836884 file://gcc-$VERSION-pass1-lib64.patch
+    ed1f9d742cc0e8646c2d6ae6b6d79003d75576022831d34cd45fc9a9fa3167b1 file://gcc-$VERSION-pass1-linux64.patch
 )
 
 NEEDS=(
@@ -26,9 +28,9 @@ BUILD_NEEDS=(
 )
 
 # Stock gcc: this cross compiler runs only on the build host, against the
-# host's C library, so it gets none of Fluffy's patches.  Where the other
-# gccs search /sw/*, it is given the absolute paths of the packages the
-# cross passes use: glibc, linux-headers, binutils and libstdcpp.
+# host's C library, so it gets none of Fluffy's gcc commits.  Where the
+# other gccs search /sw/*, it is given the absolute paths of the packages
+# the cross passes use: glibc, linux-headers, binutils and libstdcpp.
 MAKE() {
     tar -xf ../mpfr-$MPFR_VERSION.tar.xz
     mv -v mpfr-$MPFR_VERSION mpfr
@@ -37,14 +39,11 @@ MAKE() {
     tar -xf ../gmp-$GMP_VERSION.tar.xz
     mv -v gmp-$GMP_VERSION gmp
 
-    sed -e '/m64=/s/lib64/lib/' \
-        -i gcc/config/i386/t-linux64
-    cat >> gcc/config/i386/linux64.h << EOF
-#undef GLIBC_DYNAMIC_LINKER64
-#define GLIBC_DYNAMIC_LINKER64 "/sw/glibc/lib/ld-linux-x86-64.so.2"
-#undef STARTFILE_PREFIX_SPEC
-#define STARTFILE_PREFIX_SPEC "/sw/glibc/lib/"
-EOF
+    # LFS's lib64 edit and the pass's own loader and startfile paths, as
+    # patches, not commits: this pass builds the bare tag (see the
+    # patches' headers).
+    patch -Z -Np1 -i ../gcc-$VERSION-pass1-lib64.patch
+    patch -Z -Np1 -i ../gcc-$VERSION-pass1-linux64.patch
 
     mkdir -v build
     cd build

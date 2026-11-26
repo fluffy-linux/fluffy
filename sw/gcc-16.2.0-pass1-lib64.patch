@@ -1,0 +1,25 @@
+Submitted By: Linux From Scratch <lfs-dev@lists.linuxfromscratch.org>
+Date: 2026-11-26
+Initial Package Version: 16.2.0
+Upstream Status: Not submitted (an edit from the book)
+Origin: Linux From Scratch 13.1-systemd, chapter 5, "GCC-16.2.0 -
+        Pass 1": sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
+Description: The 64-bit multilib's OS directory becomes ../lib, so gcc
+installs its 64-bit libraries in lib and searches lib for the system's,
+as LFS has no lib64.  The book makes the edit with a sed; this patch
+makes the same edit.  It is commit 121996dbc20e on Fluffy's
+fluffy/releases/gcc-16.2.0 branch, but gcc-pass1 builds upstream's bare
+releases/gcc-16.2.0 tag: it runs on the build host against the host's C
+library, which has no GLOB_PATHS, so it can't take that branch's driver
+commits, and it carries its edits as patches instead.
+
+--- a/gcc/config/i386/t-linux64
++++ b/gcc/config/i386/t-linux64
+@@ -33,6 +33,6 @@
+ comma=,
+ MULTILIB_OPTIONS    = $(subst $(comma),/,$(TM_MULTILIB_CONFIG))
+ MULTILIB_DIRNAMES   = $(patsubst m%, %, $(subst /, ,$(MULTILIB_OPTIONS)))
+-MULTILIB_OSDIRNAMES = m64=../lib64$(call if_multiarch,:x86_64-linux-gnu)
++MULTILIB_OSDIRNAMES = m64=../lib$(call if_multiarch,:x86_64-linux-gnu)
+ MULTILIB_OSDIRNAMES+= m32=$(if $(wildcard $(shell echo $(SYSTEM_HEADER_DIR))/../../usr/lib32),../lib32,../lib)$(call if_multiarch,:i386-linux-gnu)
+ MULTILIB_OSDIRNAMES+= mx32=../libx32$(call if_multiarch,:x86_64-linux-gnux32)
