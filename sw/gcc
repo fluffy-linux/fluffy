@@ -130,6 +130,18 @@ CHECK() {
 INSTALL() {
     cd build
     make install
+    # make install runs install-info for several manuals at once (each of
+    # gcc's is its own make target, and libgomp's and libquadmath's install
+    # alongside), and their writes to share/info/dir race: builds of the
+    # same recipe kept different sets of entries.  So the dir file is
+    # written again from scratch by the info installs of those three
+    # directories alone, run serially.
+    rm -f $DESTDIR/sw/gcc/share/info/dir
+    local d
+    for d in gcc */libgomp */libquadmath
+    do
+        make -C "$d" -j1 install-info
+    done
     ln -svr $DESTDIR/sw/gcc/bin/cpp $DESTDIR/sw/gcc/lib
     ln -sv gcc $DESTDIR/sw/gcc/bin/cc
     ln -sv gcc.1 $DESTDIR/sw/gcc/share/man/man1/cc.1

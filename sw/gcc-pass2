@@ -75,5 +75,13 @@ MAKE() {
 INSTALL() {
     cd build
     make install
+    # make install runs install-info for gcc's manuals at once (each is its
+    # own make target), and their writes to share/info/dir race: builds of
+    # the same recipe kept different sets of entries.  So the dir file is
+    # written again from scratch by gcc's info install alone, run serially.
+    # (Not the top-level install-info: it would also install the in-tree
+    # gmp's, mpfr's and mpc's manuals, which make install leaves out.)
+    rm -f $DESTDIR/sw/gcc/share/info/dir
+    make -C gcc -j1 install-info
     ln -sv gcc $DESTDIR/sw/gcc/bin/cc
 }
