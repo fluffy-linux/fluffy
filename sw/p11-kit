@@ -7,10 +7,14 @@ fi
 
 VERSION=0.26.5
 
+# Built straight from Fluffy's branch (our commits on upstream's 0.26.5
+# tag, BLFS's anchor hook among them): swctl fetches the pinned commit,
+# and the pkcs11-json commit it pins, with git.  Built with meson, as
+# BLFS 13.1-systemd builds it; the man pages are made with xsltproc.  The
+# release tarball's prebuilt gtk-doc HTML manual is not installed: BLFS
+# doesn't build it, and Fluffy has no gtk-doc.
 ARCHIVES=(
-    f2cc09111e44bf3fea58f023180b33acea90aa82d042d6fbb623fbc5ba033bb7 https://github.com/fluffy-linux/p11-kit/releases/download/$VERSION/p11-kit-$VERSION.tar.xz
-    fb23c8ff167de11339fb6c870844690f3caed16dd7901222d60c5d8e2cab3b8e file://p11-kit-$VERSION-fluffy-source.patch
-    b169b0e9542f6dc06a9474748eedc97c854dc6608bec3a0b1ddc03d202716a33 file://p11-kit-$VERSION-fluffy-test.patch
+    6d2fdf3034295c9775a058c273b1dfc0740888b0 https://github.com/fluffy-linux/p11-kit.git#refs/heads/fluffy/$VERSION
 )
 
 NEEDS=(
@@ -28,6 +32,8 @@ then
         diffutils-pass1
         findutils-pass1
         gawk-pass1
+        docbook-xml
+        docbook-xsl-nons
         gcc
         gettext
         glibc
@@ -35,8 +41,11 @@ then
         libffi
         libgcc
         libtasn1
+        libxslt
         linux-headers
         make-pass1
+        meson
+        ninja
         patch-pass1
         pkgconf
         python
@@ -52,6 +61,8 @@ else
         diffutils
         findutils
         gawk
+        docbook-xml
+        docbook-xsl-nons
         gcc
         gettext
         glibc
@@ -59,8 +70,11 @@ else
         libffi
         libgcc
         libtasn1
+        libxslt
         linux-headers
         make
+        meson
+        ninja
         patch
         pkgconf
         python
@@ -71,24 +85,25 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../p11-kit-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../p11-kit-$VERSION-fluffy-test.patch
-    export CONFIG_SHELL=/sw/bash/bin/bash
-    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+    mkdir -p build
+    cd build
+    meson setup .. \
         --prefix=/sw/p11-kit \
         --sysconfdir=/sw/p11-kit/etc \
-        --with-trust-paths=/etc/pki/anchors:/sw/ca-certificates/etc/ssl/certs/ca-certificates.crt \
-        --disable-static \
-        bashcompdir=/sw/p11-kit/share/bash-completion/completions
-    make
+        --buildtype=release \
+        --wrap-mode=nofallback \
+        -D trust_paths=/etc/pki/anchors:/sw/ca-certificates/etc/ssl/certs/ca-certificates.crt \
+        -D bashcompdir=/sw/p11-kit/share/bash-completion/completions \
+        -D man=true
+    ninja
 }
 
 CHECK() {
-    make check
+    meson test -C build --print-errorlogs
 }
 
 INSTALL() {
-    make install
+    DESTDIR=$DESTDIR ninja -C build install
     ln -sfv ../libexec/p11-kit/trust-extract-compat \
         $DESTDIR/sw/p11-kit/bin/update-ca-certificates
     ln -sfv ./pkcs11/p11-kit-trust.so $DESTDIR/sw/p11-kit/lib/libnssckbi.so
