@@ -7,10 +7,14 @@ fi
 
 VERSION=704
 
+# Built straight from Fluffy's branch (our commits on upstream's v704
+# tag): swctl fetches the pinned commit with git.  The tag lacks the files
+# the release's make -f Makefile.aut adds (configure, defines.h.in,
+# help.c, funcs.h and the versioned man pages), so MAKE makes them as it
+# does, with the autoconf the release tarball was made with (2.72).
 ARCHIVES=(
-    20a0b0a2bb2525fa53c7eee9beb854b4c9cf172eabb209af7020743547bfe9fb https://github.com/fluffy-linux/less/releases/download/v$VERSION/less-$VERSION.tar.gz
-    89d014808ffa1063f4b6c602c6898829329dbb66428f3418e4de59e15b1e38be file://less-$VERSION-fluffy-source.patch
-    80ad0eb07fe85df9ffd1c53f64a495fddae4eb4cd4e78fa5204e71bb6deb3ccd file://less-$VERSION-fluffy-test.patch
+    555f82c680264a303dc5aa59cd6aaad69a3ba72f https://github.com/fluffy-linux/less.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
 )
 
 NEEDS=(
@@ -65,11 +69,14 @@ else
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../less-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../less-$VERSION-fluffy-test.patch
+source sw/autoconf.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    # The man pages are dated by the release (its v704 tag, 30 May 2026).
+    SOURCE_DATE_EPOCH=1780185255 make -f Makefile.aut \
+        help.c funcs.h configure less.nro lesskey.nro lessecho.nro
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/less \
         --sysconfdir=/sw/less/etc
