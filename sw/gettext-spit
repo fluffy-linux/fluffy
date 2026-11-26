@@ -72,9 +72,8 @@ MAKE() {
         --disable-static \
         --docdir=/sw/gettext-spit/share/doc/gettext-$VERSION
     make -C gettext-tools/src spit
-    # The man page, dated by the release as sw/gettext dates it, and its
-    # HTML.
-    SOURCE_DATE_EPOCH=1769645591 make -C gettext-tools/man \
+    # The man page and its HTML.
+    make -C gettext-tools/man \
         HELP2MAN='$(PERL) -w -- '"$(command -v help2man)" spit.1 spit.1.html
 }
 

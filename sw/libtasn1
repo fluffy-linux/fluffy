@@ -84,13 +84,9 @@ MAKE() {
     automake_build
     libtool_build
     $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
-    # configure dates the man pages and the manual by the last commit, when
-    # it can ask git: the release's, the v4.21.0 tag (2026-01-08).
-    SOURCETIME_HELP2MAN=1767874762 \
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/libtasn1 \
         --disable-static
-    TZ=UTC0 touch -m -t 202601081219.22 NEWS.md doc/libtasn1.texi
     make
 }
 

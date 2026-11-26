@@ -74,8 +74,7 @@ source sw/autoconf.common
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
     autoconf_build
-    # The man pages are dated by the release (its v704 tag, 30 May 2026).
-    SOURCE_DATE_EPOCH=1780185255 make -f Makefile.aut \
+    make -f Makefile.aut \
         help.c funcs.h configure less.nro lesskey.nro lessecho.nro
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/less \

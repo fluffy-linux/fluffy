@@ -95,12 +95,7 @@ MAKE() {
         --prefix=/sw/m4
     # The translations as make dist merges them with m4.pot.
     make -C po update-po
-    # The manual is dated by m4.texi's time, as the release's is (git
-    # gives every file the commit's).
-    touch -d '2026-02-06 12:00 UTC' doc/m4.texi
-    # The release's man page is dated by the release (its v1.4.21 tag,
-    # February 2026); help2man dates it by SOURCE_DATE_EPOCH.
-    SOURCE_DATE_EPOCH=1770407720 make
+    make
 }
 
 CHECK() {

@@ -75,15 +75,13 @@ MAKE() {
     cp .autotools/share/automake-1.16/{missing,mkinstalldirs} build-aux/
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/help2man
-    # The release's man page is dated by the release (its v1.49.3 tag,
-    # December 2022); help2man dates it by SOURCE_DATE_EPOCH.
-    SOURCE_DATE_EPOCH=1670892811 make
+    make
 }
 
 # help2man has no test suite.  It writes its own man page when it is
 # built; write it again with the built script and check both agree.
 CHECK() {
-    SOURCE_DATE_EPOCH=1670892811 ./help2man --include=help2man.h2m \
+    ./help2man --include=help2man.h2m \
         --output=help2man.1.check ./help2man
     cmp help2man.1 help2man.1.check
 }

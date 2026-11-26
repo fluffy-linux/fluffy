@@ -118,12 +118,7 @@ MAKE() {
         --prefix=/sw/coreutils
     # The translations as make dist merges them with coreutils.pot.
     make -C po update-po
-    # The manual is dated by coreutils.texi's time, as the release's is
-    # (git gives every file the commit's).
-    touch -d '2026-04-06 12:00 UTC' doc/coreutils.texi
-    # The release's man pages are dated by the release (its v9.11 tag,
-    # April 2026); man/help2man dates them by SOURCE_DATE_EPOCH.
-    SOURCE_DATE_EPOCH=1776688917 make
+    make
 }
 
 CHECK() {

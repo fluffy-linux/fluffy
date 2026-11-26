@@ -90,12 +90,10 @@ MAKE() {
     gperf_make
 }
 
-# The man page and the HTML manual are dated as the release tarball's
-# are (16 April 2025, four days before its v3.3 tag); the PDF manual,
-# which needs TeX, is never installed
-# (doc's check target remakes all the manuals, so CHECK skips it too).
+# The PDF manual, which needs TeX, is never installed (doc's check
+# target remakes all the manuals, so CHECK skips it too).
 gperf_make() {
-    SOURCE_DATE_EPOCH=1744761600 make TEXI2PDF=: "$@"
+    make TEXI2PDF=: "$@"
 }
 
 CHECK() {

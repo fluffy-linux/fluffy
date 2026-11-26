@@ -120,13 +120,7 @@ MAKE() {
         --prefix=/sw/gettext \
         --disable-static \
         --docdir=/sw/gettext/share/doc/gettext-$VERSION
-    # The manuals are dated by their .texi's time, as the release's are
-    # (git gives every file the commit's).
-    touch -d '2026-01-27 12:00 UTC' gettext-tools/doc/gettext.texi
-    touch -d '2025-10-01 12:00 UTC' libtextstyle/doc/libtextstyle.texi
-    # The release's man pages are dated by the release (its v1.0 tag,
-    # January 2026); help2man dates them by SOURCE_DATE_EPOCH.
-    SOURCE_DATE_EPOCH=1769645591 make HELP2MAN='$(PERL) -w -- '"$(command -v help2man)"
+    make HELP2MAN='$(PERL) -w -- '"$(command -v help2man)"
     # The examples' translations, installed with them, as make dist
     # writes them from the release's templates.
     make -C gettext-tools/examples/po update-po

@@ -96,12 +96,7 @@ MAKE() {
         --prefix=/sw/diffutils
     # The translations as make dist merges them with diffutils.pot.
     make -C po update-po
-    # The manual is dated by diffutils.texi's time, as the release's is
-    # (git gives every file the commit's).
-    touch -d '2025-01-12 12:00 UTC' doc/diffutils.texi
-    # The release's man pages are dated by the release (its v3.12 tag,
-    # April 2025); man/help2man dates them by SOURCE_DATE_EPOCH.
-    SOURCE_DATE_EPOCH=1744166239 make
+    make
 }
 
 CHECK() {

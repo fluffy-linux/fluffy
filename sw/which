@@ -82,10 +82,7 @@ MAKE() {
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/which
     # version.texi, which the tarball ships: outside maintainer mode
-    # make doesn't write it by itself.  It dates the manual by
-    # which.texi's time, which is the release's (git gives every file the
-    # commit's).
-    touch -d '2025-04-15 12:00 UTC' which.texi
+    # make doesn't write it by itself.
     make stamp-vti
     make
 }

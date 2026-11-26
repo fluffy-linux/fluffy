@@ -58,9 +58,9 @@ MAKE() {
     gperf_make
 }
 
-# As gperf's: the manuals dated by the release; no PDF.
+# As gperf's: no PDF.
 gperf_make() {
-    SOURCE_DATE_EPOCH=1744761600 make TEXI2PDF=: "$@"
+    make TEXI2PDF=: "$@"
 }
 
 INSTALL() {

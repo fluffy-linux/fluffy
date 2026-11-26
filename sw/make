@@ -94,9 +94,6 @@ MAKE() {
         --prefix=/sw/make
     # The translations as make dist merges them with make.pot.
     make -C po update-po
-    # The manual is dated by make.texi's time, as the release's is (git
-    # gives every file the commit's).
-    touch -d '2023-02-26 12:00 UTC' doc/make.texi
     make
 }
 
