@@ -259,8 +259,125 @@ then
     fi
 fi
 
-if test -f "$DIR/boot/grub/grub.cfg" && ! cmp -s "$DIR/boot/grub/grub.cfg" "$FLUFFY/boot/grub/grub.cfg"
+# grub_cfg FS_UUID PARTUUID FS_MODULE SUBVOL KERNEL_VERSION FONT: the root's
+# grub.cfg, on stdout.  grub finds the root's file system by FS_UUID, loads
+# FS_MODULE to read it, and loops the kernel back out of linux's image, in
+# subvolume SUBVOL (none: "") or, failing that, the file system's own /sw;
+# the kernel mounts the root by PARTUUID (there is no initramfs).  With
+# FONT (1), a gfxterm in 4K with that font; without the font, grub's own
+# text console.  No serial console: the boot test adds its own.
+grub_cfg() {
+    local fs_uuid="$1" partuuid="$2" fs_mod="$3" subvol="$4" kver="$5" font="$6"
+    local img="sw/linux-$kver.squashfs" flags="" entry
+
+    cat << EOF
+set default=0
+set timeout=5
+
+insmod $fs_mod
+insmod part_gpt
+
+EOF
+    if test "$font" = 1
+    then
+        cat << "EOF"
+# Initialize graphical video drivers
+set gfxmode=3840x2160x32,auto
+
+insmod video
+insmod font
+insmod gfxterm
+terminal_output gfxterm
+
+# Load a larger font for the GRUB interface
+font /boot/grub/fonts/djsans64.pf2
+
+EOF
+    fi
+    cat << EOF
+# DYNAMIC SEARCH: This finds the drive containing your LFS partition by its UUID
+# and assigns it to the 'root' variable automatically, bypassing the need for "hd0".
+search --no-floppy --fs-uuid --set=root $fs_uuid
+EOF
+    if test -n "$subvol"
+    then
+        flags=" rootflags=subvol=$subvol"
+    fi
+    for entry in "native root=PARTUUID=$partuuid" "libvirt root=/dev/sda1"
+    do
+        echo
+        echo "menuentry \"Fluffy Linux $kver (${entry%% *})\" {"
+        echo "    insmod loopback"
+        echo "    insmod squash4"
+        if test -n "$subvol"
+        then
+            echo "    if [ -f /$subvol/$img ]; then"
+            echo "        loopback loop0 /$subvol/$img"
+            echo "    else"
+            echo "        loopback loop0 /$img"
+            echo "    fi"
+        else
+            echo "    loopback loop0 /$img"
+        fi
+        echo "    linux (loop0)/boot/vmlinuz-$kver ${entry#* }$flags init=/init ro"
+        echo "}"
+    done
+}
+
+# /boot/grub/grub.cfg, written for this root: its file system, partition,
+# subvolume and kernel.  Only for a root that can boot: once linux is built,
+# on a partition, and the whole file system or a btrfs subvolume (not a
+# CI root on a whole disk, nor a bind mount of a directory, like CI's
+# /mnt/ci); only when it changed.
+grub_note=""
+grub_linux="$(awk '$2 == "/sw/linux" { print $1; exit }' "$FLUFFY/etc/fluffy/fstab" 2>/dev/null || true)"
+grub_kver="${grub_linux#/sw/linux-}"
+grub_kver="${grub_kver%.squashfs}"
+grub_partuuid=""
+if test -n "$root_dev" && test -b "$root_dev"
 then
+    grub_partuuid="$(blkid -s PARTUUID -o value "$root_dev" 2>/dev/null || true)"
+fi
+case "$root_fstype" in
+    btrfs) grub_fs_mod=btrfs ;;
+    ext2|ext3|ext4) grub_fs_mod=ext2 ;;
+    xfs) grub_fs_mod=xfs ;;
+    *) grub_fs_mod="" ;;
+esac
+grub_subvol=""
+if test "$root_fstype" = btrfs && test -n "$root_fsroot" && test "$root_fsroot" != /
+then
+    grub_subvol="${root_fsroot#/}"
+fi
+grub_font=0
+if test -f "$FLUFFY/boot/grub/fonts/djsans64.pf2"
+then
+    grub_font=1
+fi
+if test -z "$grub_linux" || test "$grub_kver" = "$grub_linux"
+then
+    grub_note="linux is not built"
+elif test -z "$root_uuid" || test -z "$grub_partuuid"
+then
+    grub_note="the root's file system UUID or partition UUID is unknown"
+elif test -z "$grub_fs_mod"
+then
+    grub_note="grub reads no ${root_fstype:-unknown} file system here"
+elif test -z "$grub_subvol" && test -n "$root_fsroot" && test "$root_fsroot" != /
+then
+    grub_note="the root is a directory of its file system ($root_fsroot), which the kernel cannot mount as /"
+else
     mkdir -pv "$FLUFFY/boot/grub"
-    cp -fv "$DIR/boot/grub/grub.cfg" "$FLUFFY/boot/grub/grub.cfg"
+    grub_cfg "$root_uuid" "$grub_partuuid" "$grub_fs_mod" "$grub_subvol" "$grub_kver" "$grub_font" \
+        > "$FLUFFY/boot/grub/grub.cfg.new"
+    if cmp -s "$FLUFFY/boot/grub/grub.cfg.new" "$FLUFFY/boot/grub/grub.cfg"
+    then
+        rm -f "$FLUFFY/boot/grub/grub.cfg.new"
+    else
+        mv -fv "$FLUFFY/boot/grub/grub.cfg.new" "$FLUFFY/boot/grub/grub.cfg"
+    fi
+fi
+if test -n "$grub_note" && test "${BUILDKITE:-}" != true
+then
+    echo "bootstrap: no /boot/grub/grub.cfg written: $grub_note" >&2
 fi
