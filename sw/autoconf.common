@@ -43,7 +43,9 @@ autoconf_build() {
     tar -xf ../autoconf.tar -C .autotools-build
     (
         cd .autotools-build/autoconf
-        autoreconf -fi
+        # Without -f, so the config.guess, config.sub and install-sh it
+        # installs are its own, the release's, as sw/autoconf's are.
+        autoreconf -i
         ${CONFIG_SHELL:-/bin/sh} ./configure --prefix="$prefix"
         make dist_man_MANS= INFO_DEPS=
         make dist_man_MANS= INFO_DEPS= DESTDIR= install
