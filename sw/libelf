@@ -7,9 +7,19 @@ fi
 
 VERSION=0.195
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# elfutils-0.195 tag, and upstream's later fix to known-dwarf.awk for
+# gawk 5.4, by the user's exception to "never newer than LFS"): swctl
+# fetches the pinned commit with git.  The tag has no configure,
+# Makefile.in, gettext files or generated disassembler tables, so MAKE
+# regenerates them with autoreconf, as upstream makes its release
+# tarball (autoconf 2.72, automake 1.18.1, from their Fluffy branches,
+# and gettext's autopoint), and configures in maintainer mode, in which
+# make generates the tables with bison and flex.
 ARCHIVES=(
-    37629fdf7f1f3dc2818e138fca2b8094177d6c2d0f701d3bb650a561218dc026 https://github.com/fluffy-linux/elfutils/releases/download/elfutils-$VERSION/elfutils-$VERSION.tar.bz2
-    16d1008b693b207f4495d06a0e67f2e4bd1d022edb588eba1bb046a7b31040e9 file://elfutils-$VERSION-fluffy.patch
+    3048c839487856190e7c66a376cf744df03d10a4 https://github.com/fluffy-linux/elfutils.git#refs/heads/fluffy/elfutils-$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
 )
 
 NEEDS=(
@@ -81,11 +91,19 @@ else
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../elfutils-$VERSION-fluffy.patch
+source sw/autoconf.common
+source sw/automake.common
 
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    autoreconf -fi
     ./configure \
         --prefix=/sw/libelf \
+        --enable-maintainer-mode \
         --disable-debuginfod \
         --enable-libdebuginfod=dummy \
         --without-libarchive
