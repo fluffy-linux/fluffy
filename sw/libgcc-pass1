@@ -2,8 +2,11 @@ ON=host-build
 
 VERSION=16.2.0
 
+# Upstream's releases/gcc-16.2.0 tag, as our fork has it: swctl fetches
+# the pinned tag with git.  No Fluffy commits: the stock
+# source, as the release tarball was.
 ARCHIVES=(
-    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://github.com/fluffy-linux/gcc/releases/download/releases/gcc-$VERSION/gcc-$VERSION.tar.xz
+    1831ac03fd08e3400c16b29f21762e6b326a618d https://github.com/fluffy-linux/gcc.git#refs/tags/releases/gcc-$VERSION
 )
 
 NEEDS=(

@@ -7,11 +7,12 @@ fi
 
 VERSION=16.2.0
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# releases/gcc-16.2.0 tag): swctl fetches the pinned commit with git.  What
+# the release tarball ships prebuilt that this build uses (gengtype's
+# flex scanner, the info and man pages) the build makes.
 ARCHIVES=(
-    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://github.com/fluffy-linux/gcc/releases/download/releases/gcc-$VERSION/gcc-$VERSION.tar.xz
-    14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    9811dcd56cd2adebe504b7e88e29fcd8e7b1b8c6f8591900b79fef3defa7b07f file://gcc-$VERSION-fluffy-source.patch
-    c37b4f076f7a1fe7d8b20e0eaf28569f34b23de8a5919990532659b664215ae0 file://gcc-$VERSION-fluffy-test.patch
+    249a7913825ded5cb6aab9f39eff492057a959e6 https://github.com/fluffy-linux/gcc.git#refs/heads/fluffy/releases/gcc-$VERSION
 )
 
 NEEDS=(
@@ -37,6 +38,7 @@ then
         expect
         file-pass1
         findutils-pass1
+        flex
         gawk-pass1
         gcc-pass2
         gettext-pass1
@@ -49,7 +51,6 @@ then
         make-pass1
         mpc
         mpfr
-        patch-pass1
         perl-pass1
         python-pass1
         sed-pass1
@@ -69,6 +70,7 @@ else
         expect
         file
         findutils
+        flex
         gawk
         gcc
         gettext
@@ -81,7 +83,6 @@ else
         make
         mpc
         mpfr
-        patch
         perl
         python
         sed
@@ -94,27 +95,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../gcc-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i ../gcc-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../gcc-$VERSION-fluffy-test.patch
-
-    sed -i '1s|#!/bin/sh|#!/sw/bash/bin/bash|' \
-        libbacktrace/install-debuginfo-for-buildid.sh.in
-
-    sed -e '/m64=/s/lib64/lib/' \
-        -i gcc/config/i386/t-linux64
-    cat >> gcc/config/i386/linux64.h << EOF
-#undef GLIBC_DYNAMIC_LINKER64
-#define GLIBC_DYNAMIC_LINKER64 "/sw/glibc/lib/ld-linux-x86-64.so.2"
-#undef STARTFILE_PREFIX_SPEC
-#define STARTFILE_PREFIX_SPEC "/sw/*/lib/"
-#undef MD_EXEC_PREFIX
-#define MD_EXEC_PREFIX "/sw/*/bin/"
-EOF
-
-    sed '/thread_header =/s/@.*@/gthr-posix.h/' \
-        -i libgcc/Makefile.in libgcc/configure
-
     mkdir -v build
     cd build
     CONFIG_SITE=/sw/glibc/share/config.site ../configure \

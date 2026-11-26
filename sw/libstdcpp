@@ -7,10 +7,10 @@ fi
 
 VERSION=16.2.0
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# releases/gcc-16.2.0 tag): swctl fetches the pinned commit with git.
 ARCHIVES=(
-    e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e https://github.com/fluffy-linux/gcc/releases/download/releases/gcc-$VERSION/gcc-$VERSION.tar.xz
-    14f783de32e23716a14dcb197edae9e130c9b8605374293bec921ad972ca3c78 file://gcc-$VERSION-fluffy-shell.patch
-    c37b4f076f7a1fe7d8b20e0eaf28569f34b23de8a5919990532659b664215ae0 file://gcc-$VERSION-fluffy-test.patch
+    249a7913825ded5cb6aab9f39eff492057a959e6 https://github.com/fluffy-linux/gcc.git#refs/heads/fluffy/releases/gcc-$VERSION
 )
 
 NEEDS=(
@@ -36,7 +36,6 @@ then
         libgcc
         linux-headers
         make-pass1
-        patch-pass1
         python-pass1
         sed-pass1
         tcl
@@ -58,7 +57,6 @@ else
         libgcc
         linux-headers
         make
-        patch
         python
         sed
         tcl
@@ -66,9 +64,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../gcc-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i ../gcc-$VERSION-fluffy-test.patch
-
     ln -sv gthr-posix.h libgcc/gthr-default.h
 
     mkdir -v build
