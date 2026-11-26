@@ -7,9 +7,17 @@ fi
 
 VERSION=2.6.0
 
+# Built straight from Fluffy's branch (our commits on upstream's v2.6.0
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure, Makefile.in or gettext files, so MAKE runs autogen.sh, as
+# upstream makes its release tarball: with the autoconf, automake and
+# libtool the release was made with (2.72, 1.18.1, 2.5.4), from their
+# Fluffy branches, and gettext's autopoint.
 ARCHIVES=(
-    d42fa374513180bb48cb11a46696f488240e5124ff1e6ad88b0abff706985612 https://github.com/fluffy-linux/attr/releases/download/v$VERSION/attr-$VERSION.tar.gz
-    4fe15575f01abb0491890e93899695bbb398a34e7c00590398362e571d667f14 file://attr-$VERSION-fluffy-test.patch
+    5bf31003563d47f7090f057539cfedc9352f1d27 https://github.com/fluffy-linux/attr.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    2b62947fd566e11dedf3c2c7e252f05a8937d54c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(
@@ -35,6 +43,7 @@ then
         patch-pass1
         perl-pass1
         sed-pass1
+        xz-pass1
     )
 else
     BUILD_NEEDS=(
@@ -54,19 +63,36 @@ else
         patch
         perl
         sed
+        xz
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../attr-$VERSION-fluffy-test.patch
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    autopoint_wrapper
+    $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/attr \
         --disable-static \
         --sysconfdir=/sw/attr/etc \
         --docdir=/sw/attr/share/doc/attr-$VERSION
     make
+}
+
+# autogen.sh runs autopoint, which gettext installs with a #!/bin/sh line
+# (gettext's bug): put one that runs it with bash first in PATH, beside
+# the autotools.
+autopoint_wrapper() {
+    printf '#!%s\nexec %s /sw/gettext/bin/autopoint "$@"\n' \
+        "$CONFIG_SHELL" "$CONFIG_SHELL" > .autotools/bin/autopoint
+    chmod +x .autotools/bin/autopoint
 }
 
 CHECK() {

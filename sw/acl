@@ -7,9 +7,18 @@ fi
 
 VERSION=2.4.0
 
+# Built straight from Fluffy's branch (our commits on upstream's v2.4.0
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure, Makefile.in or gettext files, so MAKE runs autogen.sh, as
+# upstream makes its release tarball: with the autoconf, automake and
+# libtool the release was made with (2.72, 1.18.1, 2.5.4), from their
+# Fluffy branches, and gettext's autopoint.  The translations are merged
+# with the release's acl.pot, as its make dist did.
 ARCHIVES=(
-    e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3 https://github.com/fluffy-linux/acl/releases/download/v$VERSION/acl-$VERSION.tar.xz
-    107000ecaeed120e8175e4cb12cb02d5dd96d89fed5f5664c375019b41336d88 file://acl-$VERSION-fluffy-test.patch
+    584eb9f2d829a77bb8ee9dbddefa3cfe760196e0 https://github.com/fluffy-linux/acl.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    2b62947fd566e11dedf3c2c7e252f05a8937d54c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(
@@ -37,6 +46,7 @@ then
         patch-pass1
         perl-pass1
         sed-pass1
+        xz-pass1
     )
 else
     BUILD_NEEDS=(
@@ -57,18 +67,37 @@ else
         patch
         perl
         sed
+        xz
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../acl-$VERSION-fluffy-test.patch
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    autopoint_wrapper
+    $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/acl \
         --disable-static \
         --docdir=/sw/acl/share/doc/acl-$VERSION
+    # The translations as make dist merges them with acl.pot.
+    make -C po update-po
     make
+}
+
+# autogen.sh runs autopoint, which gettext installs with a #!/bin/sh line
+# (gettext's bug): put one that runs it with bash first in PATH, beside
+# the autotools.
+autopoint_wrapper() {
+    printf '#!%s\nexec %s /sw/gettext/bin/autopoint "$@"\n' \
+        "$CONFIG_SHELL" "$CONFIG_SHELL" > .autotools/bin/autopoint
+    chmod +x .autotools/bin/autopoint
 }
 
 CHECK() {

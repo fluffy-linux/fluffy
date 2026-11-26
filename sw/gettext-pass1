@@ -72,9 +72,13 @@ MAKE() {
 
 # As LFS's chapter 7 gettext: msgfmt, msgmerge and xgettext.  Beyond LFS,
 # autopoint and its archive too: m4, which gcc needs through gmp and so
-# comes before gettext, bootstraps from git and runs autopoint.
+# comes before gettext, bootstraps from git and runs autopoint.  And
+# msginit, msgconv and msgfilter: attr and acl, built from git before the
+# final gettext, make their en@quot and en@boldquot catalogs with them,
+# as their release tarballs' make dist did.
 INSTALL() {
     mkdir -pv $DESTDIR/sw/gettext/bin
-    cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} $DESTDIR/sw/gettext/bin
+    cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext,msginit,msgconv,msgfilter} \
+        $DESTDIR/sw/gettext/bin
     make -C gettext-tools/autotools install
 }
