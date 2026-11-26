@@ -7,10 +7,13 @@ fi
 
 VERSION=3530400
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# version-3.53.4 tag): swctl fetches the pinned commit with git.  The
+# tag is SQLite's canonical source tree; MAKE makes the release's
+# autoconf package from it with make amalgamation-tarball, as the
+# release was made, and builds that package as LFS does.
 ARCHIVES=(
-    0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c https://github.com/fluffy-linux/sqlite/releases/download/version-3.53.4/sqlite-autoconf-$VERSION.tar.gz
-    8633b6b7310a836affd8c3c17e5f77ef13a1938970bd37c4f01eb6bb051d2e2d file://sqlite-$VERSION-fluffy.patch
-    8075977877737249f9f13b34228b1dad98021eed6073041d0a599b728ba02685 file://sqlite-$VERSION-fluffy-test.patch
+    d79b2dd8ec7bb31de79a3d3af968652cd7f260d5 https://github.com/fluffy-linux/sqlite.git#refs/heads/fluffy/version-3.53.4
 )
 
 NEEDS=(
@@ -66,9 +69,12 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../sqlite-$VERSION-fluffy.patch
-    patch -Z -Np1 -i ../sqlite-$VERSION-fluffy-test.patch
-
+    CROSS="" ./configure
+    CROSS="" make amalgamation-tarball
+    mkdir autoconf-package
+    tar -xf sqlite-autoconf-$VERSION.tar.gz -C autoconf-package \
+        --strip-components=1
+    cd autoconf-package
     CROSS="" ./configure \
         --prefix=/sw/sqlite \
         --disable-static \
@@ -84,9 +90,9 @@ MAKE() {
 }
 
 CHECK() {
-    make check
+    make -C autoconf-package check
 }
 
 INSTALL() {
-    make install
+    make -C autoconf-package install
 }
