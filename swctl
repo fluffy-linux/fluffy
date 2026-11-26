@@ -2291,7 +2291,11 @@ ci_step() {
 # and on the check steps of what its build mounts, so an image is vetted
 # only after the images it was built against.  world-check depends on
 # every check step: what must wait for a vetted world (the pipeline's
-# final steps) waits for it.
+# final steps) waits for it.  When the plan holds what a system boots
+# (boot_pkgs), boot-test, after world-check, on an agent with KVM (the kvm
+# queue), fetches the vetted images from the cache and boots them
+# (boot-test.sh), with the serial console's log as an artifact.
+boot_pkgs=(linux grub init systemd util-linux)
 buildkite_pipeline() {
     if test $# -lt 1
     then
@@ -2408,6 +2412,39 @@ buildkite_pipeline() {
     if test -n "$ci"
     then
         bk_step world-check world-check true "${all_checks[@]}"
+
+        local boots=1 targets
+        for pkg in "${boot_pkgs[@]}"
+        do
+            if test -z "${pkg_ver[$pkg]:-}"
+            then
+                boots=""
+            fi
+        done
+        if test -n "$boots"
+        then
+            # Not bk_step's: a short limit, so that a wedged boot cannot
+            # hold an agent (boot-test.sh's own limit for the boot is 3
+            # minutes), the kvm queue, and the artifacts.  The images
+            # come from the cache only: without FLUFFY_CACHE_TOKEN_FILE,
+            # swctl publishes nothing.
+            targets="$(printf ' %q' "$@")"
+            echo "  - label: $(yaml_str boot-test)"
+            echo "    key: $(yaml_str boot-test)"
+            echo "    command: $(yaml_str "${boot}sudo --preserve-env=$keep,FLUFFY_CACHE_REGISTRY$env_prefix ./swctl build$targets && sudo --preserve-env=$keep$env_prefix ./boot-test.sh --out boot-test")"
+            echo "    timeout_in_minutes: 15"
+            echo "    agents:"
+            echo "      queue: $(yaml_str kvm)"
+            echo "    artifact_paths:"
+            echo "      - $(yaml_str 'boot-test/*.log')"
+            echo "      - $(yaml_str 'boot-test/grub.cfg*')"
+            echo "    retry:"
+            echo "      automatic:"
+            echo "        - exit_status: -1"
+            echo "          limit: 2"
+            echo "    depends_on:"
+            echo "      - $(yaml_str world-check)"
+        fi
     fi
 }
 
