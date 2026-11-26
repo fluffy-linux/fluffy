@@ -7,10 +7,17 @@ fi
 
 VERSION=2.25
 
+# Built straight from Fluffy's branch (our commits on upstream's v2.25
+# tag): swctl fetches the pinned commit, and the cwm4 and indent commits
+# it pins, with git.  The tag has no configure, Makefile.in, which.1 or
+# which.info, so MAKE runs cwm4's bootstrap with the autoconf and
+# automake the release tarball was made with (2.73, 1.18.1), writes
+# which.1 with indent's texinfo2man as the maintainer's makefile does,
+# and make writes which.info.
 ARCHIVES=(
-    1cb83e4f702e60b8211ab5ec4c2afbab1b1dec80209456a7d2faf7584ed225ea https://github.com/fluffy-linux/which/releases/download/v$VERSION/which-$VERSION.tar.gz
-    c001e76ac9740d5b03bf5d6aff178595ef10dd593aa4dba89790637c01baa2c3 file://which-$VERSION-fluffy-source.patch
-    cc504bfcfd8b0afd02fd8e609c738c318f7b862e14c2d39de2e1e6b2153f660e file://which-$VERSION-fluffy-test.patch
+    a157b53cd9841b747f24dc291eb403512b4a5953 https://github.com/fluffy-linux/which.git#refs/heads/fluffy/v$VERSION
+    008e8749cc5ef038ed8dbe86c24c67401af88c36 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
 )
 
 NEEDS=(
@@ -36,6 +43,7 @@ then
         patch
         sed
         tar
+        texinfo
     )
 else
     BUILD_NEEDS=(
@@ -55,16 +63,30 @@ else
         patch
         sed
         tar
+        texinfo
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../which-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../which-$VERSION-fluffy-test.patch
+source sw/autoconf.common
+source sw/automake.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    # autogen.sh, without a git repository, runs only this.
+    $CONFIG_SHELL cwm4/scripts/bootstrap.sh
+    # maintMakefile's rule (maintainer mode only).
+    gcc -g -o texinfo2man indent/man/texinfo2man.c
+    ./texinfo2man which.1.in which.texi > which.1
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/which
+    # version.texi, which the tarball ships: outside maintainer mode
+    # make doesn't write it by itself.  It dates the manual by
+    # which.texi's time, which is the release's (git gives every file the
+    # commit's).
+    touch -d '2025-04-15 12:00 UTC' which.texi
+    make stamp-vti
     make
 }
 
