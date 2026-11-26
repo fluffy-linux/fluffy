@@ -130,11 +130,24 @@ trap 'exit 143' TERM HUP
 
 section "image"
 
+# The test's grub.cfg is a fixed file, boot/grub/grub-ci.cfg (bootstrap.sh
+# copies the user's machine's): the image is made with the IDs it names,
+# the root's btrfs UUID and its partition's PARTUUID, and it must name
+# world's kernel.
+ci_cfg="$REPO/boot/grub/grub-ci.cfg"
+test -f "$ci_cfg" || die "$ci_cfg is missing"
+fs_uuid="$(awk '$1 == "search" { print $NF; exit }' "$ci_cfg")"
+part_uuid="$(sed -nE 's/.* root=PARTUUID=([0-9a-f-]+).*/\1/p' "$ci_cfg" | head -n1)"
+test -n "$fs_uuid" && test -n "$part_uuid" || die "$ci_cfg names no file system UUID or PARTUUID"
+linux_img="$(awk '$2 == "/sw/linux" { print $1; exit }' "$FLUFFY/sw/.build/fstab" 2>/dev/null || true)"
+grep -qF "loopback loop0 /@$linux_img" "$ci_cfg" \
+    || die "$ci_cfg doesn't boot world's kernel (${linux_img:-none in the fstab of $FLUFFY}); update it"
+
 # GPT: a BIOS boot partition, where grub's i386-pc core goes, and the root.
 truncate -s "$SIZE" "$IMG"
 sgdisk -o \
     -n 1:0:+1M -t 1:ef02 -c 1:bios \
-    -n 2:0:0   -t 2:8304 -c 2:fluffy \
+    -n 2:0:0   -t 2:8304 -c 2:fluffy -u "2:$part_uuid" \
     "$IMG" > /dev/null
 LOOP="$(losetup -f --show -P "$IMG")"
 udevadm settle 2>/dev/null || true
@@ -144,7 +157,7 @@ do
     sleep 0.1
 done
 test -b "${LOOP}p2" || die "${LOOP}p2 did not appear"
-mkfs.btrfs -q -f -L fluffy "${LOOP}p2"
+mkfs.btrfs -q -f -L fluffy -U "$fs_uuid" "${LOOP}p2"
 
 # The image's root is mounted inside the Fluffy root, where `swctl run`
 # (which chroots into $FLUFFY) can reach it.
@@ -174,24 +187,13 @@ cp "$FLUFFY/sw/.build/fstab" "$MNT/sw/.build/fstab"
 (cd "$REPO" && env -u BUILDKITE FLUFFY="$MNT" ./bootstrap.sh) > "$OUT/bootstrap.log" 2>&1 \
     || { cat "$OUT/bootstrap.log" >&2; die "bootstrap.sh failed on the image"; }
 cfg="$MNT/boot/grub/grub.cfg"
-test -s "$cfg" || { cat "$OUT/bootstrap.log" >&2; die "bootstrap.sh wrote no /boot/grub/grub.cfg"; }
 while read -r src _
 do
     test -f "$MNT$src" || die "/etc/fluffy/fstab names $src, which the image lacks"
 done < "$MNT/etc/fluffy/fstab"
-
-# The test's serial console: grub's terminal (last, so that it wins), and
-# the kernel's console, which systemd's getty generator starts a getty on.
-cp "$cfg" "$OUT/grub.cfg.bootstrap"
-sed -i -E 's|^( *linux \(loop0\)/.*)$|\1 console=tty0 console=ttyS0,115200|' "$cfg"
-cat >> "$cfg" << "EOF"
-
-# boot-test.sh: a serial console
-serial --unit=0 --speed=115200
-terminal_input serial console
-terminal_output serial console
-set timeout=1
-EOF
+mkdir -p "$MNT/boot/grub"
+test ! -f "$cfg" || cp "$cfg" "$OUT/grub.cfg.bootstrap"
+cp "$ci_cfg" "$cfg"
 cp "$cfg" "$OUT/grub.cfg"
 
 say "installing Fluffy's grub on $LOOP"
