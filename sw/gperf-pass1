@@ -8,9 +8,12 @@ VERSION=3.3
 # makes them with gperf.  The final gperf comes after gettext and is
 # built with the final bash, grep and sed, which need gettext: this pass
 # breaks that cycle, built with the temporary tools.  Beyond LFS, which
-# builds gettext from its release tarball.
+# builds gettext from its release tarball.  Built straight from Fluffy's
+# branch, as gperf is.
 ARCHIVES=(
-    fd87e0aba7e43ae054837afd6cd4db03a3f2693deb3619085e6ed9d8d9604ad8 https://github.com/fluffy-linux/gperf/releases/download/v$VERSION/gperf-$VERSION.tar.gz
+    b51df51f93514108844029599d23d774e591aad8 https://github.com/fluffy-linux/gperf.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    c47d100eab0ff3b64e16811f6b3925b233085497 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17
 )
 
 NEEDS=(
@@ -36,16 +39,30 @@ BUILD_NEEDS=(
     make-pass1
     sed-pass1
     tar-pass1
+    texinfo-pass1
     xz-pass1
 )
 
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    # autogen.sh runs make -f Makefile.devel, whose rules run autoconf
+    # and autoheader in the same directories: not in parallel.
+    MAKEFLAGS= $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gperf
-    make
+    gperf_make
+}
+
+# As gperf's: the manuals dated by the release; no PDF.
+gperf_make() {
+    SOURCE_DATE_EPOCH=1744761600 make TEXI2PDF=: "$@"
 }
 
 INSTALL() {
-    make install
+    gperf_make install
 }

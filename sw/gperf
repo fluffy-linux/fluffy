@@ -7,9 +7,17 @@ fi
 
 VERSION=3.3
 
+# Built straight from Fluffy's branch (our commits on upstream's v3.3
+# tag): swctl fetches the pinned commit, and the gnulib commit it pins,
+# with git.  The tag has no configure, gnulib files or built manuals, so
+# MAKE runs autogen.sh with the autoconf and automake the release
+# tarball was made with (2.72, 1.17), and make builds the man page, the
+# info and the HTML manual with the help2man and texi2html gperf carries
+# and Fluffy's makeinfo.
 ARCHIVES=(
-    fd87e0aba7e43ae054837afd6cd4db03a3f2693deb3619085e6ed9d8d9604ad8 https://github.com/fluffy-linux/gperf/releases/download/v$VERSION/gperf-$VERSION.tar.gz
-    00012bcccd09a2a2a3ade32e8a84c69952d26f1753425adcc196c5164399675c file://gperf-$VERSION-fluffy-test.patch
+    b51df51f93514108844029599d23d774e591aad8 https://github.com/fluffy-linux/gperf.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    c47d100eab0ff3b64e16811f6b3925b233085497 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17
 )
 
 NEEDS=(
@@ -38,6 +46,7 @@ then
         patch-pass1
         sed
         tar-pass1
+        texinfo-pass1
         xz
     )
 else
@@ -57,25 +66,42 @@ else
         linux-headers
         make
         patch
+        perl
         sed
         tar
+        texinfo
         xz
     )
 fi
 
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
-    patch -Z -Np1 -i ../gperf-$VERSION-fluffy-test.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    # autogen.sh runs make -f Makefile.devel, whose rules run autoconf
+    # and autoheader in the same directories: not in parallel.
+    MAKEFLAGS= $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gperf \
         --docdir=/sw/gperf/share/doc/gperf-$VERSION
-    make
+    gperf_make
+}
+
+# The man page and the HTML manual are dated as the release tarball's
+# are (16 April 2025, four days before its v3.3 tag); the PDF manual,
+# which needs TeX, is never installed
+# (doc's check target remakes all the manuals, so CHECK skips it too).
+gperf_make() {
+    SOURCE_DATE_EPOCH=1744761600 make TEXI2PDF=: "$@"
 }
 
 CHECK() {
-    make check
+    gperf_make check
 }
 
 INSTALL() {
-    make install
+    gperf_make install
 }
