@@ -7,9 +7,18 @@ fi
 
 VERSION=4.21.0
 
+# Built straight from Fluffy's branch (our commits on upstream's v4.21.0
+# tag): swctl fetches the pinned commit, and the gnulib commit it pins,
+# with git.  The tag has no configure, Makefile.in, gnulib files, ASN.1
+# parser or manuals, so MAKE runs gnulib's bootstrap with the autoconf,
+# automake and libtool the release tarball was made with (2.72, 1.17,
+# 2.4.7), and make writes the parser with bison, the man pages with
+# help2man and gdoc, and the manual with makeinfo.
 ARCHIVES=(
-    1d8a444a223cc5464240777346e125de51d8e6abf0b8bac742ac84609167dc87 https://github.com/fluffy-linux/libtasn1/releases/download/v$VERSION/libtasn1-$VERSION.tar.gz
-    7b26ae0d835b6bb1d1ca18c62c4d6767e733df4486313f9bed1dca3078c89982 file://libtasn1-$VERSION-fluffy-test.patch
+    ca76ebd0c0019cd34168446b9f2a655b0cb9254b https://github.com/fluffy-linux/libtasn1.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    c47d100eab0ff3b64e16811f6b3925b233085497 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17
+    12c01761b8567defd3d8060feb87a216ce91bef7 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.7
 )
 
 NEEDS=(
@@ -30,12 +39,15 @@ then
         glibc
         grep
         gzip
+        help2man
         libgcc
         linux-headers
         make
         patch
+        perl
         sed
         tar
+        texinfo
     )
 else
     BUILD_NEEDS=(
@@ -50,21 +62,35 @@ else
         glibc
         grep
         gzip
+        help2man
         libgcc
         linux-headers
         make
         patch
+        perl
         sed
         tar
+        texinfo
     )
 fi
 
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
-    patch -Z -Np1 -i ../libtasn1-$VERSION-fluffy-test.patch
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
+    # configure dates the man pages and the manual by the last commit, when
+    # it can ask git: the release's, the v4.21.0 tag (2026-01-08).
+    SOURCETIME_HELP2MAN=1767874762 \
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/libtasn1 \
         --disable-static
+    TZ=UTC0 touch -m -t 202601081219.22 NEWS.md doc/libtasn1.texi
     make
 }
 
