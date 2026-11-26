@@ -374,6 +374,16 @@ else
     then
         rm -f "$FLUFFY/boot/grub/grub.cfg.new"
     else
+        # The grub.cfg it replaces is kept, as grub.cfg.old: a machine that
+        # booted with it can be put back if the new one doesn't boot.
+        if test -f "$FLUFFY/boot/grub/grub.cfg"
+        then
+            cp -fv "$FLUFFY/boot/grub/grub.cfg" "$FLUFFY/boot/grub/grub.cfg.old"
+            if test "${BUILDKITE:-}" != true
+            then
+                echo "bootstrap: /boot/grub/grub.cfg changed; the previous one is grub.cfg.old (diff them before rebooting)" >&2
+            fi
+        fi
         mv -fv "$FLUFFY/boot/grub/grub.cfg.new" "$FLUFFY/boot/grub/grub.cfg"
     fi
 fi
