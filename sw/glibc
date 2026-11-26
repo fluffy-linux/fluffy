@@ -109,7 +109,11 @@ CHECK() {
 INSTALL() {
     cd build
     make install
-    make localedata/install-locales
+    # Serially: in parallel, the locales go into locale-archive in a
+    # different order each time, and so does its layout, so glibc's image
+    # never came out the same twice (the same 886 locales, ~78 MB of
+    # differing bytes).
+    make -j1 localedata/install-locales
 
     mkdir -p $DESTDIR/sw/glibc/etc
     install -m 644 ../../glibc.passwd $DESTDIR/sw/glibc/etc/passwd
