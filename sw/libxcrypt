@@ -7,10 +7,17 @@ fi
 
 VERSION=4.5.2
 
+# Built straight from Fluffy's branch (our commits on upstream's v4.5.2
+# tag, LFS's glibc 2.43 fix among them): swctl fetches the pinned commit
+# with git.  The tag has no configure or Makefile.in, so MAKE runs
+# autogen.sh, as upstream makes its release tarball: with the autoconf,
+# automake and libtool the release was made with (2.72, 1.18.1, 2.5.4),
+# from their Fluffy branches.
 ARCHIVES=(
-    71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071 https://github.com/fluffy-linux/libxcrypt/releases/download/v$VERSION/libxcrypt-$VERSION.tar.xz
-    0a0c1ff0c61708f89d3aec4d334345aac48b50d821b5e6c795ffd15f1774b44d file://libxcrypt-$VERSION-fluffy-source.patch
-    95c5ec81dd64182e87f5e9c0e7cb0c5b0dcada490e7d77b24bc50db45f6317ca file://libxcrypt-$VERSION-fluffy-test.patch
+    7a0264c284b328c851c8b90318b7efee007ff66e https://github.com/fluffy-linux/libxcrypt.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    2b62947fd566e11dedf3c2c7e252f05a8937d54c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(
@@ -56,11 +63,16 @@ else
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../libxcrypt-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../libxcrypt-$VERSION-fluffy-test.patch
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/libxcrypt \
         --enable-hashes=strong,glibc \
