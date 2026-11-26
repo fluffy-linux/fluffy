@@ -37,6 +37,7 @@ NEEDS=(
     gcc
     gdbm
     gettext
+    gettext-spit
     git
     glibc
     gmp

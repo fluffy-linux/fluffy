@@ -136,8 +136,13 @@ CHECK() {
     make check
 }
 
+# Beyond LFS: spit, a Python script, and its pages are left out; they are
+# sw/gettext-spit, which NEEDS python (gettext can't: see there).
 INSTALL() {
     make install
     chmod -v 0755 $DESTDIR/sw/gettext/lib/preloadable_libintl.so
     rm -fv $DESTDIR/sw/gettext/lib/lib*.la
+    rm -v $DESTDIR/sw/gettext/bin/spit \
+        $DESTDIR/sw/gettext/share/man/man1/spit.1 \
+        $DESTDIR/sw/gettext/share/doc/gettext-$VERSION/spit.1.html
 }

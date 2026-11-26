@@ -1,0 +1,93 @@
+if test -v CROSS
+then
+    ON=cross-build
+else
+    ON=fluffy-build
+fi
+
+VERSION=1.0
+
+# spit, gettext's program that asks a language model to translate PO
+# messages, with its man page and its HTML, as gettext's own build makes
+# and installs them; gettext itself leaves them out.  Beyond LFS, whose
+# gettext installs spit: it is a Python script (#! /sw/python/bin/python3),
+# so it is its own package, which NEEDS python.  gettext can't: grep,
+# gdbm, expat and others BUILD_NEED gettext, and python's build reaches
+# them.  Nothing builds with spit, so here python is no cycle.
+#
+# From the same commit of Fluffy's gettext branch as sw/gettext, set up
+# as its MAKE sets it up (autopull.sh, autogen.sh and configure, with the
+# same autotools); make then makes only spit and its pages.
+ARCHIVES=(
+    83f7f5a3e73d40559dfce09dcb78cc9ef4bf8f87 https://github.com/fluffy-linux/gettext.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    8e25f43f9ecbcfbbc48762662d46fa54164876af https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.6.0
+)
+
+NEEDS=(
+    python
+)
+
+BUILD_NEEDS=(
+    bash
+    binutils
+    coreutils
+    diffutils
+    findutils
+    gawk
+    gcc
+    gettext
+    glibc
+    grep
+    groff
+    gzip
+    help2man
+    libgcc
+    linux-headers
+    make
+    ncurses
+    patch
+    perl
+    python
+    sed
+    tar
+    xz
+)
+
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    export GNULIB_SRCDIR=$PWD/gnulib
+    $CONFIG_SHELL ./autopull.sh
+    $CONFIG_SHELL ./autogen.sh
+    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+        --prefix=/sw/gettext-spit \
+        --disable-static \
+        --docdir=/sw/gettext-spit/share/doc/gettext-$VERSION
+    make -C gettext-tools/src spit
+    # The man page, dated by the release as sw/gettext dates it, and its
+    # HTML.
+    SOURCE_DATE_EPOCH=1769645591 make -C gettext-tools/man \
+        HELP2MAN='$(PERL) -w -- '"$(command -v help2man)" spit.1 spit.1.html
+}
+
+# gettext's own test of spit: that it runs, by its #! line.
+CHECK() {
+    make -C gettext-tools/tests check TESTS=spit-1 check_PROGRAMS= \
+        check_LTLIBRARIES=
+}
+
+INSTALL() {
+    install -vDm755 gettext-tools/src/spit.py $DESTDIR/sw/gettext-spit/bin/spit
+    install -vDm644 gettext-tools/man/spit.1 \
+        $DESTDIR/sw/gettext-spit/share/man/man1/spit.1
+    install -vDm644 gettext-tools/man/spit.1.html \
+        $DESTDIR/sw/gettext-spit/share/doc/gettext-$VERSION/spit.1.html
+}
