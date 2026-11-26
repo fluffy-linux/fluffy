@@ -7,9 +7,16 @@ fi
 
 VERSION=4.2.2
 
+# Built straight from Fluffy's branch (our commits on upstream's 4.2.2
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure or Makefile.in, so MAKE runs autogen.sh, as upstream makes
+# its release tarball: with the autoconf, automake and libtool the
+# release was made with (2.72, 1.17, 2.5.4), from their Fluffy branches.
 ARCHIVES=(
-    b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01 https://github.com/fluffy-linux/mpfr/releases/download/$VERSION/mpfr-$VERSION.tar.xz
-    722260587205e6697cd7c55ee98b8eb648f46eadc560b74e5f1c76169e77c5f6 file://mpfr-$VERSION-fluffy-source.patch
+    c330c0458216121cb5c1a25fbf4e084f2ef2c502 https://github.com/fluffy-linux/mpfr.git#refs/heads/fluffy/$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    c47d100eab0ff3b64e16811f6b3925b233085497 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17
+    2b62947fd566e11dedf3c2c7e252f05a8937d54c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(
@@ -60,10 +67,16 @@ else
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../mpfr-$VERSION-fluffy-source.patch
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/mpfr \
         --disable-static \
