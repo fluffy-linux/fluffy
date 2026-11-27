@@ -83,11 +83,16 @@ MAKE() {
     automake_build
     libtool_build
     autoreconf -fi
+    # Not LFS's --with-gcc-arch=native, which compiles for the building
+    # machine's CPU (AVX here), so an image from the binary cache might not
+    # run on another and differs by machine; --without-gcc-arch is LFS's
+    # own alternative, generic x86-64 (the user's ruling, 2026-11-27, as
+    # for gmp).
     $CONFIG_SHELL ./configure \
         --prefix=/sw/libffi \
         --disable-static \
         --disable-multi-os-directory \
-        --with-gcc-arch=native
+        --without-gcc-arch
     make
 }
 
