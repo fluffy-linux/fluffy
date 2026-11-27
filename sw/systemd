@@ -206,6 +206,22 @@ ID=fluffy
 PRETTY_NAME="Fluffy Linux"
 EOF
 
+    # Not LFS's: PID 1 reacts to at most 5 mount table changes a second
+    # (src/core/mount.c's rate limit), and while it is limited every mount
+    # job waits, even one whose condition fails.  Early boot makes about 13-16
+    # (API file systems, remount-fs, a credentials tmpfs per unit with
+    # ImportCredential=), and with no initrd they all land in PID 1's first
+    # second: binfmt_misc's mount, which sandboxed services trigger, waited
+    # about 0.9 s, and userdbd, udevd and resolved behind it (upstream issue
+    # #28264).  The documented knob (docs/ENVIRONMENT.md) raises the burst;
+    # at 20 it never triggered, and userspace boot went from 2.21 s to about
+    # 1.33 s.  The user's ruling, 2026-11-27.
+    mkdir -pv $DESTDIR/sw/systemd/lib/systemd/system.conf.d
+    cat > $DESTDIR/sw/systemd/lib/systemd/system.conf.d/50-mount-rate-limit.conf << "EOF"
+[Manager]
+ManagerEnvironment=SYSTEMD_DEFAULT_MOUNT_RATE_LIMIT_BURST=20
+EOF
+
     mkdir -pv $DESTDIR/sw/systemd/lib/systemd/system-preset
     mkdir -pv $DESTDIR/sw/systemd/lib/systemd/user-preset
     rm -fv $DESTDIR/sw/systemd/lib/systemd/system-preset/*.preset
