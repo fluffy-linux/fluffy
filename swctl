@@ -62,6 +62,19 @@ pkg_log() {
     fi
 }
 
+# bk_now; bk_took MIN LABEL START: on Buildkite, log "LABEL: N.Ns", the time
+# since START (an earlier bk_now), when it is at least MIN tenths of a
+# second, so a step's log shows where its PREPARE spends its time.  The
+# timed command runs between the two as usual, so errexit still stops on
+# its failures.  Bash's own clock (EPOCHREALTIME): PREPARE has only
+# cross-build's tools.
+bk_now() { local t="${EPOCHREALTIME/[.,]/}"; echo "${t#0}"; }
+bk_took() {
+    (( bk_log )) || return 0
+    local tenths=$(( ($(bk_now) - $3) / 100000 ))
+    (( tenths < $1 )) || log "$2: $(( tenths / 10 )).$(( tenths % 10 ))s"
+}
+
 fatal() {
     # On Buildkite, open the section the failure is in (see bk_log).
     test "${bk_log:-0}" != 1 || log "^^^ +++"
@@ -1350,7 +1363,10 @@ build_single_pkg() {
                     if is_git_url "$url"
                     then
                         validate_pkg_name "${archives[i/2]}"
+                        local t_fetch
+                        t_fetch="$(bk_now)"
                         fetch_git "$sha256" "$url"
+                        bk_took 3 "git fetch ${url%%.git#*}" "$t_fetch"
                         continue
                     fi
                     filename="${url##*/}"
@@ -1364,8 +1380,11 @@ build_single_pkg() {
                         [[ "$url" == file://* && "$url" != file:///* ]] && url="file://$PWD/sw/${url#file://}"
                         # Retried as the cache's requests are: a release
                         # download's 504 failed a CI step (build #74, grub).
+                        local t_dl
+                        t_dl="$(bk_now)"
                         curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
                             --proto '=https,http,file' --output "$tmp_dl" -- "$url"
+                        bk_took 3 "download $filename" "$t_dl"
                         verify_sha256 "$tmp_dl" "$sha256" "$filename"
                         mv -f "$tmp_dl" "$cached_file"
                     else
@@ -1394,14 +1413,23 @@ build_single_pkg() {
                         if (( idx == 0 ))
                         then
                             mkdir "$pkg-$VERSION"
+                            local t_un
+                            t_un="$(bk_now)"
                             extract_git "${ARCHIVES[2*idx+1]%%#*}" "${ARCHIVES[2*idx]}" "$pkg-$VERSION"
+                            bk_took 3 "unpack ${archive%.tar}" "$t_un"
                         else
+                            local t_un
+                            t_un="$(bk_now)"
                             tar_git "${ARCHIVES[2*idx+1]%%#*}" "${ARCHIVES[2*idx]}" "$archive" "${archive%.tar}"
+                            bk_took 3 "tar ${archive%.tar}" "$t_un"
                         fi
                     elif (( idx == 0 )) && [[ "$archive" == *.tar.* ]]
                     then
                         mkdir "$pkg-$VERSION"
+                        local t_un
+                        t_un="$(bk_now)"
                         tar --no-same-owner --no-same-permissions --strip-components=1 -C "$pkg-$VERSION" -xf "$work_dir/archives/$archive"
+                        bk_took 3 "unpack $archive" "$t_un"
                     else
                         cp -- "$work_dir/archives/$archive" .
                     fi
@@ -2171,8 +2199,13 @@ ci_step() {
     local -a order=()
     local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=() pkg_has_check=()
     local -A pkg_recipe_chk=() pkg_tag=() pkg_check_step=() reach=()
+    local t_prep
+    t_prep="$(bk_now)"
     plan_pkgs build "$pkg"
+    bk_took 0 "plan" "$t_prep"
+    t_prep="$(bk_now)"
     ci_resolve "$pkg"
+    bk_took 0 "cache lookups" "$t_prep"
     plan_check_steps
 
     local chk="${pkg_recipe_chk[$pkg]}" tag="${pkg_tag[$pkg]}" vetted tree tree_file=/sw/.build/tree.squashfs d
@@ -2187,13 +2220,19 @@ ci_step() {
             pkg_log "CACHED($tag)"
             return 0
         fi
+        local fetch_start n_deps=0
+        fetch_start="$(bk_now)"
         for d in "${order[@]}"
         do
             if test -n "${reach[$d]:-}"
             then
+                t_prep="$(bk_now)"
                 cache_fetch "$d" "${pkg_recipe_chk[$d]}" "${pkg_img_chk[$d]}"
+                bk_took 5 "image $d" "$t_prep"
+                n_deps=$(( n_deps + 1 ))
             fi
         done
+        (( ! bk_log )) || log "images to mount, $n_deps: $(( ($(bk_now) - fetch_start) / 1000000 ))s"
         rm -f "$tree_file"
         export FLUFFY_RECIPE_CHECKSUM="$chk"
         build_single_pkg "$pkg"
@@ -2256,13 +2295,19 @@ ci_step() {
             *) fatal "cache: could not look up $tree in $FLUFFY_CACHE_REGISTRY" ;;
         esac
         cache_blob "$tree_chk" "$tree_file" "$tree"
+        local fetch_start n_deps=0
+        fetch_start="$(bk_now)"
         for d in "${order[@]}"
         do
             if test -n "${reach[$d]:-}"
             then
+                t_prep="$(bk_now)"
                 cache_fetch "$d" "${pkg_recipe_chk[$d]}" "${pkg_img_chk[$d]}"
+                bk_took 5 "image $d" "$t_prep"
+                n_deps=$(( n_deps + 1 ))
             fi
         done
+        (( ! bk_log )) || log "images to mount, $n_deps: $(( ($(bk_now) - fetch_start) / 1000000 ))s"
         build_single_pkg "$pkg"
         rm -f "$tree_file"
     fi
