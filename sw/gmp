@@ -7,9 +7,19 @@ fi
 
 VERSION=6.3.0
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# gmp-6.3.0 tag, LFS's gcc 15 edit among them): swctl fetches the pinned
+# commit with git.  The tag has no configure, Makefile.in or gmp.info,
+# so MAKE regenerates them as the tag's .bootstrap does, with the
+# autoconf, automake and libtool the release was made with (2.69, 1.15,
+# 2.4.6), from their Fluffy branches.  make also writes demos/calc's
+# parser and scanner, which the tarball ships, with bison and flex (the
+# demos aren't installed).
 ARCHIVES=(
-    a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898 https://github.com/fluffy-linux/gmp/releases/download/gmp-$VERSION/gmp-$VERSION.tar.xz
-    87441888f5bb1b30afd1fb6f32693e4c92786de47f98d3efb79e46996c7ce822 file://gmp-$VERSION-fluffy-source.patch
+    b014758f355f3d1ec645cda0acdb09811a16e3d7 https://github.com/fluffy-linux/gmp.git#refs/heads/fluffy/gmp-$VERSION
+    48eccc1ad68d408db760ce345e08eda16b694c52 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.69
+    d134bdcb732a6f097d9553a0d2a311d66fbd834c https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.15
+    963b66efea03cad6818121235016785e051d14c3 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.6
 )
 
 if test -v CROSS
@@ -32,9 +42,11 @@ then
     BUILD_NEEDS=(
         bash-pass1
         binutils
+        bison-pass1
         coreutils-pass1
         diffutils-pass1
         findutils-pass1
+        flex
         gawk-pass1
         gcc-pass2
         glibc
@@ -53,9 +65,11 @@ else
     BUILD_NEEDS=(
         bash
         binutils
+        bison
         coreutils
         diffutils
         findutils
+        flex
         gawk
         gcc
         glibc
@@ -72,15 +86,26 @@ else
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../gmp-$VERSION-fluffy-source.patch
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    # .bootstrap, without its doc/version.texi stub: make writes that.
+    # Not -f: gmp's own config.guess, which picks the CPU, stays.
+    autoreconf -i
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gmp \
         --enable-cxx \
         --disable-static \
         --docdir=/sw/gmp/share/doc/gmp-$VERSION
+    # doc/version.texi, which the tarball ships: outside maintainer mode
+    # make doesn't write it by itself.
+    make -C doc stamp-vti
     make
     make html
 }

@@ -38,7 +38,13 @@ automake_build() {
     tar -xf ../automake.tar -C .autotools-build
     (
         cd .autotools-build/automake
-        ${CONFIG_SHELL:-/bin/sh} ./bootstrap
+        # automake 1.15 and older call it bootstrap.sh.
+        if test -e bootstrap
+        then
+            ${CONFIG_SHELL:-/bin/sh} ./bootstrap
+        else
+            ${CONFIG_SHELL:-/bin/sh} ./bootstrap.sh
+        fi
         ${CONFIG_SHELL:-/bin/sh} ./configure --prefix="$prefix"
         make man1_MANS= INFO_DEPS= dist_doc_DATA=
         make man1_MANS= INFO_DEPS= dist_doc_DATA= DESTDIR= install
