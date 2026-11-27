@@ -1,6 +1,13 @@
 env:
   FLUFFY: /mnt/ci
   CROSS: "1"
+  # Every step on GitHub-hosted runners (the gha queue), the plan's and
+  # those swctl generates.  Unset, and without the agents: below, CI runs
+  # on the GCP agents (the cluster's default queue).
+  FLUFFY_CI_QUEUE: gha
+
+agents:
+  queue: gha
 
 steps:
   - label: "plan"
