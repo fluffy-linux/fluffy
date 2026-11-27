@@ -76,6 +76,13 @@ else
 fi
 
 MAKE() {
+    # The kernel's reproducible-builds settings: otherwise the version
+    # string records the build's user, host and time, and the built-in
+    # initramfs that time too.
+    export KBUILD_BUILD_USER=fluffy
+    export KBUILD_BUILD_HOST=fluffy
+    export KBUILD_BUILD_TIMESTAMP="$(date -u -d @$SOURCE_DATE_EPOCH)"
+
     cp -v ../config-$VERSION .config
 
     make olddefconfig
