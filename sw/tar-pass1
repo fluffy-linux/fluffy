@@ -2,9 +2,17 @@ ON=host-build
 
 VERSION=1.35
 
+# Built straight from Fluffy's branch, as tar is: the host's autotools
+# build the ones tar's release tarball was made with, and bootstrap runs
+# the host's autopoint.  The branch's xexec fix matters here: tar runs
+# compressors (gzip, xz, ...) through /bin/sh -c, which Fluffy doesn't
+# have, so without it tar-pass1 can't create or extract a compressed
+# archive inside the root (binutils' gprofng builds its examples.tar.gz
+# at install).
 ARCHIVES=(
-    4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16 https://github.com/fluffy-linux/tar/releases/download/v$VERSION/tar-$VERSION.tar.xz
-    754d6eda1c3e8b407d858249ae58e8fdba1def25131dc2f81a93ed10cb1594b3 file://tar-$VERSION-fluffy-source.patch
+    eba7031194ccab8337e67e64c6217d1712eb98fa https://github.com/fluffy-linux/tar.git#refs/heads/fluffy/v$VERSION
+    6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )
 
 NEEDS=(
@@ -17,17 +25,19 @@ BUILD_NEEDS=(
     linux-headers
 )
 
-MAKE() {
-    # tar runs compressors (gzip, xz, ...) through /bin/sh -c, which Fluffy
-    # doesn't have: without this, tar-pass1 can't create or extract a
-    # compressed archive inside the root (binutils' gprofng builds its
-    # examples.tar.gz at install).  The same source patch as sw/tar.
-    patch -Z -Np1 -i ../tar-$VERSION-fluffy-source.patch
+source sw/autoconf.common
+source sw/automake.common
 
+MAKE() {
+    autoconf_build
+    automake_build
+    ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/tar \
         --host=$FLUFFY_TGT \
         --build=$(build-aux/config.guess)
+    # The translations as make dist merges them with tar.pot.
+    make -C po update-po
     make
 }
 

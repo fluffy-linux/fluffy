@@ -7,10 +7,16 @@ fi
 
 VERSION=1.35
 
+# Built straight from Fluffy's branch (our commits on upstream's
+# v1.35 tag, LFS's acl fix among them): swctl fetches the pinned
+# commit, and the gnulib, paxutils and translationproject commits it
+# pins, with git.  The tag has no configure, Makefile.in or gnulib
+# files, so MAKE bootstraps it, and its translations come from the
+# Translation Project's files, merged as the release's make dist did.
 ARCHIVES=(
-    4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16 https://github.com/fluffy-linux/tar/releases/download/v$VERSION/tar-$VERSION.tar.xz
-    51cadccfcb2f29cfdb4ec18015360100aa167179a72ece040a6a8612aeec5081 file://tar-$VERSION-acl_fix-1.patch
-    754d6eda1c3e8b407d858249ae58e8fdba1def25131dc2f81a93ed10cb1594b3 file://tar-$VERSION-fluffy-source.patch
+    eba7031194ccab8337e67e64c6217d1712eb98fa https://github.com/fluffy-linux/tar.git#refs/heads/fluffy/v$VERSION
+    6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )
 
 NEEDS=(
@@ -24,6 +30,7 @@ then
         acl
         bash
         binutils
+        bison
         bzip2
         coreutils
         diffutils
@@ -38,8 +45,10 @@ then
         linux-headers
         make
         patch
+        perl
         sed
         tar-pass1
+        texinfo
         xz
         zstd
     )
@@ -48,6 +57,7 @@ else
         acl
         bash
         binutils
+        bison
         bzip2
         coreutils
         diffutils
@@ -62,20 +72,33 @@ else
         linux-headers
         make
         patch
+        perl
         sed
         tar
+        texinfo
         xz
         zstd
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../tar-$VERSION-acl_fix-1.patch
-    patch -Z -Np1 -i ../tar-$VERSION-fluffy-source.patch
+# Bootstrapped with the autotools tar's release tarball was made with
+# (autoconf 2.71, automake 1.16.5).  gettext gives bootstrap autopoint,
+# and the build xgettext, msgmerge and msgfmt; bison writes gnulib's
+# parse-datetime.c, which the release tarball ships made.
+source sw/autoconf.common
+source sw/automake.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     FORCE_UNSAFE_CONFIGURE=1 $CONFIG_SHELL ./configure \
         --prefix=/sw/tar
+    # The translations as make dist merges them with tar.pot.
+    make -C po update-po
     make
 }
 
