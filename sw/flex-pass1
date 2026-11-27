@@ -1,0 +1,66 @@
+ON=host-build
+
+VERSION=2.6.4
+
+# Beyond LFS, which builds flex from its release tarball: flex's
+# scanner, src/scan.l, is compiled by a flex, and the release tarball
+# ships it compiled (scan.c); built from git, the final flex needs a
+# flex to build with.  This one is built in host-build with the host's
+# flex, bison, autopoint, perl, help2man and makeinfo, from the same
+# branch as sw/flex, and cross-built for Fluffy, as the other host-build
+# pass1s are; sw/flex builds with it.
+ARCHIVES=(
+    ab49343b08c933e32de8de78132649f9560a3727 https://github.com/fluffy-linux/flex.git#refs/heads/fluffy/v$VERSION
+    48eccc1ad68d408db760ce345e08eda16b694c52 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.69
+    d134bdcb732a6f097d9553a0d2a311d66fbd834c https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.15
+    963b66efea03cad6818121235016785e051d14c3 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.6
+)
+
+NEEDS=(
+    glibc-pass1
+    m4-pass1
+)
+
+BUILD_NEEDS=(
+    gcc-pass1
+    glibc-pass1
+    linux-headers
+)
+
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
+MAKE() {
+    # libtool 2.4.6's bootstrap needs bash (the host's /bin/sh may be
+    # dash).
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    ./autogen.sh
+    # Configured as a native build: the flex it builds runs here (the
+    # root's glibc-pass1 is mounted), and make runs it for its own
+    # scanner and the man page.  The m4 that flex runs is the root's:
+    # configure, here on the host, would find and try the host's.  No
+    # catalogs: builds run in the POSIX locale, and the host's xgettext
+    # would date the en@quot ones by the clock.
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
+        --prefix=/sw/flex \
+        --disable-static \
+        --disable-nls \
+        --docdir=/sw/flex/share/doc/flex-$VERSION \
+        --host=$FLUFFY_TGT \
+        --build=$FLUFFY_TGT \
+        ac_cv_path_M4=/sw/m4/bin/m4
+    # While make builds the skeleton (mkskel.sh, with $(m4)) and runs that
+    # flex for its own scanner and the host's bison for its parser, they
+    # run the host's m4 ($M4 overrides the configured one; given on make's
+    # command line, so the Makefile's doesn't).
+    make M4="$(command -v m4)" m4="$(command -v m4)"
+}
+
+INSTALL() {
+    make install
+    ln -sv flex $DESTDIR/sw/flex/bin/lex
+}

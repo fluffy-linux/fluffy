@@ -7,8 +7,19 @@ fi
 
 VERSION=2.6.4
 
+# Built straight from Fluffy's branch (upstream's v2.6.4 tag): swctl
+# fetches the pinned commit with git.  The tag has no configure,
+# Makefile.in, scanner (src/scan.c), parser (src/parse.c) or built
+# manuals, so MAKE runs autogen.sh with the autoconf, automake and
+# libtool the release was made with (2.69, 1.15, 2.4.6), from their
+# Fluffy branches, and gettext's autopoint; make writes the scanner with
+# flex-pass1, the parser with bison, the man page with help2man and the
+# manual with makeinfo.
 ARCHIVES=(
-    e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995 https://github.com/fluffy-linux/flex/releases/download/v$VERSION/flex-$VERSION.tar.gz
+    ab49343b08c933e32de8de78132649f9560a3727 https://github.com/fluffy-linux/flex.git#refs/heads/fluffy/v$VERSION
+    48eccc1ad68d408db760ce345e08eda16b694c52 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.69
+    d134bdcb732a6f097d9553a0d2a311d66fbd834c https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.15
+    963b66efea03cad6818121235016785e051d14c3 https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.4.6
 )
 
 NEEDS=(
@@ -25,11 +36,14 @@ then
         coreutils-pass1
         diffutils-pass1
         findutils-pass1
+        flex-pass1
         gawk-pass1
         gcc-pass2
+        gettext-pass1
         glibc
         grep-pass1
         gzip-pass1
+        help2man-pass1
         libgcc
         linux-headers
         m4
@@ -37,6 +51,7 @@ then
         patch-pass1
         sed-pass1
         tar-pass1
+        texinfo-pass1
     )
 else
     BUILD_NEEDS=(
@@ -46,11 +61,14 @@ else
         coreutils
         diffutils
         findutils
+        flex
         gawk
         gcc
+        gettext
         glibc
         grep
         gzip
+        help2man
         libgcc
         linux-headers
         m4
@@ -58,11 +76,22 @@ else
         patch
         sed
         tar
+        texinfo
     )
 fi
 
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/flex \
         --disable-static \
