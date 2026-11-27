@@ -7,11 +7,12 @@ VERSION=1.24.1
 # as the release did.  The final groff is built with the final texinfo,
 # bison and perl, and texinfo needs gettext: this pass breaks that
 # cycle, built with the temporary tools.  Beyond LFS, which builds
-# gettext from its release tarball.
+# gettext from its release tarball.  Built straight from Fluffy's
+# branch, as groff is.
 ARCHIVES=(
-    74e2819795b6aff431aeac983d63a9c8968eeaba2a2eba7df8ba4c7b41e7cfd8 https://github.com/fluffy-linux/groff/releases/download/$VERSION/groff-$VERSION.tar.gz
-    7b2160654b45f201501b6240c5c912fb91323fccacb2b97dd2287e8b44c152c5 file://groff-$VERSION-fluffy-shell.patch
-    d0df217d5e68e13aed942a8646837a66e1cc9a72b0c1773b7c71636518b6ca49 file://groff-$VERSION-fluffy-source.patch
+    e50939decf593b1a898144bc447b63b4024a1b36 https://github.com/fluffy-linux/groff.git#refs/heads/fluffy/$VERSION
+    48eccc1ad68d408db760ce345e08eda16b694c52 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.69
+    9d78c9a5e6180fb86ad77f3e6b4e82403bc86da6 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.3
 )
 
 NEEDS=(
@@ -39,17 +40,22 @@ BUILD_NEEDS=(
     make-pass1
     patch-pass1
     perl-pass1
+    pkgconf-pass1
     sed-pass1
     tar-pass1
     texinfo-pass1
     xz-pass1
 )
 
-MAKE() {
-    patch -Z -Np1 -i ../groff-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i ../groff-$VERSION-fluffy-source.patch
+source sw/autoconf.common
+source sw/automake.common
 
-    PAGE=letter ./configure \
+MAKE() {
+    export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
+    PAGE=letter $CONFIG_SHELL ./configure \
         --prefix=/sw/groff
     make -j1
 }
