@@ -7,9 +7,18 @@ fi
 
 VERSION=23.7
 
+# Built straight from Fluffy's branch (our commits on upstream's v23.7
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure, Makefile.in, gettext files or translated man pages, so MAKE
+# runs autogen.sh, as upstream makes its release tarball, with the
+# autoconf and automake the release was made with (2.71, 1.16.5), from
+# their Fluffy branches, and gettext's autopoint; make writes the
+# translated man pages with po4a, run from its git tree.
 ARCHIVES=(
-    58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327 https://github.com/fluffy-linux/psmisc/releases/download/v$VERSION/psmisc-$VERSION.tar.xz
-    6e8008deb93c7fcb54ef9baa5156893d2c6655d301316a7d1ff53c3985d9a971 file://psmisc-$VERSION-fluffy-test.patch
+    17eeffd3a35d920f500959be624c3b82c938876a https://github.com/fluffy-linux/psmisc.git#refs/heads/fluffy/v$VERSION
+    6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
+    5d4c70797ee716aefe259fb57bb9c9c416fd2782 https://github.com/fluffy-linux/po4a.git#refs/heads/fluffy/v0.74
 )
 
 NEEDS=(
@@ -39,6 +48,7 @@ then
         patch-pass1
         sed-pass1
         tcl
+        xz-pass1
     )
 else
     BUILD_NEEDS=(
@@ -61,16 +71,43 @@ else
         patch
         sed
         tcl
+        xz
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../psmisc-$VERSION-fluffy-test.patch
+source sw/autoconf.common
+source sw/automake.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    autopoint_wrapper
+    po4a_build
+    $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/psmisc
     make
+}
+
+# autogen.sh runs autopoint, which gettext installs with a #!/bin/sh line
+# (gettext's bug): put one that runs it with bash first in PATH, beside
+# the autotools.
+autopoint_wrapper() {
+    printf '#!%s\nexec %s /sw/gettext/bin/autopoint "$@"\n' \
+        "$CONFIG_SHELL" "$CONFIG_SHELL" > .autotools/bin/autopoint
+    chmod +x .autotools/bin/autopoint
+}
+
+# po4a, run from its git tree by perl, beside the autotools, where
+# configure finds it: its Man module needs nothing beyond perl's own
+# modules and gettext's msgmerge and msgfmt.
+po4a_build() {
+    mkdir -p .po4a
+    tar -xf ../po4a.tar -C .po4a
+    printf '#!%s\nexec perl -I %s %s "$@"\n' "$CONFIG_SHELL" \
+        "$PWD/.po4a/po4a/lib" "$PWD/.po4a/po4a/po4a" > .autotools/bin/po4a
+    chmod +x .autotools/bin/po4a
 }
 
 CHECK() {
