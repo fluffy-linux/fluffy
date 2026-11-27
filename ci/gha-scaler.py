@@ -9,15 +9,21 @@ agents and the agent runs not yet started, keeping at most MAX agent runs
 in flight.  Being the only one deciding, the cap is exact.  It exits after
 QUIET seconds with no job waiting or running and no agent run in flight.
 
+A run still queued after STALE seconds is not counted: a hosted runner
+takes a run within a minute or so, and GitHub can leave a run queued for
+good, with no jobs (one made while the repository's Actions were off), and
+won't cancel it.  Counted, it would stand for a runner that never comes.
+
 Environment: BUILDKITE_AGENT_TOKEN (any agent token of the cluster, for the
 metrics), GITHUB_TOKEN (actions: write), GITHUB_REPOSITORY, GITHUB_REF_NAME;
-MAX (4) and QUIET (300) optional.  The tokens are never printed.
+MAX (4), QUIET (300) and STALE (600) optional.  The tokens are never printed.
 """
-import json, os, time, urllib.request
+import calendar, json, os, time, urllib.request
 
 BK, GH = os.environ["BUILDKITE_AGENT_TOKEN"], os.environ["GITHUB_TOKEN"]
 REPO, REF = os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_REF_NAME"]
 MAX, QUIET = int(os.environ.get("MAX", "4")), int(os.environ.get("QUIET", "300"))
+STALE = int(os.environ.get("STALE", "600"))
 API = f"https://api.github.com/repos/{REPO}/actions/workflows/buildkite-agent.yml"
 
 
@@ -40,7 +46,9 @@ while True:
         idle = int(agents.get("idle", 0))
         runs = [r for s in ("queued", "in_progress")
                 for r in call(f"{API}/runs?status={s}&event=workflow_dispatch&per_page=50",
-                              "Bearer " + GH).get("workflow_runs", [])]
+                              "Bearer " + GH).get("workflow_runs", [])
+                if s == "in_progress" or time.time() - calendar.timegm(
+                    time.strptime(r["created_at"], "%Y-%m-%dT%H:%M:%SZ")) < STALE]
         queued = sum(1 for r in runs if r["status"] == "queued")
         want = max(0, min(waiting - idle - queued, MAX - len(runs)))
         for _ in range(want):
