@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# ci/gha-agent.sh: make a GitHub-hosted runner a Fluffy CI agent for one
-# Buildkite job (the gha queue), then run that job.  Called by
+# ci/gha-agent.sh: make a GitHub-hosted runner a Fluffy CI agent for the
+# gha queue, and run its jobs until it has been idle for 2 minutes.  Called by
 # .github/workflows/buildkite-agent.yml, as the runner's user, which has
 # passwordless sudo.
 #
@@ -22,9 +22,8 @@ set -euo pipefail
 INFRA_REF="${INFRA_REF:-main}"
 
 echo "--- disk"
-# The runner image's preinstalled SDKs: Fluffy uses none of them, and the
-# build needs the room.
-sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost
+# The runner image's preinstalled SDKs stay: removing them took 2.5
+# minutes, and without that a runner still has about 65 GB free.
 df -h / /mnt
 
 echo "--- provision (infra $INFRA_REF)"
@@ -64,13 +63,14 @@ printf '%s' "$GHCR_TOKEN" | sudo tee /run/fluffy-ci/ghcr-token > /dev/null
 sudo chmod 600 /run/fluffy-ci/ghcr-token
 
 echo "--- agent"
-# One job: an agent that takes the next job of the gha queue, then exits.
-# If no job comes within 5 minutes (another runner took it), it exits too.
+# Jobs back to back while the gha queue has them, as the GCP agents do:
+# setting a runner up takes about 2 minutes, and most of a world's steps
+# take seconds.  After 2 minutes with no job, the agent exits and the run
+# ends (and at the latest at the job's 350-minute limit).
 export FLUFFY_CACHE_REGISTRY=ghcr.io/fluffy-linux/sw
 export FLUFFY_CACHE_TOKEN_FILE=/run/fluffy-ci/ghcr-token
 exec buildkite-agent start \
     --tags queue=gha \
     --name "gha-%hostname-%spawn" \
     --build-path /mnt/buildkite/builds \
-    --disconnect-after-job \
-    --disconnect-after-idle-timeout 300
+    --disconnect-after-idle-timeout 120

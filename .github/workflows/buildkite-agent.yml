@@ -1,6 +1,6 @@
-# A Buildkite agent on a GitHub-hosted runner, for one job of Fluffy's own
-# CI (the gha queue).  Started by the CI scaler, one run per waiting job;
-# the run takes that job and ends.  GitHub's terms allow GitHub-hosted
+# A Buildkite agent on a GitHub-hosted runner, for jobs of Fluffy's own CI
+# (the gha queue).  Started when jobs are waiting; the agent takes them
+# back to back and ends after 2 idle minutes.  GitHub's terms allow GitHub-hosted
 # runners for "the production, testing, deployment, or publication of the
 # software project" of the repository: this builds, tests and publishes
 # Fluffy, and nothing else.
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 350
     steps:
-      - name: One Buildkite job
+      - name: Buildkite jobs, until idle
         env:
           BUILDKITE_AGENT_TOKEN: ${{ secrets.BUILDKITE_AGENT_TOKEN }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
