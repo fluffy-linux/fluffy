@@ -6,12 +6,18 @@
 # Fluffy, and nothing else.
 name: buildkite-agent
 
+# A push to the default branch starts the first runner, which takes the
+# pipeline's plan step; every runner starts more while jobs wait
+# (ci/gha-agent.sh's scaler, through workflow_dispatch).
 on:
+  push:
+    branches: ["🐶"]
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
+  actions: write
 
 jobs:
   agent:
