@@ -96,10 +96,16 @@ MAKE() {
     automake_build
     libtool_build
     # .bootstrap, without its doc/version.texi stub: make writes that.
-    # Not -f: gmp's own config.guess, which picks the CPU, stays.
+    # Not -f: gmp's own config.guess, which names the CPU, stays.
     autoreconf -i
+    # --host=none-linux-gnu: LFS's generic libraries, plain C.  Otherwise
+    # gmp tunes its code and CFLAGS (which mpfr and mpc take from gmp.h)
+    # to the build machine's CPU, so images differ by machine and may not
+    # run on an older one.  config.guess then names only the build
+    # machine, whose CPU doesn't change the image.
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/gmp \
+        --host=none-linux-gnu \
         --enable-cxx \
         --disable-static \
         --docdir=/sw/gmp/share/doc/gmp-$VERSION
