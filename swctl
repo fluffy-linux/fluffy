@@ -2292,9 +2292,9 @@ ci_step() {
 # only after the images it was built against.  world-check depends on
 # every check step: what must wait for a vetted world (the pipeline's
 # final steps) waits for it.  When the plan holds what a system boots
-# (boot_pkgs), boot-test, after world-check, on an agent with KVM (the kvm
-# queue), fetches the vetted images from the cache and boots them
-# (boot-test.sh), with the serial console's log as an artifact.
+# (boot_pkgs), boot-test, after world-check, fetches the vetted images from
+# the cache and boots them (boot-test.sh, under KVM: every agent is Intel
+# with nested virtualization), with the serial console's log as an artifact.
 boot_pkgs=(linux grub init systemd util-linux)
 buildkite_pipeline() {
     if test $# -lt 1
@@ -2425,7 +2425,7 @@ buildkite_pipeline() {
         then
             # Not bk_step's: a short limit, so that a wedged boot cannot
             # hold an agent (boot-test.sh's own limit for the boot is 3
-            # minutes), the kvm queue, and the artifacts.  The images
+            # minutes), and the artifacts.  The images
             # come from the cache only: without FLUFFY_CACHE_TOKEN_FILE,
             # swctl publishes nothing.
             targets="$(printf ' %q' "$@")"
@@ -2435,8 +2435,6 @@ buildkite_pipeline() {
             # times and plot); the agent posts it, pass or fail.
             echo "    command: $(yaml_str "${boot}sudo --preserve-env=$keep,FLUFFY_CACHE_REGISTRY$env_prefix ./swctl build$targets && sudo --preserve-env=$keep$env_prefix ./boot-test.sh --out boot-test; rc=\$?; if test -s boot-test/annotation.md; then buildkite-agent annotate --context boot-test --style \"\$(cat boot-test/annotation-style)\" < boot-test/annotation.md || true; fi; exit \$rc")"
             echo "    timeout_in_minutes: 15"
-            echo "    agents:"
-            echo "      queue: $(yaml_str kvm)"
             echo "    artifact_paths:"
             echo "      - $(yaml_str 'boot-test/*.log')"
             echo "      - $(yaml_str 'boot-test/grub.cfg*')"
