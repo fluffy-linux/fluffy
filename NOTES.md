@@ -551,16 +551,13 @@ The question Fluffy asks is "how far can I push squashfs packages using glob() a
 
 - **Why:** GCP spending reached the $50 budget in about four days (spot C4/C4D agents for world builds). GitHub-hosted runners are free and unlimited for public repositories.
 - **Terms (read 2026-11-27):** GitHub's Additional Product Terms allow GitHub-hosted runners for "the production, testing, deployment, or publication of the software project" of the repository, and forbid cryptomining, unauthorized access, reselling Actions, and a "burden ... disproportionate to the benefits" (e.g. serverless). A Buildkite agent that builds, tests and publishes Fluffy from the fluffy repo is that repository's own CI.
-- **Design:** `.github/workflows/buildkite-agent.yml` + `ci/gha-agent.sh`.
-  - **Start:** a push starts one runner, which takes `plan`.
-  - **Scaling:** each runner runs a small scaler (every 30 s, `workflow_dispatch` while jobs wait beyond idle agents and unstarted runs; about 4 in flight, a soft cap).
-  - **Safety net:** a run every 15 minutes covers retries and builds started in Buildkite.
-  - **Idle exit:** agents take jobs back to back and exit after 2 idle minutes.
-  - **Set-up:** the host comes from infra's `packer/provision.sh`.
-  - **Tokens:** the gha queue's own agent token is a repo secret, and publishing uses the job's `GITHUB_TOKEN` (the `sw` package grants the fluffy repo Write). The agent starts with a clean environment, so jobs inherit no token.
-  - **Routing:** `.buildkite/pipeline.yml` routes everything to `gha`; reverting that commit returns CI to GCP.
+- **Design:** `.github/workflows/buildkite-agent.yml`, with two jobs.
+  - **scaler** (`ci/gha-scaler.py`): on a push, and every 15 minutes for retries or builds started in Buildkite, one per branch (its concurrency group). Every 30 s it starts agent runs while the gha queue has jobs waiting beyond the idle agents and not-yet-started runs, at most 4 (an exact cap: it is the only one deciding), and ends after 5 quiet minutes. It is the only job with `actions: write` (the user's design, 2026-11-27; it first lived in every runner, with a soft cap).
+  - **agent** (`ci/gha-agent.sh`), on `workflow_dispatch`: the host set up by infra's `packer/provision.sh`, then jobs back to back until 2 idle minutes.
+  - **Tokens:** the gha queue's own agent token is a repo secret, and publishing uses the job's `GITHUB_TOKEN` (`packages: write`; the `sw` package grants the fluffy repo Write). The agent starts with a clean environment, so jobs inherit no token.
+  - **Routing:** `.buildkite/pipeline.yml` routes everything to `gha`, the Buildkite pipeline's upload step included (infra), and reverting that commit returns CI to GCP.
 - **Runners:** 4 vCPU, 16 GB, about 65 GB free, `/dev/kvm`, 6 h per job; setup about 2 minutes.
-- **First run (#94):** the runners scaled to 4 and ran the cached steps quickly; build-gmp then failed at publishing (`permission_denied: write_package`) until the package granted the repo Write.
+- **First runs:** #94 scaled to 4 and ran the cached steps quickly, then build-gmp failed at publishing (`permission_denied: write_package`) until the package granted the repo Write. #95 passed, all 271 steps (gmp, gcc and what follows rebuilt, plus the boot test): 94 min wall. Per heavy step about 3-3.7x the 16-vCPU Intel agents (check-gcc 48.4 vs 13.0 min, build-gcc 17.2 vs 5.6 min), smaller steps 1.1-1.6x. PREPARE takes about a minute per step on a fresh runner (images and git sources fetched anew); timed per sub-step since 85f74e7.
 
 ### CI hosting (2026-11-20, open)
 

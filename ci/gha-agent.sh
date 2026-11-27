@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ci/gha-agent.sh: make a GitHub-hosted runner a Fluffy CI agent for the
-# gha queue, and run its jobs until it has been idle for 2 minutes.  Called by
+# gha queue, and run its jobs until it has been idle for 2 minutes.  The
+# workflow's scaler job (ci/gha-scaler.py) starts these runs.  Called by
 # .github/workflows/buildkite-agent.yml, as the runner's user, which has
 # passwordless sudo.
 #
@@ -12,34 +13,14 @@
 #
 # Environment (from the workflow):
 #   BUILDKITE_AGENT_TOKEN   the gha queue's own agent token (an Actions secret)
-#   GHCR_TOKEN              the job's GITHUB_TOKEN: packages: write for the
-#                           binary cache, actions: write for the scaler
+#   GHCR_TOKEN              the job's GITHUB_TOKEN (packages: write), for the
+#                           binary cache
 #   INFRA_REF               the infra commit to provision from (default main)
 set -euo pipefail
 
 : "${BUILDKITE_AGENT_TOKEN:?the agent token of the gha queue}"
 : "${GHCR_TOKEN:?a token that can write ghcr.io/fluffy-linux/sw}"
 INFRA_REF="${INFRA_REF:-main}"
-
-# A scheduled run is the safety net for jobs no runner started for (a
-# retried job, a build started in Buildkite): it becomes an agent only when
-# gha has jobs waiting and no agent idle, and otherwise ends at once.
-if test "${GITHUB_EVENT_NAME:-}" = schedule
-then
-    need="$(BK="$BUILDKITE_AGENT_TOKEN" python3 -I -c '
-import json, os, urllib.request
-r = urllib.request.Request("https://agent.buildkite.com/v3/metrics",
-                           headers={"Authorization": "Token " + os.environ["BK"]})
-m = json.load(urllib.request.urlopen(r, timeout=30))
-waiting = m.get("jobs", {}).get("queues", {}).get("gha", {}).get("scheduled", 0)
-idle = m.get("agents", {}).get("queues", {}).get("gha", {}).get("idle", 0)
-print(1 if waiting > idle else 0)')"
-    if test "$need" != 1
-    then
-        echo "gha has no job waiting for an agent: nothing to do"
-        exit 0
-    fi
-fi
 
 echo "--- disk"
 # The runner image's preinstalled SDKs stay: removing them took 2.5
@@ -90,49 +71,6 @@ echo "--- agent"
 agent_cfg=/run/fluffy-ci-agent.cfg
 sudo install -m 600 -o "$(id -u)" -g "$(id -g)" /dev/null "$agent_cfg"
 printf 'token="%s"\n' "$BUILDKITE_AGENT_TOKEN" > "$agent_cfg"
-
-# The scaler, in every runner: every 30 s, while gha has more jobs waiting
-# than idle agents and runs not yet started, start more runs of this
-# workflow (workflow_dispatch, which GITHUB_TOKEN may trigger), up to
-# about SCALE_MAX in flight.  A soft cap: two runners deciding at once can
-# go one over.  New jobs only become runnable when a running one finishes,
-# and its runner lives 2 more minutes, so some runner always sees them.
-cat > /tmp/gha-scale.py << "PYEOF"
-import json, os, time, urllib.request
-BK, GH = os.environ["SCALE_BK"], os.environ["SCALE_GH"]
-REPO, REF = os.environ["GITHUB_REPOSITORY"], os.environ["SCALE_REF"]
-MAX = int(os.environ.get("SCALE_MAX", "4"))
-API = f"https://api.github.com/repos/{REPO}/actions/workflows/buildkite-agent.yml"
-
-def call(url, auth, method="GET", body=None):
-    req = urllib.request.Request(url, method=method,
-        headers={"Authorization": auth, "Accept": "application/vnd.github+json"},
-        data=None if body is None else json.dumps(body).encode())
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        text = resp.read()
-        return json.loads(text) if text else {}
-
-while True:
-    try:
-        m = call("https://agent.buildkite.com/v3/metrics", "Token " + BK)
-        waiting = int(m.get("jobs", {}).get("queues", {}).get("gha", {}).get("scheduled", 0))
-        idle = int(m.get("agents", {}).get("queues", {}).get("gha", {}).get("idle", 0))
-        runs = [r for s in ("queued", "in_progress")
-                for r in call(f"{API}/runs?status={s}&per_page=50", "Bearer " + GH).get("workflow_runs", [])]
-        queued = sum(1 for r in runs if r["status"] == "queued")
-        want = min(waiting - idle - queued, MAX - len(runs))
-        for _ in range(max(want, 0)):
-            call(f"{API}/dispatches", "Bearer " + GH, "POST", {"ref": REF})
-        if want > 0:
-            print(f"scale: waiting={waiting} idle={idle} runs={len(runs)}: started {want}", flush=True)
-    except Exception as e:
-        print("scale: error:", type(e).__name__, flush=True)
-    time.sleep(30)
-PYEOF
-SCALE_BK="$BUILDKITE_AGENT_TOKEN" SCALE_GH="$GHCR_TOKEN" SCALE_REF="$GITHUB_REF_NAME" \
-    python3 -I /tmp/gha-scale.py &
-scaler=$!
-trap 'kill "$scaler" 2>/dev/null || true' EXIT
 
 # Jobs back to back while the gha queue has them, as the GCP agents do:
 # setting a runner up takes about 2 minutes, and most of a world's steps

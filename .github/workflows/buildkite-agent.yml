@@ -1,16 +1,19 @@
-# A Buildkite agent on a GitHub-hosted runner, for jobs of Fluffy's own CI
-# (the gha queue).  Started when jobs are waiting; the agent takes them
-# back to back and ends after 2 idle minutes.  GitHub's terms allow GitHub-hosted
-# runners for "the production, testing, deployment, or publication of the
-# software project" of the repository: this builds, tests and publishes
-# Fluffy, and nothing else.
+# Buildkite agents on GitHub-hosted runners, for Fluffy's own CI (the gha
+# queue).  GitHub's terms allow GitHub-hosted runners for "the production,
+# testing, deployment, or publication of the software project" of the
+# repository: this builds, tests and publishes Fluffy, and nothing else.
+#
+# Two jobs:
+# - scaler, on a push and every 15 minutes (for a retried job or a build
+#   started in Buildkite), one per branch (its concurrency group): it
+#   starts agent runs of this workflow while gha has jobs waiting, at most
+#   4 at once, and ends when the queue has been quiet for 5 minutes
+#   (ci/gha-scaler.py).  The only job that may start workflows.
+# - agent, on workflow_dispatch (what the scaler starts): a runner set up
+#   as the GCP agents are, taking gha's jobs back to back until 2 idle
+#   minutes (ci/gha-agent.sh).
 name: buildkite-agent
 
-# A push to the default branch starts the first runner, which takes the
-# pipeline's plan step; every runner starts more while jobs wait
-# (ci/gha-agent.sh's scaler, through workflow_dispatch).  Every 15 minutes
-# a scheduled run checks for jobs waiting with no agent (a retry, a build
-# started in Buildkite) and ends at once if there are none.
 on:
   push:
     branches: ["🐶"]
@@ -18,15 +21,36 @@ on:
   schedule:
     - cron: "*/15 * * * *"
 
-permissions:
-  contents: read
-  packages: write
-  actions: write
+permissions: {}
 
 jobs:
-  agent:
+  scaler:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 350
+    concurrency:
+      group: scaler-${{ github.ref_name }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Start agent runs while jobs wait
+        env:
+          BUILDKITE_AGENT_TOKEN: ${{ secrets.BUILDKITE_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -fsSL -o /tmp/gha-scaler.py \
+            "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/ci/gha-scaler.py"
+          python3 -I /tmp/gha-scaler.py
+
+  agent:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Buildkite jobs, until idle
         env:
