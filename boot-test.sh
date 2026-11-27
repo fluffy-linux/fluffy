@@ -21,6 +21,12 @@
 #   SIZE          the image's size (default 5G)
 #   MEM, SMP      the guest's memory in MiB (default 2048) and CPUs (2)
 #   SERIAL_TAIL   how many of the serial log's last lines to print (30)
+#   ANALYZE_WAIT  after login:, how long to wait for the guest's
+#                 systemd-analyze report and power-off (default 60 s)
+#
+# Outputs, in OUT: serial.log, boot-analyze.txt (systemd-analyze time,
+# critical-chain and blame), boot-plot.svg (systemd-analyze plot), and
+# annotation.md with annotation-style, a Buildkite annotation of them.
 #
 # The image is what an install would make: GPT with a BIOS boot partition
 # and a btrfs root whose subvolume @ is the Fluffy root, holding the
@@ -58,7 +64,8 @@ done
 TIMEOUT="${TIMEOUT:-180}"
 OUT="${OUT:-$PWD/boot-test}"
 KEEP="${KEEP:-0}"
-export TIMEOUT OUT KEEP
+ANALYZE_WAIT="${ANALYZE_WAIT:-60}"
+export TIMEOUT OUT KEEP ANALYZE_WAIT
 
 test "$(id -u)" = 0 || die "must run as root (sudo)"
 
@@ -202,6 +209,46 @@ say "installing Fluffy's grub on $LOOP"
     > "$OUT/grub-install.log" 2>&1 \
     || { cat "$OUT/grub-install.log" >&2; die "grub-install failed"; }
 
+# The boot's own measurements, from systemd-analyze, once boot has
+# finished: on the serial console between markers, the plot (an SVG
+# timeline) gzipped and in base64; then the guest powers off.  Only in this
+# throwaway image.  Type=exec, so the unit is up at once and doesn't hold
+# up the boot it waits for.
+cat > "$MNT/etc/boot-test-analyze" << "EOF"
+#!/sw/bash/bin/bash
+export PATH='/sw/*/bin' SYSTEMD_COLORS=0 SYSTEMD_PAGER=cat
+systemctl is-system-running --wait > /dev/null 2>&1
+{
+    echo "@@boot-test-analyze-begin@@"
+    echo "state: $(systemctl is-system-running)"
+    systemd-analyze time
+    echo
+    systemd-analyze critical-chain
+    echo
+    systemd-analyze blame | head -n 40
+    echo "@@boot-test-analyze-end@@"
+    echo "@@boot-test-plot-begin@@"
+    systemd-analyze plot | gzip -9 | base64
+    echo "@@boot-test-plot-end@@"
+} > /dev/ttyS0 2>&1
+systemctl poweroff
+EOF
+chmod 755 "$MNT/etc/boot-test-analyze"
+mkdir -p "$MNT/etc/systemd/system/multi-user.target.wants"
+cat > "$MNT/etc/systemd/system/boot-test-analyze.service" << "EOF"
+[Unit]
+Description=boot-test: systemd-analyze on the serial console
+After=multi-user.target
+
+[Service]
+Type=exec
+ExecStart=/etc/boot-test-analyze
+
+[Install]
+WantedBy=multi-user.target
+EOF
+ln -sf ../boot-test-analyze.service "$MNT/etc/systemd/system/multi-user.target.wants/boot-test-analyze.service"
+
 # Everything on the disk before QEMU opens it.
 umount "$MNT"
 rmdir "$MNT"
@@ -257,6 +304,17 @@ do
     fi
 done
 elapsed="$(awk -v a="$start" -v b="$(date +%s.%N)" 'BEGIN { printf "%.1f", b - a }')"
+# After login:, the guest reports systemd-analyze and powers off: wait for
+# that, up to ANALYZE_WAIT seconds, but not past QEMU's hard limit.
+if test "$result" = pass && test -n "$QEMU_PID"
+then
+    for _ in $(seq $(( ANALYZE_WAIT * 5 )))
+    do
+        grep -aq '@@boot-test-plot-end@@' "$LOG" 2>/dev/null && break
+        kill -0 "$QEMU_PID" 2>/dev/null || break
+        sleep 0.2
+    done
+fi
 if test -n "$QEMU_PID"
 then
     kill "$QEMU_PID" 2>/dev/null || true
@@ -264,27 +322,93 @@ then
     QEMU_PID=""
 fi
 
-# The log's tail, without terminal control sequences.
+# The log without terminal control sequences and carriage returns.
+clean_log() {
+    sed 's/\x1b\[[0-9;?]*[A-Za-z]//g; s/\x1bP[^\x1b]*\x1b\\//g; s/\r//g' "$LOG" 2>/dev/null
+}
+# systemd-analyze's report and plot, when the guest sent them.
+analyze="$OUT/boot-analyze.txt" plot="$OUT/boot-plot.svg"
+rm -f "$analyze" "$plot"
+clean_log | sed -n '/@@boot-test-analyze-begin@@/,/@@boot-test-analyze-end@@/{//!p}' > "$analyze"
+test -s "$analyze" || rm -f "$analyze"
+clean_log | sed -n '/@@boot-test-plot-begin@@/,/@@boot-test-plot-end@@/{//!p}' | base64 -d 2>/dev/null | gunzip > "$plot" 2>/dev/null || true
+test -s "$plot" || rm -f "$plot"
+
+# The log's tail, without the report's blocks.
 echo "----- the last $SERIAL_TAIL lines of $LOG"
-sed 's/\x1b\[[0-9;?]*[A-Za-z]//g; s/\x1bP[^\x1b]*\x1b\\//g; s/\r//g' "$LOG" 2>/dev/null | tail -n "$SERIAL_TAIL"
+clean_log | sed '/@@boot-test-analyze-begin@@/,/@@boot-test-plot-end@@/d' | tail -n "$SERIAL_TAIL"
 echo
 echo "-----"
+if test -f "$analyze"
+then
+    cat "$analyze"
+    echo "-----"
+else
+    echo "boot-test: no systemd-analyze report from the guest (the test still judges by login:)"
+fi
+
+# A Buildkite annotation (annotation.md, its style in annotation-style),
+# which the pipeline's step posts: the result, systemd-analyze's times, the
+# plot from the step's artifacts, and the critical chain.
+write_annotation() {
+    local style="$1" title="$2"
+    {
+        echo "#### Boot test: $title"
+        if test -f "$analyze"
+        then
+            echo
+            echo '```'
+            sed -n '/^state:/,/^$/p' "$analyze" | sed '/^$/d'
+            echo '```'
+        fi
+        if test -f "$plot"
+        then
+            echo
+            echo '<img src="artifact://boot-test/boot-plot.svg" alt="systemd-analyze plot of the boot">'
+        fi
+        if test -f "$analyze"
+        then
+            echo
+            echo '<details><summary>Critical chain and slowest units</summary>'
+            echo
+            echo '```'
+            sed '1,/^$/d' "$analyze"
+            echo '```'
+            echo '</details>'
+        fi
+        if test "$style" = error
+        then
+            echo
+            echo '<details><summary>The serial console'"'"'s last lines</summary>'
+            echo
+            echo '```'
+            clean_log | sed '/@@boot-test-analyze-begin@@/,/@@boot-test-plot-end@@/d' | tail -n "$SERIAL_TAIL"
+            echo '```'
+            echo '</details>'
+        fi
+    } > "$OUT/annotation.md"
+    echo "$style" > "$OUT/annotation-style"
+}
 case "$result" in
     pass)
         echo "boot-test: PASS: login: after ${elapsed}s"
+        write_annotation success "\`login:\` after ${elapsed} s"
         test "$KEEP" = 1 || rm -f "$IMG"
         ;;
     timeout)
         echo "boot-test: FAIL: no login: within ${TIMEOUT}s; QEMU killed" >&2
+        write_annotation error "FAIL, no \`login:\` within ${TIMEOUT} s"
         exit 1
         ;;
     exited)
         cat "$OUT/qemu.log" >&2
         echo "boot-test: FAIL: QEMU exited (status $qemu_rc) after ${elapsed}s, with no login: prompt" >&2
+        write_annotation error "FAIL, QEMU exited (status $qemu_rc) after ${elapsed} s with no \`login:\`"
         exit 1
         ;;
     stuck)
         echo "boot-test: FAIL: the boot came to a dead end after ${elapsed}s (see the serial log above)" >&2
+        write_annotation error "FAIL, a dead end after ${elapsed} s"
         exit 1
         ;;
 esac

@@ -2431,13 +2431,17 @@ buildkite_pipeline() {
             targets="$(printf ' %q' "$@")"
             echo "  - label: $(yaml_str boot-test)"
             echo "    key: $(yaml_str boot-test)"
-            echo "    command: $(yaml_str "${boot}sudo --preserve-env=$keep,FLUFFY_CACHE_REGISTRY$env_prefix ./swctl build$targets && sudo --preserve-env=$keep$env_prefix ./boot-test.sh --out boot-test")"
+            # boot-test.sh writes an annotation (the result, systemd-analyze's
+            # times and plot); the agent posts it, pass or fail.
+            echo "    command: $(yaml_str "${boot}sudo --preserve-env=$keep,FLUFFY_CACHE_REGISTRY$env_prefix ./swctl build$targets && sudo --preserve-env=$keep$env_prefix ./boot-test.sh --out boot-test; rc=\$?; if test -s boot-test/annotation.md; then buildkite-agent annotate --context boot-test --style \"\$(cat boot-test/annotation-style)\" < boot-test/annotation.md || true; fi; exit \$rc")"
             echo "    timeout_in_minutes: 15"
             echo "    agents:"
             echo "      queue: $(yaml_str kvm)"
             echo "    artifact_paths:"
             echo "      - $(yaml_str 'boot-test/*.log')"
             echo "      - $(yaml_str 'boot-test/grub.cfg*')"
+            echo "      - $(yaml_str 'boot-test/boot-analyze.txt')"
+            echo "      - $(yaml_str 'boot-test/boot-plot.svg')"
             echo "    retry:"
             echo "      automatic:"
             echo "        - exit_status: -1"
