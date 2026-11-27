@@ -21,6 +21,26 @@ set -euo pipefail
 : "${GHCR_TOKEN:?a token that can write ghcr.io/fluffy-linux/sw}"
 INFRA_REF="${INFRA_REF:-main}"
 
+# A scheduled run is the safety net for jobs no runner started for (a
+# retried job, a build started in Buildkite): it becomes an agent only when
+# gha has jobs waiting and no agent idle, and otherwise ends at once.
+if test "${GITHUB_EVENT_NAME:-}" = schedule
+then
+    need="$(BK="$BUILDKITE_AGENT_TOKEN" python3 -I -c '
+import json, os, urllib.request
+r = urllib.request.Request("https://agent.buildkite.com/v3/metrics",
+                           headers={"Authorization": "Token " + os.environ["BK"]})
+m = json.load(urllib.request.urlopen(r, timeout=30))
+waiting = m.get("jobs", {}).get("queues", {}).get("gha", {}).get("scheduled", 0)
+idle = m.get("agents", {}).get("queues", {}).get("gha", {}).get("idle", 0)
+print(1 if waiting > idle else 0)')"
+    if test "$need" != 1
+    then
+        echo "gha has no job waiting for an agent: nothing to do"
+        exit 0
+    fi
+fi
+
 echo "--- disk"
 # The runner image's preinstalled SDKs stay: removing them took 2.5
 # minutes, and without that a runner still has about 65 GB free.

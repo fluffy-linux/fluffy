@@ -8,11 +8,15 @@ name: buildkite-agent
 
 # A push to the default branch starts the first runner, which takes the
 # pipeline's plan step; every runner starts more while jobs wait
-# (ci/gha-agent.sh's scaler, through workflow_dispatch).
+# (ci/gha-agent.sh's scaler, through workflow_dispatch).  Every 15 minutes
+# a scheduled run checks for jobs waiting with no agent (a retry, a build
+# started in Buildkite) and ends at once if there are none.
 on:
   push:
     branches: ["🐶"]
   workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
 
 permissions:
   contents: read

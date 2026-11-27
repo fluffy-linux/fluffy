@@ -547,6 +547,21 @@ The question Fluffy asks is "how far can I push squashfs packages using glob() a
   - **Open:** whether a failing smoke test blocks promotion like CHECK or only reports; whether the booted tier runs every build or only when a booted package changed; recipes as the home (`SMOKE()` beside `CHECK()`).
   - **User (2026-11-26):** "I'm not sure yet", so noted here to think about more.
 
+### CI on GitHub-hosted runners (2026-11-27, trial)
+
+- **Why:** GCP spending reached the $50 budget in about four days (spot C4/C4D agents for world builds). GitHub-hosted runners are free and unlimited for public repositories.
+- **Terms (read 2026-11-27):** GitHub's Additional Product Terms allow GitHub-hosted runners for "the production, testing, deployment, or publication of the software project" of the repository, and forbid cryptomining, unauthorized access, reselling Actions, and a "burden ... disproportionate to the benefits" (e.g. serverless). A Buildkite agent that builds, tests and publishes Fluffy from the fluffy repo is that repository's own CI.
+- **Design:** `.github/workflows/buildkite-agent.yml` + `ci/gha-agent.sh`.
+  - **Start:** a push starts one runner, which takes `plan`.
+  - **Scaling:** each runner runs a small scaler (every 30 s, `workflow_dispatch` while jobs wait beyond idle agents and unstarted runs; about 4 in flight, a soft cap).
+  - **Safety net:** a run every 15 minutes covers retries and builds started in Buildkite.
+  - **Idle exit:** agents take jobs back to back and exit after 2 idle minutes.
+  - **Set-up:** the host comes from infra's `packer/provision.sh`.
+  - **Tokens:** the gha queue's own agent token is a repo secret, and publishing uses the job's `GITHUB_TOKEN` (the `sw` package grants the fluffy repo Write). The agent starts with a clean environment, so jobs inherit no token.
+  - **Routing:** `.buildkite/pipeline.yml` routes everything to `gha`; reverting that commit returns CI to GCP.
+- **Runners:** 4 vCPU, 16 GB, about 65 GB free, `/dev/kvm`, 6 h per job; setup about 2 minutes.
+- **First run (#94):** the runners scaled to 4 and ran the cached steps quickly; build-gmp then failed at publishing (`permission_denied: write_package`) until the package granted the repo Write.
+
 ### CI hosting (2026-11-20, open)
 
 - **Goal:** get CI off the user's PC, for hermeticity and security, cheaply, and ideally under a *true hard* spending limit (spending can't exceed it, not just alerts). Today a Buildkite agent (`buildkite-agent` user) runs `swctl build world` on the same machine (`.buildkite/pipeline.yml`, 720-minute timeout); its persistent `work/` (archives, `work/git`) and previous squashfs images are what keep incremental worlds fast.
