@@ -1,10 +1,22 @@
-ON=cross-build
+ON=host-build
 
 VERSION=3.8.2
 
+# Built straight from Fluffy's branch (our commits on upstream's v3.8.2
+# tag): swctl fetches the pinned commit, and the gnulib, autoconf and
+# translationproject commits it pins, with git.  The tag has no
+# configure, Makefile.in, gnulib files or built manuals, so MAKE runs
+# bootstrap with the autoconf and automake the release tarball was made
+# with (2.71, 1.16.4).  Beyond LFS, which builds bison from its release
+# tarball: in host-build, with the host's autopoint, perl, flex, gperf,
+# help2man and makeinfo, because gettext-pass1, which would give
+# autopoint in cross-build, needs bison-pass1 for its own grammars.  It
+# is cross-built for Fluffy, as the other host-build pass1s are, and
+# runs in the root.
 ARCHIVES=(
-    9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2 https://github.com/fluffy-linux/bison/releases/download/v$VERSION/bison-$VERSION.tar.xz
-    12fddada7b0fb9d9374a2e7fff40b23de5ea354946a095b356afc0b9f18b3380 file://bison-$VERSION-fluffy-source.patch
+    6ee6e6ca82eb25239d917b278534f01c94f71e34 https://github.com/fluffy-linux/bison.git#refs/heads/fluffy/v$VERSION
+    6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    7aa69820bf6aab0bd99093422df79349986460dc https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.4
 )
 
 NEEDS=(
@@ -13,32 +25,50 @@ NEEDS=(
 )
 
 BUILD_NEEDS=(
-    bash-pass1
-    binutils-pass2
-    coreutils-pass1
-    diffutils-pass1
-    findutils-pass1
-    gawk-pass1
-    gcc-pass2
+    gcc-pass1
     glibc-pass1
-    grep-pass1
-    gzip-pass1
     linux-headers
-    m4-pass1
-    make-pass1
-    patch-pass1
-    sed-pass1
-    tar-pass1
-    xz-pass1
 )
 
+source sw/autoconf.common
+source sw/automake.common
+
 MAKE() {
-    patch -Z -Np1 -i ../bison-$VERSION-fluffy-source.patch
-    export CONFIG_SHELL=/sw/bash/bin/bash
-    CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
+    autoconf_build
+    automake_build
+    ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
+    # Configured as a native build: the bison it builds runs here (the
+    # root's glibc-pass1 is mounted), and make runs it for doc/bison.help,
+    # the man page and the manual's option tables, which configure leaves
+    # out when cross compiling.  The m4 that bison runs is the root's:
+    # configure, here on the host, would find and try the host's.  Nor
+    # does configure ask the host's bison where its catalogs are (YACC):
+    # it would turn on translated parser messages (YYENABLE_NLS), which
+    # bison has only where a bison is installed already.
+    CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/bison \
-        --docdir=/sw/bison/share/doc/bison-$VERSION
+        --docdir=/sw/bison/share/doc/bison-$VERSION \
+        --host=$FLUFFY_TGT \
+        --build=$FLUFFY_TGT \
+        ac_cv_path_M4=/sw/m4/bin/m4 \
+        ac_cv_prog_gnu_m4_gnu=yes \
+        YACC=false
+    # The translations as make dist merges them with the templates.
+    make -C po update-po
+    make -C runtime-po update-po
+    make -C gnulib-po update-po
     make
+    # bison's parser as make dist ships it (its gen-synclines step): the
+    # branch's src/parse-gram.c was made by bison 3.8.1 without #line
+    # marks, and the release's by this bison, with them.  make then
+    # builds bison again with it.  Here on the host that bison runs the
+    # host's m4 ($M4 overrides the configured one; given on make's
+    # command line, so the Makefile's doesn't).
+    make gen-synclines distdir=. M4="$(command -v m4)"
+    make
+    # The installed examples without the #line marks extexi leaves in
+    # them, as make dist ships them (its examples-unline step).
+    make examples-unline distdir=.
 }
 
 INSTALL() {

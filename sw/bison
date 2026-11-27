@@ -7,9 +7,19 @@ fi
 
 VERSION=3.8.2
 
+# Built straight from Fluffy's branch (our commits on upstream's v3.8.2
+# tag): swctl fetches the pinned commit, and the gnulib, autoconf and
+# translationproject commits it pins, with git.  The tag has no
+# configure, Makefile.in, gnulib files, translations or built manuals,
+# so MAKE runs bootstrap with the autoconf and automake the release
+# tarball was made with (2.71, 1.16.4), and gettext's autopoint; make
+# writes the man page with help2man, the manual with makeinfo, the
+# scanners with flex and gnulib's iconv_open tables with gperf, and the
+# translations are merged as the release's make dist did.
 ARCHIVES=(
-    9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2 https://github.com/fluffy-linux/bison/releases/download/v$VERSION/bison-$VERSION.tar.xz
-    12fddada7b0fb9d9374a2e7fff40b23de5ea354946a095b356afc0b9f18b3380 file://bison-$VERSION-fluffy-source.patch
+    6ee6e6ca82eb25239d917b278534f01c94f71e34 https://github.com/fluffy-linux/bison.git#refs/heads/fluffy/v$VERSION
+    6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
+    7aa69820bf6aab0bd99093422df79349986460dc https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.4
 )
 
 NEEDS=(
@@ -28,9 +38,12 @@ then
         flex
         gawk-pass1
         gcc
+        gettext-pass1
         glibc
+        gperf-pass1
         grep-pass1
         gzip-pass1
+        help2man-pass1
         libgcc
         linux-headers
         m4
@@ -39,6 +52,7 @@ then
         perl-pass1
         sed-pass1
         tar-pass1
+        texinfo-pass1
         xz
     )
 else
@@ -51,9 +65,12 @@ else
         flex
         gawk
         gcc
+        gettext
         glibc
+        gperf
         grep
         gzip
+        help2man
         libgcc
         linux-headers
         m4
@@ -62,19 +79,39 @@ else
         perl
         sed
         tar
+        texinfo
         xz
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../bison-$VERSION-fluffy-source.patch
+source sw/autoconf.common
+source sw/automake.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    $CONFIG_SHELL ./bootstrap --skip-po --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site $CONFIG_SHELL ./configure \
         --prefix=/sw/bison \
         --docdir=/sw/bison/share/doc/bison-$VERSION \
         M4=/sw/m4/bin/m4
+    # The translations as make dist merges them with the templates.
+    make -C po update-po
+    make -C runtime-po update-po
+    make -C gnulib-po update-po
     make
+    # bison's parser as make dist ships it (its gen-synclines step): the
+    # branch's src/parse-gram.c was made by bison 3.8.1 without #line
+    # marks, and the release's by this bison, with them.  make then
+    # builds bison again with it.
+    make gen-synclines distdir=.
+    make
+    # The installed examples without the #line marks extexi leaves in
+    # them, as make dist ships them (its examples-unline step).
+    make examples-unline distdir=.
 }
 
 CHECK() {
