@@ -2369,6 +2369,14 @@ buildkite_pipeline() {
         fi
     }
 
+    # FLUFFY_CI_QUEUE: the Buildkite queue every step goes to (unset: the
+    # cluster's default queue), e.g. gha for the agents on GitHub-hosted
+    # runners.
+    if test -n "${FLUFFY_CI_QUEUE:-}"
+    then
+        echo "agents:"
+        echo "  queue: $(yaml_str "$FLUFFY_CI_QUEUE")"
+    fi
     echo "steps:"
     local pkg dep swctl
     local -a builds=() checks=() all_checks=()
