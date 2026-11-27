@@ -22,9 +22,10 @@
 #   MEM, SMP      the guest's memory in MiB (default 2048) and CPUs (2)
 #   SERIAL_TAIL   how many of the serial log's last lines to print (30)
 #   ANALYZE_WAIT  after login:, how long to wait for the guest's
-#                 systemd-analyze report and power-off (default 60 s)
+#                 systemd-analyze report (default 60 s)
 #
-# Outputs, in OUT: serial.log, boot-analyze.txt (systemd-analyze time,
+# Outputs, in OUT: serial.log (the console), report.log (the guest's
+# systemd-analyze report, on its second serial port), boot-analyze.txt (systemd-analyze time,
 # critical-chain and blame), boot-plot.svg (systemd-analyze plot), and
 # annotation.md with annotation-style, a Buildkite annotation of them.
 #
@@ -100,7 +101,8 @@ section() {
 mkdir -p "$OUT"
 IMG="$OUT/disk.img"
 LOG="$OUT/serial.log"
-rm -f "$IMG" "$LOG"
+REPORT="$OUT/report.log"
+rm -f "$IMG" "$LOG" "$REPORT"
 
 LOOP="" MNT="" MADE_MNT="" QEMU_PID=""
 cleanup() {
@@ -210,14 +212,18 @@ say "installing Fluffy's grub on $LOOP"
     || { cat "$OUT/grub-install.log" >&2; die "grub-install failed"; }
 
 # The boot's own measurements, from systemd-analyze, once boot has
-# finished: on the serial console between markers, the plot (an SVG
-# timeline) gzipped and in base64; then the guest powers off.  Only in this
-# throwaway image.  Type=exec, so the unit is up at once and doesn't hold
+# finished: on a second serial port between markers, the plot (an SVG
+# timeline) gzipped and in base64.  The host stops the guest once it has
+# both login: and the report.  Only in this throwaway image.  Type=exec, so the unit is up at once and doesn't hold
 # up the boot it waits for.
 cat > "$MNT/etc/boot-test-analyze" << "EOF"
 #!/sw/bash/bin/bash
-export PATH='/sw/*/bin' SYSTEMD_COLORS=0 SYSTEMD_PAGER=cat
+export PATH='/sw/*/bin' SYSTEMD_COLORS=0 SYSTEMD_PAGER=cat TERM=dumb
 systemctl is-system-running --wait > /dev/null 2>&1
+# On the second serial port, ttyS1 (QEMU writes it to report.log): the
+# getty owns the console's, ttyS0, and hangs it up when it starts.  Through
+# a pipe, not straight to the tty: on a terminal, systemd's tools query it
+# (cursor position, OSC context) and wait for answers that never come.
 {
     echo "@@boot-test-analyze-begin@@"
     echo "state: $(systemctl is-system-running)"
@@ -230,8 +236,7 @@ systemctl is-system-running --wait > /dev/null 2>&1
     echo "@@boot-test-plot-begin@@"
     systemd-analyze plot | gzip -9 | base64
     echo "@@boot-test-plot-end@@"
-} > /dev/ttyS0 2>&1
-systemctl poweroff
+} 2>&1 | cat > /dev/ttyS1
 EOF
 chmod 755 "$MNT/etc/boot-test-analyze"
 mkdir -p "$MNT/etc/systemd/system/multi-user.target.wants"
@@ -269,7 +274,7 @@ timeout --kill-after=5 "$TIMEOUT" \
     qemu-system-x86_64 -enable-kvm -machine q35 -cpu host -smp "$SMP" -m "$MEM" \
     -drive "file=$IMG,format=raw,if=virtio" \
     -nic none -no-reboot \
-    -nographic -monitor none -serial "file:$LOG" \
+    -nographic -monitor none -serial "file:$LOG" -serial "file:$REPORT" \
     < /dev/null > "$OUT/qemu.log" 2>&1 &
 QEMU_PID=$!
 
@@ -304,13 +309,13 @@ do
     fi
 done
 elapsed="$(awk -v a="$start" -v b="$(date +%s.%N)" 'BEGIN { printf "%.1f", b - a }')"
-# After login:, the guest reports systemd-analyze and powers off: wait for
-# that, up to ANALYZE_WAIT seconds, but not past QEMU's hard limit.
+# After login:, wait for the guest's systemd-analyze report, up to
+# ANALYZE_WAIT seconds, but not past QEMU's hard limit; then stop QEMU.
 if test "$result" = pass && test -n "$QEMU_PID"
 then
     for _ in $(seq $(( ANALYZE_WAIT * 5 )))
     do
-        grep -aq '@@boot-test-plot-end@@' "$LOG" 2>/dev/null && break
+        grep -aq '@@boot-test-plot-end@@' "$REPORT" 2>/dev/null && break
         kill -0 "$QEMU_PID" 2>/dev/null || break
         sleep 0.2
     done
@@ -324,14 +329,14 @@ fi
 
 # The log without terminal control sequences and carriage returns.
 clean_log() {
-    sed 's/\x1b\[[0-9;?]*[A-Za-z]//g; s/\x1bP[^\x1b]*\x1b\\//g; s/\r//g' "$LOG" 2>/dev/null
+    sed 's/\x1b\[[0-9;?!]*[A-Za-z]//g; s/\x1b\][^\x07\x1b]*\(\x07\|\x1b\\\)//g; s/\x1bP[^\x1b]*\x1b\\//g; s/\x1b[78]//g; s/\r//g' "$LOG" 2>/dev/null
 }
 # systemd-analyze's report and plot, when the guest sent them.
 analyze="$OUT/boot-analyze.txt" plot="$OUT/boot-plot.svg"
 rm -f "$analyze" "$plot"
-clean_log | sed -n '/@@boot-test-analyze-begin@@/,/@@boot-test-analyze-end@@/{//!p}' > "$analyze"
+tr -d '\r' < "$REPORT" 2>/dev/null | sed -n '/@@boot-test-analyze-begin@@/,/@@boot-test-analyze-end@@/{//!p}' > "$analyze"
 test -s "$analyze" || rm -f "$analyze"
-clean_log | sed -n '/@@boot-test-plot-begin@@/,/@@boot-test-plot-end@@/{//!p}' | base64 -d 2>/dev/null | gunzip > "$plot" 2>/dev/null || true
+tr -d '\r' < "$REPORT" 2>/dev/null | sed -n '/@@boot-test-plot-begin@@/,/@@boot-test-plot-end@@/{//!p}' | base64 -d 2>/dev/null | gunzip > "$plot" 2>/dev/null || true
 test -s "$plot" || rm -f "$plot"
 
 # The log's tail, without the report's blocks.
