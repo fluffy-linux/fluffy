@@ -7,10 +7,11 @@ fi
 
 VERSION=34.2
 
+# Built straight from Fluffy's branch (our commits on upstream's v34.2
+# tag): swctl fetches the pinned commit with git.  kmod builds with meson,
+# so the release tarball's autotools files are not needed.
 ARCHIVES=(
-    5a5d5073070cc7e0c7a7a3c6ec2a0e1780850c8b47b3e3892226b93ffcb9cb54 https://github.com/fluffy-linux/kmod/releases/download/v$VERSION/kmod-$VERSION.tar.xz
-    e96a0f0805dd970126554b6b35c85b6ec73bb02394939c0c65e964b9ec2c0fb1 file://kmod-$VERSION-fluffy-test.patch
-    92b7b08c05e6b2bb355ba7188953fd458bb40ef2c38ff05a5d4503926443a254 file://kmod-$VERSION-fluffy.patch
+    2a645f6949ec7bb391b7847ce3d3d57effbe4a4c https://github.com/fluffy-linux/kmod.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
@@ -40,7 +41,6 @@ then
         meson
         ninja
         openssl
-        patch-pass1
         pkgconf
         python
         sed
@@ -66,7 +66,6 @@ else
         meson
         ninja
         openssl
-        patch
         pkgconf
         python
         sed
@@ -77,9 +76,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../kmod-$VERSION-fluffy-test.patch
-    patch -Z -Np1 -i ../kmod-$VERSION-fluffy.patch
-
     mkdir -p build
     cd build
     CFLAGS="-DVENDOR_PKG_PREFIX=\\\"/sw\\\" ${CFLAGS:-}" \
