@@ -21,17 +21,21 @@ do
 done
 
 # On Buildkite (every CI step runs this first), its output goes in a
-# collapsed section of its own, and only when there is any: run again with
-# the output captured, then print the section, opened if this failed.
-if test "${BUILDKITE:-}" = true && test -z "${FLUFFY_BOOTSTRAP_CAPTURED:-}"
+# collapsed section of its own, and only when there is any: run again, the
+# section's header printed before its first line, and each line as it
+# comes (a fresh runner's first bootstrap has taken 18 to 44 s); the
+# section is opened if this failed.
+if test "${BUILDKITE:-}" = true && test -z "${FLUFFY_BOOTSTRAP_SECTION:-}"
 then
     rc=0
-    out="$(FLUFFY_BOOTSTRAP_CAPTURED=1 "$0" "$@" 2>&1)" || rc=$?
-    if test -n "$out"
-    then
-        echo "--- bootstrap"
-        printf '%s\n' "$out"
-    fi
+    FLUFFY_BOOTSTRAP_SECTION=1 "$0" "$@" 2>&1 | {
+        if IFS= read -r line
+        then
+            echo "--- bootstrap"
+            printf '%s\n' "$line"
+            cat
+        fi
+    } || rc=$?
     if test "$rc" != 0
     then
         echo "^^^ +++"
@@ -39,17 +43,33 @@ then
     exit "$rc"
 fi
 
+# took PART: on Buildkite, how long PART (since the last) took, when that
+# was half a second or more.
+took_since="${EPOCHREALTIME/[.,]/}"
+took() {
+    local now="${EPOCHREALTIME/[.,]/}" tenths
+    tenths=$(( (now - took_since) / 100000 ))
+    took_since="$now"
+    if test "${BUILDKITE:-}" = true && (( tenths >= 5 ))
+    then
+        echo "bootstrap: $1: $(( tenths / 10 )).$(( tenths % 10 ))s"
+    fi
+}
+
 "$DIR/mkuid.sh" --check
+took "mkuid.sh --check"
 
 if ! mountpoint -q "$FLUFFY"
 then
     mount "$FLUFFY"
 fi
+took "mount"
 
 if ! id -u builder &>/dev/null
 then
     useradd -m -U -s /bin/bash builder
 fi
+took "useradd builder"
 
 mkdir -pv /sw
 mkdir -pv /work
@@ -69,11 +89,13 @@ mkdir -pv "$FLUFFY/var/log"
 # /init mounts devtmpfs, proc, sysfs and /run before it remounts /
 # read-write, so it cannot make them itself.
 mkdir -pv "$FLUFFY"/{dev,proc,sys,run}
+took "directories"
 
 if test ! -f "$FLUFFY/etc/machine-id"
 then
     tr -d '-' < /proc/sys/kernel/random/uuid > "$FLUFFY/etc/machine-id"
 fi
+took "machine-id"
 
 # glibc reads /etc/hosts, /etc/services and /etc/protocols at those paths.
 # A root gets minimal copies, only where it has none: enough for localhost
@@ -150,6 +172,7 @@ DHCP=yes
 UseDomains=true
 NET_EOF
 fi
+took "hosts, protocols, services, network"
 
 # root_mnt FIELD: FIELD of the file system mounted on $FLUFFY, one line: the
 # topmost mount there, the one $FLUFFY shows.  findmnt can list more than
@@ -169,6 +192,7 @@ if test -z "$root_uuid" && test -n "$root_dev" && test -b "$root_dev"
 then
     root_uuid="$(blkid -s UUID -o value "$root_dev" 2>/dev/null || true)"
 fi
+took "findmnt, blkid"
 
 if test ! -f "$FLUFFY/etc/fstab"
 then
@@ -183,6 +207,7 @@ then
         echo "UUID=$root_uuid / $root_fstype $root_opts 0 0" > "$FLUFFY/etc/fstab"
     fi
 fi
+took "fstab"
 
 # /init, from the init package: only when it changed, like the rest (CI
 # runs this before every step).
@@ -212,6 +237,7 @@ then
     sed -E '/^#/d; /^\/sw\/[^ ]*-pass[0-9]+-[^ ]*\.squashfs[[:space:]]/d; /^\/sw\/(cross|host)-build-[^ ]*\.squashfs[[:space:]]/d; s/-pass[0-9]+//g' \
         "$FLUFFY/sw/.build/fstab" > "$FLUFFY/etc/fluffy/fstab"
 fi
+took "init, /etc/fluffy/fstab"
 
 if test ! -f "$FLUFFY/etc/shadow"
 then
@@ -224,6 +250,7 @@ if ! grep -q '^root:' "$FLUFFY/etc/shadow"
 then
     echo "root:!:20000:0:99999:7:::" >> "$FLUFFY/etc/shadow"
 fi
+took "shadow"
 
 if ! awk -F: '$1 == "root" && $2 != "" && $2 != "!" && $2 != "*" { found=1 } END { exit !found }' "$FLUFFY/etc/shadow"
 then
@@ -272,3 +299,4 @@ then
     fi
     cp -fv "$DIR/boot/grub/grub.cfg" "$FLUFFY/boot/grub/grub.cfg"
 fi
+took "grub.cfg"
