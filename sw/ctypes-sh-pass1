@@ -2,8 +2,16 @@ ON=host-build
 
 VERSION=1.3
 
+# Built straight from Fluffy's branch (upstream's v1.3 tag; no commits of
+# ours): swctl fetches the pinned commit with git.  The tag has no
+# configure, Makefile.in or libtool files, so MAKE regenerates them as
+# upstream's autogen.sh does, with the autotools the release tarball was
+# made with.
 ARCHIVES=(
-    ab032a845d8e579e39159f9bb8e68214892b2d927e6c70834230c88145892165 https://github.com/fluffy-linux/ctypes.sh/releases/download/v$VERSION/ctypes-sh-$VERSION.tar.gz
+    78125e34c214e4fabf8539010c5a5f85289c5754 https://github.com/fluffy-linux/ctypes.sh.git#refs/heads/fluffy/v$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
+    2b62947fd566e11dedf3c2c7e252f05a8937d54c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(
@@ -22,7 +30,16 @@ BUILD_NEEDS=(
     zlib-pass1  # configure insists, but only struct support (off: no libelf) uses it
 )
 
+# Regenerated with the autotools ctypes.sh's release tarball was made with.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
+
 MAKE() {
+    autoconf_build
+    automake_build
+    libtool_build
+    autoreconf -fi
     CONFIG_SITE=/sw/glibc/share/config.site ./configure \
         --prefix=/sw/ctypes-sh \
         --host=$FLUFFY_TGT \
