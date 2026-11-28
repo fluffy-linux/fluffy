@@ -369,6 +369,17 @@ bring_up_lo() {
     dlcall free "$ptr"
 }
 
+# has_id FILE ID: whether the passwd(5) or group(5) FILE has an entry
+# whose ID (its third field) is ID.
+has_id() {
+    local _name _pw id _rest
+    while IFS=: read -r _name _pw id _rest || test -n "$_name"
+    do
+        test "$id" != "$2" || return 0
+    done < "$1"
+    return 1
+}
+
 mount_chroot_resolv_conf() {
     local chroot_etc="$FLUFFY/run/.chroot-etc"
     rm -rf "$chroot_etc"
@@ -383,7 +394,7 @@ mount_chroot_resolv_conf() {
         touch "$chroot_etc/passwd" "$chroot_etc/group"
         grep -q '^root:' "$chroot_etc/passwd" || printf 'root:x:0:0:root:/root:/sw/bash/bin/bash\n' >> "$chroot_etc/passwd"
         grep -q '^nobody:' "$chroot_etc/passwd" || printf 'nobody:*:65534:65534:Unprivileged User:/dev/null:/sw/coreutils/bin/false\n' >> "$chroot_etc/passwd"
-        if ! awk -F: -v u="$SUDO_UID" '$3 == u { found=1 } END { exit !found }' "$chroot_etc/passwd"
+        if ! has_id "$chroot_etc/passwd" "$SUDO_UID"
         then
             printf 'builder:*:%s:%s:Builder:/tmp:/sw/bash/bin/bash\n' "$SUDO_UID" "$SUDO_GID" >> "$chroot_etc/passwd"
         fi
@@ -391,7 +402,7 @@ mount_chroot_resolv_conf() {
         grep -q '^root:' "$chroot_etc/group" || printf 'root:x:0:\n' >> "$chroot_etc/group"
         grep -q '^tty:' "$chroot_etc/group" || printf 'tty:x:5:\n' >> "$chroot_etc/group"
         grep -q '^nogroup:' "$chroot_etc/group" || printf 'nogroup:x:65534:\n' >> "$chroot_etc/group"
-        if ! awk -F: -v g="$SUDO_GID" '$3 == g { found=1 } END { exit !found }' "$chroot_etc/group"
+        if ! has_id "$chroot_etc/group" "$SUDO_GID"
         then
             printf 'builder:x:%s:\n' "$SUDO_GID" >> "$chroot_etc/group"
         fi
@@ -1765,13 +1776,41 @@ cache_auth() {
 # lookup is a request): a vetted tag, or this build's, always names the
 # same image here, and every image fetched is checked against its digest
 # anyway.  A tag not found is never remembered: it may appear later.
-cache_seen=/sw/.build/cache-seen
+#
+# The file is bash, sourced once per swctl: one assignment per line, and
+# only of a tag and a digest that match their patterns (checked before
+# each is written, and again when read).  A damaged file (a line cut
+# short, an agent killed mid-write) is dropped, not trusted: its tags are
+# looked up again.  (The old /sw/.build/cache-seen, "TAG DIGEST" lines,
+# is not read.)
+cache_seen=/sw/.build/cache-seen.bash
+declare -A cache_seen_digest=()
+cache_seen_loaded=""
 cache_image_digest() {
     local tag="$1" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" body code seen
     local -n __digest_out="$2"
-    if test -n "${ci_mode:-}" && test -f "$cache_seen"
+    if test -n "${ci_mode:-}"
     then
-        seen="$(awk -v t="$tag" '$1 == t { print $2; exit }' "$cache_seen")"
+        if test -z "$cache_seen_loaded"
+        then
+            cache_seen_loaded=1
+            # Only root's, writable by no one else: sourced, it runs as
+            # root, and builds run upstream code.
+            # A line cut short can make a bad assignment, which would end
+            # this shell: tried first in a subshell, a file that fails is
+            # dropped (its tags are looked up again).
+            if test -f "$cache_seen" && test "$(stat -c '%u %A' "$cache_seen")" == "0 -rw-r--r--"
+            then
+                if (source "$cache_seen") 2>/dev/null
+                then
+                    source "$cache_seen" 2>/dev/null || true
+                else
+                    log "cache: $cache_seen is damaged; looking its tags up again"
+                    rm -f "$cache_seen"
+                fi
+            fi
+        fi
+        seen="${cache_seen_digest[$tag]:-}"
         if [[ "$seen" =~ ^[0-9a-f]{64}$ ]]
         then
             __digest_out="$seen"
@@ -1795,9 +1834,11 @@ cache_image_digest() {
     manifest="${manifest#*\"layers\"}"
     [[ "$manifest" =~ \"digest\":\"sha256:([0-9a-f]{64})\" ]] || { log "cache: $tag has no layer"; return 2; }
     __digest_out="${BASH_REMATCH[1]}"
-    if test -n "${ci_mode:-}"
+    if test -n "${ci_mode:-}" && [[ "$tag" =~ ^[A-Za-z0-9._-]+$ ]]
     then
-        printf '%s %s\n' "$tag" "$__digest_out" >> "$cache_seen" || true
+        cache_seen_digest["$tag"]="$__digest_out"
+        test -f "$cache_seen" || install -m 0644 /dev/null "$cache_seen" || true
+        printf 'cache_seen_digest[%s]=%s\n' "$tag" "$__digest_out" >> "$cache_seen" || true
     fi
 }
 
