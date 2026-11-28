@@ -7,11 +7,14 @@ fi
 
 VERSION=261.2
 
+# Built straight from Fluffy's branch (our commits on upstream's v261.2
+# tag, which equals the release tarball): swctl fetches the pinned
+# commit with git.  The man pages are still LFS's prebuilt
+# systemd-man-pages tarball: building them (-Dman=enabled) needs
+# python's lxml, which Fluffy doesn't package.
 ARCHIVES=(
-    ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec https://github.com/fluffy-linux/systemd/releases/download/v$VERSION/systemd-$VERSION.tar.gz
+    fa1119eb6d705a39b2c722ac1293dfa5b38e7583 https://github.com/fluffy-linux/systemd.git#refs/heads/fluffy/v$VERSION
     9be13865c9c7f9fecba7b86fc5185aecef00164c87ed68b4f6884283aefebe50 https://github.com/fluffy-linux/systemd/releases/download/v$VERSION/systemd-man-pages-$VERSION.tar.xz
-    7b62b8271aa5532fcf9011d8d6d0fd5c01070dab862c482741d3f600f8f51962 file://systemd-$VERSION-fluffy-shell.patch
-    05199805a4d9eb4bebe913ff9a379a3de133cf453d118c4d6fe6031983363baa file://systemd-$VERSION-fluffy-source.patch
     1b46ffd4c8c02f909646ace178ca78f980928279185835216b0bdc1ff9f106f7 file://systemd.passwd
     23d078bd659027ca416d7c6c12a396ffa3fa4a489c89bced6d6765fe0e326f78 file://systemd.group
 )
@@ -105,9 +108,6 @@ else
 fi
 
 MAKE() {
-    patch -Z -Np1 -i ../systemd-$VERSION-fluffy-shell.patch
-    patch -Z -Np1 -i ../systemd-$VERSION-fluffy-source.patch
-
     mkdir -p build
     cd build
 
@@ -181,6 +181,11 @@ CHECK() {
         test-mount-util \
         test-dlopen-so \
         --print-errorlogs
+    # test-fileio and test-os-util don't pass as a whole here (they want
+    # /bin/sh, and an os-release in /etc or /usr/lib); run the test
+    # functions of Fluffy's commits in them.
+    TESTFUNCS=test_search_and_fopen_glob build/test-fileio
+    TESTFUNCS=test_open_os_release_vendor build/test-os-util
 }
 
 INSTALL() {
