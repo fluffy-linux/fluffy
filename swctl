@@ -176,13 +176,66 @@ then
 fi
 
 FSTAB=${FSTAB:-/sw/.build/fstab}
-check_sha256() {
-    test -f "$1" && test "$(sha256sum "$1" | cut -d' ' -f1)" == "$2"
+# A file swctl fetched or made (an image, a tree, an archive) carries its
+# sha256 in the xattr user.fluffy.sha256 once it has been hashed, so
+# checking it again needs no hashing (a gcc image is 700 MB, and every CI
+# step checks the images it mounts).  Such files are never rewritten in
+# place, only replaced by renaming a new file over them, so the xattr
+# can't go stale; a new file is always hashed (sha256_hash), never taken
+# on trust.  A file without the xattr, or on a file system without
+# xattrs, is hashed as before.  The xattr is read and set through libc,
+# with no process.
+sha256_xattr=user.fluffy.sha256
+
+# sha256_hash FILE VAR: hash FILE into VAR, and record it in the xattr.
+sha256_hash() {
+    local -n __sh_out="$2"
+    local __sh_sum __sh_ret
+    __sh_sum="$(sha256sum "$1")"
+    __sh_out="${__sh_sum%% *}"
+    dlcall -r int -n __sh_ret setxattr "string:$1" "string:$sha256_xattr" \
+        "string:$__sh_out" ulong:${#__sh_out} int:0
 }
 
+# sha256_of FILE VAR: FILE's sha256 into VAR, from the xattr if it has one.
+sha256_of() {
+    local -n __so_out="$2"
+    local __so_buf __so_len __so_val
+    dlcall -r pointer -n __so_buf calloc ulong:1 ulong:65
+    dlcall -r long -n __so_len getxattr "string:$1" "string:$sha256_xattr" "$__so_buf" ulong:64
+    __so_val=""
+    if (( ${__so_len#*:} == 64 ))
+    then
+        dlcall -r string -n __so_val strstr "$__so_buf" string:
+        __so_val="${__so_val#string:}"
+    fi
+    dlcall free "$__so_buf"
+    if [[ "$__so_val" =~ ^[0-9a-f]{64}$ ]]
+    then
+        __so_out="$__so_val"
+    else
+        sha256_hash "$1" __so_out
+    fi
+}
+
+# check_sha256 FILE SHA256: whether FILE exists and has that checksum.
+check_sha256() {
+    local actual
+    test -f "$1" || return 1
+    sha256_of "$1" actual
+    test "$actual" == "$2"
+}
+
+# verify_sha256 FILE SHA256 NAME [new]: fatal unless FILE has that
+# checksum; with "new", FILE was just written, and is hashed.
 verify_sha256() {
     local file="$1" expected="$2" name="$3" actual
-    actual="$(sha256sum "$file" | cut -d' ' -f1)"
+    if test "${4:-}" == new
+    then
+        sha256_hash "$file" actual
+    else
+        sha256_of "$file" actual
+    fi
     if test "$actual" != "$expected"
     then
         fatal "checksum mismatch for $name: $actual != $expected"
@@ -615,7 +668,7 @@ register_entry() {
         get_fs_opt "$mnt_fs" "X-fluffy.image-checksum" old_img_chk || true
     fi
 
-    img_chk="$(sha256sum "$squashfs.new" | cut -d' ' -f1)"
+    sha256_hash "$squashfs.new" img_chk
     if test -n "$old_src" && test -f "$old_src" && test "$img_chk" == "$old_img_chk"
     then
         if test "$old_src" == "$squashfs"
@@ -1396,7 +1449,7 @@ build_single_pkg() {
                         curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
                             --proto '=https,http,file' --output "$tmp_dl" -- "$url"
                         bk_took 3 "download $filename" "$t_dl"
-                        verify_sha256 "$tmp_dl" "$sha256" "$filename"
+                        verify_sha256 "$tmp_dl" "$sha256" "$filename" new
                         mv -f "$tmp_dl" "$cached_file"
                     else
                         verify_sha256 "$cached_file" "$sha256" "$filename"
@@ -1883,10 +1936,13 @@ cache_blob() {
     local digest="$1" file="$2" name="$3" host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}" code
     check_sha256 "$file" "$digest" && return 0
     cache_auth || fatal "cache: no registry token"
+    rm -f "$file.new"
     code="$(curl -sS -L --retry 3 --retry-all-errors -o "$file.new" -w '%{http_code}' \
         -H "Authorization: Bearer $cache_bearer" \
         "https://$host/v2/$repo/blobs/sha256:$digest")" || code=000
-    if test "$code" != 200 || ! check_sha256 "$file.new" "$digest"
+    local got=""
+    test "$code" != 200 || sha256_hash "$file.new" got
+    if test "$got" != "$digest"
     then
         rm -f "$file.new"
         fatal "cache: could not fetch a good $name from $FLUFFY_CACHE_REGISTRY (HTTP $code)"
@@ -1915,12 +1971,8 @@ cache_fetch() {
     cache_blob "$img_chk" "$src" "image for $pkg"
 
     # The fstab line exactly as register_entry writes it after a build.
-    local needs="${pkg_needs[$pkg]:-}" options="X-fluffy.image-checksum=$img_chk"
-    if test -n "$needs"
-    then
-        options="$options,X-fluffy.needs=\"${needs// /,}\""
-    fi
-    options="$options,X-fluffy.recipe-checksum=$recipe_chk"
+    local options
+    ci_fstab_options "$pkg" "$recipe_chk" "$img_chk" options
 
     local mnt_fs="$NULL" old_src=""
     reload_fstab
@@ -2004,6 +2056,13 @@ build_pkgs() {
             shift
             ;;
     esac
+    if test "${1:-}" == --rows
+    then
+        test -n "$ci_mode" || fatal "--rows is for CI steps (build --defer-check, check)"
+        ci_rows="${2:?--rows needs a directory}"
+        test -d "$ci_rows" || fatal "--rows: no directory $ci_rows"
+        shift 2
+    fi
 
     case "$ci_mode" in
         defer)
@@ -2178,14 +2237,122 @@ plan_check_steps() {
     done
 }
 
+# CI's rows: a step passes on what it resolved, so that no step after it
+# works it out again.  A row is a package's fstab line, exactly as
+# cache_fetch writes it (its image, recipe checksum and NEEDS).  Every
+# build step writes the rows of its whole plan, plus any it was given, to
+# --rows' DIR/out, and the step's command stores that as the build's
+# meta-data fstab:<pkg>; a later step's command gets those of the few
+# steps whose plans cover its own (buildkite_pipeline) into DIR/in, and
+# swctl takes them, after sort -u, instead of computing them.  A package
+# no row covers is computed as before.  Only the target's own recipe
+# checksum is always computed: it is what the step is about.
+ci_rows=""
+declare -A ci_row_line=()
+
+# ci_row PKG VAR: PKG's row, from pkg_img_chk, pkg_recipe_chk and the plan.
+ci_row() {
+    local -n __cr_out="$2"
+    local __cr_opts
+    ci_fstab_options "$1" "${pkg_recipe_chk[$1]}" "${pkg_img_chk[$1]}" __cr_opts
+    printf -v __cr_out '%s %s squashfs %s 0 0' \
+        "/sw/$1-${pkg_ver[$1]}.squashfs" "/sw/${1%-pass*}" "$__cr_opts"
+}
+
+# ci_fstab_options PKG RECIPE_CHECKSUM IMAGE_CHECKSUM VAR: the options of
+# PKG's fstab line, as register_entry writes them after a build.
+ci_fstab_options() {
+    local -n __fo_out="$4"
+    local __fo_needs="${pkg_needs[$1]:-}"
+    __fo_out="X-fluffy.image-checksum=$3"
+    if test -n "$__fo_needs"
+    then
+        __fo_out+=",X-fluffy.needs=\"${__fo_needs// /,}\""
+    fi
+    __fo_out+=",X-fluffy.recipe-checksum=$2"
+}
+
+# ci_rows_load: the rows of DIR/in that name packages of the plan, by
+# package, in ci_row_line.  Two different lines for one image are fatal.
+ci_rows_load() {
+    test -n "$ci_rows" && test -s "$ci_rows/in" || return 0
+    local -A src_pkg=() seen=()
+    local d line src _rest
+    for d in "${order[@]}"
+    do
+        src_pkg["/sw/$d-${pkg_ver[$d]}.squashfs"]="$d"
+    done
+    while IFS= read -r line
+    do
+        test -n "$line" || continue
+        read -r src _rest <<< "$line"
+        test -z "${seen[$src]:-}" || fatal "rows: two different lines for $src"
+        seen["$src"]=1
+        d="${src_pkg[$src]:-}"
+        if test -n "$d"
+        then
+            ci_row_line["$d"]="$line"
+        fi
+    done < <(LC_ALL=C sort -u "$ci_rows/in")
+}
+
+# ci_rows_write: DIR/out, the rows given and those of the whole plan.
+# Every package of the plan must be resolved by now, the target too.
+ci_rows_write() {
+    test -n "$ci_rows" || return 0
+    local d row
+    {
+        if test -f "$ci_rows/in"
+        then
+            cat "$ci_rows/in"
+        fi
+        for d in "${order[@]}"
+        do
+            test -n "${pkg_img_chk[$d]:-}" || fatal "rows: $d has no image checksum"
+            ci_row "$d" row
+            printf '%s\n' "$row"
+        done
+    } | LC_ALL=C sort -u > "$ci_rows/out.new"
+    mv -f "$ci_rows/out.new" "$ci_rows/out"
+}
+
 # ci_resolve TARGET: the recipe checksum of every package of the plan, in
 # order, and the tag its image is under (vetted, else this build's; see
 # cache_lookup), from the registry alone: nothing is downloaded.  Only
-# TARGET may be missing: every other package's own step built it.
+# TARGET may be missing: every other package's own step built it.  A
+# package with a row takes its recipe and image checksums from it; its row
+# must be the one the plan gives for those (its version, NEEDS and paths).
+# Only a check step, which needs to know that what it was built against is
+# vetted, looks its tag up then.
 ci_resolve() {
-    local target="$1" pkg chk __rs_digest __rs_tag rc
+    local target="$1" pkg chk __rs_digest __rs_tag rc line row n_rows=0 n_computed=0
+    ci_rows_load
     for pkg in "${order[@]}"
     do
+        line="${ci_row_line[$pkg]:-}"
+        if test "$pkg" != "$target" && test -n "$line"
+        then
+            [[ "$line" =~ X-fluffy\.image-checksum=([0-9a-f]{64}) ]] || fatal "rows: $pkg's row has no image checksum"
+            pkg_img_chk["$pkg"]="${BASH_REMATCH[1]}"
+            [[ "$line" =~ X-fluffy\.recipe-checksum=([0-9a-f]{64}) ]] || fatal "rows: $pkg's row has no recipe checksum"
+            pkg_recipe_chk["$pkg"]="${BASH_REMATCH[1]}"
+            ci_row "$pkg" row
+            test "$row" == "$line" || fatal "rows: $pkg's row is not this plan's: $line"
+            n_rows=$(( n_rows + 1 ))
+            pkg_tag["$pkg"]=""
+            test "$ci_mode" == check || continue
+            __rs_digest="" __rs_tag="" rc=0
+            cache_lookup "$pkg" "${pkg_recipe_chk[$pkg]}" __rs_digest __rs_tag || rc=$?
+            case "$rc" in
+                0) ;;
+                1) fatal "cache: $pkg ($(cache_tag "$pkg" "${pkg_recipe_chk[$pkg]}")) has a row, but no image in the cache" ;;
+                *) fatal "cache: could not look up $(cache_tag "$pkg" "${pkg_recipe_chk[$pkg]}") in $FLUFFY_CACHE_REGISTRY" ;;
+            esac
+            test "$__rs_digest" == "${pkg_img_chk[$pkg]}" || fatal "cache: $__rs_tag is not the image $pkg's row names"
+            pkg_tag["$pkg"]="$__rs_tag"
+            continue
+        fi
+        n_computed=$(( n_computed + 1 ))
         chk="$(format_recipe_mime "$pkg" | sha256sum)"
         chk="${chk%% *}"
         pkg_recipe_chk["$pkg"]="$chk"
@@ -2208,6 +2375,10 @@ ci_resolve() {
                 ;;
         esac
     done
+    if test -n "$ci_rows"
+    then
+        log "rows: $n_rows from earlier steps, $n_computed computed"
+    fi
 }
 
 # A step of a CI build with deferred checks (see buildkite_pipeline), for
@@ -2258,6 +2429,7 @@ ci_step() {
     then
         if test -n "$tag"
         then
+            ci_rows_write
             pkg_log "CACHED($tag)"
             return 0
         fi
@@ -2306,6 +2478,12 @@ ci_step() {
             cache_publish "$pkg" "$chk" || fatal "cache: could not publish $tag"
         fi
         pkg_log "published $tag"
+        local built_fs="$NULL" built_img=""
+        find_fs_by_pkg "$pkg" built_fs 1
+        test "$built_fs" != "$NULL" && get_fs_opt "$built_fs" "X-fluffy.image-checksum" built_img ||
+            fatal "rows: $pkg's built image has no checksum in fstab"
+        pkg_img_chk["$pkg"]="$built_img"
+        ci_rows_write
         return 0
     fi
 
@@ -2455,6 +2633,62 @@ buildkite_pipeline() {
         fi
     }
 
+    # The rows (see ci_rows): a build step's DIR/out holds the rows of its
+    # plan, which is the package and, for each of its BUILD_NEEDS, that
+    # one's plan and its NEEDS' (plan_of; run_of adds the NEEDS).  A step
+    # gets the rows of the steps it depends on whose plans no other such
+    # step's plan contains: biggest first, each one not covered yet.
+    local -A plan_of=() run_of=() plan_n=() closing=()
+    run_closure() {
+        local p="$1" b x
+        test -z "${run_of[$p]+x}" || return 0
+        test -z "${closing[$p]:-}" || return 0
+        closing["$p"]=1
+        local -A u=(["$p"]=1)
+        local -a bs=() ns=()
+        read -ra bs <<< "${pkg_bneeds[$p]:-}"
+        for b in "${bs[@]}"
+        do
+            run_closure "${b##*/}"
+            for x in ${run_of[${b##*/}]:-}
+            do
+                u["$x"]=1
+            done
+        done
+        plan_of["$p"]=" ${!u[*]} "
+        plan_n["$p"]="${#u[@]}"
+        read -ra ns <<< "${pkg_needs[$p]:-}"
+        for b in "${ns[@]}"
+        do
+            run_closure "${b##*/}"
+            for x in ${run_of[${b##*/}]:-}
+            do
+                u["$x"]=1
+            done
+        done
+        run_of["$p"]="${!u[*]}"
+    }
+    # rows_from: the cover of reach, into rows_from (an array).
+    rows_from() {
+        local d x
+        local -A covered=()
+        rows_from=()
+        for d in "${!reach[@]}"
+        do
+            run_closure "$d"
+        done
+        while read -r _ d
+        do
+            test -z "${covered[$d]:-}" || continue
+            rows_from+=("$d")
+            for x in ${plan_of[$d]}
+            do
+                covered["$x"]=1
+            done
+        done < <(for d in "${!reach[@]}"; do printf '%s %s\n' "${plan_n[$d]}" "$d"; done | sort -k1,1nr -k2,2)
+    }
+    local -a rows_from=()
+
     # FLUFFY_CI_QUEUE: the Buildkite queue every step goes to (unset: the
     # cluster's default queue), e.g. gha for the agents on GitHub-hosted
     # runners.
@@ -2496,10 +2730,26 @@ buildkite_pipeline() {
                 fi
             fi
         done
-        bk_step "build-$pkg" "build-$pkg" "$boot$swctl build --defer-check $(printf '%q' "$pkg")" "${builds[@]}"
+        # The rows' directory, and the build step's own rows stored for the
+        # steps after it (see ci_rows).  The agent's job token stays out
+        # here: swctl only reads and writes the files.
+        local rows_in="" r q
+        q="$(printf '%q' "$pkg")"
+        rows_from
+        for r in "${rows_from[@]}"
+        do
+            rows_in+=" $(printf '%q' "fstab:$r")"
+        done
+        local rows_cmd='rows="$(mktemp -d)" && trap '"'"'rm -rf "$rows"'"'"' EXIT && touch "$rows/in" && '
+        if test -n "$rows_in"
+        then
+            rows_cmd+='for k in'"$rows_in"'; do buildkite-agent meta-data get "$k" >> "$rows/in"; done && '
+        fi
+        bk_step "build-$pkg" "build-$pkg" "$rows_cmd$boot$swctl build --defer-check --rows \"\$rows\" $q && buildkite-agent meta-data set $(printf '%q' "fstab:$pkg") < \"\$rows/out\"" "${builds[@]}"
         if test -n "${pkg_check_step[$pkg]}"
         then
-            bk_step "check-$pkg" "check-$pkg" "$boot$swctl check $(printf '%q' "$pkg")" "${checks[@]}"
+            rows_cmd='rows="$(mktemp -d)" && trap '"'"'rm -rf "$rows"'"'"' EXIT && buildkite-agent meta-data get '"$(printf '%q' "fstab:$pkg")"' > "$rows/in" && '
+            bk_step "check-$pkg" "check-$pkg" "$rows_cmd$boot$swctl check --rows \"\$rows\" $q" "${checks[@]}"
             all_checks+=("check-$pkg")
         fi
     done
