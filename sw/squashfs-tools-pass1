@@ -2,8 +2,12 @@ ON=host-build
 
 VERSION=4.7.5
 
+# Built straight from Fluffy's branch (upstream's 4.7.5 tag; no commits
+# of ours): swctl fetches the pinned commit with git.  Its archive is the
+# release, apart from version.mk's abbreviated hash, which the build
+# doesn't use (the Makefile sets RELEASE_VERSION).
 ARCHIVES=(
-    547b7b7f4d2e44bf91b6fc554664850c69563701deab9fd9cd7e21f694c88ea6 https://github.com/fluffy-linux/squashfs-tools/releases/download/$VERSION/squashfs-tools-$VERSION.tar.gz
+    708c59ae80853b0845017c33b42e56061cc546cd https://github.com/fluffy-linux/squashfs-tools.git#refs/heads/fluffy/$VERSION
 )
 
 NEEDS=(
