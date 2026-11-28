@@ -7,8 +7,11 @@ fi
 
 VERSION=32
 
+# Built straight from Fluffy's branch (our commit on upstream's v32
+# tag): swctl fetches the pinned commit, and the libwaive commit it pins,
+# with git.  The tag is the release, apart from git's own files.
 ARCHIVES=(
-    6dd1b97fd9273d268b70c1be3c2592cbbe1488bca5e45c12c58f8c74362758d5 https://github.com/fluffy-linux/signify/releases/download/v$VERSION/signify-$VERSION.tar.xz
+    367a783d000e14bb1400662bf9ac0b2c8dfd40c3 https://github.com/fluffy-linux/signify.git#refs/heads/fluffy/v$VERSION
 )
 
 NEEDS=(
