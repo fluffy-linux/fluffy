@@ -320,7 +320,18 @@ fetch_git() {
 # gitlink commit, pinned by the repository's tree, is fetched at depth 1
 # under refs/fluffy/<host>/<path>.git/commits/<commit>.  Only its own
 # submodules, not theirs, as "git submodule update" does by default.
-# Prints "<commit> <url> <path>" per submodule of REPO's COMMIT.
+# Prints "<commit> <url> <path> <name>" per submodule of REPO's COMMIT.
+#
+# A submodule's fluffy-sparse values in .gitmodules, if it has any, are
+# the lines of a sparse-checkout file (git's non-cone patterns, as in
+# $GIT_DIR/info/sparse-checkout), and only the paths they select are
+# extracted (sparse_paths).  The Translation Project's repository, say, is
+# 1 GB of every package's catalogs at every version; a package needs its
+# own:
+#     [submodule "translationproject"]
+#         path = translationproject
+#         url = ../translationproject.git
+#         fluffy-sparse = /PO-files/*/grep-*.po
 git_submodules() {
     local repo="$1" commit="$2" key name path mode type sub rel base url
     store_git cat-file -e "$commit:.gitmodules" 2> /dev/null || return 0
@@ -349,14 +360,49 @@ git_submodules() {
         url="$base/$rel"
         [[ "$url" =~ ^https://[a-zA-Z0-9.-]+/[^#:]+\.git$ ]] ||
             fatal "$repo: submodule $path resolves to $url, not https://<host>/<path>.git"
-        echo "$sub $url $path"
+        echo "$sub $url $path $name"
     done < <(store_git config --blob "$commit:.gitmodules" --get-regexp '^submodule\..*\.path$' || true)
+}
+
+# sparse_paths COMMIT PATTERN...: the paths of COMMIT that a sparse
+# checkout with those patterns (non-cone) keeps, one per line.  Git itself
+# decides: a sparse checkout of COMMIT in a scratch directory (it writes
+# only the paths it keeps), whose index marks every other path
+# skip-worktree.  A pattern set that keeps nothing is an error.
+sparse_paths() {
+    local commit="$1" tmp tag path n=0 objects="$work_dir/git/objects"
+    shift
+    [[ "$objects" == /* ]] || objects="$PWD/$objects"
+    tmp="$(mktemp -d)"
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null XDG_CONFIG_HOME=/dev/null \
+        git init --quiet --bare "$tmp/git"
+    printf '%s\n' "$objects" > "$tmp/git/objects/info/alternates"
+    mkdir -p "$tmp/git/info" "$tmp/wt"
+    printf '%s\n' "$@" > "$tmp/git/info/sparse-checkout"
+    sparse_git() {
+        GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null XDG_CONFIG_HOME=/dev/null \
+            GIT_INDEX_FILE="$tmp/index" git -c gc.auto=0 -c maintenance.auto=false \
+            -c core.sparseCheckout=true -c core.sparseCheckoutCone=false \
+            --git-dir="$tmp/git" --work-tree="$tmp/wt" "$@"
+    }
+    sparse_git read-tree -m -u "$commit" > /dev/null
+    while IFS= read -r -d '' tag
+    do
+        path="${tag#? }"
+        if [[ "$tag" == "H "* ]]
+        then
+            printf '%s\n' "$path"
+            n=$(( n + 1 ))
+        fi
+    done < <(sparse_git ls-files -t -z)
+    rm -rf "$tmp"
+    (( n > 0 )) || fatal "sparse checkout of $commit keeps nothing (patterns: $*)"
 }
 
 fetch_git_submodules() {
     local list sub url path local_ref
     list="$(git_submodules "$1" "$2")"
-    while read -r sub url path
+    while read -r sub url path _
     do
         test -n "$sub" || continue
         local_ref="refs/fluffy/${url#https://}/commits/$sub"
@@ -370,17 +416,34 @@ fetch_git_submodules() {
     done <<< "$list"
 }
 
+# submodule_paths COMMIT NAME SUB VAR: into the array VAR, the paths of
+# the submodule NAME (at SUB) to extract: none, meaning all, unless
+# COMMIT's .gitmodules gives it fluffy-sparse patterns.
+submodule_paths() {
+    local -n __sp_out="$4"
+    local __sp_patterns
+    __sp_out=()
+    __sp_patterns="$(store_git config --blob "$1:.gitmodules" --get-all "submodule.$2.fluffy-sparse" || true)"
+    test -n "$__sp_patterns" || return 0
+    local -a __sp_pat=()
+    mapfile -t __sp_pat <<< "$__sp_patterns"
+    mapfile -t __sp_out < <(sparse_paths "$3" "${__sp_pat[@]}")
+    (( ${#__sp_out[@]} > 0 )) || fatal "submodule $2: its fluffy-sparse patterns keep nothing"
+}
+
 # Extracts REPO's COMMIT, with its submodules, into the directory DIR.
 extract_git() {
-    local repo="$1" commit="$2" dir="$3" list sub url path
+    local repo="$1" commit="$2" dir="$3" list sub url path name
+    local -a paths=()
     store_git archive --format=tar "$commit" |
         tar --no-same-owner --no-same-permissions -C "$dir" -xf -
     list="$(git_submodules "$repo" "$commit")"
-    while read -r sub url path
+    while read -r sub url path name
     do
         test -n "$sub" || continue
         mkdir -p "$dir/$path"
-        store_git archive --format=tar "$sub" |
+        submodule_paths "$commit" "$name" "$sub" paths
+        store_git --literal-pathspecs archive --format=tar "$sub" -- "${paths[@]}" |
             tar --no-same-owner --no-same-permissions -C "$dir/$path" -xf -
     done <<< "$list"
 }
@@ -388,13 +451,15 @@ extract_git() {
 # Writes REPO's COMMIT, with its submodules, as the tar file TAR holding
 # PREFIX/.
 tar_git() {
-    local repo="$1" commit="$2" tar="$3" prefix="$4" list sub url path
+    local repo="$1" commit="$2" tar="$3" prefix="$4" list sub url path name
+    local -a paths=()
     store_git archive --format=tar --prefix="$prefix/" "$commit" > "$tar"
     list="$(git_submodules "$repo" "$commit")"
-    while read -r sub url path
+    while read -r sub url path name
     do
         test -n "$sub" || continue
-        store_git archive --format=tar --prefix="$prefix/$path/" "$sub" > "$tar.sub"
+        submodule_paths "$commit" "$name" "$sub" paths
+        store_git --literal-pathspecs archive --format=tar --prefix="$prefix/$path/" "$sub" -- "${paths[@]}" > "$tar.sub"
         tar --concatenate --file="$tar" "$tar.sub"
         rm -f "$tar.sub"
     done <<< "$list"
