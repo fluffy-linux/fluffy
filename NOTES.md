@@ -547,6 +547,30 @@ The question Fluffy asks is "how far can I push squashfs packages using glob() a
   - **Open:** whether a failing smoke test blocks promotion like CHECK or only reports; whether the booted tier runs every build or only when a booted package changed; recipes as the home (`SMOKE()` beside `CHECK()`).
   - **User (2026-11-26):** "I'm not sure yet", so noted here to think about more.
 
+### Idea: parallel mounts (measured 2026-11-27, not planned)
+
+If mounting is ever worth speeding up, this is what was found:
+
+- **No batch syscall.** Linux has no call that mounts several file
+  systems at once: `mount(2)` and the new API (`fsopen`/`fsconfig`/
+  `fsmount`/`move_mount`) are per file system, and io_uring has no mount
+  operation (none of Linux 7.1.8's 62 `IORING_OP_*`).  What does act on
+  many mounts in one call is a recursive bind (`MS_BIND | MS_REC`, or
+  `open_tree(OPEN_TREE_CLONE | AT_RECURSIVE)` + `move_mount`), which
+  swctl already uses for `/sw`; and `mount_setattr(AT_RECURSIVE)` for
+  flags.
+- **Parallel helps, a little.** A world's 155 squashfs images, mounted
+  with `mount -o ro,loop` in a private namespace (the user's machine): one
+  by one 1.05 s (about 7 ms each), 8 at a time (`xargs -P 8`) 0.55 s.
+  swctl mounts through libmount without a process per mount, so its own
+  cost is likely lower still; at boot, `/init`'s 102 mounts take 0.12 s
+  (see the boot test's notes).
+- **How, if wanted:** `xargs -P`, as the parallel fetch does (no GNU
+  parallel, which would add Perl), or mount a step's images once into a
+  staging tree in parallel and put it in place with one recursive bind.
+  At under a second per world, nothing in CI's time (downloads, first
+  bootstraps, plan, the builds themselves) calls for it yet.
+
 ### CI on GitHub-hosted runners (2026-11-27, trial)
 
 - **Why:** GCP spending reached the $50 budget in about four days (spot C4/C4D agents for world builds). GitHub-hosted runners are free and unlimited for public repositories.
