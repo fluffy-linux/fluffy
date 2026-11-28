@@ -5,8 +5,9 @@ Run by .github/workflows/buildkite-agent.yml's scaler job, one per branch
 (its concurrency group), on a push and every 15 minutes.  Every 30 s it
 reads the gha queue from Buildkite's agent metrics and starts agent runs
 of the same workflow (workflow_dispatch) while jobs wait beyond the idle
-agents and the agent runs not yet started, keeping at most MAX agent runs
-in flight.  Being the only one deciding, the cap is exact.  It exits after
+agents and the agent runs whose agent hasn't connected yet (a run takes
+about 2 minutes to set its runner up), keeping at most MAX agent runs in
+flight.  Being the only one deciding, the cap is exact.  It exits after
 QUIET seconds with no job waiting or running and no agent run in flight.
 
 A run still queued after STALE seconds is not counted: a hosted runner
@@ -43,18 +44,18 @@ while True:
         jobs = m.get("jobs", {}).get("queues", {}).get("gha", {})
         agents = m.get("agents", {}).get("queues", {}).get("gha", {})
         waiting, running = int(jobs.get("scheduled", 0)), int(jobs.get("running", 0))
-        idle = int(agents.get("idle", 0))
+        idle, connected = int(agents.get("idle", 0)), int(agents.get("total", 0))
         runs = [r for s in ("queued", "in_progress")
                 for r in call(f"{API}/runs?status={s}&event=workflow_dispatch&per_page=50",
                               "Bearer " + GH).get("workflow_runs", [])
                 if s == "in_progress" or time.time() - calendar.timegm(
                     time.strptime(r["created_at"], "%Y-%m-%dT%H:%M:%SZ")) < STALE]
-        queued = sum(1 for r in runs if r["status"] == "queued")
-        want = max(0, min(waiting - idle - queued, MAX - len(runs)))
+        pending = max(0, len(runs) - connected)
+        want = max(0, min(waiting - idle - pending, MAX - len(runs)))
         for _ in range(want):
             call(f"{API}/dispatches", "Bearer " + GH, "POST", {"ref": REF})
         print(time.strftime("%H:%M:%S"), f"waiting={waiting} running={running} idle={idle} "
-              f"agent runs={len(runs)} (queued {queued}): started {want}", flush=True)
+              f"agent runs={len(runs)} (no agent yet {pending}): started {want}", flush=True)
         if waiting or running or runs:
             quiet_since = time.time()
         elif time.time() - quiet_since >= QUIET:
