@@ -17,10 +17,13 @@ TZDATA_VERSION=2026c
 # test-installation line disables a check the Makefile only runs when
 # the prefix is /usr and nothing is installed under DESTDIR, and its sed
 # on ldd's RTLDLIST strips "/usr", which ldd's /sw/glibc paths do
-# not contain.
+# not contain.  The time zone data comes from Fluffy's tz branch
+# (upstream's 2026c tag), whose data files are the tzdata release
+# tarball's; the tarball's leapseconds is generated, and INSTALL makes
+# it as the release's Makefile does.
 ARCHIVES=(
     14921213fafa2dead5254a8585e3890e74b592cc https://github.com/fluffy-linux/glibc.git#refs/heads/fluffy/glibc-$VERSION
-    e4a178a4477f3d0ea77cc31828ff72aa38feff8d61aa13e7e99e142e9d902be4 https://github.com/fluffy-linux/tz/releases/download/$TZDATA_VERSION/tzdata$TZDATA_VERSION.tar.gz
+    71f28b9ab3b67c0f9466803f6151812d4fc8e357 https://github.com/fluffy-linux/tz.git#refs/heads/fluffy/$TZDATA_VERSION
     0d0ebdf6c6a81658e352a96e703815779105a3489a52bc3c74746e07d368dda0 file://glibc.passwd
     b2b74131611f9116dfbae38c97575816812fe6273ccf795582bb12a5c21e2fea file://glibc.group
 )
@@ -123,7 +126,9 @@ INSTALL() {
 multi on
 EOF
 
-    tar -xf ../../tzdata$TZDATA_VERSION.tar.gz
+    tar -xf ../../tz.tar
+    cd tz
+    make leapseconds
     ZONEINFO=$DESTDIR/sw/glibc/share/zoneinfo
     mkdir -pv $ZONEINFO/{posix,right}
     for tz in etcetera southamerica northamerica europe africa antarctica asia australasia backward
