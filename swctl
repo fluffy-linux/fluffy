@@ -1996,6 +1996,88 @@ cache_fetch() {
     fi
 }
 
+# cache_prefetch PKG...: the images of PKGs (pkg_img_chk) that aren't here
+# yet, fetched all at once: one curl --parallel (FLUFFY_CACHE_PARALLEL, 8,
+# at a time), then hashed several at a time, each given its xattr (see
+# sha256_of) and moved into place, so that cache_fetch finds it here.  A
+# download that fails, or isn't the image it should be, is dropped:
+# cache_fetch fetches it again on its own, and fails if it can't.
+cache_prefetch() {
+    local pkg src digest host="${FLUFFY_CACHE_REGISTRY%%/*}" repo="${FLUFFY_CACHE_REGISTRY#*/}"
+    local -A want=()
+    for pkg
+    do
+        src="/sw/$pkg-${pkg_ver[$pkg]}.squashfs"
+        digest="${pkg_img_chk[$pkg]:-}"
+        [[ "$digest" =~ ^[0-9a-f]{64}$ ]] || fatal "cache: no image checksum for $pkg"
+        check_sha256 "$src" "$digest" && continue
+        want["$src.new"]="$digest"
+    done
+    (( ${#want[@]} > 0 )) || return 0
+    cache_auth || fatal "cache: no registry token"
+    local file t_pf
+    t_pf="$(bk_now)"
+    for file in "${!want[@]}"
+    do
+        rm -f "$file"
+    done
+    # The token goes in curl's config, on stdin, never on a command line.
+    {
+        printf 'header = "Authorization: Bearer %s"\n' "$cache_bearer"
+        for file in "${!want[@]}"
+        do
+            printf 'url = "https://%s/v2/%s/blobs/sha256:%s"\noutput = "%s"\n' "$host" "$repo" "${want[$file]}" "$file"
+        done
+    } | curl -sS -L --fail --retry 3 --retry-all-errors \
+        --parallel --parallel-max "${FLUFFY_CACHE_PARALLEL:-8}" -K - || true
+    local n="${#want[@]}" sum ret
+    while read -r sum file
+    do
+        if test "$sum" == "${want[$file]:-}"
+        then
+            dlcall -r int -n ret setxattr "string:$file" "string:$sha256_xattr" "string:$sum" ulong:64 int:0
+            mv -f "$file" "${file%.new}"
+            unset 'want[$file]'
+        fi
+    done < <(for file in "${!want[@]}"; do test -f "$file" && printf '%s\0' "$file"; done |
+        xargs -0 -r -n 1 -P "$(nproc)" sha256sum)
+    for file in "${!want[@]}"
+    do
+        rm -f "$file"
+    done
+    bk_took 0 "images fetched at once, $(( n - ${#want[@]} )) of $n" "$t_pf"
+}
+
+# swctl restore --rows DIR PKG...: register the images that DIR/in's rows
+# name for PKGs' plan, fetched all at once (CI's boot test, with
+# build-<pkg>'s rows: see ci_rows).  `build PKG...` then finds them up to
+# date, as if they had been built here.  A row must be the plan's.
+restore_rows() {
+    test "${1:-}" == --rows && test $# -ge 3 || fatal "Usage: $0 restore --rows DIR <package...>"
+    ci_rows="$2"
+    shift 2
+    test -d "$ci_rows" || fatal "restore: no directory $ci_rows"
+    cache_enabled || fatal "restore: FLUFFY_CACHE_REGISTRY names no cache"
+    local -a order=() have=()
+    local -A pkg_ver=() pkg_bneeds=() pkg_needs=() pkg_img_chk=() pkg_includes=() pkg_has_check=() pkg_recipe_chk=()
+    local pkg
+    bk_section PREPARE
+    plan_pkgs build "$@"
+    ci_rows_load
+    for pkg in "${order[@]}"
+    do
+        test -n "${ci_row_line[$pkg]:-}" || continue
+        ci_row_take "$pkg"
+        have+=("$pkg")
+    done
+    cache_prefetch "${have[@]}"
+    for pkg in "${have[@]}"
+    do
+        cache_fetch "$pkg" "${pkg_recipe_chk[$pkg]}" "${pkg_img_chk[$pkg]}"
+    done
+    log "restore: ${#have[@]} of ${#order[@]} images, from the rows"
+}
+
 # cache_push FILE TAG ARTIFACT_TYPE: push FILE as the tag's single layer.
 cache_push() {
     (
@@ -2296,6 +2378,18 @@ ci_rows_load() {
     done < <(LC_ALL=C sort -u "$ci_rows/in")
 }
 
+# ci_row_take PKG: PKG's recipe and image checksums, from its row, which
+# must be the one the plan gives for them.
+ci_row_take() {
+    local line="${ci_row_line[$1]}" row
+    [[ "$line" =~ X-fluffy\.image-checksum=([0-9a-f]{64}) ]] || fatal "rows: $1's row has no image checksum"
+    pkg_img_chk["$1"]="${BASH_REMATCH[1]}"
+    [[ "$line" =~ X-fluffy\.recipe-checksum=([0-9a-f]{64}) ]] || fatal "rows: $1's row has no recipe checksum"
+    pkg_recipe_chk["$1"]="${BASH_REMATCH[1]}"
+    ci_row "$1" row
+    test "$row" == "$line" || fatal "rows: $1's row is not this plan's: $line"
+}
+
 # ci_rows_write: DIR/out, the rows given and those of the whole plan.
 # Every package of the plan must be resolved by now, the target too.
 ci_rows_write() {
@@ -2332,12 +2426,7 @@ ci_resolve() {
         line="${ci_row_line[$pkg]:-}"
         if test "$pkg" != "$target" && test -n "$line"
         then
-            [[ "$line" =~ X-fluffy\.image-checksum=([0-9a-f]{64}) ]] || fatal "rows: $pkg's row has no image checksum"
-            pkg_img_chk["$pkg"]="${BASH_REMATCH[1]}"
-            [[ "$line" =~ X-fluffy\.recipe-checksum=([0-9a-f]{64}) ]] || fatal "rows: $pkg's row has no recipe checksum"
-            pkg_recipe_chk["$pkg"]="${BASH_REMATCH[1]}"
-            ci_row "$pkg" row
-            test "$row" == "$line" || fatal "rows: $pkg's row is not this plan's: $line"
+            ci_row_take "$pkg"
             n_rows=$(( n_rows + 1 ))
             pkg_tag["$pkg"]=""
             test "$ci_mode" == check || continue
@@ -2435,6 +2524,12 @@ ci_step() {
         fi
         local fetch_start n_deps=0
         fetch_start="$(bk_now)"
+        local -a reach_pkgs=()
+        for d in "${order[@]}"
+        do
+            test -z "${reach[$d]:-}" || reach_pkgs+=("$d")
+        done
+        cache_prefetch "${reach_pkgs[@]}"
         for d in "${order[@]}"
         do
             if test -n "${reach[$d]:-}"
@@ -2516,6 +2611,12 @@ ci_step() {
         cache_blob "$tree_chk" "$tree_file" "$tree"
         local fetch_start n_deps=0
         fetch_start="$(bk_now)"
+        local -a reach_pkgs=()
+        for d in "${order[@]}"
+        do
+            test -z "${reach[$d]:-}" || reach_pkgs+=("$d")
+        done
+        cache_prefetch "${reach_pkgs[@]}"
         for d in "${order[@]}"
         do
             if test -n "${reach[$d]:-}"
@@ -2743,7 +2844,8 @@ buildkite_pipeline() {
         local rows_cmd='rows="$(mktemp -d)" && trap '"'"'rm -rf "$rows"'"'"' EXIT && touch "$rows/in" && '
         if test -n "$rows_in"
         then
-            rows_cmd+='for k in'"$rows_in"'; do buildkite-agent meta-data get "$k" >> "$rows/in"; done && '
+            # The gets at once, each to its own file (xargs fails if one does).
+            rows_cmd+='printf "%s\n"'"$rows_in"' | xargs -P 8 -I {} sh -c '"'"'buildkite-agent meta-data get "$1" > "$2/$1"'"'"' _ {} "$rows" && cat "$rows"/fstab:* > "$rows/in" && '
         fi
         bk_step "build-$pkg" "build-$pkg" "$rows_cmd$boot$swctl build --defer-check --rows \"\$rows\" $q && buildkite-agent meta-data set $(printf '%q' "fstab:$pkg") < \"\$rows/out\"" "${builds[@]}"
         if test -n "${pkg_check_step[$pkg]}"
@@ -2773,13 +2875,20 @@ buildkite_pipeline() {
             # come from the cache only: without FLUFFY_CACHE_TOKEN_FILE,
             # swctl publishes nothing.
             targets="$(printf ' %q' "$@")"
+            # The images, all at once, from the targets' rows (see ci_rows,
+            # restore_rows): swctl build then finds them up to date.
+            local boot_rows='rows="$(mktemp -d)"; trap '"'"'rm -rf "$rows"'"'"' EXIT; ' t
+            for t in "$@"
+            do
+                boot_rows+="buildkite-agent meta-data get $(printf '%q' "fstab:${t##*/}") >> \"\$rows/in\" && "
+            done
             echo "  - label: $(yaml_str boot-test)"
             echo "    key: $(yaml_str boot-test)"
             # boot-test.sh writes an annotation (the result, systemd-analyze's
             # times and plot); the agent posts it, pass or fail.  Buildkite
             # runs the command under bash -e, so the status is caught with
             # || rather than read from $? after a failing command.
-            echo "    command: $(yaml_str "rc=0; ${boot}sudo --preserve-env=$keep,FLUFFY_CACHE_REGISTRY$env_prefix ./swctl build$targets && sudo --preserve-env=$keep$env_prefix ./boot-test.sh --out boot-test || rc=\$?; if test -s boot-test/annotation.md; then buildkite-agent annotate --context boot-test --style \"\$(cat boot-test/annotation-style)\" < boot-test/annotation.md || true; fi; exit \$rc")"
+            echo "    command: $(yaml_str "rc=0; $boot_rows${boot}sudo --preserve-env=$keep,FLUFFY_CACHE_REGISTRY$env_prefix ./swctl restore --rows \"\$rows\"$targets && sudo --preserve-env=$keep,FLUFFY_CACHE_REGISTRY$env_prefix ./swctl build$targets && sudo --preserve-env=$keep$env_prefix ./boot-test.sh --out boot-test || rc=\$?; if test -s boot-test/annotation.md; then buildkite-agent annotate --context boot-test --style \"\$(cat boot-test/annotation-style)\" < boot-test/annotation.md || true; fi; exit \$rc")"
             echo "    timeout_in_minutes: 15"
             echo "    artifact_paths:"
             echo "      - $(yaml_str 'boot-test/*.log')"
@@ -2792,6 +2901,10 @@ buildkite_pipeline() {
             echo "          limit: 2"
             echo "    depends_on:"
             echo "      - $(yaml_str world-check)"
+            for t in "$@"
+            do
+                echo "      - $(yaml_str "$(step_key "build-${t##*/}")")"
+            done
         fi
     fi
 }
@@ -2894,6 +3007,10 @@ check)
     shift
     ci_mode=check
     build_pkgs "$@"
+    ;;
+restore)
+    shift
+    restore_rows "$@"
     ;;
 refresh-checksums)
     shift
