@@ -7,9 +7,17 @@ fi
 
 VERSION=7.1
 
+# Built straight from Fluffy's branch (our commits on upstream's v7.1
+# tag): swctl fetches the pinned commit with git.  The tag has no
+# configure, include/config.h.in or config/ helpers, so MAKE runs
+# autogen.sh with the autoconf and automake the release tarball was
+# made with (2.73, 1.18.1).  The tarball's prebuilt man pages (made
+# with Sphinx, which Fluffy doesn't have) aren't in git; this recipe
+# never installed them (BLFS does).
 ARCHIVES=(
-    d1f55cc2971398c9142eaa79d203e63d586a3b4b867f956664a1d68322cd4e34 https://github.com/fluffy-linux/btrfs-progs/releases/download/v$VERSION/btrfs-progs-v$VERSION.tar.xz
-    d4ef7a3a51c7ba1d2c270960b39a7f6beb4e01c61fdc09116f3c09b7c542b787 file://btrfs-progs-v$VERSION-fluffy-source.patch
+    bf9a89086802033e0b270761fe02b11d0f5ad447 https://github.com/fluffy-linux/btrfs-progs.git#refs/heads/fluffy/v$VERSION
+    008e8749cc5ef038ed8dbe86c24c67401af88c36 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73
+    cc330adb5f903693718796b765fb0cce0aaa66ba https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1
 )
 
 NEEDS=(
@@ -77,10 +85,14 @@ else
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../btrfs-progs-v$VERSION-fluffy-source.patch
+source sw/autoconf.common
+source sw/automake.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    $CONFIG_SHELL ./autogen.sh
     CONFIG_SITE=/sw/glibc/share/config.site \
     $CONFIG_SHELL ./configure \
         --prefix=/sw/btrfs-progs \
