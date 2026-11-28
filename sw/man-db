@@ -7,10 +7,19 @@ fi
 
 VERSION=2.13.1
 
+# Built straight from Fluffy's branch (our commits on upstream's 2.13.1
+# tag): swctl fetches the pinned commit, and the gnulib and
+# translationproject commits it pins, with git.  The tag has no
+# configure, Makefile.in, gnulib files or gnulib translations, so MAKE
+# bootstraps it with the autoconf, automake and libtool the release
+# tarball was made with (2.72, 1.17, 2.5.4), the gnulib translations
+# come from the Translation Project's files, merged as the release's
+# make dist did, and make writes the scanners (flex) and catalogs.
 ARCHIVES=(
-    8afebb6f7eb6bb8542929458841f5c7e6f240e30c86358c1fbcefbea076c87d9 https://github.com/fluffy-linux/man-db/releases/download/$VERSION/man-db-$VERSION.tar.xz
-    6d87c5c80292f349f711c6a017ea2a1b7291b71152c58172a32a525ace53b163 file://man-db-$VERSION-fluffy-source.patch
-    f0bd10104ecd9c3ceba955aa5ac34e956c6c38a9201a2751c8a97e36fc8490b5 file://man-db-$VERSION-fluffy-test.patch
+    6f962e811716b2040e50b5c37ad45c5ea28974d2 https://github.com/fluffy-linux/man-db.git#refs/heads/fluffy/$VERSION
+    ae4ca8a64a5ba81ed37e3aa37ef8d75abd4925fb https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72
+    c47d100eab0ff3b64e16811f6b3925b233085497 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17
+    2b62947fd566e11dedf3c2c7e252f05a8937d54c https://github.com/fluffy-linux/libtool.git#refs/heads/fluffy/v2.5.4
 )
 
 NEEDS=(
@@ -79,11 +88,23 @@ else
     )
 fi
 
-MAKE() {
-    patch -Z -Np1 -i ../man-db-$VERSION-fluffy-source.patch
-    patch -Z -Np1 -i ../man-db-$VERSION-fluffy-test.patch
+# gettext gives bootstrap autopoint, and the build xgettext, msgmerge
+# and msgfmt.
+source sw/autoconf.common
+source sw/automake.common
+source sw/libtool.common
 
+MAKE() {
     export CONFIG_SHELL=/sw/bash/bin/bash
+    autoconf_build
+    automake_build
+    libtool_build
+    # gettext installs autopoint with a #!/bin/sh line (gettext's bug).
+    export AUTOPOINT="$CONFIG_SHELL /sw/gettext/bin/autopoint"
+    # Not --skip-po: that leaves out gl/po's build files.  bootstrap
+    # fetches nothing here (bootstrap.conf's SKIP_PO, and no wget for
+    # gnulib-tool's fetch); the translations are the branch's.
+    $CONFIG_SHELL ./bootstrap --no-git --gnulib-srcdir=gnulib
     CONFIG_SITE=/sw/glibc/share/config.site \
     CPPFLAGS='-DVENDOR_CONFIG_PATH="\"/sw/*/etc/man_db.conf\""' \
     libpipeline_CFLAGS=" " \
@@ -101,6 +122,9 @@ MAKE() {
         --with-systemdsystemunitdir=/sw/man-db/lib/systemd/system \
         --with-systemdtmpfilesdir=/sw/man-db/lib/tmpfiles.d \
         --without-libseccomp
+    # gnulib's translations as make dist merges them with
+    # man-db-gnulib.pot.
+    make -C gl/po update-po
     make
 }
 
