@@ -65,9 +65,11 @@ then
 fi
 took "mount"
 
+# No home directory: nothing logs in as builder, and making one copies
+# /etc/skel, which took 21 to 55 s on GitHub's runners (build #103).
 if ! id -u builder &>/dev/null
 then
-    useradd -m -U -s /bin/bash builder
+    useradd -M -U -s /bin/bash builder
 fi
 took "useradd builder"
 
