@@ -10,7 +10,7 @@ VERSION=1.35
 # archive inside the root (binutils' gprofng builds its examples.tar.gz
 # at install).
 ARCHIVES=(
-    eba7031194ccab8337e67e64c6217d1712eb98fa https://github.com/fluffy-linux/tar.git#refs/heads/fluffy/v$VERSION
+    027b8bbc8df681b3a30c7fe93a6c027794767e6e https://github.com/fluffy-linux/tar.git#refs/heads/fluffy/v$VERSION
     6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
     fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )

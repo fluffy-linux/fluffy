@@ -7,7 +7,7 @@ VERSION=4.4.1
 # runs the host's autopoint.  configure.ac checks for guile with
 # pkg-config's macros: aclocal takes pkg.m4 from pkgconf-pass1.
 ARCHIVES=(
-    95a4535ef305c0351ee7f6a76a853940229a1fd3 https://github.com/fluffy-linux/make.git#refs/heads/fluffy/$VERSION
+    19e53fcc5b7c479ce78dd3420796d9699a28f6a5 https://github.com/fluffy-linux/make.git#refs/heads/fluffy/$VERSION
     6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
     fecfc0984bc0aa2623d671fbcaaf4afbad979dee https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.5
 )

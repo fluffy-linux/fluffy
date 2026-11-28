@@ -14,7 +14,7 @@ VERSION=4.10
 # translations come from the Translation Project's files, merged as the
 # release's make dist did.
 ARCHIVES=(
-    1041359ee65f5160841dae26e0b781a111027df6 https://github.com/fluffy-linux/sed.git#refs/heads/fluffy/v$VERSION
+    5f48ac2bfa3ad5028f39a3b9ff27fd44bde3fa9a https://github.com/fluffy-linux/sed.git#refs/heads/fluffy/v$VERSION
     83bfc9cc82d6b4480d7ed9838823212dfb3aa03b https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.73.1-b400b
     1a3ba678aa6cb7796a3438b3e1df02bc39d91a81 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.18.1.91
 )

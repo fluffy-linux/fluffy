@@ -14,7 +14,7 @@ VERSION=3.8.2
 # is cross-built for Fluffy, as the other host-build pass1s are, and
 # runs in the root.
 ARCHIVES=(
-    6ee6e6ca82eb25239d917b278534f01c94f71e34 https://github.com/fluffy-linux/bison.git#refs/heads/fluffy/v$VERSION
+    9792f8b0e621254fb2bd9cac20b323dcc1c51f40 https://github.com/fluffy-linux/bison.git#refs/heads/fluffy/v$VERSION
     6d71b5a3bfe08b333ef1e9eb8fdfd8172a5f6607 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.71
     7aa69820bf6aab0bd99093422df79349986460dc https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.16.4
 )

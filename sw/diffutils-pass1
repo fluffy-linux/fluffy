@@ -6,7 +6,7 @@ VERSION=3.12
 # build the ones diffutils's release tarball was made with, and bootstrap
 # runs the host's autopoint.
 ARCHIVES=(
-    ccbabc3eef9e170ac2176764dc7a12aa0e33a1ba https://github.com/fluffy-linux/diffutils.git#refs/heads/fluffy/v$VERSION
+    28cf20f733ead054900d5d811f9a317e68aa7570 https://github.com/fluffy-linux/diffutils.git#refs/heads/fluffy/v$VERSION
     1996f5b17a22cc4056860b7bc807dc061e1c4368 https://github.com/fluffy-linux/autoconf.git#refs/heads/fluffy/v2.72.76-2f64
     a88a8c2541f3fcb0137de63799a80e31e5435ae4 https://github.com/fluffy-linux/automake.git#refs/heads/fluffy/v1.17.0.91
 )
